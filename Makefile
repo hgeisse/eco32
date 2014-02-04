@@ -2,7 +2,7 @@
 # Makefile for ECO32 project
 #
 
-VERSION = 0.23
+VERSION = 0.22
 
 DIRS = doc binutils sim simtest
 BUILD = `pwd`/build
