@@ -4,7 +4,7 @@
 
 VERSION = 0.23
 
-DIRS = doc binutils
+DIRS = doc binutils sim
 BUILD = `pwd`/build
 
 .PHONY:		all compiler builddir clean dist
