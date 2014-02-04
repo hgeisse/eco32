@@ -15,8 +15,9 @@ all:		compiler
 		done
 
 compiler:	builddir
-		# some commands here
-		# to build the compiler
+		$(MAKE) -C lcc BUILDDIR=$(BUILD)/bin \
+		  HOSTFILE=etc/eco32-netbsd.c lcc
+		$(MAKE) -C lcc BUILDDIR=$(BUILD)/bin all
 		rm -f $(BUILD)/bin/*.c
 		rm -f $(BUILD)/bin/*.o
 		rm -f $(BUILD)/bin/*.a
