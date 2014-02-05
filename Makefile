@@ -4,7 +4,7 @@
 
 VERSION = 0.22
 
-DIRS = doc binutils sim simtest
+DIRS = doc binutils sim simtest fpga
 BUILD = `pwd`/build
 
 .PHONY:		all compiler builddir clean dist
