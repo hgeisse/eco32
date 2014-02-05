@@ -1,0 +1,26 @@
+File Calling Hierarchy
+----------------------
+
+makefs
+	walk
+	ffs
+
+ffs
+	mkfs
+	ffs_balloc
+
+mkfs
+	ffs_bswap
+	ffs_subr
+
+ffs_balloc
+	ffs_alloc
+	ufs_bmap
+	buf
+
+ffs_alloc
+	ffs_subr
+	ffs_tables
+
+ffs_subr
+	ffs_tables

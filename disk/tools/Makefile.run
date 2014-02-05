@@ -1,0 +1,29 @@
+#
+# Makefile to build a bootable disk, and either start the
+# ECO32 simulator with a ROM monitor (goal: run an OS within
+# the simulator) or start the serial line disk server (goal:
+# run an OS on an FPGA board).
+#
+
+BUILD = ..
+
+all:		disk.img
+
+run-sim:	disk.img
+		$(BUILD)/bin/sim -i -t 1 \
+		  -r $(BUILD)/monitor/monitor.bin \
+		  -d disk.img -o run.log
+
+run-server:	disk.img
+		$(BUILD)/bin/diskserv disk.img
+
+disk.img:
+		$(BUILD)/bin/mkdisk disk.img 100M
+		$(BUILD)/bin/mkpart disk.img disk.part
+		$(MAKE) -C fs-EOS32 all
+		$(MAKE) -C fs-NetBSD all
+
+clean:
+		$(MAKE) -C fs-EOS32 clean
+		$(MAKE) -C fs-NetBSD clean
+		rm -f *~ disk.img run.log

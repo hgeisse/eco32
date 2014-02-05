@@ -1,0 +1,27 @@
+./bootblk
+2236 1500
+d--755 1 1
+boot      d--755 2 1
+          hello.bin       ---644 2 1 ../../stdalone/hello.bin
+          hello2.bin      ---644 2 1 ../../stdalone/hello2.bin
+          memsize.bin     ---644 2 1 ../../stdalone/memsize.bin
+          onetask.bin     ---644 2 1 ../../stdalone/onetask.bin
+          twotasks-1.bin  ---644 2 1 ../../stdalone/twotasks-1.bin
+          twotasks-2.bin  ---644 2 1 ../../stdalone/twotasks-2.bin
+          wrtmbr.bin      ---644 2 1 ../../stdalone/wrtmbr.bin
+          dskchk.bin      ---644 2 1 ../../stdalone/dskchk.bin
+          mkpart.bin      ---644 2 1 ../../stdalone/mkpart.bin
+          shpart.bin      ---644 2 1 ../../stdalone/shpart.bin
+          eos32.bin       ---644 2 1 ../../../os-bin/EOS32/eos32.bin
+          $
+bin       d--755 2 1
+          $
+dev       d--755 2 1
+          $
+etc       d--755 2 1
+          $
+tmp       d--777 2 1
+          $
+usr       d--755 2 1
+          $
+$
