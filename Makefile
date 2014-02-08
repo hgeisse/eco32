@@ -2,17 +2,20 @@
 # Makefile for ECO32 project
 #
 
-VERSION = 0.22
+VERSION = 0.23
 
-DIRS = doc binutils sim simtest fpga hwtests monitor disk stdalone
+DIRS = binutils sim simtest fpga hwtests monitor disk stdalone
 BUILD = `pwd`/build
 
-.PHONY:		all compiler builddir clean dist
+.PHONY:		all doc compiler builddir clean dist
 
 all:		compiler
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i install ; \
 		done
+
+doc:
+		$(MAKE) -C doc install
 
 compiler:	builddir
 		$(MAKE) -C lcc BUILDDIR=$(BUILD)/bin \
@@ -30,6 +33,7 @@ clean:
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i clean ; \
 		done
+		$(MAKE) -C doc clean
 		rm -rf $(BUILD)
 		rm -f *~
 
