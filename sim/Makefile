@@ -33,7 +33,7 @@ $(BIN):		$(OBJS) getline/libgetline.a
 		$(CC) $(CFLAGS) -o $@ -c $<
 
 depend.mak:
-		$(CC) -MM -MG $(CFLAGS) $(SRCS) > depend.mak
+		$(CC) -MM -MG $(CFLAGS) $(SRCS) >depend.mak
 
 -include depend.mak
 
