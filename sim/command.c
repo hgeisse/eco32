@@ -22,6 +22,8 @@
 #include "dspkbd.h"
 #include "term.h"
 #include "disk.h"
+#include "output.h"
+#include "shutdown.h"
 #include "graph.h"
 
 
@@ -731,6 +733,8 @@ static void doInit(char *tokens[], int n) {
     keyboardReset();
     termReset();
     diskReset();
+    outputReset();
+    shutdownReset();
     graphReset();
     memoryReset();
     mmuReset();

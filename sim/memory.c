@@ -19,6 +19,7 @@
 #include "term.h"
 #include "disk.h"
 #include "output.h"
+#include "shutdown.h"
 #include "graph.h"
 
 
@@ -71,6 +72,10 @@ Word memoryReadWord(Word pAddr) {
   }
   if ((pAddr & IO_DEV_MASK) == OUTPUT_BASE) {
     data = outputRead(pAddr & IO_REG_MASK);
+    return data;
+  }
+  if ((pAddr & IO_DEV_MASK) == SHUTDOWN_BASE) {
+    data = shutdownRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_DEV_MASK) >= GRAPH_BASE) {
@@ -157,6 +162,10 @@ void memoryWriteWord(Word pAddr, Word data) {
   }
   if ((pAddr & IO_DEV_MASK) == OUTPUT_BASE) {
     outputWrite(pAddr & IO_REG_MASK, data);
+    return;
+  }
+  if ((pAddr & IO_DEV_MASK) == SHUTDOWN_BASE) {
+    shutdownWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_DEV_MASK) >= GRAPH_BASE) {

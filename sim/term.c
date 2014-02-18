@@ -59,7 +59,7 @@ static void rcvrCallback(int dev) {
   if (debug) {
     cPrintf("\n**** TERM RCVR CALLBACK ****\n");
   }
-  timerStart(TERM_RCVR_MSEC, rcvrCallback, dev);
+  timerStart(TERM_RCVR_USEC, rcvrCallback, dev);
   c = fgetc(terminals[dev].in);
   if (c == EOF) {
     /* no character typed */
@@ -98,12 +98,12 @@ Word termRead(Word addr) {
   if (debug) {
     cPrintf("\n**** TERM READ from 0x%08X", addr);
   }
-  dev = addr >> 4;
+  dev = addr >> 12;
   if (dev >= numTerminals) {
     /* illegal device */
     throwException(EXC_BUS_TIMEOUT);
   }
-  reg = addr & 0x0F;
+  reg = addr & 0x0FFF;
   if (reg == TERM_RCVR_CTRL) {
     data = terminals[dev].rcvrCtrl;
   } else
@@ -139,12 +139,12 @@ void termWrite(Word addr, Word data) {
     cPrintf("\n**** TERM WRITE to 0x%08X, data = 0x%08X ****\n",
             addr, data);
   }
-  dev = addr >> 4;
+  dev = addr >> 12;
   if (dev >= numTerminals) {
     /* illegal device */
     throwException(EXC_BUS_TIMEOUT);
   }
-  reg = addr & 0x0F;
+  reg = addr & 0x0FFF;
   if (reg == TERM_RCVR_CTRL) {
     if (data & TERM_RCVR_IEN) {
       terminals[dev].rcvrCtrl |= TERM_RCVR_IEN;
@@ -196,7 +196,7 @@ void termWrite(Word addr, Word data) {
       /* lower terminal xmtr interrupt */
       cpuResetInterrupt(terminals[dev].xmtrIRQ);
     }
-    timerStart(TERM_XMTR_MSEC, xmtrCallback, dev);
+    timerStart(TERM_XMTR_USEC, xmtrCallback, dev);
   } else {
     /* illegal register */
     throwException(EXC_BUS_TIMEOUT);
@@ -215,7 +215,7 @@ void termReset(void) {
     terminals[i].rcvrCtrl = 0;
     terminals[i].rcvrData = 0;
     terminals[i].rcvrIRQ = IRQ_TERM_0_RCVR + 2 * i;
-    timerStart(TERM_RCVR_MSEC, rcvrCallback, i);
+    timerStart(TERM_RCVR_USEC, rcvrCallback, i);
     terminals[i].xmtrCtrl = TERM_XMTR_RDY;
     terminals[i].xmtrData = 0;
     terminals[i].xmtrIRQ = IRQ_TERM_0_XMTR + 2 * i;

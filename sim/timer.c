@@ -19,6 +19,9 @@
 #define TIME_WRAP	1000000		/* avoid overflow of current time */
 
 
+/*
+ * data structure for simulation timer
+ */
 typedef struct timer {
   struct timer *next;
   int alarm;
@@ -27,29 +30,47 @@ typedef struct timer {
 } Timer;
 
 
+/*
+ * data structure for timer/counter device
+ */
+typedef struct {
+  Word ctrl;
+  Word divisor;
+  Word counter;
+  int irq;
+} TimerCounter;
+
+
 static Bool debug = false;
 
 static Timer *activeTimers = NULL;
 static Timer *freeTimers = NULL;
+static int currentTime = 0;		/* measured in clock cycles */
 
-static int currentTime = 0;
-
-static Word timerCtrl = 0x00000000;
-static Word timerDivisor = 0xFFFFFFFF;
-static Word timerCounter = 0xFFFFFFFF;
+static TimerCounter timerCounters[NUMBER_TMRCNT];
 
 
 Word timerRead(Word addr) {
+  int dev, reg;
   Word data;
 
   if (debug) {
     cPrintf("\n**** TIMER READ from 0x%08X", addr);
   }
-  if (addr == TIMER_CTRL) {
-    data = timerCtrl;
+  dev = addr >> 12;
+  if (dev >= NUMBER_TMRCNT) {
+    /* illegal device */
+    throwException(EXC_BUS_TIMEOUT);
+  }
+  reg = addr & 0x0FFF;
+  if (reg == TIMER_CTRL) {
+    data = timerCounters[dev].ctrl;
   } else
-  if (addr == TIMER_DIVISOR) {
-    data = timerDivisor;
+  if (reg == TIMER_DIVISOR) {
+    data = timerCounters[dev].divisor;
+  } else
+  if (reg == TIMER_COUNTER) {
+    data = timerCounters[dev].counter;
   } else {
     /* illegal register */
     throwException(EXC_BUS_TIMEOUT);
@@ -62,33 +83,41 @@ Word timerRead(Word addr) {
 
 
 void timerWrite(Word addr, Word data) {
+  int dev, reg;
+
   if (debug) {
     cPrintf("\n**** TIMER WRITE to 0x%08X, data = 0x%08X ****\n",
             addr, data);
   }
-  if (addr == TIMER_CTRL) {
+  dev = addr >> 12;
+  if (dev >= NUMBER_TMRCNT) {
+    /* illegal device */
+    throwException(EXC_BUS_TIMEOUT);
+  }
+  reg = addr & 0x0FFF;
+  if (reg == TIMER_CTRL) {
     if (data & TIMER_IEN) {
-      timerCtrl |= TIMER_IEN;
+      timerCounters[dev].ctrl |= TIMER_IEN;
     } else {
-      timerCtrl &= ~TIMER_IEN;
+      timerCounters[dev].ctrl &= ~TIMER_IEN;
     }
     if (data & TIMER_EXP) {
-      timerCtrl |= TIMER_EXP;
+      timerCounters[dev].ctrl |= TIMER_EXP;
     } else {
-      timerCtrl &= ~TIMER_EXP;
+      timerCounters[dev].ctrl &= ~TIMER_EXP;
     }
-    if ((timerCtrl & TIMER_IEN) != 0 &&
-        (timerCtrl & TIMER_EXP) != 0) {
+    if ((timerCounters[dev].ctrl & TIMER_IEN) != 0 &&
+        (timerCounters[dev].ctrl & TIMER_EXP) != 0) {
       /* raise timer interrupt */
-      cpuSetInterrupt(IRQ_TIMER);
+      cpuSetInterrupt(timerCounters[dev].irq);
     } else {
       /* lower timer interrupt */
-      cpuResetInterrupt(IRQ_TIMER);
+      cpuResetInterrupt(timerCounters[dev].irq);
     }
   } else
-  if (addr == TIMER_DIVISOR) {
-    timerDivisor = data;
-    timerCounter = data;
+  if (reg == TIMER_DIVISOR) {
+    timerCounters[dev].divisor = data;
+    timerCounters[dev].counter = data;
   } else {
     /* illegal register */
     throwException(EXC_BUS_TIMEOUT);
@@ -100,9 +129,12 @@ void timerTick(void) {
   Timer *timer;
   void (*callback)(int param);
   int param;
+  int i;
 
-  /* increment current time, avoid overflow */
-  if (++currentTime == TIME_WRAP) {
+  /* increment current time */
+  currentTime += CC_PER_INSTR;
+  /* avoid overflow */
+  if (currentTime >= TIME_WRAP) {
     currentTime -= TIME_WRAP;
     timer = activeTimers;
     while (timer != NULL) {
@@ -121,19 +153,23 @@ void timerTick(void) {
     freeTimers = timer;
     (*callback)(param);
   }
-  /* decrement counter and check if an interrupt must be raised */
-  if (--timerCounter == 0) {
-    timerCounter = timerDivisor;
-    timerCtrl |= TIMER_EXP;
-    if (timerCtrl & TIMER_IEN) {
-      /* raise timer interrupt */
-      cpuSetInterrupt(IRQ_TIMER);
+  /* decrement counters and check if an interrupt must be raised */
+  for (i = 0; i < NUMBER_TMRCNT; i++) {
+    if (timerCounters[i].counter <= CC_PER_INSTR) {
+      timerCounters[i].counter += timerCounters[i].divisor - CC_PER_INSTR;
+      timerCounters[i].ctrl |= TIMER_EXP;
+      if (timerCounters[i].ctrl & TIMER_IEN) {
+        /* raise timer interrupt */
+        cpuSetInterrupt(timerCounters[i].irq);
+      }
+    } else {
+      timerCounters[i].counter -= CC_PER_INSTR;
     }
   }
 }
 
 
-void timerStart(int msec, void (*callback)(int param), int param) {
+void timerStart(int usec, void (*callback)(int param), int param) {
   Timer *timer;
   Timer *p;
 
@@ -142,7 +178,7 @@ void timerStart(int msec, void (*callback)(int param), int param) {
   }
   timer = freeTimers;
   freeTimers = timer->next;
-  timer->alarm = currentTime + msec;
+  timer->alarm = currentTime + usec * CC_PER_USEC;
   timer->callback = callback;
   timer->param = param;
   if (activeTimers == NULL ||
@@ -165,6 +201,7 @@ void timerStart(int msec, void (*callback)(int param), int param) {
 
 void timerReset(void) {
   Timer *timer;
+  int i;
 
   cPrintf("Resetting Timer...\n");
   while (activeTimers != NULL) {
@@ -172,6 +209,12 @@ void timerReset(void) {
     activeTimers = timer->next;
     timer->next = freeTimers;
     freeTimers = timer;
+  }
+  for (i = 0; i < NUMBER_TMRCNT; i++) {
+    timerCounters[i].ctrl = 0x00000000;
+    timerCounters[i].divisor = 0xFFFFFFFF;
+    timerCounters[i].counter = 0xFFFFFFFF;
+    timerCounters[i].irq = IRQ_TIMER_0 + i;
   }
 }
 
@@ -195,7 +238,12 @@ void timerInit(void) {
 void timerExit(void) {
   Timer *timer;
 
-  timerReset();
+  while (activeTimers != NULL) {
+    timer = activeTimers;
+    activeTimers = timer->next;
+    timer->next = freeTimers;
+    freeTimers = timer;
+  }
   while (freeTimers != NULL) {
     timer = freeTimers;
     freeTimers = timer->next;

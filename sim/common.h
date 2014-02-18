@@ -30,6 +30,7 @@
 #define MAX_NTERMS	2		/* max number of terminals */
 #define DISK_BASE	0x30400000	/* physical disk base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */
+#define SHUTDOWN_BASE	0x3F100000	/* physical shutdown device address */
 #define GRAPH_BASE	0x3FC00000	/* physical grahics base address */
 					/* extends to end of address space */
 
@@ -37,7 +38,8 @@
 #define OFFSET_MASK	(PAGE_SIZE - 1)	/* mask for offset within a page */
 #define PAGE_MASK	(~OFFSET_MASK)	/* mask for page number */
 
-#define INSTRS_PER_MSEC	1700		/* average execution speed */
+#define CC_PER_USEC	50		/* clock cycles per microsecond */
+#define CC_PER_INSTR	18		/* clock cycles per instruction */
 
 
 typedef enum { false, true } Bool;	/* truth values */

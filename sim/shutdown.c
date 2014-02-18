@@ -1,12 +1,11 @@
 /*
- * error.c -- error handler
+ * shutdown.c -- shutdown device
  */
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "common.h"
 #include "console.h"
@@ -23,9 +22,14 @@
 #include "graph.h"
 
 
-void error(char *fmt, ...) {
-  va_list ap;
+Word shutdownRead(Word addr) {
+  /* the shutdown device always returns 0 on read */
+  return 0;
+}
 
+
+void shutdownWrite(Word addr, Word data) {
+  /* the device supports a single function: exiting the simulator */
   cpuExit();
   mmuExit();
   memoryExit();
@@ -37,11 +41,21 @@ void error(char *fmt, ...) {
   outputExit();
   shutdownExit();
   graphExit();
+  cPrintf("ECO32 Simulator shutdown\n");
   cExit();
-  va_start(ap, fmt);
-  fprintf(stderr, "Error: ");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  va_end(ap);
-  exit(1);
+  exit(data & 0xFF);
+}
+
+
+void shutdownReset(void) {
+  cPrintf("Resetting Shutdown Device...\n");
+}
+
+
+void shutdownInit(void) {
+  shutdownReset();
+}
+
+
+void shutdownExit(void) {
 }

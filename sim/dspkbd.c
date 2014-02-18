@@ -1,5 +1,5 @@
 /*
- * display.c -- display controller simulation
+ * dspkbd.h -- display & keyboard controller simulation
  */
 
 
@@ -794,7 +794,7 @@ static void kbdCallback(int dev) {
   if (debug) {
     cPrintf("\n**** KEYBOARD CALLBACK ****\n");
   }
-  timerStart(KEYBOARD_MSEC, kbdCallback, dev);
+  timerStart(KEYBOARD_USEC, kbdCallback, dev);
   if (kbdBufWritePtr == kbdBufReadPtr) {
     /* no character ready */
     return;
@@ -886,7 +886,7 @@ void keyboardReset(void) {
   kbdBufInit();
   kbdCtrl = 0;
   kbdData = 0;
-  timerStart(KEYBOARD_MSEC, kbdCallback, 0);
+  timerStart(KEYBOARD_USEC, kbdCallback, 0);
 }
 
 

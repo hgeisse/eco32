@@ -20,6 +20,7 @@
 #include "term.h"
 #include "disk.h"
 #include "output.h"
+#include "shutdown.h"
 #include "graph.h"
 
 
@@ -150,6 +151,7 @@ int main(int argc, char *argv[]) {
   termInit(numTerms);
   diskInit(diskName);
   outputInit(outputName);
+  shutdownInit();
   if (graphics) {
     graphInit();
   }
@@ -186,6 +188,7 @@ int main(int argc, char *argv[]) {
   termExit();
   diskExit();
   outputExit();
+  shutdownExit();
   graphExit();
   cPrintf("ECO32 Simulator finished\n");
   cExit();

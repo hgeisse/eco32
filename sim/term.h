@@ -14,11 +14,11 @@
 
 #define TERM_RCVR_RDY		0x01	/* receiver has a character */
 #define TERM_RCVR_IEN		0x02	/* enable receiver interrupt */
-#define TERM_RCVR_MSEC		20	/* input checking interval */
+#define TERM_RCVR_USEC		2000	/* input checking interval */
 
 #define TERM_XMTR_RDY		0x01	/* transmitter accepts a character */
 #define TERM_XMTR_IEN		0x02	/* enable transmitter interrupt */
-#define TERM_XMTR_MSEC		8	/* output speed */
+#define TERM_XMTR_USEC		1042	/* output speed */
 
 
 Word termRead(Word addr);

@@ -8,7 +8,7 @@
 ; $11 pointer to string
 ; $31 return address
 
-	.set	tba,0xF0300010
+	.set	tba,0xF0301000
 
 	add	$8,$0,tba
 	add	$11,$0,hello

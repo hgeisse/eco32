@@ -42,7 +42,6 @@ static Word pc;			/* program counter */
 static Word psw;		/* processor status word */
 static Word r[32];		/* general purpose registers */
 
-static int instrCount;		/* counts instrs for timer tick */
 static unsigned irqPending;	/* one bit for each pending IRQ */
 
 static Bool breakSet;		/* breakpoint set if true */
@@ -57,15 +56,6 @@ static Word startAddr;		/* start of ROM (or start of RAM, */
 
 
 /**************************************************************/
-
-
-static void handleRealTimeTasks(void) {
-  /* handle 'real-time' tasks */
-  if (++instrCount == INSTRS_PER_MSEC) {
-    instrCount = 0;
-    timerTick();
-  }
-}
 
 
 static void handleInterrupts(void) {
@@ -572,7 +562,7 @@ void cpuStep(void) {
   if (exception == 0) {
     /* initialization */
     pushEnvironment(&myEnvironment);
-    handleRealTimeTasks();
+    timerTick();
     execNextInstruction();
     handleInterrupts();
   } else {
@@ -602,7 +592,7 @@ void cpuRun(void) {
     }
   }
   while (run) {
-    handleRealTimeTasks();
+    timerTick();
     execNextInstruction();
     handleInterrupts();
     if (breakSet && pc == breakAddr) {
@@ -641,7 +631,6 @@ void cpuReset(void) {
   r[0] = 0;
   psw = 0;
   /* reset simulator control variables */
-  instrCount = 0;
   irqPending = 0;
   total = 0;
 }

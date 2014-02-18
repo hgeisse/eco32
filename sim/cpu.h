@@ -7,7 +7,8 @@
 #define _CPU_H_
 
 
-#define IRQ_TIMER	14		/* timer interrupt */
+#define IRQ_TIMER_1	15		/* timer 1 interrupt */
+#define IRQ_TIMER_0	14		/* timer 0 interrupt */
 #define IRQ_DISK	8		/* disk interrupt */
 #define IRQ_KEYBOARD	4		/* keyboard interrupt */
 #define IRQ_TERM_1_RCVR	3		/* terminal 1 receiver interrupt */

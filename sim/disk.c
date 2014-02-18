@@ -158,7 +158,7 @@ void diskWrite(Word addr, Word data) {
         if (delta > diskCap) {
           delta = diskCap;
         }
-        timerStart(DISK_DELAY + (delta * DISK_SEEK) / diskCap,
+        timerStart(DISK_DELAY_USEC + (delta * DISK_SEEK_USEC) / diskCap,
                    diskCallback, 1);
       }
     } else {
@@ -213,7 +213,7 @@ void diskReset(void) {
   if (totalSectors != 0) {
     cPrintf("Disk of size %ld sectors (%ld bytes) installed.\n",
             totalSectors, totalSectors * SECTOR_SIZE);
-    timerStart(DISK_STARTUP, diskCallback, 0);
+    timerStart(DISK_START_USEC, diskCallback, 0);
   }
 }
 

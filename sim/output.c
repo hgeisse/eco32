@@ -45,7 +45,7 @@ void outputReset(void) {
     /* output device not installed */
     return;
   }
-  cPrintf("Resetting output device...\n");
+  cPrintf("Resetting Output Device...\n");
   fseek(outputFile, 0, SEEK_SET);
 }
 

@@ -21,9 +21,9 @@
 #define DISK_DONE	0x10	/* 1 = disk has finished the command */
 #define DISK_READY	0x20	/* 1 = capacity valid, disk accepts command */
 
-#define DISK_DELAY	10	/* seek start/settle + rotational delay */
-#define DISK_SEEK	50	/* full disk seek time */
-#define DISK_STARTUP	1000	/* disk startup time (until DISK_READY) */
+#define DISK_DELAY_USEC	10000	/* seek start/settle + rotational delay */
+#define DISK_SEEK_USEC	50000	/* full disk seek time */
+#define DISK_START_USEC	1000000	/* disk startup time (until DISK_READY) */
 
 
 Word diskRead(Word addr);

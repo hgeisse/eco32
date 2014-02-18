@@ -20,7 +20,7 @@ void displayExit(void);
 
 #define KEYBOARD_RDY		0x01	/* keyboard has a character */
 #define KEYBOARD_IEN		0x02	/* enable keyboard interrupt */
-#define KEYBOARD_MSEC		20	/* input checking interval */
+#define KEYBOARD_USEC		2000	/* input checking interval */
 
 
 Word keyboardRead(Word addr);
