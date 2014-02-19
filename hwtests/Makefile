@@ -4,9 +4,9 @@
 
 BUILD = ../build
 
-DIRS = tools serial looptest ldtest memtest1 memtest2 shtest brtest \
-       tmrtest multest divtest remtest sregtest tlbtest irqtest xcptest \
-       dsptest kbdtest jalrtest
+DIRS = serial looptest ldtest memtest1 memtest2 shtest brtest \
+       tmrtest multest divtest remtest sregtest tlbtest irqtest \
+       xcptest dsptest kbdtest jalrtest
 
 .PHONY:		all install clean
 

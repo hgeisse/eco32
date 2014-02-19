@@ -1,8 +1,8 @@
 #
-# Makefile for building the ROM tools
+# Makefile for building the tools
 #
 
-BUILD = ../../build
+BUILD = ../build
 
 DIRS = bin2exo bit2exo
 

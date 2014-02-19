@@ -2,7 +2,7 @@
 # Makefile for binary to S-record converter
 #
 
-BUILD = ../../../build
+BUILD = ../../build
 
 .PHONY:		all install clean
 
