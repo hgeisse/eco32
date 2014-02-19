@@ -1037,3 +1037,51 @@ transfer mechanism accesses physical memory and not virtual memory
 rely on the disk driver (and possibly the disk hardware) to transfer
 multiple blocks in a single call, but split them up into single block
 transfers. Done - the "expansion swap" is now running.
+
+----------------------------------------------------------------
+
+In the meantime...
+
+  - experiments with porting ECO32 to another FPGA board
+  - splitting the project (separating the OS part)
+  - experiments with a pipelined version of ECO32
+
+----------------------------------------------------------------
+
+03-Feb-2014
+Project "ECO32" created on OpenCores, based on version eco32-0.22:
+http://opencores.org/project,eco32
+
+18-Feb-2014
+Several changes in the simulator:
+a) There are two independent identical timer/counters
+available, of course with different interrupts and I/O
+addresses (see below).
+b) The timer/counters are readable, so that they can
+be used for short-time measurements. They count clock
+cycles (no pre-scaling any longer). This change will
+affect all programs which use the timer/counters.
+c) The simulation timing model is completely based on
+clock cycles (and does no longer try to function in
+some sort of "real-time"). As there is no real clock
+within the simulator, but the natural time unit is
+one instruction, the simulation time is incremented
+by the CPI value (clock cycles per instruction) every
+instruction. I measured the CPI value in the real ECO32
+implementation: it's a horrible 18 cycles per instruction,
+yielding an instruction rate of about 2.8 MIPS. There is
+so much room for improvements...
+d) I changed the resolution of the simulation timers to
+microseconds. All timing constants had to be adapted and
+can now be specified more precisely. They are automatically
+scaled to clock cycles (see above).
+e) The addressing scheme for peripherals of the same sort
+has changed slightly. Virtual addresses of I/O devices have
+the form 0xFxxyyrrr, where xx is the device type, yy is the
+device number, and rrr is the register within the device
+(must be a word address). This change could affect existent
+programs which use more than one terminal.
+f) The ECO32 simulation got a new peripheral, called the
+"shutdown device". A write to address 0xFF100000 results
+in terminating the simulation run, with the lower 8 bits
+of the data written supplied as exit status.
