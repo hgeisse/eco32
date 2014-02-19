@@ -22,6 +22,8 @@ all:
 		@echo "    run-rom05 (\"Hello, world!\", on terminal 1)"
 		@echo "    run-rom06 (crossed echo with two terminals)"
 		@echo "    run-rom07 (string output to output device)"
+		@echo "    run-rom08 (string output with delay loop)"
+		@echo "    run-rom09 (string output with timing loop)"
 		@echo "    run-rom10 (console character attributes)"
 		@echo "    run-romboot (ROM bootstrapping disk)"
 		@echo "    clean"
@@ -53,6 +55,12 @@ run-rom06:
 
 run-rom07:
 		$(BUILD)/bin/sim -i -r rom07.bin -o $(LOGFILE)
+
+run-rom08:
+		$(BUILD)/bin/sim -i -r rom08.bin -t 1
+
+run-rom09:
+		$(BUILD)/bin/sim -i -r rom09.bin -t 1
 
 run-rom10:
 		$(BUILD)/bin/sim -i -r rom10.bin -c
