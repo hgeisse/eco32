@@ -138,8 +138,8 @@ static char *exceptionCause[32] = {
   /* 11 */  "unknown interrupt",
   /* 12 */  "unknown interrupt",
   /* 13 */  "unknown interrupt",
-  /* 14 */  "timer interrupt",
-  /* 15 */  "unknown interrupt",
+  /* 14 */  "timer 0 interrupt",
+  /* 15 */  "timer 1 interrupt",
   /* 16 */  "bus timeout exception",
   /* 17 */  "illegal instruction exception",
   /* 18 */  "privileged instruction exception",
@@ -193,7 +193,7 @@ int clockISR(int irq) {
 
 void initClock(void) {
   setISR(14, clockISR);
-  *TIMER_DIV = 10;
+  *TIMER_DIV = 500000;
   *TIMER_CTRL = 2;
   setMask(1 << 14);
   enable();

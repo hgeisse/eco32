@@ -140,8 +140,8 @@ static char *exceptionCause[32] = {
   /* 11 */  "unknown interrupt",
   /* 12 */  "unknown interrupt",
   /* 13 */  "unknown interrupt",
-  /* 14 */  "timer interrupt",
-  /* 15 */  "unknown interrupt",
+  /* 14 */  "timer 0 interrupt",
+  /* 15 */  "timer 1 interrupt",
   /* 16 */  "bus timeout exception",
   /* 17 */  "illegal instruction exception",
   /* 18 */  "privileged instruction exception",
@@ -271,7 +271,7 @@ void initTimer(void) {
   unsigned int *timerBase;
 
   timerBase = (unsigned int *) 0xF0000000;
-  *(timerBase + 1) = 1000;
+  *(timerBase + 1) = 50000000;
   *timerBase = 2;
   orMask(1 << 14);
 }

@@ -237,8 +237,8 @@ irqsrv:
 	.word	0		; 11: unused
 	.word	0		; 12: unused
 	.word	0		; 13: unused
-	.word	0		; 14: timer interrupt
-	.word	0		; 15: unused
+	.word	0		; 14: timer 0 interrupt
+	.word	0		; 15: timer 1 interrupt
 	.word	0		; 16: bus timeout exception
 	.word	0		; 17: illegal instruction exception
 	.word	0		; 18: privileged instruction exception
