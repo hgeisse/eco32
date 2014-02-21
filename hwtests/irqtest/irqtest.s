@@ -18,7 +18,7 @@ userMiss:
 start:
 	add	$29,$0,stacktop
 	add	$8,$0,tmr_base
-	add	$9,$0,1000
+	add	$9,$0,50000000		; divisor for 1 sec
 	stw	$9,$8,4
 	add	$9,$0,0x02
 	stw	$9,$8,0

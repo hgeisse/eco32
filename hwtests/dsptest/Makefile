@@ -13,7 +13,7 @@ all:		dsptest.exo
 install:	dsptest.exo
 
 dsptest.exo:	dsptest.bin
-		$(BUILD)/bin/bin2exo 0 dsptest.bin dsptest.exo
+		$(BUILD)/bin/bin2exo -S2 0 dsptest.bin dsptest.exo
 
 dsptest.bin:	$(DSPTEST_SRC)
 		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \

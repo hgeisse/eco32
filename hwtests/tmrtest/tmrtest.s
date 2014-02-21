@@ -6,7 +6,7 @@
 	.set	io_base,0xF0300000
 
 	add	$8,$0,tmr_base
-	add	$9,$0,1000
+	add	$9,$0,50000000		; divisor for 1 sec
 	stw	$9,$8,4
 	add	$7,$0,'a'-10
 again:

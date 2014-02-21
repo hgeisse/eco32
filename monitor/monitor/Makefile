@@ -19,7 +19,7 @@ install:	monitor.bin monitor.exo
 		cp monitor.exo $(BUILD)/monitor
 
 monitor.exo:	monitor.bin
-		$(BUILD)/bin/bin2exo 0 monitor.bin monitor.exo
+		$(BUILD)/bin/bin2exo -S2 0 monitor.bin monitor.exo
 
 monitor.bin:	$(SRC)
 		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \

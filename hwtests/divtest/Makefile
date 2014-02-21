@@ -11,7 +11,7 @@ all:		divtest.exo
 install:	divtest.exo
 
 divtest.exo:	divtest.bin
-		$(BUILD)/bin/bin2exo 0 divtest.bin divtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 divtest.bin divtest.exo
 
 divtest.bin:	divtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o divtest.bin divtest.o

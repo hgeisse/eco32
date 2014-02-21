@@ -23,10 +23,10 @@ echo1.bin:	echo1.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o echo1.bin echo1.o
 
 echo0.exo:	echo0.bin
-		$(BUILD)/bin/bin2exo 0 echo0.bin echo0.exo
+		$(BUILD)/bin/bin2exo -S2 0 echo0.bin echo0.exo
 
 echo1.exo:	echo1.bin
-		$(BUILD)/bin/bin2exo 0 echo1.bin echo1.exo
+		$(BUILD)/bin/bin2exo -S2 0 echo1.bin echo1.exo
 
 sertest:	sertest.c
 		gcc -m32 -g -Wall -o sertest sertest.c

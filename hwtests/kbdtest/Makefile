@@ -13,7 +13,7 @@ all:		kbdtest.exo
 install:	kbdtest.exo
 
 kbdtest.exo:	kbdtest.bin
-		$(BUILD)/bin/bin2exo 0 kbdtest.bin kbdtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 kbdtest.bin kbdtest.exo
 
 kbdtest.bin:	$(KBDTEST_SRC)
 		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \

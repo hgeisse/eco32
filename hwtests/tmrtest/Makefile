@@ -11,7 +11,7 @@ all:		tmrtest.exo
 install:	tmrtest.exo
 
 tmrtest.exo:	tmrtest.bin
-		$(BUILD)/bin/bin2exo 0 tmrtest.bin tmrtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 tmrtest.bin tmrtest.exo
 
 tmrtest.bin:	tmrtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 \

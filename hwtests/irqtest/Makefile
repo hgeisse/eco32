@@ -11,7 +11,7 @@ all:		irqtest.exo
 install:	irqtest.exo
 
 irqtest.exo:	irqtest.bin
-		$(BUILD)/bin/bin2exo 0 irqtest.bin irqtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 irqtest.bin irqtest.exo
 
 irqtest.bin:	irqtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 \

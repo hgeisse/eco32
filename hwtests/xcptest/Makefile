@@ -13,7 +13,7 @@ all:		xcptest.exo
 install:	xcptest.exo
 
 xcptest.exo:	xcptest.bin
-		$(BUILD)/bin/bin2exo 0 xcptest.bin xcptest.exo
+		$(BUILD)/bin/bin2exo -S2 0 xcptest.bin xcptest.exo
 
 xcptest.bin:	$(XCPTEST_SRC)
 		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \

@@ -13,7 +13,7 @@ all:		tlbtest.exo
 install:	tlbtest.exo
 
 tlbtest.exo:	tlbtest.bin
-		$(BUILD)/bin/bin2exo 0 tlbtest.bin tlbtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 tlbtest.bin tlbtest.exo
 
 tlbtest.bin:	$(TLBTEST_SRC)
 		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \

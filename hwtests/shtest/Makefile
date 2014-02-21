@@ -11,7 +11,7 @@ all:		shtest.exo
 install:	shtest.exo
 
 shtest.exo:	shtest.bin
-		$(BUILD)/bin/bin2exo 0 shtest.bin shtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 shtest.bin shtest.exo
 
 shtest.bin:	shtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o shtest.bin shtest.o

@@ -11,7 +11,7 @@ all:		memtest1.exo
 install:	memtest1.exo
 
 memtest1.exo:	memtest1.bin
-		$(BUILD)/bin/bin2exo 0 memtest1.bin memtest1.exo
+		$(BUILD)/bin/bin2exo -S2 0 memtest1.bin memtest1.exo
 
 memtest1.bin:	memtest1.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 \

@@ -11,7 +11,7 @@ all:		remtest.exo
 install:	remtest.exo
 
 remtest.exo:	remtest.bin
-		$(BUILD)/bin/bin2exo 0 remtest.bin remtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 remtest.bin remtest.exo
 
 remtest.bin:	remtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o remtest.bin remtest.o

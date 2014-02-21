@@ -9,6 +9,11 @@
 #include <stdarg.h>
 
 
+#define S1	1
+#define S2	2
+#define S3	3
+
+
 void error(char *fmt, ...) {
   va_list ap;
 
@@ -22,8 +27,14 @@ void error(char *fmt, ...) {
 
 
 int main(int argc, char *argv[]) {
+  int type;
+  unsigned int loadAddrMsk;
+  char *loadAddrStr;
+  char *infileStr;
+  char *outfileStr;
   char *endptr;
   unsigned int loadAddr;
+  unsigned int startAddr;
   FILE *infile;
   FILE *outfile;
   int numBytes, i;
@@ -31,23 +42,45 @@ int main(int argc, char *argv[]) {
   unsigned char lineData[16];
   unsigned int chksum;
 
-  if (argc != 4) {
-    printf("Usage: %s <load addr, hex> <input file> <output file>\n",
-           argv[0]);
+  if (argc != 5) {
+    printf("Usage: %s -S1|-S2|-S3 <load addr, hex> ", argv[0]);
+    printf("<input file> <output file>\n");
     exit(1);
   }
-  loadAddr = strtoul(argv[1], &endptr, 16);
+  if (strcmp(argv[1], "-S1") == 0) {
+    type = S1;
+    loadAddrMsk = 0x0000FFFF;
+  } else
+  if (strcmp(argv[1], "-S2") == 0) {
+    type = S2;
+    loadAddrMsk = 0x00FFFFFF;
+  } else
+  if (strcmp(argv[1], "-S3") == 0) {
+    type = S3;
+    loadAddrMsk = 0xFFFFFFFF;
+  } else {
+    error("exactly one of -S1, -S2, or -S3 must be specified");
+  }
+  loadAddrStr = argv[2];
+  infileStr = argv[3];
+  outfileStr = argv[4];
+  loadAddr = strtoul(loadAddrStr, &endptr, 16);
   if (*endptr != '\0') {
-    error("illegal load address %s", argv[1]);
+    error("illegal load address %s", loadAddrStr);
   }
-  infile = fopen(argv[2], "rb");
+  if (loadAddr & ~loadAddrMsk) {
+    error("load address too big");
+  }
+  startAddr = loadAddr;
+  infile = fopen(infileStr, "rb");
   if (infile == NULL) {
-    error("cannot open input file %s", argv[2]);
+    error("cannot open input file %s", infileStr);
   }
-  outfile = fopen(argv[3], "wt");
+  outfile = fopen(outfileStr, "wt");
   if (outfile == NULL) {
-    error("cannot open output file %s", argv[3]);
+    error("cannot open output file %s", outfileStr);
   }
+  fprintf(outfile, "S00600004844521B\n");
   while (1) {
     chksum = 0;
     for (numBytes = 0; numBytes < 16; numBytes++) {
@@ -61,21 +94,70 @@ int main(int argc, char *argv[]) {
     if (numBytes == 0) {
       break;
     }
-    fprintf(outfile, "S2%02X%06X", numBytes + 4, loadAddr);
+    switch (type) {
+      case S1:
+        fprintf(outfile, "S1%02X%04X", numBytes + 3, loadAddr);
+        break;
+      case S2:
+        fprintf(outfile, "S2%02X%06X", numBytes + 4, loadAddr);
+        break;
+      case S3:
+        fprintf(outfile, "S3%02X%08X", numBytes + 5, loadAddr);
+        break;
+    }
     for (i = 0; i < numBytes; i++) {
       fprintf(outfile, "%02X", lineData[i]);
     }
-    chksum += numBytes + 4;
-    chksum += ((loadAddr >>  0) & 0xFF) +
-              ((loadAddr >>  8) & 0xFF) +
-              ((loadAddr >> 16) & 0xFF);
+    switch (type) {
+      case S1:
+        chksum += numBytes + 3 +
+                  ((loadAddr >>  0) & 0xFF) +
+                  ((loadAddr >>  8) & 0xFF);
+        break;
+      case S2:
+        chksum += numBytes + 4 +
+                  ((loadAddr >>  0) & 0xFF) +
+                  ((loadAddr >>  8) & 0xFF) +
+                  ((loadAddr >> 16) & 0xFF);
+        break;
+      case S3:
+        chksum += numBytes + 5 +
+                  ((loadAddr >>  0) & 0xFF) +
+                  ((loadAddr >>  8) & 0xFF) +
+                  ((loadAddr >> 16) & 0xFF) +
+                  ((loadAddr >> 24) & 0xFF);
+        break;
+    }
     fprintf(outfile, "%02X\n", 0xFF - (chksum & 0xFF));
     loadAddr += numBytes;
     if (c == EOF) {
       break;
     }
   }
-  fprintf(outfile, "S804000000FB\n");
+  switch (type) {
+    case S1:
+      fprintf(outfile, "S903%04X", startAddr);
+      chksum = 3 +
+               ((startAddr >>  0) & 0xFF) +
+               ((startAddr >>  8) & 0xFF);
+      break;
+    case S2:
+      fprintf(outfile, "S804%06X", startAddr);
+      chksum = 4 +
+               ((startAddr >>  0) & 0xFF) +
+               ((startAddr >>  8) & 0xFF) +
+               ((startAddr >> 16) & 0xFF);
+      break;
+    case S3:
+      fprintf(outfile, "S705%08X", startAddr);
+      chksum = 5 +
+               ((startAddr >>  0) & 0xFF) +
+               ((startAddr >>  8) & 0xFF) +
+               ((startAddr >> 16) & 0xFF) +
+               ((startAddr >> 24) & 0xFF);
+      break;
+  }
+  fprintf(outfile, "%02X\n", 0xFF - (chksum & 0xFF));
   fclose(infile);
   fclose(outfile);
   return 0;

@@ -11,7 +11,7 @@ all:		multest.exo
 install:	multest.exo
 
 multest.exo:	multest.bin
-		$(BUILD)/bin/bin2exo 0 multest.bin multest.exo
+		$(BUILD)/bin/bin2exo -S2 0 multest.bin multest.exo
 
 multest.bin:	multest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o multest.bin multest.o

@@ -11,7 +11,7 @@ all:		sregtest.exo
 install:	sregtest.exo
 
 sregtest.exo:	sregtest.bin
-		$(BUILD)/bin/bin2exo 0 sregtest.bin sregtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 sregtest.bin sregtest.exo
 
 sregtest.bin:	sregtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o sregtest.bin sregtest.o

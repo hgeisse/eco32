@@ -11,7 +11,7 @@ all:		jalrtest.exo
 install:	jalrtest.exo
 
 jalrtest.exo:	jalrtest.bin
-		$(BUILD)/bin/bin2exo 0 jalrtest.bin jalrtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 jalrtest.bin jalrtest.exo
 
 jalrtest.bin:	jalrtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 \

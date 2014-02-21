@@ -23,10 +23,10 @@ send1.bin:	send1.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o send1.bin send1.o
 
 send0.exo:	send0.bin
-		$(BUILD)/bin/bin2exo 0 send0.bin send0.exo
+		$(BUILD)/bin/bin2exo -S2 0 send0.bin send0.exo
 
 send1.exo:	send1.bin
-		$(BUILD)/bin/bin2exo 0 send1.bin send1.exo
+		$(BUILD)/bin/bin2exo -S2 0 send1.bin send1.exo
 
 receive:	receive.c
 		gcc -m32 -g -Wall -o receive receive.c

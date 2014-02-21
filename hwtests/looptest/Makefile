@@ -11,7 +11,7 @@ all:		looptest.exo
 install:	looptest.exo
 
 looptest.exo:	looptest.bin
-		$(BUILD)/bin/bin2exo 0 looptest.bin looptest.exo
+		$(BUILD)/bin/bin2exo -S2 0 looptest.bin looptest.exo
 
 looptest.bin:	looptest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 \

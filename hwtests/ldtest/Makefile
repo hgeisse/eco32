@@ -11,7 +11,7 @@ all:		ldtest.exo
 install:	ldtest.exo
 
 ldtest.exo:	ldtest.bin
-		$(BUILD)/bin/bin2exo 0 ldtest.bin ldtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 ldtest.bin ldtest.exo
 
 ldtest.bin:	ldtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o ldtest.bin ldtest.o

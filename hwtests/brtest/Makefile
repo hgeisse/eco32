@@ -11,7 +11,7 @@ all:		brtest.exo
 install:	brtest.exo
 
 brtest.exo:	brtest.bin
-		$(BUILD)/bin/bin2exo 0 brtest.bin brtest.exo
+		$(BUILD)/bin/bin2exo -S2 0 brtest.bin brtest.exo
 
 brtest.bin:	brtest.o
 		$(BUILD)/bin/ld -h -rc 0xE0000000 -o brtest.bin brtest.o
