@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = bin2exo bit2exo
+DIRS = bin2exo bin2mcs bit2exo
 
 .PHONY:		all install clean
 
