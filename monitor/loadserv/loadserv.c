@@ -12,8 +12,6 @@
 #include <termios.h>
 
 
-#define SERIAL_PORT	"/dev/ttyS0"
-
 #define SYN		((unsigned char) 's')
 #define ACK		((unsigned char) 'a')
 
@@ -52,10 +50,10 @@ void error(char *fmt, ...) {
 }
 
 
-void serialOpen(void) {
-  sfd = open(SERIAL_PORT, O_RDWR | O_NOCTTY | O_NDELAY);
+void serialOpen(char *serialPort) {
+  sfd = open(serialPort, O_RDWR | O_NOCTTY | O_NDELAY);
   if (sfd == -1) {
-    error("cannot open serial port '%s'", SERIAL_PORT);
+    error("cannot open serial port '%s'", serialPort);
   }
   tcgetattr(sfd, &origOptions);
   currOptions = origOptions;
@@ -71,7 +69,7 @@ void serialOpen(void) {
   currOptions.c_iflag &= ~(IGNBRK | BRKINT | IGNPAR | PARMRK);
   currOptions.c_iflag &= ~(INPCK | ISTRIP | INLCR | IGNCR | ICRNL);
   currOptions.c_iflag &= ~(IXON | IXOFF | IXANY);
-  currOptions.c_oflag &= ~(OPOST | ONLCR | OCRNL | ONOCR | ONLRET | OFILL);
+  currOptions.c_oflag &= ~(OPOST | ONLCR | OCRNL | ONOCR | ONLRET);
   tcsetattr(sfd, TCSANOW, &currOptions);
 }
 
@@ -122,17 +120,17 @@ int main(int argc, char *argv[]) {
   char line[LINE_SIZE];
   int n, i;
 
-  if (argc != 2) {
-    printf("Usage: %s <file to be loaded>\n", argv[0]);
+  if (argc != 3) {
+    printf("Usage: %s <serial port> <file to be loaded>\n", argv[0]);
     exit(1);
   }
-  loadName = argv[1];
+  loadName = argv[2];
   loadFile = fopen(loadName, "rt");
   if (loadFile == NULL) {
     error("cannot open file to be loaded '%s'", loadName);
   }
   /* open serial interface */
-  serialOpen();
+  serialOpen(argv[1]);
   /* wait for client to connect */
   printf("Waiting for client...\n");
   while (1) {
