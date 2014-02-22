@@ -114,6 +114,7 @@ void connect(void) {
 
 
 int main(int argc, char *argv[]) {
+  char *serialPort;
   char *loadName;
   unsigned char b;
   unsigned char cmd;
@@ -124,13 +125,14 @@ int main(int argc, char *argv[]) {
     printf("Usage: %s <serial port> <file to be loaded>\n", argv[0]);
     exit(1);
   }
+  serialPort = argv[1];
   loadName = argv[2];
   loadFile = fopen(loadName, "rt");
   if (loadFile == NULL) {
     error("cannot open file to be loaded '%s'", loadName);
   }
   /* open serial interface */
-  serialOpen(argv[1]);
+  serialOpen(serialPort);
   /* wait for client to connect */
   printf("Waiting for client...\n");
   while (1) {
