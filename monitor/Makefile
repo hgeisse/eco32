@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = kbdtbls monitor
+DIRS = kbdtbls monitor loadserv
 
 .PHONY:		all install clean
 
