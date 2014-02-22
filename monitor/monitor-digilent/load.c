@@ -172,7 +172,7 @@ void load(int serno) {
       case '3':
         /* S3 record: 4 byte load address + data (load data) */
         addr = (getByte( 4) << 24) |
-               (getByte( 6) << 26) |
+               (getByte( 6) << 16) |
                (getByte( 8) <<  8) |
                (getByte(10) <<  0);
         addr |= 0xC0000000;
@@ -187,7 +187,7 @@ void load(int serno) {
       case '7':
         /* S7 record: 4 byte start address (set PC, stop loading) */
         addr = (getByte( 4) << 24) |
-               (getByte( 6) << 26) |
+               (getByte( 6) << 16) |
                (getByte( 8) <<  8) |
                (getByte(10) <<  0);
         addr |= 0xC0000000;

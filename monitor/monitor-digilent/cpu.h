@@ -33,8 +33,8 @@ void cpuResetBreak(void);
 
 char *exceptionToString(int exception);
 
-Bool cpuStep(void);
-Bool cpuRun(void);
+void cpuStep(void);
+void cpuRun(void);
 
 
 #endif /* _CPU_H_ */

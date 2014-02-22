@@ -192,7 +192,7 @@ static void showBreak(void) {
   Word brk;
 
   brk = cpuGetBreak();
-  printf("Brk  ");
+  printf("brk  ");
   if (cpuTestBreak()) {
     printf("%08X", brk);
   } else {
@@ -383,7 +383,7 @@ static void doContinue(char *tokens[], int n) {
     cpuRun();
   }
   addr = cpuGetPC();
-  printf("Break at %08X\n", addr);
+  printf("break at %08X\n", addr);
   showPC();
 }
 

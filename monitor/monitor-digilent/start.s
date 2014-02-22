@@ -3,15 +3,21 @@
 ;
 
 	.set	dmapaddr,0xC0000000	; base of directly mapped addresses
-	.set	stacktop,0xC4000000	; monitor stack is at top of memory
+	.set	stacktop,0xC0010000	; monitor stack is at top of 64K
 
 	.set	PSW,0			; reg # of PSW
+	.set	V_SHIFT,27		; interrupt vector ctrl bit
+	.set	V,1 << V_SHIFT
+
 	.set	TLB_INDEX,1		; reg # of TLB Index
 	.set	TLB_ENTRY_HI,2		; reg # of TLB EntryHi
 	.set	TLB_ENTRY_LO,3		; reg # of TLB EntryLo
 	.set	TLB_ENTRIES,32		; number of TLB entries
 
 	.set	USER_CONTEXT_SIZE,36*4	; size of user context
+
+	.set	BIO_OUT,0xF1000000	; board I/O output port
+	.set	SPI_EN,0x80000000	; SPI bus enable ctrl bit
 
 ;***************************************************************
 
@@ -54,6 +60,11 @@
 	.export	sout
 	.export	dskcap
 	.export	dskio
+
+	.export	setISR
+	.export	setUMSR
+	.export	isrPtr
+	.export	umsrPtr
 
 	.export	getTLB_HI
 	.export	getTLB_LO
@@ -129,14 +140,35 @@ dskcap:
 dskio:
 	j	dio
 
+reserved1:
+	j	reserved1
+
+reserved2:
+	j	reserved2
+
+reserved3:
+	j	reserved3
+
+setISR:
+	j	setISR1
+
+setUMSR:
+	j	setUMSR1
+
 ;***************************************************************
 
 	.code
 	.align	4
 
 start:
-	; force CPU into a defined state
-	mvts	$0,PSW			; disable interrupts and user mode
+	; let irq/exc vectors point to RAM
+	add	$8,$0,V
+	mvts	$8,PSW
+
+	; disable flash ROM, enable SPI bus
+	add	$8,$0,BIO_OUT
+	add	$9,$0,SPI_EN
+	stw	$9,$8,0
 
 	; initialize TLB
 	mvts	$0,TLB_ENTRY_LO		; invalidate all TLB entries
@@ -187,6 +219,9 @@ clrtest:
 
 ;***************************************************************
 
+	.code
+	.align	4
+
 	; Word getTLB_HI(int index)
 getTLB_HI:
 	mvts	$4,TLB_INDEX
@@ -211,6 +246,9 @@ setTLB:
 
 ;***************************************************************
 
+	.code
+	.align	4
+
 	; int dskcap(int dskno)
 dcap:
 	bne	$4,$0,dcapser
@@ -232,6 +270,30 @@ dioser:
 	add	$6,$7,$0
 	ldw	$7,$29,16
 	j	sctioser
+
+;***************************************************************
+
+	.code
+	.align	4
+
+	; void setISR(Word ptr)
+setISR1:
+	stw	$4,$0,isrPtr
+	jr	$31
+
+	; void setUMSR(Word ptr)
+setUMSR1:
+	stw	$4,$0,umsrPtr
+	jr	$31
+
+	.data
+	.align	4
+
+isrPtr:
+	.word	0
+
+umsrPtr:
+	.word	0
 
 ;***************************************************************
 
@@ -297,7 +359,7 @@ resume:
 	.nosyn
 	ldw	$8,$28,33*4		; tlbIndex
 	mvts	$8,TLB_INDEX
-	ldw	$8,$28,34*4		; tlbWntryHi
+	ldw	$8,$28,34*4		; tlbEntryHi
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
