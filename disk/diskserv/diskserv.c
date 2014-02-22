@@ -12,8 +12,6 @@
 #include <termios.h>
 
 
-#define SERIAL_PORT	"/dev/tty01"
-
 #define SYN		0x16
 #define ACK		0x06
 
@@ -58,10 +56,10 @@ void error(char *fmt, ...) {
 }
 
 
-void serialOpen(void) {
-  sfd = open(SERIAL_PORT, O_RDWR | O_NOCTTY | O_NDELAY);
+void serialOpen(char *serialPort) {
+  sfd = open(serialPort, O_RDWR | O_NOCTTY | O_NDELAY);
   if (sfd == -1) {
-    error("cannot open serial port '%s'", SERIAL_PORT);
+    error("cannot open serial port '%s'", serialPort);
   }
   tcgetattr(sfd, &origOptions);
   currOptions = origOptions;
@@ -152,6 +150,7 @@ void showData(unsigned char buffer[512]) {
 
 
 int main(int argc, char *argv[]) {
+  char *serialPort;
   char *diskName;
   int i;
   unsigned char b;
@@ -159,11 +158,12 @@ int main(int argc, char *argv[]) {
   unsigned int sector;
   unsigned char buffer[512];
 
-  if (argc != 2) {
-    printf("Usage: %s <disk image file>\n", argv[0]);
+  if (argc != 3) {
+    printf("Usage: %s <serial port> <disk image file>\n", argv[0]);
     exit(1);
   }
-  diskName = argv[1];
+  serialPort = argv[1];
+  diskName = argv[2];
   diskFile = fopen(diskName, "r+b");
   if (diskFile == NULL) {
     error("cannot open disk image file '%s'", diskName);
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
   fseek(diskFile, 0, SEEK_SET);
   printf("Disk '%s' has 0x%08X sectors.\n", diskName, numSectors);
   /* open serial interface */
-  serialOpen();
+  serialOpen(serialPort);
   /* wait for client to connect */
   printf("Waiting for client...\n");
   while (1) {
