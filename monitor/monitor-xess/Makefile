@@ -5,7 +5,7 @@
 BUILD = ../../build
 
 SRC = start.s main.c command.c instr.c asm.c disasm.c \
-      boot.c cpu.c mmu.c getline.c romlib.c \
+      load.c boot.c cpu.c mmu.c getline.c romlib.c \
       keyboard.s ../kbdtbls/kbdtbls.s display.s \
       serial.s sctio-ctl.s sctio-ser.s end.s
 

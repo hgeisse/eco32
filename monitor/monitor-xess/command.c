@@ -10,6 +10,7 @@
 #include "command.h"
 #include "asm.h"
 #include "disasm.h"
+#include "load.h"
 #include "boot.h"
 #include "cpu.h"
 #include "mmu.h"

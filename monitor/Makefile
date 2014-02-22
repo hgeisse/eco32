@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = kbdtbls monitor loadserv
+DIRS = kbdtbls monitor-xess monitor-digilent loadserv
 
 .PHONY:		all install clean
 
