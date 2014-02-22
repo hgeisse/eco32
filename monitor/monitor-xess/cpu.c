@@ -213,13 +213,12 @@ static Bool evalCond(int cc, Word a, Word b) {
 }
 
 
-Bool cpuStep(void) {
+void cpuStep(void) {
   Word instr;
   int opcode;
   int reg1, reg2;
   Half immed;
   Word offset;
-  Bool canStep;
   Word nextAddr;
   Word nextInstr;
   int i;
@@ -232,7 +231,6 @@ Bool cpuStep(void) {
   reg2 = (instr >> 16) & 0x1F;
   immed = instr & 0x0000FFFF;
   offset = instr & 0x03FFFFFF;
-  canStep = true;
   switch (stepType[opcode]) {
     case 1:
       /* next instruction follows current one */
@@ -256,11 +254,7 @@ Bool cpuStep(void) {
     default:
       printf("cannot single-step instruction with opcode 0x%02X\n",
              opcode);
-      canStep = false;
-      break;
-  }
-  if (!canStep) {
-    return false;
+      return;
   }
   nextInstr = mmuReadWord(nextAddr);
   mmuWriteWord(nextAddr, BREAK);
@@ -288,12 +282,12 @@ Bool cpuStep(void) {
   mmuSetEntryLo(userContext.tlbLo);
   mmuWriteWord(nextAddr, nextInstr);
   if (nextAddr == pc) {
-    return true;
+    return;
   }
   if ((psw & PSW_V) == 0) {
     printf("unexpected %s occurred\n",
            exceptionToString((psw & PSW_PRIO_MASK) >> 16));
-    return false;
+    return;
   }
   if ((psw & PSW_PRIO_MASK) >> 16 == 21 &&
       (mmuGetEntryHi() & 0x80000000) == 0) {
@@ -301,11 +295,10 @@ Bool cpuStep(void) {
   } else {
     pc = 0xC0000004;
   }
-  return true;
 }
 
 
-Bool cpuRun(void) {
+void cpuRun(void) {
   Word instr;
   int i;
   MonitorState runState;
@@ -313,9 +306,7 @@ Bool cpuRun(void) {
 
   if (breakSet && breakAddr == pc) {
     /* single-step one instruction */
-    if (!cpuStep()) {
-      return false;
-    }
+    cpuStep();
   }
   while (1) {
     if (breakSet) {
@@ -348,12 +339,12 @@ Bool cpuRun(void) {
       mmuWriteWord(breakAddr, instr);
     }
     if (breakSet && breakAddr == pc) {
-      return true;
+      return;
     }
     if ((psw & PSW_V) == 0) {
       printf("unexpected %s occurred\n",
              exceptionToString((psw & PSW_PRIO_MASK) >> 16));
-      return false;
+      return;
     }
     if ((psw & PSW_PRIO_MASK) >> 16 == 21 &&
         (mmuGetEntryHi() & 0x80000000) == 0) {
@@ -362,6 +353,4 @@ Bool cpuRun(void) {
       pc = 0xC0000004;
     }
   }
-  /* never reached */
-  return false;
 }

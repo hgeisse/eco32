@@ -39,7 +39,7 @@ static void help(void) {
   printf("  b       set/reset breakpoint\n");
   printf("  c       continue from breakpoint\n");
   printf("  s       single-step\n");
-  printf("  @       show/set PC\n");
+  printf("  #       show/set PC\n");
   printf("  p       show/set PSW\n");
   printf("  r       show/set register\n");
   printf("  d       dump memory\n");
@@ -47,6 +47,7 @@ static void help(void) {
   printf("  mh      show/set memory halfword\n");
   printf("  mb      show/set memory byte\n");
   printf("  t       show/set TLB contents\n");
+  printf("  load    load from serial line\n");
   printf("  boot    bootstrap from disk\n");
   printf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -95,8 +96,8 @@ static void help06(void) {
 
 
 static void help07(void) {
-  printf("  @                 show PC\n");
-  printf("  @  <addr>         set PC to <addr>\n");
+  printf("  #                 show PC\n");
+  printf("  #  <addr>         set PC to <addr>\n");
 }
 
 
@@ -150,6 +151,11 @@ static void help14(void) {
 
 
 static void help15(void) {
+  printf("  load <n>          load an S-record file from serial line <n>\n");
+}
+
+
+static void help16(void) {
   printf("  boot <n>          load and execute first sector of disk <n>\n");
 }
 
@@ -186,7 +192,7 @@ static void showBreak(void) {
   Word brk;
 
   brk = cpuGetBreak();
-  printf("Brk  ");
+  printf("brk  ");
   if (cpuTestBreak()) {
     printf("%08X", brk);
   } else {
@@ -275,7 +281,7 @@ static void doAssemble(char *tokens[], int n) {
   addr &= ~0x00000003;
   psw = cpuGetPSW();
   while (1) {
-    sprintf(prompt, "ASM @ %08X: ", addr);
+    sprintf(prompt, "ASM # %08X: ", addr);
     line = getLine(prompt);
     if (*line == '\0' || *line == '\n') {
       break;
@@ -377,7 +383,7 @@ static void doContinue(char *tokens[], int n) {
     cpuRun();
   }
   addr = cpuGetPC();
-  printf("Break at %08X\n", addr);
+  printf("break at %08X\n", addr);
   showPC();
 }
 
@@ -759,6 +765,21 @@ static void doTLB(char *tokens[], int n) {
 }
 
 
+static void doLoad(char *tokens[], int n) {
+  int serno;
+
+  if (n == 2) {
+    if (!getDecNumber(tokens[1], &serno) || serno < 0 || serno > 1) {
+      printf("illegal serial line number\n");
+      return;
+    }
+    load(serno);
+  } else {
+    help15();
+  }
+}
+
+
 static void doBoot(char *tokens[], int n) {
   int dskno;
 
@@ -769,7 +790,7 @@ static void doBoot(char *tokens[], int n) {
     }
     boot(dskno);
   } else {
-    help15();
+    help16();
   }
 }
 
@@ -782,7 +803,7 @@ Command commands[] = {
   { "b",    help04, doBreak      },
   { "c",    help05, doContinue   },
   { "s",    help06, doStep       },
-  { "@",    help07, doPC         },
+  { "#",    help07, doPC         },
   { "p",    help08, doPSW        },
   { "r",    help09, doRegister   },
   { "d",    help10, doDump       },
@@ -790,7 +811,8 @@ Command commands[] = {
   { "mh",   help12, doMemoryHalf },
   { "mb",   help13, doMemoryByte },
   { "t",    help14, doTLB        },
-  { "boot", help15, doBoot       },
+  { "load", help15, doLoad       },
+  { "boot", help16, doBoot       },
 };
 
 int numCommands = sizeof(commands) / sizeof(commands[0]);

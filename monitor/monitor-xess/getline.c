@@ -9,7 +9,7 @@
 #include "getline.h"
 
 
-#define MAX_HISTORY	100
+#define MAX_HISTORY	20
 
 
 static char history[MAX_HISTORY][80];
