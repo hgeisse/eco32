@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = server tools
+DIRS = diskserv tools
 
 .PHONY:		all install clean
 
