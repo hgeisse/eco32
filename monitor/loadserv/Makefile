@@ -1,5 +1,5 @@
 #
-# Makefile for ECO32 load server
+# Makefile for serial line load server
 #
 
 BUILD = ../../build

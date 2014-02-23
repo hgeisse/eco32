@@ -1,10 +1,10 @@
 #
-# Makefile for building the ECO32 ROM monitor
+# Makefile for ECO32 ROM monitor and serial line load server
 #
 
 BUILD = ../build
 
-DIRS = kbdtbls monitor-xess monitor-digilent loadserv
+DIRS = monitor loadserv
 
 .PHONY:		all install clean
 
