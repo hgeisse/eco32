@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
   if (outfile == NULL) {
     error("cannot open output file %s", outfileStr);
   }
-  fprintf(outfile, "S00600004844521B\n");
   while (1) {
     chksum = 0;
     for (numBytes = 0; numBytes < 16; numBytes++) {
