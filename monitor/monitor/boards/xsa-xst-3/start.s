@@ -165,11 +165,6 @@ start:
 	add	$8,$0,V
 	mvts	$8,PSW
 
-	; disable flash ROM, enable SPI bus
-;	add	$8,$0,BIO_OUT
-;	add	$9,$0,SPI_EN
-;	stw	$9,$8,0
-
 	; initialize TLB
 	mvts	$0,TLB_ENTRY_LO		; invalidate all TLB entries
 	add	$8,$0,dmapaddr		; by impossible virtual page number

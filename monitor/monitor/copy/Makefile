@@ -4,9 +4,11 @@
 
 BUILD = ../../../build
 
-.PHONY:		all clean
+.PHONY:		all install clean
 
 all:		copy.bin
+
+install:	copy.bin
 
 copy.bin:	copy.o
 		$(BUILD)/bin/ld -o copy.bin -m copy.map \

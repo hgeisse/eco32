@@ -2,21 +2,36 @@
 # Makefile for ECO32 ROM monitor
 #
 
-BUILD = ../../build
+BUILD = ../../../../build
 
-SRC = start.s main.c command.c instr.c asm.c disasm.c \
-      load.c boot.c cpu.c mmu.c getline.c romlib.c \
-      keyboard.s ../kbdtbls/kbdtbls.s display.s \
-      serial.s sctio-ctl.s sctio-ser.s end.s
+SRC = start.s \
+      ../../common/main.c \
+      ../../common/command.c \
+      ../../common/instr.c \
+      ../../common/asm.c \
+      ../../common/disasm.c \
+      ../../common/load.c \
+      ../../common/boot.c \
+      ../../common/cpu.c \
+      ../../common/mmu.c \
+      ../../common/getline.c \
+      ../../common/romlib.c \
+      ../../common/keyboard.s \
+      ../../kbdtbls/kbdtbls.s \
+      ../../common/display.s \
+      ../../common/serial.s \
+      ../../common/sctio-ctl.s \
+      ../../common/sctio-ser.s \
+      ../../common/end.s
 
 .PHONY:		all install clean
 
 all:		monitor.bin monitor.exo
 
 install:	monitor.bin monitor.exo
-		mkdir -p $(BUILD)/monitor
-		cp monitor.bin $(BUILD)/monitor
-		cp monitor.exo $(BUILD)/monitor
+		mkdir -p $(BUILD)/monitor/xsa-xst-3
+		cp monitor.bin $(BUILD)/monitor/xsa-xst-3
+		cp monitor.exo $(BUILD)/monitor/xsa-xst-3
 
 monitor.exo:	monitor.bin
 		$(BUILD)/bin/bin2exo -S2 0 monitor.bin monitor.exo
@@ -26,10 +41,10 @@ monitor.bin:	$(SRC)
 		  -Wl-rd -Wl0xC000C000 \
 		  -Wl-m -Wlmonitor.map \
 		  -o prelim.bin $(SRC)
-		cat copy/copy.bin prelim.bin >monitor.bin
+		cat ../../copy/copy.bin prelim.bin >monitor.bin
 		rm prelim.bin
 
 clean:
 		rm -f *~
-		rm -f monitor.map monitor.bin
+		rm -f prelim.bin monitor.map monitor.bin
 		rm -f monitor.exo
