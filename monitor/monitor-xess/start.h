@@ -42,6 +42,11 @@ void sout(char c);
 int dskcap(int dskno);
 int dskio(int dskno, char cmd, int sct, Word addr, int nscts);
 
+void setISR(Word ptr);
+void setUMSR(Word ptr);
+extern Word isrPtr;
+extern Word umsrPtr;
+
 Word getTLB_HI(int index);
 Word getTLB_LO(int index);
 void setTLB(int index, Word entryHi, Word entryLo);

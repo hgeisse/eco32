@@ -21,11 +21,19 @@ install:	monitor.bin monitor.exo
 monitor.exo:	monitor.bin
 		$(BUILD)/bin/bin2exo -S2 0 monitor.bin monitor.exo
 
-monitor.bin:	$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \
-		  -Wl-m -Wlmonitor.map -o monitor.bin $(SRC)
+monitor.bin:	copy/copy.bin $(SRC)
+		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rc -Wl0xC0000000 \
+		  -Wl-rd -Wl0xC000C000 \
+		  -Wl-m -Wlmonitor.map \
+		  -o prelim.bin $(SRC)
+		cat copy/copy.bin prelim.bin >monitor.bin
+		rm prelim.bin
+
+copy/copy.bin:
+		$(MAKE) -C copy all
 
 clean:
 		rm -f *~
 		rm -f monitor.map monitor.bin
 		rm -f monitor.exo
+		$(MAKE) -C copy clean

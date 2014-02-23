@@ -15,9 +15,10 @@
 int main(void) {
   char *line;
 
-  printf("\n\nECO32 Machine Monitor 1.0\n\n");
+  printf("\n\nECO32 Machine Monitor 1.3\n\n");
   initInstrTable();
-  cpuSetPC(0xC0000000);
+  cpuSetPC(0xC0010000);
+  cpuSetPSW(0x08000000);
   while (1) {
     line = getLine("ECO32 > ");
     addHist(line);

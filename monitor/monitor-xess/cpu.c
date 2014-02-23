@@ -87,10 +87,10 @@ void cpuResetBreak(void) {
 
 
 static char *cause[32] = {
-  /*  0 */  "terminal 0 transmitter interrupt",
-  /*  1 */  "terminal 0 receiver interrupt",
-  /*  2 */  "terminal 1 transmitter interrupt",
-  /*  3 */  "terminal 1 receiver interrupt",
+  /*  0 */  "serial line 0 xmt interrupt",
+  /*  1 */  "serial line 0 rcv interrupt",
+  /*  2 */  "serial line 1 xmt interrupt",
+  /*  3 */  "serial line 1 rcv interrupt",
   /*  4 */  "keyboard interrupt",
   /*  5 */  "unknown interrupt",
   /*  6 */  "unknown interrupt",
@@ -101,8 +101,8 @@ static char *cause[32] = {
   /* 11 */  "unknown interrupt",
   /* 12 */  "unknown interrupt",
   /* 13 */  "unknown interrupt",
-  /* 14 */  "timer interrupt",
-  /* 15 */  "unknown interrupt",
+  /* 14 */  "timer 0 interrupt",
+  /* 15 */  "timer 1 interrupt",
   /* 16 */  "bus timeout exception",
   /* 17 */  "illegal instruction exception",
   /* 18 */  "privileged instruction exception",
@@ -206,6 +206,7 @@ static Bool evalCond(int cc, Word a, Word b) {
       }
       break;
     default:
+      /* this should never happen */
       printf("cannot compute condition code %d\n", cc);
       break;
   }
@@ -233,7 +234,7 @@ void cpuStep(void) {
   offset = instr & 0x03FFFFFF;
   switch (stepType[opcode]) {
     case 1:
-      /* next instruction follows current one */
+      /* next instruction follows current one immediately */
       nextAddr = pc + 4;
       break;
     case 2:
@@ -249,7 +250,7 @@ void cpuStep(void) {
       break;
     case 4:
       /* next instruction reached by jump to register contents */
-      nextAddr = RR(reg1);
+      nextAddr = RR(reg1) & 0xFFFFFFFC;
       break;
     default:
       printf("cannot single-step instruction with opcode 0x%02X\n",
@@ -262,7 +263,7 @@ void cpuStep(void) {
     userContext.reg[i] = RR(i);
   }
   userContext.reg[30] = pc;
-  userContext.psw = psw & ~PSW_V;
+  userContext.psw = psw;
   userContext.tlbIndex = mmuGetIndex();
   userContext.tlbHi = mmuGetEntryHi();
   userContext.tlbLo = mmuGetEntryLo();
@@ -276,7 +277,7 @@ void cpuStep(void) {
     WR(i, userContext.reg[i]);
   }
   pc = userContext.reg[30];
-  psw = userContext.psw | (psw & PSW_V);
+  psw = userContext.psw;
   mmuSetIndex(userContext.tlbIndex);
   mmuSetEntryHi(userContext.tlbHi);
   mmuSetEntryLo(userContext.tlbLo);
@@ -284,16 +285,22 @@ void cpuStep(void) {
   if (nextAddr == pc) {
     return;
   }
-  if ((psw & PSW_V) == 0) {
-    printf("unexpected %s occurred\n",
-           exceptionToString((psw & PSW_PRIO_MASK) >> 16));
-    return;
-  }
   if ((psw & PSW_PRIO_MASK) >> 16 == 21 &&
       (mmuGetEntryHi() & 0x80000000) == 0) {
-    pc = 0xC0000008;
+    /* TLB user miss */
+    if (umsrPtr == 0x00000000) {
+      printf("unexpected TLB user miss exception occurred\n");
+      return;
+    }
+    pc = umsrPtr;
   } else {
-    pc = 0xC0000004;
+    /* any other exception */
+    if (isrPtr == 0x00000000) {
+      printf("unexpected %s occurred\n",
+             exceptionToString((psw & PSW_PRIO_MASK) >> 16));
+      return;
+    }
+    pc = isrPtr;
   }
 }
 
@@ -317,7 +324,7 @@ void cpuRun(void) {
       userContext.reg[i] = RR(i);
     }
     userContext.reg[30] = pc;
-    userContext.psw = psw & ~PSW_V;
+    userContext.psw = psw;
     userContext.tlbIndex = mmuGetIndex();
     userContext.tlbHi = mmuGetEntryHi();
     userContext.tlbLo = mmuGetEntryLo();
@@ -331,7 +338,7 @@ void cpuRun(void) {
       WR(i, userContext.reg[i]);
     }
     pc = userContext.reg[30];
-    psw = userContext.psw | (psw & PSW_V);
+    psw = userContext.psw;
     mmuSetIndex(userContext.tlbIndex);
     mmuSetEntryHi(userContext.tlbHi);
     mmuSetEntryLo(userContext.tlbLo);
@@ -341,16 +348,22 @@ void cpuRun(void) {
     if (breakSet && breakAddr == pc) {
       return;
     }
-    if ((psw & PSW_V) == 0) {
-      printf("unexpected %s occurred\n",
-             exceptionToString((psw & PSW_PRIO_MASK) >> 16));
-      return;
-    }
     if ((psw & PSW_PRIO_MASK) >> 16 == 21 &&
         (mmuGetEntryHi() & 0x80000000) == 0) {
-      pc = 0xC0000008;
+      /* TLB user miss */
+      if (umsrPtr == 0x00000000) {
+        printf("unexpected TLB user miss exception occurred\n");
+        return;
+      }
+      pc = umsrPtr;
     } else {
-      pc = 0xC0000004;
+      /* any other exception */
+      if (isrPtr == 0x00000000) {
+        printf("unexpected %s occurred\n",
+               exceptionToString((psw & PSW_PRIO_MASK) >> 16));
+        return;
+      }
+      pc = isrPtr;
     }
   }
 }

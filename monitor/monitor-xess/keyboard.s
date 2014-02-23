@@ -37,7 +37,7 @@ kbdin:
 	stw	$17,$29,0
 kbdin0:
 	jal	kbdinp
-	add	$16,$2,$0		; key1 in $16
+	add	$16,$2,$0		; key 1 in $16
 	add	$8,$0,0xF0
 	bne	$16,$8,kbdin2
 kbdin1:
@@ -45,7 +45,7 @@ kbdin1:
 	j	kbdin0
 kbdin2:
 	jal	kbdinp
-	add	$17,$2,$0		; key2 in $17
+	add	$17,$2,$0		; key 2 in $17
 	beq	$17,$16,kbdin2
 	add	$8,$0,0xF0
 	beq	$17,$8,kbdin3
@@ -54,8 +54,8 @@ kbdin3:
 	jal	kbdinp
 	bne	$2,$16,kbdin2
 kbdin4:
-	add	$4,$16,$0
-	add	$5,$0,xltbl1
+	add	$4,$16,$0		; use key 1
+	add	$5,$0,xltbl1		; with translation table 1
 	jal	xlat
 	j	kbdx
 kbdin5:
@@ -87,16 +87,25 @@ kbdin11:
 	add	$8,$0,0x12		; left shift key
 	beq	$16,$8,kbdin12
 	add	$8,$0,0x59		; right shift key
-	bne	$16,$8,kbdin13
+	beq	$16,$8,kbdin12
+	add	$8,$0,0x14		; ctrl key
+	beq	$16,$8,kbdin14
+	j	kbdin13
 kbdin12:
-	add	$4,$17,$0
-	add	$5,$0,xltbl2
+	add	$4,$17,$0		; use key 2
+	add	$5,$0,xltbl2		; with translation table 2
 	jal	xlat
 	j	kbdx
 kbdin13:
-	add	$4,$16,$0
-	add	$5,$0,xltbl1
+	add	$4,$16,$0		; use key 1
+	add	$5,$0,xltbl1		; with translation table 1
 	jal	xlat
+	j	kbdx
+kbdin14:
+	add	$4,$17,$0		; use key 2
+	add	$5,$0,xltbl1		; with translation table 1
+	jal	xlat
+	and	$2,$2,0xFF-0x60		; then reset bits 0x60
 	j	kbdx
 kbdx:
 	ldw	$17,$29,0
@@ -110,12 +119,12 @@ kbdinp:
 kbdinp1:
 	ldw	$9,$8,0
 	and	$9,$9,1
-	beq	$9,$0,kbdinp1
-	ldw	$2,$8,4
+	beq	$9,$0,kbdinp1		; wait until character ready
+	ldw	$2,$8,4			; get character
 	add	$9,$0,0xE0
-	beq	$2,$9,kbdinp1
+	beq	$2,$9,kbdinp1		; ignore E0 prefix
 	add	$9,$0,0xE1
-	beq	$2,$9,kbdinp1
+	beq	$2,$9,kbdinp1		; as well as E1 prefix
 	jr	$31
 
 xlat:
