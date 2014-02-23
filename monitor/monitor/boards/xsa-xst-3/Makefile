@@ -11,17 +11,17 @@ SRC = start.s main.c command.c instr.c asm.c disasm.c \
 
 .PHONY:		all install clean
 
-all:		monitor.bin monitor.mcs
+all:		monitor.bin monitor.exo
 
-install:	monitor.bin monitor.mcs
+install:	monitor.bin monitor.exo
 		mkdir -p $(BUILD)/monitor
 		cp monitor.bin $(BUILD)/monitor
-		cp monitor.mcs $(BUILD)/monitor
+		cp monitor.exo $(BUILD)/monitor
 
-monitor.mcs:	monitor.bin
-		$(BUILD)/bin/bin2mcs 0x00000000 monitor.bin monitor.mcs
+monitor.exo:	monitor.bin
+		$(BUILD)/bin/bin2exo -S2 0 monitor.bin monitor.exo
 
-monitor.bin:	copy/copy.bin $(SRC)
+monitor.bin:	$(SRC)
 		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rc -Wl0xC0000000 \
 		  -Wl-rd -Wl0xC000C000 \
 		  -Wl-m -Wlmonitor.map \
@@ -29,11 +29,7 @@ monitor.bin:	copy/copy.bin $(SRC)
 		cat copy/copy.bin prelim.bin >monitor.bin
 		rm prelim.bin
 
-copy/copy.bin:
-		$(MAKE) -C copy all
-
 clean:
 		rm -f *~
 		rm -f monitor.map monitor.bin
-		rm -f monitor.mcs
-		$(MAKE) -C copy clean
+		rm -f monitor.exo
