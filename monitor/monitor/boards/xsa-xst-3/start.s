@@ -16,9 +16,6 @@
 
 	.set	USER_CONTEXT_SIZE,36*4	; size of user context
 
-	.set	BIO_OUT,0xF1000000	; board I/O output port
-	.set	SPI_EN,0x80000000	; SPI bus enable ctrl bit
-
 ;***************************************************************
 
 	.import	_ecode
@@ -107,20 +104,20 @@ userMiss:
 	.align	4
 
 cinchk:
-	j	kbdinchk
-;	j	ser0inchk
+;	j	kbdinchk
+	j	ser0inchk
 
 cin:
-	j	kbdin
-;	j	ser0in
+;	j	kbdin
+	j	ser0in
 
 coutchk:
-	j	dspoutchk
-;	j	ser0outchk
+;	j	dspoutchk
+	j	ser0outchk
 
 cout:
-	j	dspout
-;	j	ser0out
+;	j	dspout
+	j	ser0out
 
 sinchk:
 	j	ser0inchk
