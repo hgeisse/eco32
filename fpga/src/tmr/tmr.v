@@ -1,3 +1,8 @@
+//
+// tmr.v -- programmable timer
+//
+
+
 module tmr(clk, reset,
            en, wr, addr,
            data_in, data_out,
@@ -12,7 +17,7 @@ module tmr(clk, reset,
     output wt;
     output irq;
 
-  reg [15:0] prescaler;
+  reg [5:0] prescaler;
   reg tick;
   reg [31:0] counter;
   reg [31:0] divisor;
@@ -23,11 +28,11 @@ module tmr(clk, reset,
 
   always @(posedge clk) begin
     if (reset == 1) begin
-      prescaler <= 16'd50000;
+      prescaler <= 6'd50;
       tick <= 0;
     end else begin
-      if (prescaler == 16'd1) begin
-        prescaler <= 16'd50000;
+      if (prescaler == 6'd1) begin
+        prescaler <= 6'd50;
         tick <= 1;
       end else begin
         prescaler <= prescaler - 1;

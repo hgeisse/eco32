@@ -1,5 +1,5 @@
 //
-// eco32.v -- toplevel description of the ECO32 system
+// eco32.v -- ECO32 top-level description
 //
 
 
@@ -24,11 +24,11 @@ module eco32(clk_in,
              flash_byte_n,
              flash_a,
              flash_d,
-             hsync,
-             vsync,
-             r,
-             g,
-             b,
+             vga_hsync,
+             vga_vsync,
+             vga_r,
+             vga_g,
+             vga_b,
              ps2_clk,
              ps2_data,
              rs232_0_rxd,
@@ -74,11 +74,11 @@ module eco32(clk_in,
     output [19:0] flash_a;
     input [15:0] flash_d;
     // VGA display
-    output hsync;
-    output vsync;
-    output [2:0] r;
-    output [2:0] g;
-    output [2:0] b;
+    output vga_hsync;
+    output vga_vsync;
+    output [2:0] vga_r;
+    output [2:0] vga_g;
+    output [2:0] vga_b;
     // keyboard
     input ps2_clk;
     input ps2_data;
@@ -355,11 +355,11 @@ module eco32(clk_in,
     .data_in(dsp_data_in[15:0]),
     .data_out(dsp_data_out[15:0]),
     .wt(dsp_wt),
-    .hsync(hsync),
-    .vsync(vsync),
-    .r(r[2:0]),
-    .g(g[2:0]),
-    .b(b[2:0])
+    .hsync(vga_hsync),
+    .vsync(vga_vsync),
+    .r(vga_r[2:0]),
+    .g(vga_g[2:0]),
+    .b(vga_b[2:0])
   );
 
   kbd kbd1(
