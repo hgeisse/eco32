@@ -1,6 +1,6 @@
 module kbd(ps2_clk, ps2_data,
            clk, reset,
-           en, wr, addr2,
+           en, wr, addr,
            data_in, data_out,
            wt, irq);
     input ps2_clk;
@@ -9,7 +9,7 @@ module kbd(ps2_clk, ps2_data,
     input reset;
     input en;
     input wr;
-    input addr2;
+    input addr;
     input [7:0] data_in;
     output [7:0] data_out;
     output wt;
@@ -40,10 +40,10 @@ module kbd(ps2_clk, ps2_data,
         data <= keyboard_data;
       end
       if (keyboard_rdy == 1 ||
-          (en == 1 && wr == 0 && addr2 == 1)) begin
+          (en == 1 && wr == 0 && addr == 1)) begin
         rdy <= keyboard_rdy;
       end
-      if (en == 1 && wr == 1 && addr2 == 0) begin
+      if (en == 1 && wr == 1 && addr == 0) begin
         rdy <= data_in[0];
         ien <= data_in[1];
       end
@@ -51,7 +51,7 @@ module kbd(ps2_clk, ps2_data,
   end
 
   assign data_out =
-    (addr2 == 0) ? { 6'b000000, ien, rdy } : data;
+    (addr == 0) ? { 6'b000000, ien, rdy } : data;
   assign wt = 1'b0;
   assign irq = ien & rdy;
 

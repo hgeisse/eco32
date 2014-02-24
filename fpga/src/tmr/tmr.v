@@ -1,12 +1,12 @@
 module tmr(clk, reset,
-           en, wr, addr2,
+           en, wr, addr,
            data_in, data_out,
            wt, irq);
     input clk;
     input reset;
     input en;
     input wr;
-    input addr2;
+    input addr;
     input [31:0] data_in;
     output [31:0] data_out;
     output wt;
@@ -65,11 +65,11 @@ module tmr(clk, reset,
       if (expired == 1) begin
         alarm <= 1;
       end else begin
-        if (en == 1 && wr == 1 && addr2 == 0) begin
+        if (en == 1 && wr == 1 && addr == 0) begin
           alarm <= data_in[0];
           ien <= data_in[1];
         end
-        if (en == 1 && wr == 1 && addr2 == 1) begin
+        if (en == 1 && wr == 1 && addr == 1) begin
           divisor <= data_in;
           divisor_loaded <= 1;
         end else begin
@@ -80,7 +80,7 @@ module tmr(clk, reset,
   end
 
   assign data_out =
-    (addr2 == 0) ? { 28'h0000000, 2'b00, ien, alarm } :
+    (addr == 0) ? { 28'h0000000, 2'b00, ien, alarm } :
                    divisor;
   assign wt = 0;
   assign irq = ien & alarm;

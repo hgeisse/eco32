@@ -1,12 +1,25 @@
-module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cpu_wt,
-               ram_en, ram_wr, ram_size, ram_addr, ram_data_in, ram_data_out, ram_wt,
-               rom_en, rom_wr, rom_size, rom_addr, rom_data_out, rom_wt,
-               tmr_en, tmr_wr, tmr_addr2, tmr_data_in, tmr_data_out, tmr_wt,
-               dsp_en, dsp_wr, dsp_addr, dsp_data_in, dsp_data_out, dsp_wt,
-               kbd_en, kbd_wr, kbd_addr2, kbd_data_in, kbd_data_out, kbd_wt,
-               ser0_en, ser0_wr, ser0_addr, ser0_data_in, ser0_data_out, ser0_wt,
-               ser1_en, ser1_wr, ser1_addr, ser1_data_in, ser1_data_out, ser1_wt,
-               dsk_en, dsk_wr, dsk_addr, dsk_data_in, dsk_data_out, dsk_wt);
+//
+// busctrl.v -- bus controller
+//
+
+module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
+               cpu_data_out, cpu_data_in, cpu_wt,
+               ram_en, ram_wr, ram_size, ram_addr,
+               ram_data_in, ram_data_out, ram_wt,
+               rom_en, rom_wr, rom_size, rom_addr,
+               rom_data_out, rom_wt,
+               tmr_en, tmr_wr, tmr_addr,
+               tmr_data_in, tmr_data_out, tmr_wt,
+               dsp_en, dsp_wr, dsp_addr,
+               dsp_data_in, dsp_data_out, dsp_wt,
+               kbd_en, kbd_wr, kbd_addr,
+               kbd_data_in, kbd_data_out, kbd_wt,
+               ser0_en, ser0_wr, ser0_addr,
+               ser0_data_in, ser0_data_out, ser0_wt,
+               ser1_en, ser1_wr, ser1_addr,
+               ser1_data_in, ser1_data_out, ser1_wt,
+               dsk_en, dsk_wr, dsk_addr,
+               dsk_data_in, dsk_data_out, dsk_wt);
     // cpu
     input cpu_en;
     input cpu_wr;
@@ -33,7 +46,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cp
     // tmr
     output tmr_en;
     output tmr_wr;
-    output tmr_addr2;
+    output tmr_addr;
     output [31:0] tmr_data_in;
     input [31:0] tmr_data_out;
     input tmr_wt;
@@ -47,7 +60,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cp
     // kbd
     output kbd_en;
     output kbd_wr;
-    output kbd_addr2;
+    output kbd_addr;
     output [7:0] kbd_data_in;
     input [7:0] kbd_data_out;
     input kbd_wt;
@@ -75,13 +88,20 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cp
 
   wire i_o_en;
 
-  // decoder
+  //
+  // address decoder
+  //
+  // RAM: architectural limit = 512 MB
+  //      board limit         =  32 MB
   assign ram_en =
     (cpu_en == 1 && cpu_addr[31:29] == 3'b000
                  && cpu_addr[28:25] == 4'b0000) ? 1 : 0;
+  // ROM: architectural limit = 256 MB
+  //      board limit         =   2 MB
   assign rom_en =
     (cpu_en == 1 && cpu_addr[31:28] == 4'b0010
                  && cpu_addr[27:21] == 7'b0000000) ? 1 : 0;
+  // I/O: architectural limit = 256 MB
   assign i_o_en =
     (cpu_en == 1 && cpu_addr[31:28] == 4'b0011) ? 1 : 0;
   assign tmr_en =
@@ -92,10 +112,10 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cp
     (i_o_en == 1 && cpu_addr[27:20] == 8'h02) ? 1 : 0;
   assign ser0_en =
     (i_o_en == 1 && cpu_addr[27:20] == 8'h03
-                 && cpu_addr[ 5: 4] == 2'b00) ? 1 : 0;
+                 && cpu_addr[19:12] == 8'h00) ? 1 : 0;
   assign ser1_en =
     (i_o_en == 1 && cpu_addr[27:20] == 8'h03
-                 && cpu_addr[ 5: 4] == 2'b01) ? 1 : 0;
+                 && cpu_addr[19:12] == 8'h01) ? 1 : 0;
   assign dsk_en =
     (i_o_en == 1 && cpu_addr[27:20] == 8'h04) ? 1 : 0;
 
@@ -134,7 +154,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cp
 
   // to tmr
   assign tmr_wr = cpu_wr;
-  assign tmr_addr2 = cpu_addr[2];
+  assign tmr_addr = cpu_addr[2];
   assign tmr_data_in[31:0] = cpu_data_out[31:0];
 
   // to dsp
@@ -144,7 +164,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr, cpu_data_out, cpu_data_in, cp
 
   // to kbd
   assign kbd_wr = cpu_wr;
-  assign kbd_addr2 = cpu_addr[2];
+  assign kbd_addr = cpu_addr[2];
   assign kbd_data_in[7:0] = cpu_data_out[7:0];
 
   // to ser0

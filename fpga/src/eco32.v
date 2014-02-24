@@ -138,7 +138,7 @@ module eco32(clk_in,
   // tmr
   wire tmr_en;
   wire tmr_wr;
-  wire tmr_addr2;
+  wire tmr_addr;
   wire [31:0] tmr_data_in;
   wire [31:0] tmr_data_out;
   wire tmr_wt;
@@ -153,7 +153,7 @@ module eco32(clk_in,
   // kbd
   wire kbd_en;
   wire kbd_wr;
-  wire kbd_addr2;
+  wire kbd_addr;
   wire [7:0] kbd_data_in;
   wire [7:0] kbd_data_out;
   wire kbd_wt;
@@ -222,7 +222,7 @@ module eco32(clk_in,
     // tmr
     .tmr_en(tmr_en),
     .tmr_wr(tmr_wr),
-    .tmr_addr2(tmr_addr2),
+    .tmr_addr(tmr_addr),
     .tmr_data_in(tmr_data_in[31:0]),
     .tmr_data_out(tmr_data_out[31:0]),
     .tmr_wt(tmr_wt),
@@ -236,7 +236,7 @@ module eco32(clk_in,
     // kbd
     .kbd_en(kbd_en),
     .kbd_wr(kbd_wr),
-    .kbd_addr2(kbd_addr2),
+    .kbd_addr(kbd_addr),
     .kbd_data_in(kbd_data_in[7:0]),
     .kbd_data_out(kbd_data_out[7:0]),
     .kbd_wt(kbd_wt),
@@ -339,7 +339,7 @@ module eco32(clk_in,
     .reset(reset),
     .en(tmr_en),
     .wr(tmr_wr),
-    .addr2(tmr_addr2),
+    .addr(tmr_addr),
     .data_in(tmr_data_in[31:0]),
     .data_out(tmr_data_out[31:0]),
     .wt(tmr_wt),
@@ -369,7 +369,7 @@ module eco32(clk_in,
     .reset(reset),
     .en(kbd_en),
     .wr(kbd_wr),
-    .addr2(kbd_addr2),
+    .addr(kbd_addr),
     .data_in(kbd_data_in[7:0]),
     .data_out(kbd_data_out[7:0]),
     .wt(kbd_wt),
