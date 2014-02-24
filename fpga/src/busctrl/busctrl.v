@@ -46,7 +46,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
     // tmr
     output tmr_en;
     output tmr_wr;
-    output tmr_addr;
+    output [3:2] tmr_addr;
     output [31:0] tmr_data_in;
     input [31:0] tmr_data_out;
     input tmr_wt;
@@ -154,7 +154,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
 
   // to tmr
   assign tmr_wr = cpu_wr;
-  assign tmr_addr = cpu_addr[2];
+  assign tmr_addr[3:2] = cpu_addr[3:2];
   assign tmr_data_in[31:0] = cpu_data_out[31:0];
 
   // to dsp

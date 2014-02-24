@@ -11,14 +11,12 @@ module tmr(clk, reset,
     input reset;
     input en;
     input wr;
-    input addr;
+    input [3:2] addr;
     input [31:0] data_in;
-    output [31:0] data_out;
+    output reg [31:0] data_out;
     output wt;
     output irq;
 
-  reg [5:0] prescaler;
-  reg tick;
   reg [31:0] counter;
   reg [31:0] divisor;
   reg divisor_loaded;
@@ -27,34 +25,15 @@ module tmr(clk, reset,
   reg ien;
 
   always @(posedge clk) begin
-    if (reset == 1) begin
-      prescaler <= 6'd50;
-      tick <= 0;
-    end else begin
-      if (prescaler == 6'd1) begin
-        prescaler <= 6'd50;
-        tick <= 1;
-      end else begin
-        prescaler <= prescaler - 1;
-        tick <= 0;
-      end
-    end
-  end
-
-  always @(posedge clk) begin
     if (divisor_loaded == 1) begin
       counter <= divisor;
       expired <= 0;
     end else begin
-      if (tick == 1) begin
-        if (counter == 32'h00000001) begin
-          counter <= divisor;
-          expired <= 1;
-        end else begin
-          counter <= counter - 1;
-          expired <= 0;
-        end
+      if (counter == 32'h00000001) begin
+        counter <= divisor;
+        expired <= 1;
       end else begin
+        counter <= counter - 1;
         expired <= 0;
       end
     end
@@ -70,11 +49,11 @@ module tmr(clk, reset,
       if (expired == 1) begin
         alarm <= 1;
       end else begin
-        if (en == 1 && wr == 1 && addr == 0) begin
+        if (en == 1 && wr == 1 && addr[3:2] == 2'b00) begin
           alarm <= data_in[0];
           ien <= data_in[1];
         end
-        if (en == 1 && wr == 1 && addr == 1) begin
+        if (en == 1 && wr == 1 && addr[3:2] == 2'b01) begin
           divisor <= data_in;
           divisor_loaded <= 1;
         end else begin
@@ -84,9 +63,25 @@ module tmr(clk, reset,
     end
   end
 
-  assign data_out =
-    (addr == 0) ? { 28'h0000000, 2'b00, ien, alarm } :
-                   divisor;
+  always @(*) begin
+    case (addr[3:2])
+      2'b00:
+        // ctrl
+        data_out = { 28'h0000000, 2'b00, ien, alarm };
+      2'b01:
+        // divisor
+        data_out = divisor;
+      2'b10:
+        // counter
+        data_out = counter;
+      2'b11:
+        // not used
+        data_out = 32'hxxxxxxxx;
+      default:
+        data_out = 32'hxxxxxxxx;
+    endcase
+  end
+
   assign wt = 0;
   assign irq = ien & alarm;
 
