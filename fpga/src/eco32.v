@@ -135,14 +135,22 @@ module eco32(clk_in,
   wire [20:0] rom_addr;
   wire [31:0] rom_data_out;
   wire rom_wt;
-  // tmr
-  wire tmr_en;
-  wire tmr_wr;
-  wire [3:2] tmr_addr;
-  wire [31:0] tmr_data_in;
-  wire [31:0] tmr_data_out;
-  wire tmr_wt;
-  wire tmr_irq;
+  // tmr0
+  wire tmr0_en;
+  wire tmr0_wr;
+  wire [3:2] tmr0_addr;
+  wire [31:0] tmr0_data_in;
+  wire [31:0] tmr0_data_out;
+  wire tmr0_wt;
+  wire tmr0_irq;
+  // tmr1
+  wire tmr1_en;
+  wire tmr1_wr;
+  wire [3:2] tmr1_addr;
+  wire [31:0] tmr1_data_in;
+  wire [31:0] tmr1_data_out;
+  wire tmr1_wt;
+  wire tmr1_irq;
   // dsp
   wire dsp_en;
   wire dsp_wr;
@@ -219,13 +227,20 @@ module eco32(clk_in,
     .rom_addr(rom_addr[20:0]),
     .rom_data_out(rom_data_out[31:0]),
     .rom_wt(rom_wt),
-    // tmr
-    .tmr_en(tmr_en),
-    .tmr_wr(tmr_wr),
-    .tmr_addr(tmr_addr[3:2]),
-    .tmr_data_in(tmr_data_in[31:0]),
-    .tmr_data_out(tmr_data_out[31:0]),
-    .tmr_wt(tmr_wt),
+    // tmr0
+    .tmr0_en(tmr0_en),
+    .tmr0_wr(tmr0_wr),
+    .tmr0_addr(tmr0_addr[3:2]),
+    .tmr0_data_in(tmr0_data_in[31:0]),
+    .tmr0_data_out(tmr0_data_out[31:0]),
+    .tmr0_wt(tmr0_wt),
+    // tmr1
+    .tmr1_en(tmr1_en),
+    .tmr1_wr(tmr1_wr),
+    .tmr1_addr(tmr1_addr[3:2]),
+    .tmr1_data_in(tmr1_data_in[31:0]),
+    .tmr1_data_out(tmr1_data_out[31:0]),
+    .tmr1_wt(tmr1_wt),
     // dsp
     .dsp_en(dsp_en),
     .dsp_wr(dsp_wr),
@@ -276,8 +291,8 @@ module eco32(clk_in,
     .irq(cpu_irq[15:0])
   );
 
-  assign cpu_irq[15] = 1'b0;
-  assign cpu_irq[14] = tmr_irq;
+  assign cpu_irq[15] = tmr1_irq;
+  assign cpu_irq[14] = tmr0_irq;
   assign cpu_irq[13] = 1'b0;
   assign cpu_irq[12] = 1'b0;
   assign cpu_irq[11] = 1'b0;
@@ -334,16 +349,28 @@ module eco32(clk_in,
     .d(flash_d[15:0])
   );
 
-  tmr tmr1(
+  tmr tmr1_0(
     .clk(clk),
     .reset(reset),
-    .en(tmr_en),
-    .wr(tmr_wr),
-    .addr(tmr_addr[3:2]),
-    .data_in(tmr_data_in[31:0]),
-    .data_out(tmr_data_out[31:0]),
-    .wt(tmr_wt),
-    .irq(tmr_irq)
+    .en(tmr0_en),
+    .wr(tmr0_wr),
+    .addr(tmr0_addr[3:2]),
+    .data_in(tmr0_data_in[31:0]),
+    .data_out(tmr0_data_out[31:0]),
+    .wt(tmr0_wt),
+    .irq(tmr0_irq)
+  );
+
+  tmr tmr1_1(
+    .clk(clk),
+    .reset(reset),
+    .en(tmr1_en),
+    .wr(tmr1_wr),
+    .addr(tmr1_addr[3:2]),
+    .data_in(tmr1_data_in[31:0]),
+    .data_out(tmr1_data_out[31:0]),
+    .wt(tmr1_wt),
+    .irq(tmr1_irq)
   );
 
   dsp dsp1(

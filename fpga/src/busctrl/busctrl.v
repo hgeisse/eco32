@@ -8,8 +8,10 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
                ram_data_in, ram_data_out, ram_wt,
                rom_en, rom_wr, rom_size, rom_addr,
                rom_data_out, rom_wt,
-               tmr_en, tmr_wr, tmr_addr,
-               tmr_data_in, tmr_data_out, tmr_wt,
+               tmr0_en, tmr0_wr, tmr0_addr,
+               tmr0_data_in, tmr0_data_out, tmr0_wt,
+               tmr1_en, tmr1_wr, tmr1_addr,
+               tmr1_data_in, tmr1_data_out, tmr1_wt,
                dsp_en, dsp_wr, dsp_addr,
                dsp_data_in, dsp_data_out, dsp_wt,
                kbd_en, kbd_wr, kbd_addr,
@@ -43,13 +45,20 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
     output [20:0] rom_addr;
     input [31:0] rom_data_out;
     input rom_wt;
-    // tmr
-    output tmr_en;
-    output tmr_wr;
-    output [3:2] tmr_addr;
-    output [31:0] tmr_data_in;
-    input [31:0] tmr_data_out;
-    input tmr_wt;
+    // tmr0
+    output tmr0_en;
+    output tmr0_wr;
+    output [3:2] tmr0_addr;
+    output [31:0] tmr0_data_in;
+    input [31:0] tmr0_data_out;
+    input tmr0_wt;
+    // tmr1
+    output tmr1_en;
+    output tmr1_wr;
+    output [3:2] tmr1_addr;
+    output [31:0] tmr1_data_in;
+    input [31:0] tmr1_data_out;
+    input tmr1_wt;
     // dsp
     output dsp_en;
     output dsp_wr;
@@ -104,8 +113,12 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
   // I/O: architectural limit = 256 MB
   assign i_o_en =
     (cpu_en == 1 && cpu_addr[31:28] == 4'b0011) ? 1 : 0;
-  assign tmr_en =
-    (i_o_en == 1 && cpu_addr[27:20] == 8'h00) ? 1 : 0;
+  assign tmr0_en =
+    (i_o_en == 1 && cpu_addr[27:20] == 8'h00
+                 && cpu_addr[19:12] == 8'h00) ? 1 : 0;
+  assign tmr1_en =
+    (i_o_en == 1 && cpu_addr[27:20] == 8'h00
+                 && cpu_addr[19:12] == 8'h01) ? 1 : 0;
   assign dsp_en =
     (i_o_en == 1 && cpu_addr[27:20] == 8'h01) ? 1 : 0;
   assign kbd_en =
@@ -123,7 +136,8 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
   assign cpu_wt =
     (ram_en == 1) ? ram_wt :
     (rom_en == 1) ? rom_wt :
-    (tmr_en == 1) ? tmr_wt :
+    (tmr0_en == 1) ? tmr0_wt :
+    (tmr1_en == 1) ? tmr1_wt :
     (dsp_en == 1) ? dsp_wt :
     (kbd_en == 1) ? kbd_wt :
     (ser0_en == 1) ? ser0_wt :
@@ -133,7 +147,8 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
   assign cpu_data_in[31:0] =
     (ram_en == 1) ? ram_data_out[31:0] :
     (rom_en == 1) ? rom_data_out[31:0] :
-    (tmr_en == 1) ? tmr_data_out[31:0] :
+    (tmr0_en == 1) ? tmr0_data_out[31:0] :
+    (tmr1_en == 1) ? tmr1_data_out[31:0] :
     (dsp_en == 1) ? { 16'h0000, dsp_data_out[15:0] } :
     (kbd_en == 1) ? { 24'h000000, kbd_data_out[7:0] } :
     (ser0_en == 1) ? { 24'h000000, ser0_data_out[7:0] } :
@@ -152,10 +167,15 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
   assign rom_size[1:0] = cpu_size[1:0];
   assign rom_addr[20:0] = cpu_addr[20:0];
 
-  // to tmr
-  assign tmr_wr = cpu_wr;
-  assign tmr_addr[3:2] = cpu_addr[3:2];
-  assign tmr_data_in[31:0] = cpu_data_out[31:0];
+  // to tmr0
+  assign tmr0_wr = cpu_wr;
+  assign tmr0_addr[3:2] = cpu_addr[3:2];
+  assign tmr0_data_in[31:0] = cpu_data_out[31:0];
+
+  // to tmr1
+  assign tmr1_wr = cpu_wr;
+  assign tmr1_addr[3:2] = cpu_addr[3:2];
+  assign tmr1_data_in[31:0] = cpu_data_out[31:0];
 
   // to dsp
   assign dsp_wr = cpu_wr;
