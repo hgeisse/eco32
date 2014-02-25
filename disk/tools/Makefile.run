@@ -10,7 +10,7 @@ BUILD = ..
 all:		disk.img
 
 run-sim:	disk.img
-		$(BUILD)/bin/sim -i -t 1 \
+		$(BUILD)/bin/sim -i -c -t 1 \
 		  -r $(BUILD)/monitor/xsa-xst-3/monitor.bin \
 		  -d disk.img -o run.log
 
