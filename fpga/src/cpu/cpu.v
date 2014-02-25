@@ -5,7 +5,7 @@
 
 module cpu(clk, reset,
            bus_en, bus_wr, bus_size, bus_addr,
-           bus_wt, bus_data_in, bus_data_out,
+           bus_data_in, bus_data_out, bus_wt,
            irq);
     input clk;				// system clock
     input reset;			// system reset
@@ -13,9 +13,9 @@ module cpu(clk, reset,
     output bus_wr;			// bus write
     output [1:0] bus_size;		// 00: byte, 01: halfword, 10: word
     output [31:0] bus_addr;		// bus address
-    input bus_wt;			// bus wait
     input [31:0] bus_data_in;		// bus data input, for reads
     output [31:0] bus_data_out;		// bus data output, for writes
+    input bus_wt;			// bus wait
     input [15:0] irq;			// interrupt requests
 
   // program counter
@@ -1335,7 +1335,7 @@ module ctrl(clk, reset,
           sreg_we = 1'b0;
           psw_we = 1'b1;
           psw_new = {
-            4'b0000,
+            psw[31:28],
             psw[27],
             1'b0, psw[26], psw[25],
             1'b0, psw[23], psw[22],
@@ -1582,7 +1582,7 @@ module ctrl(clk, reset,
           sreg_we = 1'b0;
           psw_we = 1'b1;
           psw_new = {
-            4'b0000,
+            psw[31:28],
             psw[27],
             psw[25], psw[24], psw[24],
             psw[22], psw[21], psw[21],
@@ -1651,7 +1651,7 @@ module ctrl(clk, reset,
           sreg_we = 1'b0;
           psw_we = 1'b1;
           psw_new = {
-            4'b0000,
+            psw[31:28],
             psw[27],
             1'b0, psw[26], psw[25],
             1'b0, psw[23], psw[22],
@@ -1690,7 +1690,7 @@ module ctrl(clk, reset,
           sreg_we = 1'b0;
           psw_we = 1'b1;
           psw_new = {
-            4'b0000,
+            psw[31:28],
             psw[27],
             1'b0, psw[26], psw[25],
             1'b0, psw[23], psw[22],
@@ -2553,9 +2553,12 @@ module mmu(clk, reset, fnc, virt, phys,
   assign tlb_wbit = tlb_frame[1];
   assign tlb_vbit = tlb_frame[0];
   assign rw_index = (tbwr == 1) ? random_index : tlb_index[4:0];
-  assign tlb_index_new = { tlb_miss, 26'b0, tlb_found };
-  assign tlb_entry_hi_new = { ((tbri == 1) ? r_page : page), 12'h000 };
-  assign tlb_entry_lo_new = { 2'b00, r_frame[19:2], 10'h000, r_frame[1:0] };
+  assign tlb_index_new = { tlb_miss | tlb_index[31],
+                           tlb_index[30:5], tlb_found };
+  assign tlb_entry_hi_new = { ((tbri == 1) ? r_page : page),
+                              tlb_entry_hi[11:0] };
+  assign tlb_entry_lo_new = { tlb_entry_lo[31:30], r_frame[19:2],
+                              tlb_entry_lo[11:2], r_frame[1:0] };
   assign w_enable = tbwr | tbwi;
   assign w_page = tlb_entry_hi[31:12];
   assign w_frame = { tlb_entry_lo[29:12], tlb_entry_lo[1:0] };
@@ -2614,7 +2617,7 @@ module tlb(page_in, miss, found,
            w_enable, w_page, w_frame);
     input [19:0] page_in;
     output miss;
-    output reg [4:0] found;
+    output [4:0] found;
     input clk;
     input enable;
     output reg [19:0] frame_out;
@@ -2706,133 +2709,26 @@ module tlb(page_in, miss, found,
 
   assign miss = ~(| match[31:0]);
 
-  always @(*) begin
-    if ((| match[31:16]) != 0) begin
-      if ((| match[31:24]) != 0) begin
-        if ((| match[31:28]) != 0) begin
-          if ((| match[31:30]) != 0) begin
-            if (match[31] != 0) begin
-              found = 5'd31;
-            end else begin
-              found = 5'd30;
-            end
-          end else begin
-            if (match[29] != 0) begin
-              found = 5'd29;
-            end else begin
-              found = 5'd28;
-            end
-          end
-        end else begin
-          if ((| match[27:26]) != 0) begin
-            if (match[27] != 0) begin
-              found = 5'd27;
-            end else begin
-              found = 5'd26;
-            end
-          end else begin
-            if (match[25] != 0) begin
-              found = 5'd25;
-            end else begin
-              found = 5'd24;
-            end
-          end
-        end
-      end else begin
-        if ((| match[23:20]) != 0) begin
-          if ((| match[23:22]) != 0) begin
-            if (match[23] != 0) begin
-              found = 5'd23;
-            end else begin
-              found = 5'd22;
-            end
-          end else begin
-            if (match[21] != 0) begin
-              found = 5'd21;
-            end else begin
-              found = 5'd20;
-            end
-          end
-        end else begin
-          if ((| match[19:18]) != 0) begin
-            if (match[19] != 0) begin
-              found = 5'd19;
-            end else begin
-              found = 5'd18;
-            end
-          end else begin
-            if (match[17] != 0) begin
-              found = 5'd17;
-            end else begin
-              found = 5'd16;
-            end
-          end
-        end
-      end
-    end else begin
-      if ((| match[15:8]) != 0) begin
-        if ((| match[15:12]) != 0) begin
-          if ((| match[15:14]) != 0) begin
-            if (match[15] != 0) begin
-              found = 5'd15;
-            end else begin
-              found = 5'd14;
-            end
-          end else begin
-            if (match[13] != 0) begin
-              found = 5'd13;
-            end else begin
-              found = 5'd12;
-            end
-          end
-        end else begin
-          if ((| match[11:10]) != 0) begin
-            if (match[11] != 0) begin
-              found = 5'd11;
-            end else begin
-              found = 5'd10;
-            end
-          end else begin
-            if (match[9] != 0) begin
-              found = 5'd9;
-            end else begin
-              found = 5'd8;
-            end
-          end
-        end
-      end else begin
-        if ((| match[7:4]) != 0) begin
-          if ((| match[7:6]) != 0) begin
-            if (match[7] != 0) begin
-              found = 5'd7;
-            end else begin
-              found = 5'd6;
-            end
-          end else begin
-            if (match[5] != 0) begin
-              found = 5'd5;
-            end else begin
-              found = 5'd4;
-            end
-          end
-        end else begin
-          if ((| match[3:2]) != 0) begin
-            if (match[3] != 0) begin
-              found = 5'd3;
-            end else begin
-              found = 5'd2;
-            end
-          end else begin
-            if (match[1] != 0) begin
-              found = 5'd1;
-            end else begin
-              found = 5'd0;
-            end
-          end
-        end
-      end
-    end
-  end
+  assign found[0] = match[ 1] | match[ 3] | match[ 5] | match[ 7] |
+                    match[ 9] | match[11] | match[13] | match[15] |
+                    match[17] | match[19] | match[21] | match[23] |
+                    match[25] | match[27] | match[29] | match[31];
+  assign found[1] = match[ 2] | match[ 3] | match[ 6] | match[ 7] |
+                    match[10] | match[11] | match[14] | match[15] |
+                    match[18] | match[19] | match[22] | match[23] |
+                    match[26] | match[27] | match[30] | match[31];
+  assign found[2] = match[ 4] | match[ 5] | match[ 6] | match[ 7] |
+                    match[12] | match[13] | match[14] | match[15] |
+                    match[20] | match[21] | match[22] | match[23] |
+                    match[28] | match[29] | match[30] | match[31];
+  assign found[3] = match[ 8] | match[ 9] | match[10] | match[11] |
+                    match[12] | match[13] | match[14] | match[15] |
+                    match[24] | match[25] | match[26] | match[27] |
+                    match[28] | match[29] | match[30] | match[31];
+  assign found[4] = match[16] | match[17] | match[18] | match[19] |
+                    match[20] | match[21] | match[22] | match[23] |
+                    match[24] | match[25] | match[26] | match[27] |
+                    match[28] | match[29] | match[30] | match[31];
 
   always @(posedge clk) begin
     if (enable == 1) begin
