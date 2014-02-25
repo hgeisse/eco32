@@ -11,7 +11,7 @@ all:		disk.img
 
 run-sim:	disk.img
 		$(BUILD)/bin/sim -i -t 1 \
-		  -r $(BUILD)/monitor/monitor.bin \
+		  -r $(BUILD)/monitor/xsa-xst-3/monitor.bin \
 		  -d disk.img -o run.log
 
 run-server:	disk.img
