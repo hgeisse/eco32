@@ -76,10 +76,10 @@ static void help(void) {
 
 
 static char *cause[32] = {
-  /*  0 */  "terminal 0 transmitter interrupt",
-  /*  1 */  "terminal 0 receiver interrupt",
-  /*  2 */  "terminal 1 transmitter interrupt",
-  /*  3 */  "terminal 1 receiver interrupt",
+  /*  0 */  "serial line 0 xmt interrupt",
+  /*  1 */  "serial line 0 rcv interrupt",
+  /*  2 */  "serial line 1 xmt interrupt",
+  /*  3 */  "serial line 1 rcv interrupt",
   /*  4 */  "keyboard interrupt",
   /*  5 */  "unknown interrupt",
   /*  6 */  "unknown interrupt",
