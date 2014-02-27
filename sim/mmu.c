@@ -25,7 +25,7 @@ static TLB_Entry tlb[TLB_SIZE];
 static Word tlbIndex;
 static Word tlbEntryHi;
 static Word tlbEntryLo;
-static Word tlbBadAddr;
+static Word mmuBadAddr;
 
 
 static int assoc(Word page) {
@@ -65,7 +65,7 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing) {
   }
   if ((vAddr & 0x80000000) != 0 && userMode) {
     /* trying to access a privileged address from user mode */
-    tlbBadAddr = vAddr;
+    mmuBadAddr = vAddr;
     throwException(EXC_PRV_ADDRESS);
   }
   if ((vAddr & 0xC0000000) == 0xC0000000) {
@@ -79,19 +79,19 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing) {
     index = assoc(page);
     if (index == -1) {
       /* TLB miss exception */
-      tlbBadAddr = vAddr;
+      mmuBadAddr = vAddr;
       tlbEntryHi = page;
       throwException(EXC_TLB_MISS);
     }
     if (!tlb[index].valid) {
       /* TLB invalid exception */
-      tlbBadAddr = vAddr;
+      mmuBadAddr = vAddr;
       tlbEntryHi = page;
       throwException(EXC_TLB_INVALID);
     }
     if (!tlb[index].write && writing) {
       /* TLB write exception */
-      tlbBadAddr = vAddr;
+      mmuBadAddr = vAddr;
       tlbEntryHi = page;
       throwException(EXC_TLB_WRITE);
     }
@@ -107,7 +107,7 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing) {
 Word mmuReadWord(Word vAddr, Bool userMode) {
   if ((vAddr & 3) != 0) {
     /* throw illegal address exception */
-    tlbBadAddr = vAddr;
+    mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
   return memoryReadWord(v2p(vAddr, userMode, false));
@@ -117,7 +117,7 @@ Word mmuReadWord(Word vAddr, Bool userMode) {
 Half mmuReadHalf(Word vAddr, Bool userMode) {
   if ((vAddr & 1) != 0) {
     /* throw illegal address exception */
-    tlbBadAddr = vAddr;
+    mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
   return memoryReadHalf(v2p(vAddr, userMode, false));
@@ -132,7 +132,7 @@ Byte mmuReadByte(Word vAddr, Bool userMode) {
 void mmuWriteWord(Word vAddr, Word data, Bool userMode) {
   if ((vAddr & 3) != 0) {
     /* throw illegal address exception */
-    tlbBadAddr = vAddr;
+    mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
   memoryWriteWord(v2p(vAddr, userMode, true), data);
@@ -142,7 +142,7 @@ void mmuWriteWord(Word vAddr, Word data, Bool userMode) {
 void mmuWriteHalf(Word vAddr, Half data, Bool userMode) {
   if ((vAddr & 1) != 0) {
     /* throw illegal address exception */
-    tlbBadAddr = vAddr;
+    mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
   memoryWriteHalf(v2p(vAddr, userMode, true), data);
@@ -185,12 +185,12 @@ void mmuSetEntryLo(Word value) {
 
 
 Word mmuGetBadAddr(void) {
-  return tlbBadAddr;
+  return mmuBadAddr;
 }
 
 
 void mmuSetBadAddr(Word value) {
-  tlbBadAddr = value;
+  mmuBadAddr = value;
 }
 
 
@@ -294,7 +294,7 @@ void mmuReset(void) {
   tlbIndex = rand() & TLB_MASK;
   tlbEntryHi = rand() & PAGE_MASK;
   tlbEntryLo = rand() & (PAGE_MASK | TLB_WRITE | TLB_VALID);
-  tlbBadAddr = rand();
+  mmuBadAddr = rand();
 }
 
 
