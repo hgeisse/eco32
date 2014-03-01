@@ -33,44 +33,142 @@
 static Bool quit;
 
 
+typedef struct {
+  char *name;
+  void (*hlpProc)(void);
+  void (*cmdProc)(char *tokens[], int n);
+} Command;
+
+extern Command commands[];
+extern int numCommands;
+
+
 static void help(void) {
   cPrintf("valid commands are:\n");
+  cPrintf("  help    get help\n");
+  cPrintf("  +       add and subtract\n");
+  cPrintf("  a       assemble\n");
+  cPrintf("  u       unassemble\n");
+  cPrintf("  b       set/reset breakpoint\n");
+  cPrintf("  c       continue from breakpoint\n");
+  cPrintf("  s       single-step\n");
+  cPrintf("  #       show/set PC\n");
+  cPrintf("  p       show/set PSW\n");
+  cPrintf("  r       show/set register\n");
+  cPrintf("  d       dump memory\n");
+  cPrintf("  mw      show/set memory word\n");
+  cPrintf("  mh      show/set memory halfword\n");
+  cPrintf("  mb      show/set memory byte\n");
+  cPrintf("  t       show/set TLB contents\n");
+  cPrintf("  i       initialize hardware\n");
+  cPrintf("  q       quit simulator\n");
+  cPrintf("type 'help <cmd>' to get help for <cmd>\n");
+}
+
+
+static void help00(void) {
+  cPrintf("  help              show a list of commands\n");
+  cPrintf("  help <cmd>        show help for <cmd>\n");
+}
+
+
+static void help01(void) {
   cPrintf("  +  <num1> <num2>  add and subtract <num1> and <num2>\n");
+}
+
+
+static void help02(void) {
   cPrintf("  a                 assemble starting at PC\n");
   cPrintf("  a  <addr>         assemble starting at <addr>\n");
+}
+
+
+static void help03(void) {
   cPrintf("  u                 unassemble 16 instrs starting at PC\n");
   cPrintf("  u  <addr>         unassemble 16 instrs starting at <addr>\n");
   cPrintf("  u  <addr> <cnt>   unassemble <cnt> instrs starting at <addr>\n");
+}
+
+
+static void help04(void) {
   cPrintf("  b                 reset break\n");
   cPrintf("  b  <addr>         set break at <addr>\n");
+}
+
+
+static void help05(void) {
   cPrintf("  c                 continue execution\n");
   cPrintf("  c  <cnt>          continue execution <cnt> times\n");
+}
+
+
+static void help06(void) {
   cPrintf("  s                 single-step one instruction\n");
   cPrintf("  s  <cnt>          single-step <cnt> instructions\n");
-  cPrintf("  @                 show PC\n");
-  cPrintf("  @  <addr>         set PC to <addr>\n");
+}
+
+
+static void help07(void) {
+  cPrintf("  #                 show PC\n");
+  cPrintf("  #  <addr>         set PC to <addr>\n");
+}
+
+
+static void help08(void) {
   cPrintf("  p                 show PSW\n");
   cPrintf("  p  <data>         set PSW to <data>\n");
+}
+
+
+static void help09(void) {
   cPrintf("  r                 show all registers\n");
   cPrintf("  r  <reg>          show register <reg>\n");
   cPrintf("  r  <reg> <data>   set register <reg> to <data>\n");
+}
+
+
+static void help10(void) {
   cPrintf("  d                 dump 256 bytes starting at PC\n");
   cPrintf("  d  <addr>         dump 256 bytes starting at <addr>\n");
   cPrintf("  d  <addr> <cnt>   dump <cnt> bytes starting at <addr>\n");
+}
+
+
+static void help11(void) {
   cPrintf("  mw                show memory word at PC\n");
   cPrintf("  mw <addr>         show memory word at <addr>\n");
   cPrintf("  mw <addr> <data>  set memory word at <addr> to <data>\n");
+}
+
+
+static void help12(void) {
   cPrintf("  mh                show memory halfword at PC\n");
   cPrintf("  mh <addr>         show memory halfword at <addr>\n");
   cPrintf("  mh <addr> <data>  set memory halfword at <addr> to <data>\n");
+}
+
+
+static void help13(void) {
   cPrintf("  mb                show memory byte at PC\n");
   cPrintf("  mb <addr>         show memory byte at <addr>\n");
   cPrintf("  mb <addr> <data>  set memory byte at <addr> to <data>\n");
+}
+
+
+static void help14(void) {
   cPrintf("  t                 show TLB contents\n");
   cPrintf("  t  <i>            show TLB contents at <i>\n");
   cPrintf("  t  <i> p <data>   set TLB contents at <i> to page <data>\n");
   cPrintf("  t  <i> f <data>   set TLB contents at <i> to frame <data>\n");
+}
+
+
+static void help15(void) {
   cPrintf("  i                 initialize hardware\n");
+}
+
+
+static void help16(void) {
   cPrintf("  q                 quit simulator\n");
 }
 
@@ -194,6 +292,25 @@ static void showPSW(void) {
 }
 
 
+static void doHelp(char *tokens[], int n) {
+  int i;
+
+  if (n == 1) {
+    help();
+  } else if (n == 2) {
+    for (i = 0; i < numCommands; i++) {
+      if (strcmp(commands[i].name, tokens[1]) == 0) {
+        (*commands[i].hlpProc)();
+        return;
+      }
+    }
+    cPrintf("no help available for '%s', sorry\n", tokens[1]);
+  } else {
+    help00();
+  }
+}
+
+
 static void doArith(char *tokens[], int n) {
   Word num1, num2, num3, num4;
 
@@ -237,7 +354,7 @@ static void doAssemble(char *tokens[], int n) {
   addr &= ~0x00000003;
   psw = cpuGetPSW();
   while (1) {
-    sprintf(prompt, "ASM @ %08X: ", addr);
+    sprintf(prompt, "ASM # %08X: ", addr);
     line = cGetLine(prompt);
     if (*line == '\0' || *line == '\n') {
       break;
@@ -754,30 +871,27 @@ static void doQuit(char *tokens[], int n) {
 }
 
 
-typedef struct {
-  char *name;
-  void (*cmdProc)(char *tokens[], int n);
-} Command;
-
-
-static Command commands[] = {
-  { "+",  doArith },
-  { "a",  doAssemble },
-  { "u",  doUnassemble },
-  { "b",  doBreak },
-  { "c",  doContinue },
-  { "s",  doStep },
-  { "@",  doPC },
-  { "p",  doPSW },
-  { "r",  doRegister },
-  { "d",  doDump },
-  { "mw", doMemoryWord },
-  { "mh", doMemoryHalf },
-  { "mb", doMemoryByte },
-  { "t",  doTLB },
-  { "i",  doInit },
-  { "q",  doQuit }
+Command commands[] = {
+  { "help", help00, doHelp       },
+  { "+",    help01, doArith      },
+  { "a",    help02, doAssemble   },
+  { "u",    help03, doUnassemble },
+  { "b",    help04, doBreak      },
+  { "c",    help05, doContinue   },
+  { "s",    help06, doStep       },
+  { "#",    help07, doPC         },
+  { "p",    help08, doPSW        },
+  { "r",    help09, doRegister   },
+  { "d",    help10, doDump       },
+  { "mw",   help11, doMemoryWord },
+  { "mh",   help12, doMemoryHalf },
+  { "mb",   help13, doMemoryByte },
+  { "t",    help14, doTLB        },
+  { "i",    help15, doInit       },
+  { "q",    help16, doQuit       },
 };
+
+int numCommands = sizeof(commands) / sizeof(commands[0]);
 
 
 static Bool doCommand(char *line) {
