@@ -80,7 +80,7 @@ module cpu(clk, reset,
   wire [31:0] muldiv_res;	// muldiv result
 
   // special registers
-  wire [1:0] sreg_num;		// special register number
+  wire [2:0] sreg_num;		// special register number
   wire sreg_we;			// special register write enable
   wire [31:0] sreg_di;		// special register data in
   wire [31:0] sreg_do;		// special register data out
@@ -96,6 +96,9 @@ module cpu(clk, reset,
   wire [31:0] tlb_entry_lo;	// special register 3 (tlb entry lo) contents
   wire tlb_entry_lo_we;		// tlb entry lo write enable
   wire [31:0] tlb_entry_lo_new;	// new tlb entry lo contents
+  wire [31:0] mmu_bad_addr;	// special register 4 (mmu bad addr) contents
+  wire mmu_bad_addr_we;		// mmu bad addr write enable
+  wire [31:0] mmu_bad_addr_new;	// new mmu bad addr contents
 
   // mmu & tlb
   wire tlb_kmissed;		// page not found in tlb, MSB of addr is 1
@@ -170,14 +173,16 @@ module cpu(clk, reset,
                  muldiv_done, muldiv_error, muldiv_res);
 
   // special registers
-  assign sreg_num = zx16[1:0];
+  assign sreg_num = zx16[2:0];
   assign sreg_di = reg_do2;
   sregs sregs1(clk, reset,
                sreg_num, sreg_we, sreg_di, sreg_do,
                psw, psw_we, psw_new,
                tlb_index, tlb_index_we, tlb_index_new,
                tlb_entry_hi, tlb_entry_hi_we, tlb_entry_hi_new,
-               tlb_entry_lo, tlb_entry_lo_we, tlb_entry_lo_new);
+               tlb_entry_lo, tlb_entry_lo_we, tlb_entry_lo_new,
+               mmu_bad_addr, mmu_bad_addr_we, mmu_bad_addr_new);
+  assign mmu_bad_addr_new = virt_addr;
 
   // ctrl
   ctrl ctrl1(clk, reset,
@@ -192,8 +197,10 @@ module cpu(clk, reset,
              muldiv_done, muldiv_error,
              sreg_we, irq, psw, psw_we, psw_new,
              virt_addr[31], virt_addr[1], virt_addr[0],
-             tlb_kmissed, tlb_umissed, tlb_invalid, tlb_wrtprot,
-             tlb_index_we, tlb_entry_hi_we, tlb_entry_lo_we);
+             tlb_kmissed, tlb_umissed,
+             tlb_invalid, tlb_wrtprot,
+             tlb_index_we, tlb_entry_hi_we,
+             tlb_entry_lo_we, mmu_bad_addr_we);
 
 endmodule
 
@@ -215,8 +222,10 @@ module ctrl(clk, reset,
             muldiv_done, muldiv_error,
             sreg_we, irq, psw, psw_we, psw_new,
             va_31, va_1, va_0,
-            tlb_kmissed, tlb_umissed, tlb_invalid, tlb_wrtprot,
-            tlb_index_we, tlb_entry_hi_we, tlb_entry_lo_we);
+            tlb_kmissed, tlb_umissed,
+            tlb_invalid, tlb_wrtprot,
+            tlb_index_we, tlb_entry_hi_we,
+            tlb_entry_lo_we, mmu_bad_addr_we);
     input clk;
     input reset;
     input [5:0] opcode;
@@ -260,6 +269,7 @@ module ctrl(clk, reset,
     output reg tlb_index_we;
     output reg tlb_entry_hi_we;
     output reg tlb_entry_lo_we;
+    output reg mmu_bad_addr_we;
 
   wire type_rrr;		// instr type is RRR
   wire type_rrs;		// instr type is RRS
@@ -884,6 +894,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd1:  // fetch instr (addr xlat)
         begin
@@ -914,6 +925,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
         end
       5'd2:  // decode instr
              // increment pc by 4
@@ -948,6 +960,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd3:  // execute RRR-type instr
         begin
@@ -978,6 +991,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd4:  // execute RRS-type instr
         begin
@@ -1008,6 +1022,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd5:  // execute RRH-type instr
         begin
@@ -1038,6 +1053,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd6:  // execute RHH-type instr
         begin
@@ -1068,6 +1084,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd7:  // execute RRB-type instr (1)
         begin
@@ -1098,6 +1115,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd8:  // execute RRB-type instr (2)
         begin
@@ -1128,6 +1146,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd9:  // execute J-type instr
         begin
@@ -1158,6 +1177,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd10:  // execute JR-type instr
         begin
@@ -1188,6 +1208,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd11:  // execute LDST-type instr (1)
         begin
@@ -1218,6 +1239,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd12:  // execute LD-type instr (addr xlat)
         begin
@@ -1248,6 +1270,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
         end
       5'd13:  // execute LD-type instr (3)
         begin
@@ -1278,6 +1301,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd14:  // execute ST-type instr (addr xlat)
         begin
@@ -1308,6 +1332,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
         end
       5'd15:  // interrupt
         begin
@@ -1345,6 +1370,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd16:  // extra state for RRR shift instr
         begin
@@ -1375,6 +1401,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd17:  // extra state for RRH shift instr
         begin
@@ -1405,6 +1432,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd18:  // extra state for RRR muldiv instr
         begin
@@ -1435,6 +1463,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd19:  // extra state for RRS muldiv instr
         begin
@@ -1465,6 +1494,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd20:  // extra state for RRH muldiv instr
         begin
@@ -1495,6 +1525,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd21:  // execute mvfs instr
         begin
@@ -1525,6 +1556,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd22:  // execute mvts instr
         begin
@@ -1555,6 +1587,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd23:  // execute rfx instr
         begin
@@ -1592,6 +1625,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd24:  // irq_trigger check for mvts and rfx
         begin
@@ -1622,6 +1656,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd25:  // exception (locus is PC-4)
         begin
@@ -1661,6 +1696,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd26:  // exception (locus is PC)
         begin
@@ -1700,6 +1736,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd27:  // execute TLB instr
         begin
@@ -1730,13 +1767,14 @@ module ctrl(clk, reset,
           tlb_index_we = (opcode[2:0] == 3'b010) ? 1 : 0;
           tlb_entry_hi_we = (opcode[2:0] == 3'b100) ? 1 : 0;
           tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1 : 0;
+          mmu_bad_addr_we = 1'b0;
         end
       5'd28:  // fetch instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
           mar_we = 1'b0;
-          ma_src = 1'bx;
+          ma_src = 1'b0;	// hold vaddr for latching in bad addr reg
           mmu_fnc = 3'b000;
           mdor_we = 1'b0;
           bus_en = ~exc_tlb_but_wrtprot;
@@ -1760,13 +1798,14 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_but_wrtprot;
         end
       5'd29:  // execute LD-type instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
           mar_we = 1'b0;
-          ma_src = 1'bx;
+          ma_src = 1'b1;	// hold vaddr for latching in bad addr reg
           mmu_fnc = 3'b000;
           mdor_we = 1'b0;
           bus_en = ~exc_tlb_but_wrtprot;
@@ -1790,13 +1829,14 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_but_wrtprot;
         end
       5'd30:  // execute ST-type instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
           mar_we = 1'b0;
-          ma_src = 1'bx;
+          ma_src = 1'b1;	// hold vaddr for latching in bad addr reg
           mmu_fnc = 3'b000;
           mdor_we = 1'b0;
           bus_en = ~exc_tlb_any;
@@ -1820,6 +1860,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'b0;
           tlb_entry_hi_we = exc_tlb_any;
           tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_any;
         end
       default:  // all other states: unused
         begin
@@ -1850,6 +1891,7 @@ module ctrl(clk, reset,
           tlb_index_we = 1'bx;
           tlb_entry_hi_we = 1'bx;
           tlb_entry_lo_we = 1'bx;
+          mmu_bad_addr_we = 1'bx;
         end
     endcase
   end
@@ -2412,10 +2454,11 @@ module sregs(clk, reset,
              psw, psw_we, psw_new,
              tlb_index, tlb_index_we, tlb_index_new,
              tlb_entry_hi, tlb_entry_hi_we, tlb_entry_hi_new,
-             tlb_entry_lo, tlb_entry_lo_we, tlb_entry_lo_new);
+             tlb_entry_lo, tlb_entry_lo_we, tlb_entry_lo_new,
+             mmu_bad_addr, mmu_bad_addr_we, mmu_bad_addr_new);
     input clk;
     input reset;
-    input [1:0] rn;
+    input [2:0] rn;
     input we;
     input [31:0] di;
     output [31:0] do;
@@ -2431,19 +2474,27 @@ module sregs(clk, reset,
     output [31:0] tlb_entry_lo;
     input tlb_entry_lo_we;
     input [31:0] tlb_entry_lo_new;
+    output [31:0] mmu_bad_addr;
+    input mmu_bad_addr_we;
+    input [31:0] mmu_bad_addr_new;
 
-  // rn = 00   register = PSW
-  //      01              TLB index
-  //      10              TLB entry high
-  //      11              TLB entry low
+  // rn = 000   register = PSW
+  //      001              TLB index
+  //      010              TLB entry high
+  //      011              TLB entry low
+  //      100              MMU bad address
+  //      101              - not used -
+  //      110              - not used -
+  //      111              - not used -
 
-  reg [31:0] sr[0:3];
+  reg [31:0] sr[0:7];
 
   assign do = sr[rn];
   assign psw = sr[0];
   assign tlb_index = sr[1];
   assign tlb_entry_hi = sr[2];
   assign tlb_entry_lo = sr[3];
+  assign mmu_bad_addr = sr[4];
 
   always @(posedge clk) begin
     if (reset == 1) begin
@@ -2463,6 +2514,9 @@ module sregs(clk, reset,
         end
         if (tlb_entry_lo_we) begin
           sr[3] <= tlb_entry_lo_new;
+        end
+        if (mmu_bad_addr_we) begin
+          sr[4] <= mmu_bad_addr_new;
         end
       end
     end
