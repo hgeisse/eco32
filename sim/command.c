@@ -327,7 +327,7 @@ static void doArith(char *tokens[], int n) {
     num4 = num1 - num2;
     cPrintf("add = %08X, sub = %08X\n", num3, num4);
   } else {
-    help();
+    help01();
   }
 }
 
@@ -348,7 +348,7 @@ static void doAssemble(char *tokens[], int n) {
       return;
     }
   } else {
-    help();
+    help02();
     return;
   }
   addr &= ~0x00000003;
@@ -399,7 +399,7 @@ static void doUnassemble(char *tokens[], int n) {
       return;
     }
   } else {
-    help();
+    help03();
     return;
   }
   addr &= ~0x00000003;
@@ -432,7 +432,7 @@ static void doBreak(char *tokens[], int n) {
     cpuSetBreak(addr);
     showBreakAndTotal();
   } else {
-    help();
+    help04();
   }
 }
 
@@ -449,7 +449,7 @@ static void doContinue(char *tokens[], int n) {
       return;
     }
   } else {
-    help();
+    help05();
     return;
   }
   cPrintf("CPU is running, press ^C to interrupt...\n");
@@ -473,7 +473,7 @@ static void doStep(char *tokens[], int n) {
       return;
     }
   } else {
-    help();
+    help06();
     return;
   }
   for (i = 0; i < count; i++) {
@@ -497,7 +497,7 @@ static void doPC(char *tokens[], int n) {
     cpuSetPC(addr);
     showPC();
   } else {
-    help();
+    help07();
   }
 }
 
@@ -557,7 +557,7 @@ static void doPSW(char *tokens[], int n) {
     showIRQ();
     explainPSW(data);
   } else {
-    help();
+    help08();
   }
 }
 
@@ -598,7 +598,7 @@ static void doRegister(char *tokens[], int n) {
     }
     cpuSetReg(reg, data);
   } else {
-    help();
+    help09();
   }
 }
 
@@ -633,7 +633,7 @@ static void doDump(char *tokens[], int n) {
       return;
     }
   } else {
-    help();
+    help10();
     return;
   }
   psw = cpuGetPSW();
@@ -707,7 +707,7 @@ static void doMemoryWord(char *tokens[], int n) {
     data = tmpData;
     mmuWriteWord(addr, data, psw & PSW_UM);
   } else {
-    help();
+    help11();
   }
 }
 
@@ -742,7 +742,7 @@ static void doMemoryHalf(char *tokens[], int n) {
     data = (Half) tmpData;
     mmuWriteHalf(addr, data, psw & PSW_UM);
   } else {
-    help();
+    help12();
   }
 }
 
@@ -777,7 +777,7 @@ static void doMemoryByte(char *tokens[], int n) {
     data = (Byte) tmpData;
     mmuWriteByte(addr, data, psw & PSW_UM);
   } else {
-    help();
+    help13();
   }
 }
 
@@ -810,7 +810,7 @@ static void doTLB(char *tokens[], int n) {
             tlbEntry.write ? 'w' : '-',
             tlbEntry.valid ? 'v' : '-');
   } else if (n == 3) {
-    help();
+    help14();
   } else if (n == 4) {
     if (!getDecNumber(tokens[1], &index) || index < 0 || index >= TLB_SIZE) {
       cPrintf("illegal TLB index\n");
@@ -838,7 +838,7 @@ static void doTLB(char *tokens[], int n) {
             tlbEntry.write ? 'w' : '-',
             tlbEntry.valid ? 'v' : '-');
   } else {
-    help();
+    help14();
   }
 }
 
@@ -857,7 +857,7 @@ static void doInit(char *tokens[], int n) {
     mmuReset();
     cpuReset();
   } else {
-    help();
+    help15();
   }
 }
 
@@ -866,7 +866,7 @@ static void doQuit(char *tokens[], int n) {
   if (n == 1) {
     quit = true;
   } else {
-    help();
+    help16();
   }
 }
 
