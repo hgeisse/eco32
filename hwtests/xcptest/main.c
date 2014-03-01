@@ -28,7 +28,9 @@ static InterruptContext initial = {
   /* TLB EntryHi */
   0x9ABCDEF0,
   /* TLB EntryLo */
-  0x0FEDCBA9
+  0x0FEDCBA9,
+  /* bad address */
+  0xDEADBEEF,
 };
 
 static InterruptContext ic;
@@ -47,6 +49,8 @@ static char *errorMessage[] = {
   /*  9 */  "interrupt mask bits clobbered",
   /* 10 */  "ISR entry was 'user miss'",
   /* 11 */  "ISR entry was not 'user miss'",
+  /* 12 */  "bad address register clobbered",
+  /* 13 */  "bad address register incorrect",
 };
 
 
@@ -93,10 +97,13 @@ static int execTest(void (*run)(InterruptContext *icp),
                     int expectedException,
                     Bool execInUserMode,
                     Bool clobberEntryHi,
-                    Bool shouldTakeUserMiss) {
+                    Bool shouldTakeUserMiss,
+                    Bool shouldSetBadAddr,
+                    Word expectedBadAddr) {
   unsigned int res1, res2;
   int result;
   Word *locus;
+  Word badAddr;
 
   if (execInUserMode) {
     initial.psw |= 1 << 26;
@@ -110,6 +117,7 @@ static int execTest(void (*run)(InterruptContext *icp),
   } else {
     locus = (Word *) ic.reg[30];
   }
+  badAddr = ic.badAddr;
   if (!clobberEntryHi) {
     check(&res1, &res2, initial.tlbHi);
   } else {
@@ -137,6 +145,12 @@ static int execTest(void (*run)(InterruptContext *icp),
   } else
   if (locus != expectedLocus) {
     result = 3;
+  } else
+  if (!shouldSetBadAddr && badAddr != initial.badAddr) {
+    result = 12;
+  } else
+  if (shouldSetBadAddr && badAddr != expectedBadAddr) {
+    result = 13;
   } else
   if (res2 != 0x00000001) {
     result = 4;
@@ -168,81 +182,83 @@ static struct {
   Bool execInUserMode;
   Bool clobberEntryHi;
   Bool shouldTakeUserMiss;
+  Bool shouldSetBadAddr;
+  Word expectedBadAddr;
 } tests[] = {
   { "Trap instr test:\t\t\t",
-    xtest1,  &xtest1x,  20, false, false, false },
+    xtest1,  &xtest1x,  20, false, false, false, false, 0 },
   { "Illegal instr test:\t\t\t",
-    xtest2,  &xtest2x,  17, false, false, false },
+    xtest2,  &xtest2x,  17, false, false, false, false, 0 },
   { "Divide instr test 1 (div):\t\t",
-    xtest3,  &xtest3x,  19, false, false, false },
+    xtest3,  &xtest3x,  19, false, false, false, false, 0 },
   { "Divide instr test 2 (divi):\t\t",
-    xtest4,  &xtest4x,  19, false, false, false },
+    xtest4,  &xtest4x,  19, false, false, false, false, 0 },
   { "Divide instr test 3 (divu):\t\t",
-    xtest5,  &xtest5x,  19, false, false, false },
+    xtest5,  &xtest5x,  19, false, false, false, false, 0 },
   { "Divide instr test 4 (divui):\t\t",
-    xtest6,  &xtest6x,  19, false, false, false },
+    xtest6,  &xtest6x,  19, false, false, false, false, 0 },
   { "Divide instr test 5 (rem):\t\t",
-    xtest7,  &xtest7x,  19, false, false, false },
+    xtest7,  &xtest7x,  19, false, false, false, false, 0 },
   { "Divide instr test 6 (remi):\t\t",
-    xtest8,  &xtest8x,  19, false, false, false },
+    xtest8,  &xtest8x,  19, false, false, false, false, 0 },
   { "Divide instr test 7 (remu):\t\t",
-    xtest9,  &xtest9x,  19, false, false, false },
+    xtest9,  &xtest9x,  19, false, false, false, false, 0 },
   { "Divide instr test 8 (remui):\t\t",
-    xtest10, &xtest10x, 19, false, false, false },
+    xtest10, &xtest10x, 19, false, false, false, false, 0 },
   { "Bus timeout test 1 (fetch):\t\t",
-    xtest11, &xtest11x, 16, false, false, false },
+    xtest11, &xtest11x, 16, false, false, false, false, 0 },
   { "Bus timeout test 2 (load):\t\t",
-    xtest12, &xtest12x, 16, false, false, false },
+    xtest12, &xtest12x, 16, false, false, false, false, 0 },
   { "Bus timeout test 3 (store):\t\t",
-    xtest13, &xtest13x, 16, false, false, false },
+    xtest13, &xtest13x, 16, false, false, false, false, 0 },
   { "Privileged instr test 1 (rfx):\t\t",
-    xtest14, &xtest14x, 18, true,  false, false },
+    xtest14, &xtest14x, 18, true,  false, false, false, 0 },
   { "Privileged instr test 2 (mvts):\t\t",
-    xtest15, &xtest15x, 18, true,  false, false },
+    xtest15, &xtest15x, 18, true,  false, false, false, 0 },
   { "Privileged instr test 3 (tb..):\t\t",
-    xtest16, &xtest16x, 18, true,  false, false },
+    xtest16, &xtest16x, 18, true,  false, false, false, 0 },
   { "Privileged address test 1 (fetch):\t",
-    xtest17, &xtest17x, 25, true,  false, false },
+    xtest17, &xtest17x, 25, true,  false, false, true,  0xffffff10 },
   { "Privileged address test 2 (load):\t",
-    xtest18, &xtest18x, 25, true,  false, false },
+    xtest18, &xtest18x, 25, true,  false, false, true,  0xffffff10 },
   { "Privileged address test 3 (store):\t",
-    xtest19, &xtest19x, 25, true,  false, false },
+    xtest19, &xtest19x, 25, true,  false, false, true,  0xffffff10 },
   { "Illegal address test 1 (fetch):\t\t",
-    xtest20, &xtest20x, 24, false, false, false },
+    xtest20, &xtest20x, 24, false, false, false, true,  0x11111122 },
   { "Illegal address test 2 (fetch):\t\t",
-    xtest21, &xtest21x, 24, false, false, false },
+    xtest21, &xtest21x, 24, false, false, false, true,  0x00000021 },
   { "Illegal address test 3 (ldw):\t\t",
-    xtest22, &xtest22x, 24, false, false, false },
+    xtest22, &xtest22x, 24, false, false, false, true,  0xffffff12 },
   { "Illegal address test 4 (ldw):\t\t",
-    xtest23, &xtest23x, 24, false, false, false },
+    xtest23, &xtest23x, 24, false, false, false, true,  0xffffff11 },
   { "Illegal address test 5 (ldh):\t\t",
-    xtest24, &xtest24x, 24, false, false, false },
+    xtest24, &xtest24x, 24, false, false, false, true,  0xffffff11 },
   { "Illegal address test 6 (stw):\t\t",
-    xtest25, &xtest25x, 24, false, false, false },
+    xtest25, &xtest25x, 24, false, false, false, true,  0xffffff12 },
   { "Illegal address test 7 (stw):\t\t",
-    xtest26, &xtest26x, 24, false, false, false },
+    xtest26, &xtest26x, 24, false, false, false, true,  0xffffff11 },
   { "Illegal address test 8 (sth):\t\t",
-    xtest27, &xtest27x, 24, false, false, false },
+    xtest27, &xtest27x, 24, false, false, false, true,  0xffffff11 },
   { "TLB user miss test 1 (fetch):\t\t",
-    xtest28, &xtest28x, 21, false, true,  true  },
+    xtest28, &xtest28x, 21, false, true,  true,  true,  0x33333314 },
   { "TLB user miss test 2 (load):\t\t",
-    xtest29, &xtest29x, 21, false, true,  true  },
+    xtest29, &xtest29x, 21, false, true,  true,  true,  0x33333314 },
   { "TLB user miss test 3 (store):\t\t",
-    xtest30, &xtest30x, 21, false, true,  true  },
+    xtest30, &xtest30x, 21, false, true,  true,  true,  0x33333314 },
   { "TLB kernel miss test 1 (fetch):\t\t",
-    xtest31, &xtest31x, 21, false, true,  false },
+    xtest31, &xtest31x, 21, false, true,  false, true,  0xbbbbbb1c },
   { "TLB kernel miss test 2 (load):\t\t",
-    xtest32, &xtest32x, 21, false, true,  false },
+    xtest32, &xtest32x, 21, false, true,  false, true,  0xbbbbbb1c },
   { "TLB kernel miss test 3 (store):\t\t",
-    xtest33, &xtest33x, 21, false, true,  false },
+    xtest33, &xtest33x, 21, false, true,  false, true,  0xbbbbbb1c },
   { "TLB invalid test 1 (fetch):\t\t",
-    xtest34, &xtest34x, 23, false, true,  false },
+    xtest34, &xtest34x, 23, false, true,  false, true,  0xbbbbbb1c },
   { "TLB invalid test 2 (load):\t\t",
-    xtest35, &xtest35x, 23, false, true,  false },
+    xtest35, &xtest35x, 23, false, true,  false, true,  0xbbbbbb1c },
   { "TLB invalid test 3 (store):\t\t",
-    xtest36, &xtest36x, 23, false, true,  false },
+    xtest36, &xtest36x, 23, false, true,  false, true,  0xbbbbbb1c },
   { "TLB wrtprot test (store):\t\t",
-    xtest37, &xtest37x, 22, false, true,  false },
+    xtest37, &xtest37x, 22, false, true,  false, true,  0xbbbbbb1c },
 };
 
 
@@ -258,7 +274,9 @@ int main(void) {
                       tests[i].exception,
                       tests[i].execInUserMode,
                       tests[i].clobberEntryHi,
-                      tests[i].shouldTakeUserMiss);
+                      tests[i].shouldTakeUserMiss,
+                      tests[i].shouldSetBadAddr,
+                      tests[i].expectedBadAddr);
     if (result == 0) {
       printf("ok");
     } else {

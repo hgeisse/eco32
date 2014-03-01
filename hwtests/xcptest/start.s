@@ -10,6 +10,7 @@
 	.set	TLB_ENTRY_HI,2		; reg # of TLB EntryHi
 	.set	TLB_ENTRY_LO,3		; reg # of TLB EntryLo
 	.set	TLB_ENTRIES,32		; number of TLB entries
+	.set	BAD_ADDRESS,4		; reg # of bad address reg
 
 ;***************************************************************
 
@@ -224,6 +225,8 @@ xtest1:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -285,6 +288,8 @@ xtest2:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -346,6 +351,8 @@ xtest3:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -407,6 +414,8 @@ xtest4:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -468,6 +477,8 @@ xtest5:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -529,6 +540,8 @@ xtest6:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -590,6 +603,8 @@ xtest7:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -651,6 +666,8 @@ xtest8:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -712,6 +729,8 @@ xtest9:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -773,6 +792,8 @@ xtest10:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -834,6 +855,8 @@ xtest11:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -896,6 +919,8 @@ xtest12:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -957,6 +982,8 @@ xtest13:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1040,6 +1067,8 @@ xtest14v:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1123,6 +1152,8 @@ xtest15v:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1206,6 +1237,8 @@ xtest16v:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1289,6 +1322,8 @@ xtest17v:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1373,6 +1408,8 @@ xtest18v:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1456,6 +1493,8 @@ xtest19v:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1517,6 +1556,8 @@ xtest20:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1579,6 +1620,8 @@ xtest21:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1641,6 +1684,8 @@ xtest22:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1702,6 +1747,8 @@ xtest23:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1763,6 +1810,8 @@ xtest24:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1824,6 +1873,8 @@ xtest25:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1885,6 +1936,8 @@ xtest26:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -1946,6 +1999,8 @@ xtest27:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2007,6 +2062,8 @@ xtest28:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2069,6 +2126,8 @@ xtest29:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2130,6 +2189,8 @@ xtest30:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2191,6 +2252,8 @@ xtest31:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2253,6 +2316,8 @@ xtest32:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2314,6 +2379,8 @@ xtest33:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2383,6 +2450,8 @@ xtest34:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2453,6 +2522,8 @@ xtest35:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2522,6 +2593,8 @@ xtest36:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2591,6 +2664,8 @@ xtest37:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -2720,6 +2795,8 @@ common:
 	stw	$8,$28,34*4		; tlbEntryHi
 	mvfs	$8,TLB_ENTRY_LO
 	stw	$8,$28,35*4		; tlbEntryLo
+	mvfs	$8,BAD_ADDRESS
+	stw	$8,$28,36*4		; badAddress
 	.syn
 	add	$8,$0,returnState
 	ldw	$4,$8,0*4		; pointer to interrupt context

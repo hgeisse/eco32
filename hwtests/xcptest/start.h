@@ -13,6 +13,7 @@ typedef struct {
   Word tlbIndex;		/* TLB index register */
   Word tlbHi;			/* TLB EntryHi register */
   Word tlbLo;			/* TLB EntryLo register */
+  Word badAddr;			/* bad address register */
 } InterruptContext;
 
 
