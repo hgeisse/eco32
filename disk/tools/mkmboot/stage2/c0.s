@@ -41,7 +41,7 @@ clrloop:
 	add	$8,$8,4
 clrtest:
 	bltu	$8,$9,clrloop
-	add	$29,$0,0xC0010000	; setup stack
+	add	$29,$0,0xC0020000	; setup stack
 	stw	$16,$0,bootDisk		; make arguments available
 	stw	$17,$0,startSector
 	stw	$18,$0,numSectors

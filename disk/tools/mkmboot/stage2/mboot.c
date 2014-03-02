@@ -253,10 +253,10 @@ int main(void) {
       continue;
     }
     /* load boot sector of selected partition */
-    readDisk(ptr[part].start, (unsigned char *) 0xC0000000, 1);
+    readDisk(ptr[part].start, (unsigned char *) 0xC0010000, 1);
     /* check for signature */
-    if ((*((unsigned char *) 0xC0000000 + SECTOR_SIZE - 2) != 0x55) ||
-        (*((unsigned char *) 0xC0000000 + SECTOR_SIZE - 1) != 0xAA)) {
+    if ((*((unsigned char *) 0xC0010000 + SECTOR_SIZE - 2) != 0x55) ||
+        (*((unsigned char *) 0xC0010000 + SECTOR_SIZE - 1) != 0xAA)) {
       printf("boot sector of partition %d has no signature\n", part);
       continue;
     }
@@ -266,6 +266,6 @@ int main(void) {
   /* boot manager finished, now go executing loaded boot sector */
   startSector = ptr[part].start;
   numSectors = ptr[part].size;
-  entryPoint = 0xC0000000;
+  entryPoint = 0xC0010000;
   return 0;
 }
