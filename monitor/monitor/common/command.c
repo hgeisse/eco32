@@ -721,6 +721,7 @@ static void doTLB(char *tokens[], int n) {
     printf("Index(1)   %08X\n", mmuGetIndex());
     printf("EntryHi(2) %08X\n", mmuGetEntryHi());
     printf("EntryLo(3) %08X\n", mmuGetEntryLo());
+    printf("BadAddr(4) %08X\n", mmuGetBadAddr());
   } else if (n == 2) {
     if (!getDecNumber(tokens[1], &index) || index < 0 || index >= TLB_SIZE) {
       printf("illegal TLB index\n");

@@ -36,7 +36,9 @@ void mmuSetIndex(Word value);
 Word mmuGetEntryHi(void);
 void mmuSetEntryHi(Word value);
 Word mmuGetEntryLo(void);
-void mmuSetEntryLo(Word Value);
+void mmuSetEntryLo(Word value);
+Word mmuGetBadAddr(void);
+void mmuSetBadAddr(Word value);
 
 TLB_Entry mmuGetTLB(int index);
 void mmuSetTLB(int index, TLB_Entry tlbEntry);

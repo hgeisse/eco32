@@ -13,8 +13,9 @@
 	.set	TLB_ENTRY_HI,2		; reg # of TLB EntryHi
 	.set	TLB_ENTRY_LO,3		; reg # of TLB EntryLo
 	.set	TLB_ENTRIES,32		; number of TLB entries
+	.set	BAD_ADDRESS,4		; reg # of bad address reg
 
-	.set	USER_CONTEXT_SIZE,36*4	; size of user context
+	.set	USER_CONTEXT_SIZE,37*4	; size of user context
 
 ;***************************************************************
 
@@ -355,6 +356,8 @@ resume:
 	mvts	$8,TLB_ENTRY_HI
 	ldw	$8,$28,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
+	ldw	$8,$28,36*4		; badAddress
+	mvts	$8,BAD_ADDRESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -439,5 +442,7 @@ umsr:
 	stw	$8,$28,34*4		; tlbEntryHi
 	mvfs	$8,TLB_ENTRY_LO
 	stw	$8,$28,35*4		; tlbEntryLo
+	mvfs	$8,BAD_ADDRESS
+	stw	$8,$28,36*4		; badAddress
 	.syn
 	j	loadState
