@@ -9,6 +9,8 @@
 
 #define DEFAULT_PARTITION	""	/* default boot partition number */
 
+#define LOAD_ADDR		0xC0010000
+
 #define LINE_SIZE		80
 #define SECTOR_SIZE		512
 #define NPE			(SECTOR_SIZE / sizeof(PartEntry))
@@ -253,10 +255,10 @@ int main(void) {
       continue;
     }
     /* load boot sector of selected partition */
-    readDisk(ptr[part].start, (unsigned char *) 0xC0010000, 1);
+    readDisk(ptr[part].start, (unsigned char *) LOAD_ADDR, 1);
     /* check for signature */
-    if ((*((unsigned char *) 0xC0010000 + SECTOR_SIZE - 2) != 0x55) ||
-        (*((unsigned char *) 0xC0010000 + SECTOR_SIZE - 1) != 0xAA)) {
+    if ((*((unsigned char *) LOAD_ADDR + SECTOR_SIZE - 2) != 0x55) ||
+        (*((unsigned char *) LOAD_ADDR + SECTOR_SIZE - 1) != 0xAA)) {
       printf("boot sector of partition %d has no signature\n", part);
       continue;
     }
@@ -266,6 +268,6 @@ int main(void) {
   /* boot manager finished, now go executing loaded boot sector */
   startSector = ptr[part].start;
   numSectors = ptr[part].size;
-  entryPoint = 0xC0010000;
+  entryPoint = LOAD_ADDR;
   return 0;
 }
