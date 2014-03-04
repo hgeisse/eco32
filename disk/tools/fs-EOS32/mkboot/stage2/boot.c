@@ -12,7 +12,7 @@
 
 
 #define DFLT_KERNEL	"/boot/eos32.bin"    /* path of default OS kernel */
-#define LOAD_ADDR	0xC0000000	     /* where to load the kernel */
+#define LOAD_ADDR	0xC0010000	     /* where to load the kernel */
 
 #define MAX_LINE	100		/* line buffer size */
 
