@@ -41,7 +41,6 @@ void boot(int dskno) {
   cpuSetReg(16, dskno);
   cpuSetReg(17, 0);
   cpuSetReg(18, capacity);
-  cpuSetReg(29, TOS_BOOT);
   cpuSetPC(VIRT_BOOT);
   cpuRun();
 }
