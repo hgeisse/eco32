@@ -30,6 +30,7 @@ static FILE *romImage;
 static unsigned int romSize;
 static FILE *progImage;
 static unsigned int progSize;
+static unsigned int progAddr;
 
 
 Word memoryReadWord(Word pAddr) {
@@ -208,7 +209,7 @@ void memoryReset(void) {
   cPrintf("%6d MB RAM installed", memSize / M);
   if (progImage != NULL) {
     fseek(progImage, 0, SEEK_SET);
-    if (fread(mem, progSize, 1, progImage) != 1) {
+    if (fread(mem + progAddr, progSize, 1, progImage) != 1) {
       error("cannot read program image file");
     }
     cPrintf(", %d bytes loaded", progSize);
@@ -230,6 +231,7 @@ void memoryReset(void) {
 
 void memoryInit(unsigned int memorySize,
                 char *progImageName,
+                unsigned int loadAddr,
                 char *romImageName) {
   /* allocate RAM */
   memSize = memorySize;
@@ -249,8 +251,9 @@ void memoryInit(unsigned int memorySize,
     }
     fseek(progImage, 0, SEEK_END);
     progSize = ftell(progImage);
-    if (progSize > memSize) {
-      error("program file too big");
+    progAddr = loadAddr;
+    if (progAddr + progSize > memSize) {
+      error("program file or load address too big");
     }
     /* do actual loading of image in memoryReset() */
   }

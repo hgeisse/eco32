@@ -30,6 +30,7 @@ static void usage(char *myself) {
   fprintf(stderr, "         [-m <n>]         install n MB of RAM (1-%d)\n",
           RAM_SIZE_MAX / M);
   fprintf(stderr, "         [-l <prog>]      set program file name\n");
+  fprintf(stderr, "         [-a <addr>]      set program load address\n");
   fprintf(stderr, "         [-r <rom>]       set ROM image file name\n");
   fprintf(stderr, "         [-d <disk>]      set disk image file name\n");
   fprintf(stderr, "         [-t <n>]         connect n terminals (0-%d)\n",
@@ -50,6 +51,7 @@ int main(int argc, char *argv[]) {
   Bool interactive;
   int memSize;
   char *progName;
+  unsigned int loadAddr;
   char *romName;
   char *diskName;
   int numTerms;
@@ -63,6 +65,7 @@ int main(int argc, char *argv[]) {
   interactive = false;
   memSize = RAM_SIZE_DFL / M;
   progName = NULL;
+  loadAddr = 0;
   romName = NULL;
   diskName = NULL;
   numTerms = 0;
@@ -95,6 +98,15 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
         }
         progName = argv[++i];
+        break;
+      case 'a':
+        if (i == argc - 1) {
+          usage(argv[0]);
+        }
+        loadAddr = strtoul(argv[++i], &endp, 0);
+        if (*endp != '\0') {
+          usage(argv[0]);
+        }
         break;
       case 'r':
         if (i == argc - 1 || romName != NULL || progName != NULL) {
@@ -155,10 +167,10 @@ int main(int argc, char *argv[]) {
   if (graphics) {
     graphInit();
   }
-  memoryInit(memSize * M, progName, romName);
+  memoryInit(memSize * M, progName, loadAddr, romName);
   mmuInit();
   if (progName != NULL) {
-    initialPC = 0xC0000000;
+    initialPC = 0xC0000000 | loadAddr;
   } else {
     initialPC = 0xC0000000 | ROM_BASE;
   }
