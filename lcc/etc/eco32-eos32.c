@@ -1,4 +1,4 @@
-/* Code for ECO32 under Linux, University of Applied Sciences Giessen */
+/* Code for ECO32 under EOS32, University of Applied Sciences Giessen */
 
 #include <string.h>
 
@@ -79,7 +79,7 @@ int option(char *arg) {
 		ld[6] = ld[3];
 		ld[5] = ld[2];
 		ld[4] = ld[1];
-		ld[3] = "0xC0000000";
+		ld[3] = "0xC0010000";
 		ld[2] = "-rc";
 		ld[1] = "-h";
 	} else if (strcmp(arg, "-rom") == 0) {
