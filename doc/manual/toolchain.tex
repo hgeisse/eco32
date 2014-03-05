@@ -101,7 +101,7 @@ Each file is either a C or assembler input file. The input files are assembled i
 
 The {\tt \bf -W} argument is a generic extension mechanism for command-line arguments. Only the most important uses of this mechanism will be explained here:
 \begin{itemize}
-\item {\tt \bf -Wo-kernel}: Sets the start address of the code section to C0000000$_h$ as if {\tt \bf -Wl-rc -Wl0xC0000000} had been specified, and prevents linking to the standard library. Since there is no useful standard library yet, this switch must be specified. Alternatively, compilation can be done using {\tt \bf -s} and assembly/linking be done in a separate step, which has the same effect.
+\item {\tt \bf -Wo-kernel}: Sets the start address of the code section to C0010000$_h$ as if {\tt \bf -Wl-rc -Wl0xC0010000} had been specified, and prevents linking to the standard library. Since there is no useful standard library yet, this switch must be specified. Alternatively, compilation can be done using {\tt \bf -s} and assembly/linking be done in a separate step, which has the same effect.
 \item {\tt \bf -Wl-m -Wl}{\it mapfile}: Generates a {\it map} file that lists the entities assembled to the output file.
 \item {\tt \bf -Wl-h}: Generates a {\it headerless} output file. The output file does not contain the simple segmented output format. Instead, it only contains the contents of the code and data section in direct sequence.
 \item {\tt \bf -Wl-rc -Wl0x}{\it Address}: Specifies the start address of the code section. This affects the (jump) addresses within the code that is ultimately written to the output file.
