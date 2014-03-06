@@ -22,18 +22,6 @@ _bbss:
 
 	.code
 
-	; reset arrives here
-reset:
-	j	start
-
-	; interrupts arrive here
-intrpt:
-	j	intrpt
-
-	; user TLB misses arrive here
-userMiss:
-	j	userMiss
-
 start:
 	mvfs	$8,0
 	or	$8,$8,1 << 27	; let vector point to RAM
