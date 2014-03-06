@@ -3,11 +3,15 @@ BUILD = ../../../build
 SRC = start.s main.c end.s
 BIN = twotasks-1.bin
 MAP = twotasks-1.map
+EXO = twotasks-1.exo
 
-all:		$(BIN)
+all:		$(BIN) $(EXO)
 
 run:		$(BIN)
-		$(BUILD)/bin/sim -i -t 1 -l $(BIN)
+		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -a 0x10000
+
+$(EXO):		$(BIN)
+		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
 $(BIN):		$(SRC) task1.dump task2.dump
 		$(BUILD)/bin/lcc -A -Wo-kernel \
@@ -20,4 +24,4 @@ task2.dump:
 		../dump/dump ../task2/task2 task2.dump
 
 clean:
-		rm -f *~ task1.dump task2.dump $(BIN) $(MAP)
+		rm -f *~ task1.dump task2.dump $(BIN) $(MAP) $(EXO)

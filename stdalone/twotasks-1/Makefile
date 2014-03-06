@@ -13,6 +13,7 @@ install:	dump/dump task1/task1 task2/task2 os/twotasks-1.bin
 		mkdir -p $(BUILD)/stdalone
 		cp os/twotasks-1.bin $(BUILD)/stdalone
 		cp os/twotasks-1.map $(BUILD)/stdalone
+		cp os/twotasks-1.exo $(BUILD)/stdalone
 
 run:		dump/dump task1/task1 task2/task2 os/twotasks-1.bin
 		$(MAKE) -C os run
