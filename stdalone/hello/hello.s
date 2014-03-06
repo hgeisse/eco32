@@ -3,23 +3,23 @@
 ;
 
 	.set	tba,0xF0300000		; terminal base address
-	.set	tos,0xC0010000		; top of stack
+	.set	tos,0xC0020000		; top of stack
 
 	; get some addresses listed in the load map
-	.export	reset
 	.export	start
+	.export	main
 	.export	out
 	.export	hello
 
 	; minimal execution environment
-reset:
+start:
 	add	$29,$0,tos		; setup stack
-	jal	start			; do useful work
-reset1:
-	j	reset1			; halt by looping
+	jal	main			; do useful work
+start1:
+	j	start1			; halt by looping
 
 	; main program
-start:
+main:
 	sub	$29,$29,8		; create stack frame
 	stw	$31,$29,0		; save return register
 	stw	$16,$29,4		; save register variable
