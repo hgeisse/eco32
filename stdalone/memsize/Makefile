@@ -7,22 +7,27 @@ BUILD = ../../build
 SRC = start.s main.c end.s
 BIN = memsize.bin
 MAP = memsize.map
+EXO = memsize.exo
 
 .PHONY:		all install run clean
 
-all:		$(BIN)
+all:		$(BIN) $(EXO)
 
-install:	$(BIN)
+install:	$(BIN) $(EXO)
 		mkdir -p $(BUILD)/stdalone
 		cp $(BIN) $(BUILD)/stdalone
 		cp $(MAP) $(BUILD)/stdalone
+		cp $(EXO) $(BUILD)/stdalone
 
 run:		$(BIN)
-		$(BUILD)/bin/sim -i -t 1 -l $(BIN)
+		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -a 0x10000
+
+$(EXO):		$(BIN)
+		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
 $(BIN):		$(SRC)
 		$(BUILD)/bin/lcc -A -Wo-kernel \
 		  -Wl-m -Wl$(MAP) -o $(BIN) $(SRC)
 
 clean:
-		rm -f *~ $(BIN) $(MAP)
+		rm -f *~ $(BIN) $(MAP) $(EXO)
