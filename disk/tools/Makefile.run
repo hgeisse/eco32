@@ -4,26 +4,33 @@
 # the simulator) or start the serial line disk server (goal:
 # run an OS on an FPGA board).
 #
+# NOTE: Please set SER_DEV to the serial line device on which
+#       the disk server should wait for commands!
+#
 
 BUILD = ..
 
-all:		disk.img
+SER_DEV = /dev/tty01
+DSK_IMG = disk.img
+RUN_LOG = run.log
 
-run-sim:	disk.img
+all:		$(DSK_IMG)
+
+run-sim:	$(DSK_IMG)
 		$(BUILD)/bin/sim -i -c -t 1 \
 		  -r $(BUILD)/monitor/xsa-xst-3/monitor.bin \
-		  -d disk.img -o run.log
+		  -d $(DSK_IMG) -o $(RUN_LOG)
 
-run-server:	disk.img
-		$(BUILD)/bin/diskserv disk.img
+run-server:	$(DSK_IMG)
+		$(BUILD)/bin/diskserv $(SER_DEV) $(DSK_IMG)
 
-disk.img:
-		$(BUILD)/bin/mkdisk disk.img 100M
-		$(BUILD)/bin/mkpart disk.img disk.part
+$(DSK_IMG):
+		$(BUILD)/bin/mkdisk $(DSK_IMG) 100M
+		$(BUILD)/bin/mkpart $(DSK_IMG) disk.part
 		$(MAKE) -C fs-EOS32 all
 		$(MAKE) -C fs-NetBSD all
 
 clean:
 		$(MAKE) -C fs-EOS32 clean
 		$(MAKE) -C fs-NetBSD clean
-		rm -f *~ disk.img run.log
+		rm -f *~ $(DSK_IMG) $(RUN_LOG)
