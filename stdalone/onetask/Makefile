@@ -12,6 +12,7 @@ install:	dump/dump task/task os/onetask.bin
 		mkdir -p $(BUILD)/stdalone
 		cp os/onetask.bin $(BUILD)/stdalone
 		cp os/onetask.map $(BUILD)/stdalone
+		cp os/onetask.exo $(BUILD)/stdalone
 
 run:		dump/dump task/task os/onetask.bin
 		$(MAKE) -C os run
