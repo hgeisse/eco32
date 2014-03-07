@@ -7,18 +7,24 @@ BUILD = ../../build
 SRC = start.s main.c end.s
 BIN = wrtmbr.bin
 MAP = wrtmbr.map
+EXO = wrtmbr.exo
 
 .PHONY:		all install run clean
 
-all:		$(BIN)
+all:		$(BIN) $(EXO)
 
-install:	$(BIN)
+install:	$(BIN) $(EXO)
 		mkdir -p $(BUILD)/stdalone
 		cp $(BIN) $(BUILD)/stdalone
 		cp $(MAP) $(BUILD)/stdalone
+		cp $(EXO) $(BUILD)/stdalone
 
 run:		$(BIN)
-		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -d $(BUILD)/disk/disk.img
+		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -a 0x10000 \
+		  -d $(BUILD)/run/disk.img
+
+$(EXO):		$(BIN)
+		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
 $(BIN):		$(SRC) mbr/mbr.dump
 		$(BUILD)/bin/lcc -A -Wo-kernel \
@@ -29,4 +35,4 @@ mbr/mbr.dump:
 
 clean:
 		$(MAKE) -C mbr clean
-		rm -f *~ $(BIN) $(MAP)
+		rm -f *~ $(BIN) $(MAP) $(EXO)

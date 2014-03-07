@@ -15,7 +15,7 @@ dump:		dump.c
 		gcc -m32 -g -Wall -o dump dump.c
 
 mbr.bin:	mbr.o
-		$(BUILD)/bin/ld -h -rc 0xC0000000 -o mbr.bin mbr.o
+		$(BUILD)/bin/ld -h -rc 0xC0010000 -o mbr.bin mbr.o
 
 mbr.o:		mbr.s
 		$(BUILD)/bin/as -o mbr.o mbr.s

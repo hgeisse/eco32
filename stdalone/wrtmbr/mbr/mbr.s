@@ -3,7 +3,7 @@
 ;
 
 	.set	tba,0xF0300000		; terminal base address
-	.set	tos,0xC0001000		; top of stack
+	.set	tos,0xC0011000		; top of stack
 
 start:
 	add	$29,$0,tos		; set stackpointer
