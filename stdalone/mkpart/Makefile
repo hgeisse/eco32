@@ -8,18 +8,24 @@ BUILD = ../../build
 SRC = start.s main.c iolib.c biolib.c end.s
 BIN = mkpart.bin
 MAP = mkpart.map
+EXO = mkpart.exo
 
 .PHONY:		all install run clean
 
-all:		$(BIN)
+all:		$(BIN) $(EXO)
 
-install:	$(BIN)
+install:	$(BIN) $(EXO)
 		mkdir -p $(BUILD)/stdalone
 		cp $(BIN) $(BUILD)/stdalone
 		cp $(MAP) $(BUILD)/stdalone
+		cp $(EXO) $(BUILD)/stdalone
 
 run:		$(BIN)
-		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -d $(BUILD)/disk/disk.img
+		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -a 0x10000 \
+		  -d $(BUILD)/run/disk.img
+
+$(EXO):		$(BIN)
+		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
 $(BIN):		$(SRC) mboot.dump
 		$(BUILD)/bin/lcc -A -Wo-kernel \
@@ -46,4 +52,4 @@ clean:
 		$(MAKE) -C dump clean
 		$(MAKE) -C mkptbl clean
 		$(MAKE) -C mkmboot clean
-		rm -f *~ mboot mboot.dump $(BIN) $(MAP)
+		rm -f *~ mboot mboot.dump $(BIN) $(MAP) $(EXO)
