@@ -1,13 +1,15 @@
 /*
- * boot.c -- second stage bootstrap (the boot manager)
+ * mboot.c -- the master bootstrap (boot manager)
  */
 
 
 #include "stdarg.h"
-#include "iolib.h"
+#include "biolib.h"
 
 
-#define DEFAULT_PARTITION	"0"	/* default boot partition number */
+#define DEFAULT_PARTITION	""	/* default boot partition number */
+
+#define LOAD_ADDR		0xC0010000
 
 #define LINE_SIZE		80
 #define SECTOR_SIZE		512
@@ -208,6 +210,9 @@ void readDisk(unsigned int sector, unsigned char *buffer, int count) {
 }
 
 
+unsigned int entryPoint;	/* where to continue from main() */
+
+
 int main(void) {
   int i;
   char line[LINE_SIZE];
@@ -227,7 +232,7 @@ int main(void) {
                i, ptr[i].type & 0x80000000 ? "*" : " ", ptr[i].descr);
       }
     }
-    getline("\nBoot #: ", line, LINE_SIZE);
+    getline("\nBoot partition #: ", line, LINE_SIZE);
     part = 0;
     if (line[0] == '\0') {
       continue;
@@ -250,10 +255,10 @@ int main(void) {
       continue;
     }
     /* load boot sector of selected partition */
-    readDisk(ptr[part].start, (unsigned char *) 0xC0000000, 1);
+    readDisk(ptr[part].start, (unsigned char *) LOAD_ADDR, 1);
     /* check for signature */
-    if ((*((unsigned char *) 0xC0000000 + SECTOR_SIZE - 2) != 0x55) ||
-        (*((unsigned char *) 0xC0000000 + SECTOR_SIZE - 1) != 0xAA)) {
+    if ((*((unsigned char *) LOAD_ADDR + SECTOR_SIZE - 2) != 0x55) ||
+        (*((unsigned char *) LOAD_ADDR + SECTOR_SIZE - 1) != 0xAA)) {
       printf("boot sector of partition %d has no signature\n", part);
       continue;
     }
@@ -263,5 +268,6 @@ int main(void) {
   /* boot manager finished, now go executing loaded boot sector */
   startSector = ptr[part].start;
   numSectors = ptr[part].size;
+  entryPoint = LOAD_ADDR;
   return 0;
 }

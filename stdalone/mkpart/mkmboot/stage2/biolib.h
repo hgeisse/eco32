@@ -1,10 +1,10 @@
 /*
- * iolib.h -- a very small library of I/O routines
+ * biolib.h -- basic I/O library
  */
 
 
-#ifndef _IOLIB_H_
-#define _IOLIB_H_
+#ifndef _BIOLIB_H_
+#define _BIOLIB_H_
 
 
 char getc(void);
@@ -12,4 +12,4 @@ void putc(char c);
 int rwscts(int dskno, int cmd, int sector, int addr, int count);
 
 
-#endif /* _IOLIB_H_ */
+#endif /* _BIOLIB_H_ */

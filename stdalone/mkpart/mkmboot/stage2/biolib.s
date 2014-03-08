@@ -1,10 +1,10 @@
 ;
-; iolib.s -- a very small library of I/O routines
+; biolib.s -- basic I/O library
 ;
 
-	.set	cin,0xE0000010
-	.set	cout,0xE0000018
-	.set	dskio,0xE0000030
+	.set	cin,0xC0000010
+	.set	cout,0xC0000018
+	.set	dskio,0xC0000030
 
 	.export	getc
 	.export	putc
