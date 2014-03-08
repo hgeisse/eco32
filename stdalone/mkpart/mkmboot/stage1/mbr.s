@@ -4,8 +4,8 @@
 
 ; Runtime environment:
 ;
-; This code must be loaded and started at 0xC0000000.
-; It allocates a stack from 0xC0001000 downwards. So
+; This code must be loaded and started at 0xC0010000.
+; It allocates a stack from 0xC0011000 downwards. So
 ; it must run within 4K (code + data + stack).
 ;
 ; This code expects the disk number of the boot disk
@@ -15,27 +15,13 @@
 ; The boot manager, which is loaded by this code,
 ; must be in standalone (headerless) executable
 ; format, stored at absolute disk sectors 2..31,
-; and gets loaded and started at 0xC00F0000.
+; and gets loaded and started at 0xC0011000.
 
-	.set	stacktop,0xC0001000	; top of stack
-	.set	loadaddr,0xC00F0000	; where to load the boot manager
+	.set	stacktop,0xC0011000	; top of stack
+	.set	loadaddr,0xC0011000	; where to load the boot manager
 
-	.set	cout,0xE0000018		; ROM console output
-	.set	dskio,0xE0000030	; ROM disk I/O
-
-	; reset arrives here
-reset:
-	j	start
-
-	; interrupts arrive here
-intrpt:
-	j	userMiss
-
-	; user TLB misses arrive here
-userMiss:
-	add	$4,$0,intmsg		; we do not expect any interrupt
-	jal	msgout
-	j	halt
+	.set	cout,0xC0000018		; the monitor's console output
+	.set	dskio,0xC0000030	; the monitor's disk I/O
 
 	; load the boot manager and start it
 start:
@@ -113,8 +99,6 @@ halt1:
 	j	halt1
 
 	; messages
-intmsg:
-	.byte	"unexpected interrupt", 0x0D, 0x0A, 0
 strtmsg:
 	.byte	"MBR executing...", 0x0D, 0x0A, 0
 dremsg:
