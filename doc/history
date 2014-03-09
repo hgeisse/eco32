@@ -1052,6 +1052,19 @@ In the meantime...
 Project "ECO32" created on OpenCores, based on version eco32-0.22:
 http://opencores.org/project,eco32
 
+04-Feb-2014
+Main Makefile, lcc, docs, binutils, sim, and simtest added.
+
+05-Feb-2014
+FPGA implementations, hwtests, monitor, disk and standalone
+programs added.
+
+07-Feb-2014
+Release eco32-0.22 tagged.
+
+08-Feb-2014
+ECO32 manual added. It can now be generated from TeX sources.
+
 18-Feb-2014
 Several changes in the simulator:
 a) There are two independent identical timer/counters
@@ -1062,7 +1075,7 @@ be used for short-time measurements. They count clock
 cycles (no pre-scaling any longer). This change will
 affect all programs which use the timer/counters.
 c) The simulation timing model is completely based on
-clock cycles (and does no longer try to function in
+clock cycles (and does no longer tries to function in
 some sort of "real-time"). As there is no real clock
 within the simulator, but the natural time unit is
 one instruction, the simulation time is incremented
@@ -1085,3 +1098,91 @@ f) The ECO32 simulation got a new peripheral, called the
 "shutdown device". A write to address 0xFF100000 results
 in terminating the simulation run, with the lower 8 bits
 of the data written supplied as exit status.
+
+19-Feb-2014
+In the hardware section, only the latest FPGA implementation
+was kept.
+
+20-Feb-2014
+New ISE project file created. In the LCC section, lburg/gram.c
+gets re-generated from the grammar file. Two new simulator
+tests written. Standalone programs updated.
+
+22-Feb-2014
+Tools: bin2exo tool updated, bin2mcs tool added. Hardware:
+character generator generator added, display memory generator
+added. Monitor: load server added. Disk: disk server renamed
+and updated.
+
+23-Feb-2014
+Monitor directories re-structured. Monitors extensively updated.
+FPGA implementation updated; timer is now equal to port-15.
+
+24-Feb-2014
+Hardware: timer counts clock cycles, counter is readable, two
+timers are now available.
+
+25-Feb-2014
+Simulator: IRQ 15 explanation added, IRQ 0-3 explanations
+changed.
+
+26-Feb-2014
+Hardware: cpu is now equal to port-15. Constraints file for
+XESS board re-formatted.
+
+27-Feb-2014
+Simulator: tlbBadAddr register is now called mmuBadAddr.
+
+28-Feb-2014
+Hardware tests (kbdtest): second timer added.
+
+01-Mar-2014
+Hardware tests (xcptest): test the bad address register too.
+Hardware: cpu now also has a bad address register.
+*****************************************************************
+Stefan Kristiansson's Linux port to ECO32 is running on the FPGA!
+*****************************************************************
+Simulator: change command @ -> #, better help for commands.
+Simulator: individual help messages corrected.
+
+02-Mar-2014
+Monitor: bad address register added.
+Monitor: bootstrap parameters modified.
+Disk: master boot made compatible with monitor.
+
+03-Mar-2014
+DE0-Nano board arrived. I can download a simple design.
+
+04-Mar-2014
+The Nano board does only have a bit-serial ROM. Besides the
+configuration bitstring for the FPGA there is enough room in
+it to store the machine monitor, but this program cannot
+reasonably be executed from there. So it must be copied to
+RAM before it can be started. This is also the case with the
+S3E starter kit board - this board indeed does have a parallel
+ROM but alas, it must be disabled in order to use the A/D or
+D/A converters. Therefore it is best to run the monitor from
+RAM in any case. Consequences: the boot procedures must again
+be revised.
+Monitor: do not set sp on bootstrap.
+EOS32 bootstrap update.
+
+05-Mar-2014
+Simulator: -a command line option added (which specifies a load
+address where a binary file is loaded when -l <prog> is given).
+Compiler: -Wo-kernel relocates code to 0xC0010000.
+
+06-Mar-2014
+Standalone programs (hello, hello2, memsize, onetask, twotasks-1,
+twotasks-2) executable at 0xC0010000.
+
+07-Mar-2014
+Standalone programs (wrtmbr, dskchk) executable at 0xC0010000.
+
+08-Mar-2014
+Standalone programs (shpart, mkpart) executable at 0xC0010000.
+Verified the four ways that a standalone program can be executed:
+  - simulator and -l/-a command line options
+  - simulator and simulated disk (boot the standalone program)
+  - FPGA and load server (load the standalone program)
+  - FPGA and simulated disk (boot the standalone program)
