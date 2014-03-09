@@ -1186,3 +1186,6 @@ Verified the four ways that a standalone program can be executed:
   - simulator and simulated disk (boot the standalone program)
   - FPGA and load server (load the standalone program)
   - FPGA and simulated disk (boot the standalone program)
+
+09-Mar-2014
+NetBSD bootstrap now executing at 0xC0010000.
