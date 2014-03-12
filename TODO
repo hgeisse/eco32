@@ -13,9 +13,10 @@ Things To Do
 
 sim:
 hrniels> 1. wenn man in dem cli einen tlb-miss auslöst, wird der zustand
-geändert (tlb-bad-address)
+geändert (tlb-bad-address) [cli = command-line interface]
 
 <hrniels> 2. der timer setzt seine register bei einem reset nicht zurück
+*** DONE ***
 
 <hrniels> 3. beim dspkbd-device ist ein fehler. und zwar darf man in dem
 keyboard-callback nicht die read-position in dem ring-buffer dort
@@ -28,41 +29,9 @@ alles transparent :)
 <hrniels> 5. die positionierung des fensters von dspkbd mit XCreateWindow
 wird gerne mal vom window-manager ignoriert. daher sollte man am besten ein
 XMoveWindow anschließend machen
-<hrniels> das wars :)
-
-<Konzai> klasse, ganz herzlichen dank!
-<hrniels> kein problem
-<Konzai> frage zu 1:
-<Konzai> cli == command line interface?
-ja
 
 ---------------------------------------------------
 
-<hrniels> also wenn der benutzer das macht, nicht die software
-<Konzai> ja, wobei die bad address sowieso ein ueberbleibsel ist, das nicht
-genutzt wird
-<Konzai> aber sollte natuerlich korrigiert werden
-<hrniels> hm, sie wird nicht genutzt? also ich verwende das schon um
-herauszufinden wo ein pagefault auftrat
-<Konzai> das mit den alpha-werten hatte ich schon selber gemerkt :-)
-<hrniels> obwohl..das steht auch in entryhi oder? zumindest könnte man das
-auch nutzen, wenn ich gerade nichts übersehe
-<Konzai> ja, da steht zumindest die seite drin, aber nicht die ganze adresse
-<Konzai> ich wusste beim entwurf nicht, ob man die braucht
-<Konzai> MIPS hat das, also habe ich es auch eingebaut :-)
-<hrniels> ah ok
-<Konzai> aber in der fpga-implementierung gibt's das register nicht
-<hrniels> achso. ok, dann sollte ich das bei mir wohl mal ändern und entryhi
-benutzen :)
-<Konzai> wie ist denn ihre meinung: sollte man das hinzufuegen?
-<hrniels> hab grad schon überlegt wie das für das debugging ist. kann man
-sich die wirklich pagefault-adresse immer berechnen anhand der
-register-inhalte zu dem zeitpunkt?
-<hrniels> müsste eigentlich so sein oder?
-<Konzai> ich denke ja, ist aber auf alle faelle umstaendlich
-<hrniels> selbst wenn das user-programm irgendwo hinspringt, wo es nicht hin
-darf, sieht mans ja anhand von $30
-<hrniels> das stimmt, ja
 <Konzai> btw, es wird sowieso eine aenderung in den spezial-registern geben:
 exceptions werden ihre return-adresse in ein special register schreiben
 anstatt in $30
