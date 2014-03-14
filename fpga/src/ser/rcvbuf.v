@@ -1,3 +1,8 @@
+//
+// rcvbuf.v -- serial line receiver buffer
+//
+
+
 module rcvbuf(clk, reset, read, ready, data_out, serial_in);
     input clk;
     input reset;

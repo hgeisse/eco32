@@ -1192,3 +1192,4 @@ NetBSD bootstrap now executing at 0xC0010000.
 
 14-Mar-2014
 Hardware: kbd is now equal to port-15.
+Hardware: ser is now equal to port-15.

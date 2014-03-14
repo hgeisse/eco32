@@ -1,3 +1,8 @@
+//
+// xmt.v -- serial line transmitter
+//
+
+
 module xmt(clk, reset, load, empty, parallel_in, serial_out);
     input clk;
     input reset;

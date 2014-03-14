@@ -1,8 +1,14 @@
+//
+// ser.v -- serial line interface
+//
+
+
 module ser(clk, reset,
            en, wr, addr,
            data_in, data_out,
            wt, irq_r, irq_t,
 	   rxd, txd);
+    // internal interface
     input clk;
     input reset;
     input en;
@@ -13,6 +19,7 @@ module ser(clk, reset,
     output wt;
     output irq_r;
     output irq_t;
+    // external interface
     input rxd;
     output txd;
 

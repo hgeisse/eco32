@@ -1,3 +1,8 @@
+//
+// rcv.v -- serial line receiver
+//
+
+
 module rcv(clk, reset, full, parallel_out, serial_in);
     input clk;
     input reset;

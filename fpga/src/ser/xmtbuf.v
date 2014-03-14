@@ -1,3 +1,8 @@
+//
+// xmtbuf.v -- serial line transmitter buffer
+//
+
+
 module xmtbuf(clk, reset, write, ready, data_in, serial_out);
     input clk;
     input reset;
