@@ -390,8 +390,6 @@ module eco32(clk_in,
   );
 
   kbd kbd1(
-    .ps2_clk(ps2_clk),
-    .ps2_data(ps2_data),
     .clk(clk),
     .reset(reset),
     .en(kbd_en),
@@ -400,7 +398,9 @@ module eco32(clk_in,
     .data_in(kbd_data_in[7:0]),
     .data_out(kbd_data_out[7:0]),
     .wt(kbd_wt),
-    .irq(kbd_irq)
+    .irq(kbd_irq),
+    .ps2_clk(ps2_clk),
+    .ps2_data(ps2_data)
   );
 
   ser ser1_0(

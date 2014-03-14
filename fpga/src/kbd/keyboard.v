@@ -1,3 +1,8 @@
+//
+// keyboard.v -- PC keyboard receiver
+//
+
+
 module keyboard(ps2_clk, ps2_data,
                 clk, reset,
                 keyboard_data, keyboard_rdy);

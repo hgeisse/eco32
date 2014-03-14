@@ -1189,3 +1189,6 @@ Verified the four ways that a standalone program can be executed:
 
 09-Mar-2014
 NetBSD bootstrap now executing at 0xC0010000.
+
+14-Mar-2014
+Hardware: kbd is now equal to port-15.
