@@ -28,7 +28,7 @@
 
 typedef struct {
   unsigned int name;	/* name of symbol (as offset into string space) */
-  off_t position;	/* position of member which defines the symbol */
+  long position;	/* position of member which defines the symbol */
 			/* (as file offset to the member's ArHeader) */
 } Entry;
 
@@ -36,8 +36,8 @@ typedef struct {
 FILE *fi;
 FILE *fo;
 
-off_t nxtOff;		/* file offset to next member */
-off_t curOff;
+long nxtOff;		/* file offset to next member */
+long curOff;
 
 Entry table[MAX_SYM_ENTRIES];
 int numEntries;
@@ -112,7 +112,7 @@ int nextMember(void) {
 
 
 void addSymbol(unsigned int nameOffset) {
-  off_t curPos;
+  long curPos;
   int c;
 
   if (numEntries >= MAX_SYM_ENTRIES) {
@@ -133,7 +133,7 @@ void addSymbol(unsigned int nameOffset) {
 
 
 void fixSize(void) {
-  off_t deltaOff;
+  long deltaOff;
   int pad;
   int i;
 
@@ -166,8 +166,8 @@ void showSymdefs(char *symdefs) {
   int numSymbols;
   int i;
   Entry e;
-  off_t curPos;
-  off_t pos;
+  long curPos;
+  long pos;
   int c;
 
   in = fopen(symdefs, "r");
