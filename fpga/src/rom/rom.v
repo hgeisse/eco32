@@ -1,3 +1,8 @@
+//
+// rom.v -- parallel flash ROM interface
+//
+
+
 module rom(clk, reset,
            en, wr, size, addr,
            data_out, wt,
@@ -11,7 +16,7 @@ module rom(clk, reset,
     input [20:0] addr;
     output reg [31:0] data_out;
     output reg wt;
-    // flash interface signals
+    // flash ROM interface signals
     output ce_n;
     output oe_n;
     output we_n;
@@ -31,9 +36,9 @@ module rom(clk, reset,
   assign rst_n = 1;
   assign byte_n = 1;
 
-  // the flash ram is organized in 16-bit halfwords
+  // the flash ROM is organized in 16-bit halfwords
   // address line a0 is controlled by the state machine
-  // this is necessary for word accesses
+  // (this is necessary for word accesses)
   assign a[19:1] = addr[20:2];
   assign a[0] = a0;
 
@@ -99,7 +104,7 @@ module rom(clk, reset,
         wt <= 1;
         state <= 0;
       end else begin
-        // wait for flash access time to pass
+        // wait for flash ROM access time to pass
         state <= state + 1;
       end
     end
