@@ -1196,3 +1196,4 @@ Hardware: ser is now equal to port-15.
 
 15-Mar-2014
 Hardware: rom is now equivalent to port-15.
+Hardware: ram is now equivalent to port-15.

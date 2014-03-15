@@ -1,3 +1,8 @@
+//
+// ram.v -- main memory, using SDRAM
+//
+
+
 module ram(clk, clk_ok, reset,
            en, wr, size, addr,
            data_in, data_out, wt,
@@ -6,6 +11,7 @@ module ram(clk, clk_ok, reset,
            sdram_ras_n, sdram_cas_n,
            sdram_we_n, sdram_ba,
            sdram_a, sdram_dq);
+    // internal interface signals
     input clk;
     input clk_ok;
     input reset;
@@ -16,6 +22,7 @@ module ram(clk, clk_ok, reset,
     input [31:0] data_in;
     output reg [31:0] data_out;
     output reg wt;
+    // SDRAM interface signals
     output sdram_cke;
     output sdram_cs_n;
     output sdram_udqm;
@@ -73,7 +80,7 @@ module ram(clk, clk_ok, reset,
 
   // the SDRAM is organized in 16-bit halfwords
   // address line 0 is controlled by the state machine
-  // this is necessary for word accesses
+  // (this is necessary for word accesses)
   assign cntl_addr[23:1] = addr[24:2];
   assign cntl_addr[0] = a0;
 
