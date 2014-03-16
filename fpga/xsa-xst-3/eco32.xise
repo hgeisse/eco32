@@ -426,6 +426,12 @@
     <!-- Do not hand-edit this section, as it will be overwritten when the    -->
     <!-- project is analyzed based on files automatically identified as       -->
     <!-- include files.                                                       -->
+    <file xil_pn:name="../src/dsp/chrgenlo.init" xil_pn:type="FILE_VERILOG"/>
+    <file xil_pn:name="../src/dsp/chrgenhi.init" xil_pn:type="FILE_VERILOG"/>
+    <file xil_pn:name="../src/dsp/dspatthi.init" xil_pn:type="FILE_VERILOG"/>
+    <file xil_pn:name="../src/dsp/dspattlo.init" xil_pn:type="FILE_VERILOG"/>
+    <file xil_pn:name="../src/dsp/dspchrhi.init" xil_pn:type="FILE_VERILOG"/>
+    <file xil_pn:name="../src/dsp/dspchrlo.init" xil_pn:type="FILE_VERILOG"/>
   </autoManagedFiles>
 
 </project>

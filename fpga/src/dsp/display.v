@@ -1,8 +1,12 @@
+//
+// display.v -- 30x80 character display, with attributes
+//
+
+
 module display(clk,
                dsp_row, dsp_col, dsp_en, dsp_wr,
                dsp_wr_data, dsp_rd_data,
                hsync, vsync, r, g, b);
-
     input clk;
     input [4:0] dsp_row;
     input [6:0] dsp_col;
@@ -108,11 +112,11 @@ module display(clk,
     .hsync_in(chrgen_hsync),
     .vsync_in(chrgen_vsync),
     .blink(chrgen_blink),
+    .hsync(hsync),
+    .vsync(vsync),
     .r(r[2:0]),
     .g(g[2:0]),
-    .b(b[2:0]),
-    .hsync(hsync),
-    .vsync(vsync)
+    .b(b[2:0])
   );
 
 endmodule

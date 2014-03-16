@@ -1,6 +1,11 @@
+//
+// pixel.v -- last stage in display pipeline
+//
+
+
 module pixel(clk, pixclk, attcode,
              pixel, blank, hsync_in, vsync_in, blink,
-             r, g, b, hsync, vsync);
+             hsync, vsync, r, g, b);
     input clk;
     input pixclk;
     input [7:0] attcode;
@@ -9,11 +14,11 @@ module pixel(clk, pixclk, attcode,
     input hsync_in;
     input vsync_in;
     input blink;
+    output reg hsync;
+    output reg vsync;
     output reg [2:0] r;
     output reg [2:0] g;
     output reg [2:0] b;
-    output reg hsync;
-    output reg vsync;
 
   wire blink_bit;
   wire bg_red;
@@ -47,6 +52,8 @@ module pixel(clk, pixclk, attcode,
 
   always @(posedge clk) begin
     if (pixclk == 1) begin
+      hsync <= hsync_in;
+      vsync <= vsync_in;
       r[2] <= blank & red;
       r[1] <= blank & intensify;
       r[0] <= blank & red & intensify;
@@ -56,8 +63,6 @@ module pixel(clk, pixclk, attcode,
       b[2] <= blank & blue;
       b[1] <= blank & intensify;
       b[0] <= blank & blue & intensify;
-      hsync <= hsync_in;
-      vsync <= vsync_in;
     end
   end
 

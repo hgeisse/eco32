@@ -1,3 +1,8 @@
+//
+// timing.v -- timing generator
+//
+
+
 module timing(clk, pixclk,
               txtrow, txtcol,
               chrrow, chrcol,

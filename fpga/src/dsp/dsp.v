@@ -1,9 +1,14 @@
+//
+// dsp.v -- character display interface
+//
+
+
 module dsp(clk, reset,
            addr, en, wr, wt,
            data_in, data_out,
            hsync, vsync,
            r, g, b);
-
+    // internal interface
     input clk;
     input reset;
     input [13:2] addr;
@@ -12,6 +17,7 @@ module dsp(clk, reset,
     output wt;
     input [15:0] data_in;
     output [15:0] data_out;
+    // external interface
     output hsync;
     output vsync;
     output [2:0] r;
@@ -20,18 +26,20 @@ module dsp(clk, reset,
 
   reg state;
 
-  display display1 (.clk(clk),
-                    .dsp_row(addr[13:9]),
-                    .dsp_col(addr[8:2]),
-                    .dsp_en(en),
-                    .dsp_wr(wr),
-                    .dsp_wr_data(data_in[15:0]),
-                    .dsp_rd_data(data_out[15:0]),
-                    .hsync(hsync),
-                    .vsync(vsync),
-                    .r(r[2:0]),
-                    .g(g[2:0]),
-                    .b(b[2:0]));
+  display display1(
+    .clk(clk),
+    .dsp_row(addr[13:9]),
+    .dsp_col(addr[8:2]),
+    .dsp_en(en),
+    .dsp_wr(wr),
+    .dsp_wr_data(data_in[15:0]),
+    .dsp_rd_data(data_out[15:0]),
+    .hsync(hsync),
+    .vsync(vsync),
+    .r(r[2:0]),
+    .g(g[2:0]),
+    .b(b[2:0])
+  );
 
   always @(posedge clk) begin
     if (reset == 1) begin
