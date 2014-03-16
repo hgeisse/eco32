@@ -1,16 +1,22 @@
-`define ADDR_ALTERNATE_STATUS		4'b0110
-`define ADDR_DEVICE_CONTROL			4'b0110
-`define ADDR_DEVICE_ADDRESS			4'b0111
-`define ADDR_DATA					4'b1000
-`define ADDR_ERROR					4'b1001
-`define ADDR_FEATURES				4'b1001
-`define ADDR_SECTOR_COUNT			4'b1010
-`define ADDR_LBA0					4'b1011
-`define ADDR_LBA1					4'b1100
-`define ADDR_LBA2					4'b1101
-`define ADDR_LBA3_DRV				4'b1110
-`define ADDR_STATUS					4'b1111
-`define ADDR_COMMAND				4'b1111
+//
+// atactrl.v -- parallel ATA controller
+//
+
+
+`define ADDR_ALTERNATE_STATUS	4'b0110
+`define ADDR_DEVICE_CONTROL	4'b0110
+`define ADDR_DEVICE_ADDRESS	4'b0111
+`define ADDR_DATA		4'b1000
+`define ADDR_ERROR		4'b1001
+`define ADDR_FEATURES		4'b1001
+`define ADDR_SECTOR_COUNT	4'b1010
+`define ADDR_LBA0		4'b1011
+`define ADDR_LBA1		4'b1100
+`define ADDR_LBA2		4'b1101
+`define ADDR_LBA3_DRV		4'b1110
+`define ADDR_STATUS		4'b1111
+`define ADDR_COMMAND		4'b1111
+
 
 module ata_ctrl (
 	input clk, reset,

@@ -1,3 +1,8 @@
+//
+// atabuf.v -- parallel ATA data buffer
+//
+
+
 module ata_buffer (clk,
                    bus_write, bus_addr, bus_din, bus_dout,
                    ata_write, ata_addr, ata_din, ata_dout);

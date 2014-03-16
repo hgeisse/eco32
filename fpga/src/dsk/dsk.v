@@ -1,3 +1,8 @@
+//
+// dsk.v -- parallel ATA (IDE) disk interface
+//
+
+
 module dsk(clk, reset,
            en, wr, addr,
            data_in, data_out,
