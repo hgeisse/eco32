@@ -2450,7 +2450,7 @@ endmodule
 
 
 module sregs(clk, reset,
-             rn, we, di, do,
+             rn, we, din, dout,
              psw, psw_we, psw_new,
              tlb_index, tlb_index_we, tlb_index_new,
              tlb_entry_hi, tlb_entry_hi_we, tlb_entry_hi_new,
@@ -2460,8 +2460,8 @@ module sregs(clk, reset,
     input reset;
     input [2:0] rn;
     input we;
-    input [31:0] di;
-    output [31:0] do;
+    input [31:0] din;
+    output [31:0] dout;
     output [31:0] psw;
     input psw_we;
     input [31:0] psw_new;
@@ -2489,7 +2489,7 @@ module sregs(clk, reset,
 
   reg [31:0] sr[0:7];
 
-  assign do = sr[rn];
+  assign dout = sr[rn];
   assign psw = sr[0];
   assign tlb_index = sr[1];
   assign tlb_entry_hi = sr[2];
@@ -2501,7 +2501,7 @@ module sregs(clk, reset,
       sr[0] <= 32'h00000000;
     end else begin
       if (we == 1) begin
-        sr[rn] <= di;
+        sr[rn] <= din;
       end else begin
         if (psw_we) begin
           sr[0] <= psw_new;
