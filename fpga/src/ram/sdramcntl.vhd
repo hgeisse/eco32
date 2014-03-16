@@ -211,7 +211,8 @@ begin
   -----------------------------------------------------------
 
   combinatorial : process(rd, wr, hAddr, hDIn, hDOut_r, sDIn, state_r,
-                          activeFlag_r, activeRow_r, rdPipeline_r, wrPipeline_r,
+                          activeFlag_r, activeRow_r, activeBank_r,
+                          rdPipeline_r, wrPipeline_r,
                           nopCntr_r, rfshCntr_r, timer_r, rasTimer_r,
                           wrTimer_r, refTimer_r, cmd_r, cke_r)
   begin
