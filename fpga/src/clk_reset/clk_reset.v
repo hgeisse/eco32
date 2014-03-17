@@ -1,3 +1,8 @@
+//
+// clk_reset.v -- clock and reset generator
+//
+
+
 module clk_reset(clk_in, reset_inout_n,
                  sdram_clk, sdram_fb,
                  clk, clk_ok, reset);
@@ -21,11 +26,14 @@ module clk_reset(clk_in, reset_inout_n,
   reg [23:0] reset_counter;
   wire reset_counting;
 
-//--------------------------------------------------------------
+  //------------------------------------------------------------
 
-  IBUFG clk_in_buffer(.I(clk_in), .O(clk_in_buf));
+  IBUFG clk_in_buffer(
+    .I(clk_in),
+    .O(clk_in_buf)
+  );
 
-  DCM int_dcm (
+  DCM int_dcm(
     .CLKIN(clk_in_buf),
     .CLKFB(clk),
     .RST(1'b0),
@@ -33,9 +41,12 @@ module clk_reset(clk_in, reset_inout_n,
     .LOCKED(int_locked)
   );
 
-  BUFG int_clk_buffer(.I(int_clk), .O(clk));
+  BUFG int_clk_buffer(
+    .I(int_clk),
+    .O(clk)
+  );
 
-//--------------------------------------------------------------
+  //------------------------------------------------------------
 
   SRL16 ext_dll_rst_gen(
     .CLK(clk_in_buf),
@@ -49,11 +60,14 @@ module clk_reset(clk_in, reset_inout_n,
 
   defparam ext_dll_rst_gen.INIT = 16'h0000;
 
-//--------------------------------------------------------------
+  //------------------------------------------------------------
 
-  IBUFG ext_fb_buffer(.I(sdram_fb), .O(ext_fb));
+  IBUFG ext_fb_buffer(
+    .I(sdram_fb),
+    .O(ext_fb)
+  );
 
-  DCM ext_dcm (
+  DCM ext_dcm(
     .CLKIN(clk_in_buf),
     .CLKFB(ext_fb),
     .RST(~ext_rst_n),
@@ -63,7 +77,7 @@ module clk_reset(clk_in, reset_inout_n,
 
   assign clk_ok = int_locked & ext_locked;
 
-//--------------------------------------------------------------
+  //------------------------------------------------------------
 
   assign reset_counting = (reset_counter == 24'hFFFFFF) ? 0 : 1;
   assign reset_inout_n = (reset_counter[23] == 0) ? 1'b0 : 1'bz;
