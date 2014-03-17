@@ -9,13 +9,13 @@ module eco32(clk_in,
              sdram_fb,
              sdram_cke,
              sdram_cs_n,
-             sdram_udqm,
-             sdram_ldqm,
              sdram_ras_n,
              sdram_cas_n,
              sdram_we_n,
              sdram_ba,
              sdram_a,
+             sdram_udqm,
+             sdram_ldqm,
              sdram_dq,
              flash_ce_n,
              flash_oe_n,
@@ -57,13 +57,13 @@ module eco32(clk_in,
     input sdram_fb;
     output sdram_cke;
     output sdram_cs_n;
-    output sdram_udqm;
-    output sdram_ldqm;
     output sdram_ras_n;
     output sdram_cas_n;
     output sdram_we_n;
     output [1:0] sdram_ba;
     output [12:0] sdram_a;
+    output sdram_udqm;
+    output sdram_ldqm;
     inout [15:0] sdram_dq;
     // flash ROM
     output flash_ce_n;
@@ -321,13 +321,13 @@ module eco32(clk_in,
     .wt(ram_wt),
     .sdram_cke(sdram_cke),
     .sdram_cs_n(sdram_cs_n),
-    .sdram_udqm(sdram_udqm),
-    .sdram_ldqm(sdram_ldqm),
     .sdram_ras_n(sdram_ras_n),
     .sdram_cas_n(sdram_cas_n),
     .sdram_we_n(sdram_we_n),
     .sdram_ba(sdram_ba[1:0]),
     .sdram_a(sdram_a[12:0]),
+    .sdram_udqm(sdram_udqm),
+    .sdram_ldqm(sdram_ldqm),
     .sdram_dq(sdram_dq[15:0])
   );
 
