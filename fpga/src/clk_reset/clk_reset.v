@@ -85,11 +85,11 @@ module clk_reset(clk_in, reset_inout_n,
   always @(posedge clk_in_buf) begin
     reset_p_n <= reset_inout_n;
     reset_s_n <= reset_p_n;
-    if (~reset_s_n | ~clk_ok) begin
-      reset_counter <= 24'h000000;
+    if (reset_counting == 1) begin
+      reset_counter <= reset_counter + 1;
     end else begin
-      if (reset_counting == 1) begin
-        reset_counter <= reset_counter + 1;
+      if (~reset_s_n | ~clk_ok) begin
+        reset_counter <= 24'h000000;
       end
     end
   end
