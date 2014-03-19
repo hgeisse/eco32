@@ -1197,3 +1197,19 @@ Hardware: ser is now equal to port-15.
 15-Mar-2014
 Hardware: rom is now equivalent to port-15.
 Hardware: ram is now equivalent to port-15.
+
+16-Mar-2014
+Hardware: in cpu/sregs change signal names di->din, do->dout
+(simulation tool 'Verilator' doesn't like 'do' as signal name).
+Hardware: dsk source formatted.
+Hardware: in sdramcntl.v signal added to sensitivity list.
+Hardware: dsp is now equivalent to port-15.
+
+17-Mar-2014
+Hardware: busctrl source formatted.
+Hardware: cpu external pin ordering changed.
+Hardware: ram pin ordering changed.
+Hardware: clock/reset source formatted.
+
+18-Mar-2014
+Hardware: clock/reset update.
