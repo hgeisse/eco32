@@ -2,33 +2,30 @@
 Things To Do
 ------------
 
-1) sim & fpga:
+sim & fpga:
    proper placement of disk buffer(s)
 
-2) lcc:
+lcc:
    Handle floating point operations more gracefully.
 
-3) eos32/lib/src/stdio.c and eos32/kernel/klib.c:
-   Allow more formatting options in vprintf().
-
 sim:
-hrniels> 1. wenn man in dem cli einen tlb-miss auslöst, wird der zustand
-geändert (tlb-bad-address) [cli = command-line interface]
+   1. wenn man in dem cli einen tlb-miss auslöst, wird der zustand
+   geändert (tlb-bad-address) [cli = command-line interface]
 
-<hrniels> 2. der timer setzt seine register bei einem reset nicht zurück
-*** DONE ***
+   2. der timer setzt seine register bei einem reset nicht zurück
+   *** DONE ***
 
-<hrniels> 3. beim dspkbd-device ist ein fehler. und zwar darf man in dem
-keyboard-callback nicht die read-position in dem ring-buffer dort
-weiterschieben, wenn der letzte scancode noch gar nicht gelesen wurde
+   3. beim dspkbd-device ist ein fehler. und zwar darf man in dem
+   keyboard-callback nicht die read-position in dem ring-buffer dort
+   weiterschieben, wenn der letzte scancode noch gar nicht gelesen wurde
 
-<hrniels> 4. beim dspkbd sollte man auch den alpha-wert bei den pixeln
-angeben. wenn man z.B. compiz verwendet, was das unterstützt, ist sonst
-alles transparent :)
+   4. beim dspkbd sollte man auch den alpha-wert bei den pixeln
+   angeben. wenn man z.B. compiz verwendet, was das unterstützt, ist sonst
+   alles transparent :)
 
-<hrniels> 5. die positionierung des fensters von dspkbd mit XCreateWindow
-wird gerne mal vom window-manager ignoriert. daher sollte man am besten ein
-XMoveWindow anschließend machen
+   5. die positionierung des fensters von dspkbd mit XCreateWindow
+   wird gerne mal vom window-manager ignoriert. daher sollte man am
+   besten ein XMoveWindow anschließend machen
 
 ---------------------------------------------------
 
@@ -44,5 +41,4 @@ einzuführen, dass die anzahl der bisher ausgeführten instruktionen liefert?
 <hrniels> genau. wäre auf jeden fall praktisch. bei meinem os basiert z.B.
 die laufzeit messung der einzelnen prozesse momentan darauf. und bei x86
 gibts rdtsc und bei mmix rC, nur bei eco32 gibt es das nicht :)
-<Konzai> aha, sie kitzeln meinen entwicklerstolz... ;-)
-<hrniels> hehe
+
