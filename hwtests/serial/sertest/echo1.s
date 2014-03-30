@@ -2,7 +2,7 @@
 ; echo.s -- test the serial interface
 ;
 
-	.set	sba,0xF0300010	; serial base address
+	.set	sba,0xF0301000	; serial base address
 
 	add	$8,$0,sba	; set serial base address
 L1:

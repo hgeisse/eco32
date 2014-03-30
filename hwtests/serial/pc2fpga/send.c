@@ -12,8 +12,6 @@
 #include <termios.h>
 
 
-#define SERIAL_PORT	"/dev/ttyS0"
-
 #define NUM_TRIES	10
 
 #define SYN		0x16
@@ -49,10 +47,10 @@ void error(char *fmt, ...) {
 }
 
 
-void serialOpen(void) {
-  sfd = open(SERIAL_PORT, O_RDWR | O_NOCTTY | O_NDELAY);
+void serialOpen(char *serialPort) {
+  sfd = open(serialPort, O_RDWR | O_NOCTTY | O_NDELAY);
   if (sfd == -1) {
-    error("cannot open serial port '%s'", SERIAL_PORT);
+    error("cannot open serial port '%s'", serialPort);
   }
   tcgetattr(sfd, &origOptions);
   currOptions = origOptions;
@@ -96,14 +94,16 @@ int serialRcv(unsigned char *bp) {
 
 
 int main(int argc, char *argv[]) {
+  char *serialPort;
   unsigned char curr;
   int count;
 
-  if (argc != 1) {
-    printf("Usage: %s\n", argv[0]);
+  if (argc != 2) {
+    printf("Usage: %s <serial port>\n", argv[0]);
     exit(1);
   }
-  serialOpen();
+  serialPort = argv[1];
+  serialOpen(serialPort);
   curr = 0;
   count = 0;
   while (count < 100000) {
