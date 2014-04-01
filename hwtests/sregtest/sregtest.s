@@ -12,6 +12,8 @@
 	mvts	$12,2
 	add	$13,$0,0x1FCB0BC5
 	mvts	$13,3
+	add	$14,$0,0x3AE82DD4
+	mvts	$14,4
 
 	mvfs	$8,1
 	xor	$9,$8,$11
@@ -33,6 +35,13 @@ lbl2:
 	beq	$9,$0,lbl3
 	add	$7,$0,'?'
 lbl3:
+
+	mvfs	$8,4
+	xor	$9,$8,$14
+	and	$9,$9,0xFFFFFFFF
+	beq	$9,$0,lbl4
+	add	$7,$0,'?'
+lbl4:
 
 	jal	out
 halt:
