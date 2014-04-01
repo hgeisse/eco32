@@ -5,7 +5,7 @@
 ;***************************************************************
 
 	.set	ser0base,0xF0300000	; serial line 0 base address
-	.set	ser1base,0xF0300010	; serial line 1 base address
+	.set	ser1base,0xF0301000	; serial line 1 base address
 
 	.export	serinit			; initialize serial interface
 
