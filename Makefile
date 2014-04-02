@@ -2,7 +2,7 @@
 # Makefile for ECO32 project
 #
 
-VERSION = 0.23
+VERSION = 0.24
 
 DIRS = binutils tools sim simtest fpga hwtests monitor disk stdalone
 BUILD = `pwd`/build
