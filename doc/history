@@ -1213,3 +1213,33 @@ Hardware: clock/reset source formatted.
 
 18-Mar-2014
 Hardware: clock/reset update.
+
+30-Mar-2014
+Hardware tests: serial/fpga2pc verified, README added.
+Hardware tests: serial/pc2fpga verified, README added.
+
+31-Mar-2014
+Hardware tests: serial/sertest verified, README added.
+Hardware tests: looptest verified, README added.
+Hardware tests: ldtest verified, README added.
+Hardware tests: memtest1 verified, README added.
+Hardware tests: memtest2 verified, README added.
+Hardware tests: shtest verified, README added.
+Hardware tests: serial README added.
+Hardware tests: brtest verified, README added.
+Hardware tests: tmrtest verified, README added.
+Hardware tests: multest verified, README added.
+Hardware tests: divtest verified, README added.
+
+01-Apr-2014
+Hardware tests: remtest verified, README added.
+Hardware tests: sregtest verified, README added.
+Hardware tests: tlbtest verified, README added.
+Hardware tests: irqtest verified, README added.
+Hardware tests: xcptest verified, README added.
+Hardware tests: dsptest verified, README added.
+
+02-Apr-2014
+Hardware tests: kbdtest verified, README added.
+Hardware tests: jalrtest verified, README added.
+Release eco32-0.23 tagged.
