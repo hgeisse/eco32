@@ -203,7 +203,7 @@ static void initMonitor(int argc, char *argv[]) {
   wmHints->flags = StateHint | InputHint;
   wmHints->input = True;
   wmHints->initial_state = NormalState;
-  classHints->res_name = "ECO32";
+  classHints->res_name = "ECO32 Console";
   classHints->res_class = "ECO32";
   if (XStringListToTextProperty(&classHints->res_name, 1, &windowName) == 0) {
     error("property allocation failed");
