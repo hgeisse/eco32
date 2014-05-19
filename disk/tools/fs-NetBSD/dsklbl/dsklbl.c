@@ -319,6 +319,8 @@ void showDiskLabel(DiskLabel *lp) {
     printf("Warning: wrong magic number!\n");
   }
   printf("checksum        : 0x%04X\n", lp->d_checksum);
+  printf("NOTE: The checksum may have been re-computed because of\n");
+  printf("endianness conversion, and thus may differ from the disk!\n");
   printf("bbsize          : 0x%08X\n", lp->d_bbsize);
   printf("sbsize          : 0x%08X\n", lp->d_sbsize);
   printf("npartitions     : 0x%04X\n", lp->d_npartitions);
