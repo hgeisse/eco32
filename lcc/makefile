@@ -1,7 +1,7 @@
 A=.a
 O=.o
 E=
-CC=cc
+CC=gcc -m32
 CFLAGS=-g
 LDFLAGS=-g
 LD=$(CC)
