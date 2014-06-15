@@ -16,7 +16,9 @@ all:		proto-fs
 proto-fs:
 		mkdir -p ./root
 		cp ./loader ./root
-		cp -R $(BUILD)/../os-bin/NetBSD/* ./root
+		cp $(BUILD)/../os-bin/NetBSD/netbsd ./root
+		mkdir -p ./root/sbin
+		cp $(BUILD)/../os-bin/NetBSD/init* ./root/sbin
 		mkdir -p ./root/bin
 		mkdir -p ./root/dev
 		mkdir -p ./root/etc
