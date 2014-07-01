@@ -41,20 +41,6 @@ static int assoc(Word page) {
 }
 
 
-static void assocDelay(void) {
-  int n, i;
-
-  /* simulate delay introduced by assoc when using mapped
-     addresses but not experienced with unmapped addresses */
-  n = -1;
-  for (i = 0; i < TLB_SIZE; i++) {
-    if (tlb[i].page == 0) {
-      n = i;
-    }
-  }
-}
-
-
 static Word v2p(Word vAddr, Bool userMode, Bool writing) {
   Word pAddr;
   Word page, offset;
@@ -70,7 +56,9 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing) {
   }
   if ((vAddr & 0xC0000000) == 0xC0000000) {
     /* unmapped address space */
-    assocDelay();
+    /* simulate delay introduced by assoc when using mapped
+       addresses but not experienced with unmapped addresses */
+    assoc(0);
     pAddr = vAddr & ~0xC0000000;
   } else {
     /* mapped address space */
