@@ -15,6 +15,13 @@
 #define TLB_WRITE	(1 << 1)	/* write bit in EntryLo */
 #define TLB_VALID	(1 << 0)	/* valid bit in EntryLo */
 
+#define MMU_ACCS_MASK	0x07		/* bits used in BadAccs */
+#define MMU_ACCS_READ	0x00		/* access type = read */
+#define MMU_ACCS_WRITE	0x04		/* access type = write */
+#define MMU_ACCS_BYTE	0x00		/* access width = byte */
+#define MMU_ACCS_HALF	0x01		/* access width = half */
+#define MMU_ACCS_WORD	0x02		/* access width = word */
+
 
 typedef struct {
   Word page;		/* 20 high-order bits of virtual address */
@@ -39,6 +46,8 @@ Word mmuGetEntryLo(void);
 void mmuSetEntryLo(Word value);
 Word mmuGetBadAddr(void);
 void mmuSetBadAddr(Word value);
+Word mmuGetBadAccs(void);
+void mmuSetBadAccs(Word value);
 
 void mmuTbs(void);
 void mmuTbwr(void);

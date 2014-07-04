@@ -427,6 +427,9 @@ static void execNextInstruction(void) {
         case 4:
           WR(reg2, mmuGetBadAddr());
           break;
+        case 5:
+          WR(reg2, mmuGetBadAccs());
+          break;
         default:
           throwException(EXC_ILL_INSTRCT);
           break;
@@ -451,6 +454,9 @@ static void execNextInstruction(void) {
           break;
         case 4:
           mmuSetBadAddr(RR(reg2));
+          break;
+        case 5:
+          mmuSetBadAccs(RR(reg2));
           break;
         default:
           throwException(EXC_ILL_INSTRCT);
