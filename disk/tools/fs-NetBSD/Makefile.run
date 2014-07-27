@@ -8,7 +8,7 @@ DISK = ../disk.img
 all:		proto-fs
 		$(BUILD)/bin/NetBSD-makefs -t ffs -B be -s 106496b \
 		  -f 20000 -o version=1,bsize=8192,fsize=1024 \
-		  fs.img ./root
+		  -F add.spec fs.img ./root
 		dd if=fs.img of=$(DISK) bs=512 seek=81920 conv=notrunc
 		$(BUILD)/bin/NetBSD-wrboot ./bootblk $(DISK) 3
 		$(BUILD)/bin/NetBSD-dsklbl -wb $(DISK) 3

@@ -19,6 +19,7 @@ install:
 		done
 		mkdir -p $(BUILD)/run/fs-NetBSD
 		cp Makefile.run $(BUILD)/run/fs-NetBSD/Makefile
+		cp add.spec $(BUILD)/run/fs-NetBSD/add.spec
 
 clean:
 		for i in $(DIRS) ; do \

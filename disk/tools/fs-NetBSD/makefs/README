@@ -5,6 +5,9 @@ makefs
 	walk
 	ffs
 
+walk
+	spec
+
 ffs
 	mkfs
 	ffs_balloc

@@ -136,4 +136,7 @@ char		*vispath(const char *);
 #define	CH_MASK  (UF_MASK | SF_MASK)            /* all settable flags */
 #define	SP_FLGS  (SF_IMMUTABLE | SF_APPEND)     /* special flags */
 
+void *setmode(const char *p);
+mode_t getmode(const void *bbox, mode_t omode);
+
 #endif /* _MTREE_H_ */

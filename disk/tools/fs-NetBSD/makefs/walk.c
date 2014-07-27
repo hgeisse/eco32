@@ -310,10 +310,7 @@ apply_specfile(const char *specfile, const char *dir, fsnode *parent, int specon
 	if ((fp = fopen(specfile, "r")) == NULL)
 		err(1, "Can't open `%s'", specfile);
 	TIMER_START(start);
-	/* !!!!! HG: */
-	//root = spec(fp);
-	root = NULL;
-	/* :HG !!!!! */
+	root = spec(fp);
 	TIMER_RESULTS(start, "spec");
 	if (fclose(fp) == EOF)
 		err(1, "Can't close `%s'", specfile);
@@ -327,9 +324,7 @@ apply_specfile(const char *specfile, const char *dir, fsnode *parent, int specon
 				/* merge in the changes */
 	apply_specdir(dir, root, parent, speconly);
 
-	/* !!!!! HG: */
-	//free_nodes(root);
-	/* :HG !!!!! */
+	free_nodes(root);
 }
 
 static void

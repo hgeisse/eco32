@@ -9,8 +9,9 @@ CFLAGS = -g -Wall
 LDFLAGS = -g
 LDLIBS = -lm
 
-SRCS = makefs.c walk.c ffs.c mkfs.c ffs_bswap.c ffs_balloc.c \
-       ufs_bmap.c ffs_alloc.c ffs_subr.c ffs_tables.c buf.c
+SRCS = makefs.c walk.c spec.c ffs.c mkfs.c ffs_bswap.c ffs_balloc.c \
+       ufs_bmap.c ffs_alloc.c ffs_subr.c ffs_tables.c buf.c pack_dev.c \
+       setmode.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = NetBSD-makefs
 

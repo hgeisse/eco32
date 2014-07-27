@@ -155,7 +155,7 @@ ffs_mkfs(const char *fsys, const fsinfo_t *fsopts)
 	//    sizeof(sblock.fs_volname));
 	strncpy((char *)sblock.fs_volname, ffs_opts->label,
 	    sizeof(sblock.fs_volname));
-        /* :HG !!!!! */
+	/* :HG !!!!! */
 
 	if (Oflag == 0) {
 		sblock.fs_old_inodefmt = FS_42INODEFMT;
