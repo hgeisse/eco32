@@ -268,6 +268,7 @@ void cpuStep(void) {
   userContext.tlbHi = mmuGetEntryHi();
   userContext.tlbLo = mmuGetEntryLo();
   userContext.badAddr = mmuGetBadAddr();
+  userContext.badAccs = mmuGetBadAccs();
   if (saveState(&stepState)) {
     origReturn = monitorReturn;
     monitorReturn = &stepState;
@@ -283,6 +284,7 @@ void cpuStep(void) {
   mmuSetEntryHi(userContext.tlbHi);
   mmuSetEntryLo(userContext.tlbLo);
   mmuSetBadAddr(userContext.badAddr);
+  mmuSetBadAccs(userContext.badAccs);
   mmuWriteWord(nextAddr, nextInstr);
   if (nextAddr == pc) {
     return;
@@ -331,6 +333,7 @@ void cpuRun(void) {
     userContext.tlbHi = mmuGetEntryHi();
     userContext.tlbLo = mmuGetEntryLo();
     userContext.badAddr = mmuGetBadAddr();
+    userContext.badAccs = mmuGetBadAccs();
     if (saveState(&runState)) {
       origReturn = monitorReturn;
       monitorReturn = &runState;
@@ -346,6 +349,7 @@ void cpuRun(void) {
     mmuSetEntryHi(userContext.tlbHi);
     mmuSetEntryLo(userContext.tlbLo);
     mmuSetBadAddr(userContext.badAddr);
+    mmuSetBadAccs(userContext.badAccs);
     if (breakSet) {
       mmuWriteWord(breakAddr, instr);
     }

@@ -14,8 +14,9 @@
 	.set	TLB_ENTRY_LO,3		; reg # of TLB EntryLo
 	.set	TLB_ENTRIES,32		; number of TLB entries
 	.set	BAD_ADDRESS,4		; reg # of bad address reg
+	.set	BAD_ACCESS,5		; reg # of bad access reg
 
-	.set	USER_CONTEXT_SIZE,37*4	; size of user context
+	.set	USER_CONTEXT_SIZE,38*4	; size of user context
 
 	.set	BIO_OUT,0xF1000000	; board I/O output port
 	.set	SPI_EN,0x80000000	; SPI bus enable ctrl bit
@@ -366,6 +367,8 @@ resume:
 	mvts	$8,TLB_ENTRY_LO
 	ldw	$8,$28,36*4		; badAddress
 	mvts	$8,BAD_ADDRESS
+	ldw	$8,$28,37*4		; badAccess
+	mvts	$8,BAD_ACCESS
 	;ldw	$0,$28,0*4		; registers
 	ldw	$1,$28,1*4
 	ldw	$2,$28,2*4
@@ -452,5 +455,7 @@ umsr:
 	stw	$8,$28,35*4		; tlbEntryLo
 	mvfs	$8,BAD_ADDRESS
 	stw	$8,$28,36*4		; badAddress
+	mvfs	$8,BAD_ACCESS
+	stw	$8,$28,37*4		; badAccess
 	.syn
 	j	loadState

@@ -706,8 +706,10 @@ static void doMemoryByte(char *tokens[], int n) {
 
 
 static void doTLB(char *tokens[], int n) {
+  static char *mmuAccsWidth[4] = { "byte", "half", "word", "????" };
   int index;
   TLB_Entry tlbEntry;
+  Word mmuAccs;
   Word data;
 
   if (n == 1) {
@@ -718,10 +720,15 @@ static void doTLB(char *tokens[], int n) {
              tlbEntry.write ? 'w' : '-',
              tlbEntry.valid ? 'v' : '-');
     }
-    printf("Index(1)   %08X\n", mmuGetIndex());
-    printf("EntryHi(2) %08X\n", mmuGetEntryHi());
-    printf("EntryLo(3) %08X\n", mmuGetEntryLo());
-    printf("BadAddr(4) %08X\n", mmuGetBadAddr());
+    printf("Index   (1)  %08X\n", mmuGetIndex());
+    printf("EntryHi (2)  %08X\n", mmuGetEntryHi());
+    printf("EntryLo (3)  %08X\n", mmuGetEntryLo());
+    printf("BadAddr (4)  %08X\n", mmuGetBadAddr());
+    mmuAccs = mmuGetBadAccs();
+    printf("BadAccs (5)  %08X (%s %s)\n",
+           mmuAccs,
+           (mmuAccs & MMU_ACCS_WRITE) ? "write" : "read",
+           mmuAccsWidth[mmuAccs & 0x03]);
   } else if (n == 2) {
     if (!getDecNumber(tokens[1], &index) || index < 0 || index >= TLB_SIZE) {
       printf("illegal TLB index\n");

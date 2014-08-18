@@ -14,6 +14,7 @@ typedef struct {
   Word tlbHi;			/* TLB EntryHi register */
   Word tlbLo;			/* TLB EntryLo register */
   Word badAddr;			/* bad address register */
+  Word badAccs;			/* bad access register */
 } UserContext;
 
 typedef struct {

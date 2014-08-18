@@ -14,6 +14,7 @@ static Word tlbIndex;
 static Word tlbEntryHi;
 static Word tlbEntryLo;
 static Word badAddress;
+static Word badAccess;
 
 
 Word mmuReadWord(Word vAddr) {
@@ -83,6 +84,16 @@ Word mmuGetBadAddr(void) {
 
 void mmuSetBadAddr(Word value) {
   badAddress = value;
+}
+
+
+Word mmuGetBadAccs(void) {
+  return badAccess;
+}
+
+
+void mmuSetBadAccs(Word value) {
+  badAccess = value;
 }
 
 
