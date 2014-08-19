@@ -99,6 +99,9 @@ module cpu(clk, reset,
   wire [31:0] mmu_bad_addr;	// special register 4 (mmu bad addr) contents
   wire mmu_bad_addr_we;		// mmu bad addr write enable
   wire [31:0] mmu_bad_addr_new;	// new mmu bad addr contents
+  wire [31:0] mmu_bad_accs;	// special register 5 (mmu bad accs) contents
+  wire mmu_bad_accs_we;		// mmu bad accs write enable
+  wire [31:0] mmu_bad_accs_new;	// new mmu bad accs contents
 
   // mmu & tlb
   wire tlb_kmissed;		// page not found in tlb, MSB of addr is 1
@@ -181,8 +184,11 @@ module cpu(clk, reset,
                tlb_index, tlb_index_we, tlb_index_new,
                tlb_entry_hi, tlb_entry_hi_we, tlb_entry_hi_new,
                tlb_entry_lo, tlb_entry_lo_we, tlb_entry_lo_new,
-               mmu_bad_addr, mmu_bad_addr_we, mmu_bad_addr_new);
+               mmu_bad_addr, mmu_bad_addr_we, mmu_bad_addr_new,
+               mmu_bad_accs, mmu_bad_accs_we, mmu_bad_accs_new);
   assign mmu_bad_addr_new = virt_addr;
+  assign mmu_bad_accs_we = mmu_bad_addr_we;
+  assign mmu_bad_accs_new = { 29'b0, bus_wr, bus_size[1:0] };
 
   // ctrl
   ctrl ctrl1(clk, reset,
@@ -905,8 +911,8 @@ module ctrl(clk, reset,
           mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
           mdor_we = 1'b0;
           bus_en = 1'b0;
-          bus_wr = 1'bx;
-          bus_size = 2'b10;  // enable illegal address detection
+          bus_wr = 1'b0;         // get bad_accs right in case of exc
+          bus_size = 2'b10;      // enable illegal address detection
           mdir_we = 1'b0;
           mdir_sx = 1'bx;
           ir_we = 1'b0;
@@ -1250,7 +1256,7 @@ module ctrl(clk, reset,
           mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
           mdor_we = 1'b0;
           bus_en = 1'b0;
-          bus_wr = 1'bx;
+          bus_wr = 1'b0;         // get bad_accs right in case of exc
           bus_size = ldst_size;  // enable illegal address detection
           mdir_we = 1'b0;
           mdir_sx = 1'bx;
@@ -1312,7 +1318,7 @@ module ctrl(clk, reset,
           mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
           mdor_we = 1'b0;
           bus_en = 1'b0;
-          bus_wr = 1'bx;
+          bus_wr = 1'b1;         // get bad_accs right in case of exc
           bus_size = ldst_size;  // enable illegal address detection
           mdir_we = 1'b0;
           mdir_sx = 1'bx;
@@ -2455,7 +2461,8 @@ module sregs(clk, reset,
              tlb_index, tlb_index_we, tlb_index_new,
              tlb_entry_hi, tlb_entry_hi_we, tlb_entry_hi_new,
              tlb_entry_lo, tlb_entry_lo_we, tlb_entry_lo_new,
-             mmu_bad_addr, mmu_bad_addr_we, mmu_bad_addr_new);
+             mmu_bad_addr, mmu_bad_addr_we, mmu_bad_addr_new,
+             mmu_bad_accs, mmu_bad_accs_we, mmu_bad_accs_new);
     input clk;
     input reset;
     input [2:0] rn;
@@ -2477,13 +2484,16 @@ module sregs(clk, reset,
     output [31:0] mmu_bad_addr;
     input mmu_bad_addr_we;
     input [31:0] mmu_bad_addr_new;
+    output [31:0] mmu_bad_accs;
+    input mmu_bad_accs_we;
+    input [31:0] mmu_bad_accs_new;
 
   // rn = 000   register = PSW
   //      001              TLB index
   //      010              TLB entry high
   //      011              TLB entry low
   //      100              MMU bad address
-  //      101              - not used -
+  //      101              MMU bad access
   //      110              - not used -
   //      111              - not used -
 
@@ -2495,6 +2505,7 @@ module sregs(clk, reset,
   assign tlb_entry_hi = sr[2];
   assign tlb_entry_lo = sr[3];
   assign mmu_bad_addr = sr[4];
+  assign mmu_bad_accs = sr[5];
 
   always @(posedge clk) begin
     if (reset == 1) begin
@@ -2517,6 +2528,9 @@ module sregs(clk, reset,
         end
         if (mmu_bad_addr_we) begin
           sr[4] <= mmu_bad_addr_new;
+        end
+        if (mmu_bad_accs_we) begin
+          sr[5] <= mmu_bad_accs_new;
         end
       end
     end
