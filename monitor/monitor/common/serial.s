@@ -7,13 +7,13 @@
 	.set	ser0base,0xF0300000	; serial line 0 base address
 	.set	ser1base,0xF0301000	; serial line 1 base address
 
-	.export	serinit			; initialize serial interface
-
+	.export	ser0init		; line 0 initialization
 	.export	ser0inchk		; line 0 input check
 	.export	ser0in			; line 0 input
 	.export	ser0outchk		; line 0 output check
 	.export	ser0out			; line 0 output
 
+	.export	ser1init		; line 1 initialization
 	.export	ser1inchk		; line 1 input check
 	.export	ser1in			; line 1 input
 	.export	ser1outchk		; line 1 output check
@@ -24,13 +24,8 @@
 	.code
 	.align	4
 
-serinit:
+ser0init:
 	jr	$31
-
-;***************************************************************
-
-	.code
-	.align	4
 
 ser0inchk:
 	add	$8,$0,ser0base
@@ -66,6 +61,9 @@ ser0out1:
 
 	.code
 	.align	4
+
+ser1init:
+	jr	$31
 
 ser1inchk:
 	add	$8,$0,ser1base

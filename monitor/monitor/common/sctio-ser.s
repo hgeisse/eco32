@@ -1,11 +1,11 @@
 ;
-; sctio-ser.s -- disk sector I/O for disk made available by serial interface
+; dskser.s -- disk made available by serial interface
 ;
 
 ;***************************************************************
 
-	.export	sctcapser		; determine disk capacity
-	.export	sctioser		; do disk I/O
+	.export	dskcapser		; determine disk capacity
+	.export	dskioser		; do disk I/O
 
 	.import	ser1in
 	.import	ser1out
@@ -25,7 +25,7 @@
 	.code
 	.align	4
 
-sctcapser:
+dskcapser:
 	sub	$29,$29,16
 	stw	$16,$29,0
 	stw	$17,$29,4
@@ -50,11 +50,11 @@ handshake2:
 	bne	$16,$0,handshake1
 	add	$4,$0,frustratedmsg
 	jal	puts
-	j	sctcapx
+	j	dskcapx
 handshake3:
 	jal	ser1in
 	add	$8,$0,ACK
-	bne	$2,$8,sctcapx
+	bne	$2,$8,dskcapx
 	; we got an ACK so we return it
 	add	$4,$0,ACK
 	jal	ser1out
@@ -63,19 +63,19 @@ handshake3:
 	add	$4,$0,'c'
 	jal	ser1out			; request
 	jal	ser1in			; first byte of response
-	bne	$2,$0,sctcapx		; exit if error
+	bne	$2,$0,dskcapx		; exit if error
 
 	; all is well and the server will give us the capacity
 	add	$16,$0,4		; 4 bytes to read
-sctcap1:
+dskcap1:
 	sll	$18,$18,8
 	jal	ser1in
 	or	$18,$18,$2		; most significant byte first
 	sub	$16,$16,1
-	bne	$16,$0,sctcap1
+	bne	$16,$0,dskcap1
 
 	; return value is in $18
-sctcapx:
+dskcapx:
 	add	$2,$0,$18
 	ldw	$16,$29,0
 	ldw	$17,$29,4
@@ -102,7 +102,7 @@ frustratedmsg:
 	.code
 	.align	4
 
-sctioser:
+dskioser:
 	sub	$29,$29,24
 	stw	$16,$29,0
 	stw	$17,$29,4
@@ -118,78 +118,78 @@ sctioser:
 
 	; switch over command
 	add	$8,$0,'r'
-	beq	$8,$16,sctior		; read
+	beq	$8,$16,dskior		; read
 	add	$8,$0,'w'
-	beq	$8,$16,sctiow		; write
+	beq	$8,$16,dskiow		; write
 	; unknown command
 	add	$2,$0,1			; value != 0 signifies error
-	j	sctiox
+	j	dskiox
 
 	; read from disk
-sctior:
-sctior1:				; loop over number of sectors
-	beq	$19,$0,sctiorsuc	; successful return
+dskior:
+dskior1:				; loop over number of sectors
+	beq	$19,$0,dskiorsuc	; successful return
 	sub	$19,$19,1
 	; read a sector
 	add	$4,$0,'r'
 	jal	ser1out
 	; send sector number
 	add	$20,$0,32		; 4 bytes
-sctior2:
+dskior2:
 	sub	$20,$20,8
 	slr	$4,$17,$20
 	and	$4,$4,0xff
 	jal	ser1out
-	bne	$20,$0,sctior2
+	bne	$20,$0,dskior2
 	add	$17,$17,1
 	; get answer
 	jal	ser1in
-	bne	$2,$0,sctiox		; $2 != 0 so we use it as return code
+	bne	$2,$0,dskiox		; $2 != 0 so we use it as return code
 	; read data
 	add	$20,$0,512
-sctior3:
+dskior3:
 	sub	$20,$20,1
 	jal	ser1in
 	stb	$2,$18,0
 	add	$18,$18,1
-	bne	$20,$0,sctior3
-	j	sctior1
-sctiorsuc:
+	bne	$20,$0,dskior3
+	j	dskior1
+dskiorsuc:
 	add	$2,$0,$0
-	j	sctiox
+	j	dskiox
 
 	; write to disk
-sctiow:
-sctiow1:				; loop over number of sectors
-	beq	$19,$0,sctiowsuc	; successful return
+dskiow:
+dskiow1:				; loop over number of sectors
+	beq	$19,$0,dskiowsuc	; successful return
 	sub	$19,$19,1
 	; write a sector
 	add	$4,$0,'w'
 	jal	ser1out
 	; send sector number
 	add	$20,$0,32		; 4 bytes
-sctiow2:
+dskiow2:
 	sub	$20,$20,8
 	slr	$4,$17,$20
 	and	$4,$4,0xff
 	jal	ser1out
-	bne	$20,$0,sctiow2
+	bne	$20,$0,dskiow2
 	add	$17,$17,1
 	; write data
 	add	$20,$0,512
-sctiow3:
+dskiow3:
 	sub	$20,$20,1
 	ldbu	$4,$18,0
 	jal	ser1out
 	add	$18,$18,1
-	bne	$20,$0,sctiow3
+	bne	$20,$0,dskiow3
 	; get answer
 	jal	ser1in
-	bne	$2,$0,sctiox
-	j	sctiow1
-sctiowsuc:
+	bne	$2,$0,dskiox
+	j	dskiow1
+dskiowsuc:
 	add	$2,$0,$0
-sctiox:
+dskiox:
 	ldw	$16,$29,0
 	ldw	$17,$29,4
 	ldw	$18,$29,8

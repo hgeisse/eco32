@@ -20,8 +20,8 @@ SRC = start.s \
       ../../kbdtbls/kbdtbls.s \
       ../../common/display.s \
       ../../common/serial.s \
-      ../../common/sctio-ctl.s \
-      ../../common/sctio-ser.s \
+      ../../common/dskctl.s \
+      ../../common/dskser.s \
       ../../common/end.s
 
 .PHONY:		all install clean

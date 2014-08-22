@@ -1,5 +1,5 @@
 ;
-; sctio-ctl.s -- disk sector I/O for disk made available by disk controller
+; dskctl.s -- disk made available by disk controller
 ;
 
 ;***************************************************************
@@ -22,31 +22,35 @@
 
 	.set	retries,1000000		; retries to get disk ready
 
-	.export	sctcapctl		; determine disk capacity
-	.export	sctioctl		; do disk I/O
+	.export	dskinit			; initialize disk
+	.export	dskcapctl		; determine disk capacity
+	.export	dskioctl		; do disk I/O
 
 ;***************************************************************
 
 	.code
 	.align	4
 
-sctcapctl:
-	add	$8,$0,retries		; set retry count
-	add	$9,$0,dskbase
-sctcap1:
-	ldw	$10,$9,dskctrl
-	and	$10,$10,ctrlrdy		; ready?
-	bne	$10,$0,sctcapok		; yes - jump
-	sub	$8,$8,1
-	bne	$8,$0,sctcap1		; try again
-	add	$2,$0,0			; no disk found
-	j	sctcapx
-sctcapok:
-	ldw	$2,$9,dskcap		; get disk capacity
-sctcapx:
+dskinit:
 	jr	$31
 
-sctioctl:
+dskcapctl:
+	add	$8,$0,retries		; set retry count
+	add	$9,$0,dskbase
+dskcap1:
+	ldw	$10,$9,dskctrl
+	and	$10,$10,ctrlrdy		; ready?
+	bne	$10,$0,dskcapok		; yes - jump
+	sub	$8,$8,1
+	bne	$8,$0,dskcap1		; try again
+	add	$2,$0,0			; no disk found
+	j	dskcapx
+dskcapok:
+	ldw	$2,$9,dskcap		; get disk capacity
+dskcapx:
+	jr	$31
+
+dskioctl:
 	sub	$29,$29,24
 	stw	$31,$29,20
 	stw	$16,$29,16
@@ -60,69 +64,69 @@ sctioctl:
 	add	$19,$7,$0		; number of sectors
 
 	add	$8,$0,'r'
-	beq	$16,$8,sctrd
+	beq	$16,$8,dskrd
 	add	$8,$0,'w'
-	beq	$16,$8,sctwr
+	beq	$16,$8,dskwr
 	add	$2,$0,0xFF		; illegal command
-	j	sctx
+	j	dskx
 
-sctrd:
+dskrd:
 	add	$2,$0,$0		; return ok
-	beq	$19,$0,sctx		; if no (more) sectors
+	beq	$19,$0,dskx		; if no (more) sectors
 	add	$8,$0,dskbase
 	add	$9,$0,1
 	stw	$9,$8,dskcnt		; number of sectors
 	stw	$17,$8,dsksct		; sector number on disk
 	add	$9,$0,ctrlstrt
 	stw	$9,$8,dskctrl		; start command
-sctrd1:
+dskrd1:
 	ldw	$2,$8,dskctrl
 	and	$9,$2,ctrldone		; done?
-	beq	$9,$0,sctrd1		; no - wait
+	beq	$9,$0,dskrd1		; no - wait
 	and	$9,$2,ctrlerr		; error?
-	bne	$9,$0,sctx		; yes - leave
+	bne	$9,$0,dskx		; yes - leave
 	add	$8,$0,dskbase + dskbuf	; transfer data
 	add	$9,$0,sctsize
-sctrd2:
+dskrd2:
 	ldw	$10,$8,0		; from disk buffer
 	stw	$10,$18,0		; to memory
 	add	$8,$8,4
 	add	$18,$18,4
 	sub	$9,$9,4
-	bne	$9,$0,sctrd2
+	bne	$9,$0,dskrd2
 	add	$17,$17,1		; increment sector number
 	sub	$19,$19,1		; decrement number of sectors
-	j	sctrd			; next sector
+	j	dskrd			; next sector
 
-sctwr:
+dskwr:
 	add	$2,$0,$0		; return ok
-	beq	$19,$0,sctx		; if no (more) sectors
+	beq	$19,$0,dskx		; if no (more) sectors
 	add	$8,$0,dskbase + dskbuf	; transfer data
 	add	$9,$0,sctsize
-sctwr1:
+dskwr1:
 	ldw	$10,$18,0		; from memory
 	stw	$10,$8,0		; to disk buffer
 	add	$18,$18,4
 	add	$8,$8,4
 	sub	$9,$9,4
-	bne	$9,$0,sctwr1
+	bne	$9,$0,dskwr1
 	add	$8,$0,dskbase
 	add	$9,$0,1
 	stw	$9,$8,dskcnt		; number of sectors
 	stw	$17,$8,dsksct		; sector number on disk
 	add	$9,$0,ctrlwrt | ctrlstrt
 	stw	$9,$8,dskctrl		; start command
-sctwr2:
+dskwr2:
 	ldw	$2,$8,dskctrl
 	and	$9,$2,ctrldone		; done?
-	beq	$9,$0,sctwr2		; no - wait
+	beq	$9,$0,dskwr2		; no - wait
 	and	$9,$2,ctrlerr		; error?
-	bne	$9,$0,sctx		; yes - leave
+	bne	$9,$0,dskx		; yes - leave
 	add	$17,$17,1		; increment sector number
 	sub	$19,$19,1		; decrement number of sectors
-	j	sctwr			; next sector
+	j	dskwr			; next sector
 
-sctx:
+dskx:
 	ldw	$20,$29,0
 	ldw	$19,$29,4
 	ldw	$18,$29,8

@@ -27,24 +27,31 @@
 	.import	_edata
 	.import	_ebss
 
-	.import	kbdinit
-	.import	kbdinchk
-	.import	kbdin
-
 	.import	dspinit
 	.import	dspoutchk
 	.import	dspout
 
-	.import	serinit
+	.import	kbdinit
+	.import	kbdinchk
+	.import	kbdin
+
+	.import	ser0init
 	.import	ser0inchk
 	.import	ser0in
 	.import	ser0outchk
 	.import	ser0out
 
-	.import	sctcapctl
-	.import	sctioctl
-	.import	sctcapser
-	.import	sctioser
+	.import	ser1init
+	.import	ser1inchk
+	.import	ser1in
+	.import	ser1outchk
+	.import	ser1out
+
+	.import	dskinit
+	.import	dskcapctl
+	.import	dskioctl
+	.import	dskcapser
+	.import	dskioser
 
 	.import	main
 
@@ -62,11 +69,6 @@
 	.export	sout
 	.export	dskcap
 	.export	dskio
-
-	.export	setISR
-	.export	setUMSR
-	.export	isrPtr
-	.export	umsrPtr
 
 	.export	getTLB_HI
 	.export	getTLB_LO
@@ -151,12 +153,6 @@ reserved2:
 reserved3:
 	j	reserved3
 
-setISR:
-	j	setISR1
-
-setUMSR:
-	j	setUMSR1
-
 ;***************************************************************
 
 	.code
@@ -175,15 +171,14 @@ start:
 	; initialize TLB
 	mvts	$0,TLB_ENTRY_LO		; invalidate all TLB entries
 	add	$8,$0,dmapaddr		; by impossible virtual page number
-	add	$9,$0,$0
-	add	$10,$0,TLB_ENTRIES
-tlbloop:
 	mvts	$8,TLB_ENTRY_HI
-	mvts	$9,TLB_INDEX
+	add	$8,$0,$0
+	add	$9,$0,TLB_ENTRIES
+tlbloop:
+	mvts	$8,TLB_INDEX
 	tbwi
-	add	$8,$8,0x1000		; all entries must be different
-	add	$9,$9,1
-	bne	$9,$10,tlbloop
+	add	$8,$8,1
+	bne	$8,$9,tlbloop
 
 	; copy data segment
 	add	$10,$0,_bdata		; lowest dst addr to be written to
@@ -213,7 +208,9 @@ clrtest:
 	add	$29,$0,stacktop		; setup monitor stack
 	jal	dspinit			; init display
 	jal	kbdinit			; init keyboard
-	jal	serinit			; init serial interface
+	jal	ser0init		; init serial line 0
+	jal	ser1init		; init serial line 1
+	jal	dskinit			; init disk
 	jal	main			; enter command loop
 
 	; main should never return
@@ -254,9 +251,9 @@ setTLB:
 	; int dskcap(int dskno)
 dcap:
 	bne	$4,$0,dcapser
-	j	sctcapctl
+	j	dskcapctl
 dcapser:
-	j	sctcapser
+	j	dskcapser
 
 	; int dskio(int dskno, char cmd, int sct, Word addr, int nscts)
 dio:
@@ -265,37 +262,13 @@ dio:
 	add	$5,$6,$0
 	add	$6,$7,$0
 	ldw	$7,$29,16
-	j	sctioctl
+	j	dskioctl
 dioser:
 	add	$4,$5,$0
 	add	$5,$6,$0
 	add	$6,$7,$0
 	ldw	$7,$29,16
-	j	sctioser
-
-;***************************************************************
-
-	.code
-	.align	4
-
-	; void setISR(Word ptr)
-setISR1:
-	stw	$4,$0,isrPtr
-	jr	$31
-
-	; void setUMSR(Word ptr)
-setUMSR1:
-	stw	$4,$0,umsrPtr
-	jr	$31
-
-	.data
-	.align	4
-
-isrPtr:
-	.word	0
-
-umsrPtr:
-	.word	0
+	j	dskioser
 
 ;***************************************************************
 

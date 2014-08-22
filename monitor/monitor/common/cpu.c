@@ -292,19 +292,13 @@ void cpuStep(void) {
   if ((psw & PSW_PRIO_MASK) >> 16 == 21 &&
       (mmuGetEntryHi() & 0x80000000) == 0) {
     /* TLB user miss */
-    if (umsrPtr == 0x00000000) {
-      printf("unexpected TLB user miss exception occurred\n");
-      return;
-    }
-    pc = umsrPtr;
+    printf("unexpected TLB user miss exception occurred\n");
+    return;
   } else {
     /* any other exception */
-    if (isrPtr == 0x00000000) {
-      printf("unexpected %s occurred\n",
-             exceptionToString((psw & PSW_PRIO_MASK) >> 16));
-      return;
-    }
-    pc = isrPtr;
+    printf("unexpected %s occurred\n",
+           exceptionToString((psw & PSW_PRIO_MASK) >> 16));
+    return;
   }
 }
 
@@ -359,19 +353,13 @@ void cpuRun(void) {
     if ((psw & PSW_PRIO_MASK) >> 16 == 21 &&
         (mmuGetEntryHi() & 0x80000000) == 0) {
       /* TLB user miss */
-      if (umsrPtr == 0x00000000) {
-        printf("unexpected TLB user miss exception occurred\n");
-        return;
-      }
-      pc = umsrPtr;
+      printf("unexpected TLB user miss exception occurred\n");
+      return;
     } else {
       /* any other exception */
-      if (isrPtr == 0x00000000) {
-        printf("unexpected %s occurred\n",
-               exceptionToString((psw & PSW_PRIO_MASK) >> 16));
-        return;
-      }
-      pc = isrPtr;
+      printf("unexpected %s occurred\n",
+             exceptionToString((psw & PSW_PRIO_MASK) >> 16));
+      return;
     }
   }
 }
