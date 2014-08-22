@@ -4,6 +4,7 @@
 
 ;***************************************************************
 
+	.export	dskinitser		; initialize disk
 	.export	dskcapser		; determine disk capacity
 	.export	dskioser		; do disk I/O
 
@@ -24,6 +25,9 @@
 
 	.code
 	.align	4
+
+dskinitser:
+	jr	$31
 
 dskcapser:
 	sub	$29,$29,16

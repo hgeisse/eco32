@@ -47,9 +47,11 @@
 	.import	ser1outchk
 	.import	ser1out
 
-	.import	dskinit
+	.import	dskinitctl
 	.import	dskcapctl
 	.import	dskioctl
+
+	.import	dskinitser
 	.import	dskcapser
 	.import	dskioser
 
@@ -210,7 +212,8 @@ clrtest:
 	jal	kbdinit			; init keyboard
 	jal	ser0init		; init serial line 0
 	jal	ser1init		; init serial line 1
-	jal	dskinit			; init disk
+	jal	dskinitctl		; init disk (controller)
+	jal	dskinitser		; init disk (serial line)
 	jal	main			; enter command loop
 
 	; main should never return

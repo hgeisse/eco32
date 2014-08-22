@@ -22,7 +22,7 @@
 
 	.set	retries,1000000		; retries to get disk ready
 
-	.export	dskinit			; initialize disk
+	.export	dskinitctl		; initialize disk
 	.export	dskcapctl		; determine disk capacity
 	.export	dskioctl		; do disk I/O
 
@@ -31,7 +31,7 @@
 	.code
 	.align	4
 
-dskinit:
+dskinitctl:
 	jr	$31
 
 dskcapctl:
