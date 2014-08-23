@@ -2,9 +2,9 @@
 ; biolib.s -- basic I/O library
 ;
 
-	.set	cin,0xC0000010
-	.set	cout,0xC0000018
-	.set	dskio,0xC0000030
+	.set	cin,0xC0000014
+	.set	cout,0xC000001C
+	.set	dskio,0xC0000024
 
 	.export	getc
 	.export	putc

@@ -20,8 +20,8 @@
 	.set	stacktop,0xC0011000	; top of stack
 	.set	loadaddr,0xC0011000	; where to load the boot manager
 
-	.set	cout,0xC0000018		; the monitor's console output
-	.set	dskio,0xC0000030	; the monitor's disk I/O
+	.set	cout,0xC000001C		; the monitor's console output
+	.set	dskio,0xC0000024	; the monitor's disk I/O
 
 	; load the boot manager and start it
 start:
