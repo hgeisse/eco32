@@ -31,15 +31,11 @@ typedef struct {
 } MonitorState;
 
 
+void setcon(Byte ctl);
 int cinchk(void);
-int cin(void);
+char cin(void);
 int coutchk(void);
 void cout(char c);
-
-int sinchk(void);
-int sin(void);
-int soutchk(void);
-void sout(char c);
 
 int dskcap(int dskno);
 int dskio(int dskno, char cmd, int sct, Word addr, int nscts);

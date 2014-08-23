@@ -2,6 +2,9 @@
 ; start.s -- ECO32 ROM monitor startup and support routines
 ;
 
+;	.set	CIO_CTL,0x00		; set console to keyboard/display
+	.set	CIO_CTL,0x03		; set console to serial line 0
+
 	.set	dmapaddr,0xC0000000	; base of directly mapped addresses
 	.set	stacktop,0xC0010000	; monitor stack is at top of 64K
 
@@ -24,13 +27,13 @@
 	.import	_edata
 	.import	_ebss
 
-	.import	dspinit
-	.import	dspoutchk
-	.import	dspout
-
 	.import	kbdinit
 	.import	kbdinchk
 	.import	kbdin
+
+	.import	dspinit
+	.import	dspoutchk
+	.import	dspout
 
 	.import	ser0init
 	.import	ser0inchk
@@ -58,14 +61,11 @@
 	.export	_bdata
 	.export	_bbss
 
+	.export	setcon
 	.export	cinchk
 	.export	cin
 	.export	coutchk
 	.export	cout
-	.export	sinchk
-	.export	sin
-	.export	soutchk
-	.export	sout
 	.export	dskcap
 	.export	dskio
 
@@ -95,7 +95,7 @@ _bbss:
 	.code
 	.align	4
 
-reset:
+startup:
 	j	start
 
 interrupt:
@@ -109,33 +109,20 @@ userMiss:
 	.code
 	.align	4
 
+setcon:
+	j	setcio
+
 cinchk:
-;	j	kbdinchk
-	j	ser0inchk
+	j	cichk
 
 cin:
-;	j	kbdin
-	j	ser0in
+	j	ci
 
 coutchk:
-;	j	dspoutchk
-	j	ser0outchk
+	j	cochk
 
 cout:
-;	j	dspout
-	j	ser0out
-
-sinchk:
-	j	ser0inchk
-
-sin:
-	j	ser0in
-
-soutchk:
-	j	ser0outchk
-
-sout:
-	j	ser0out
+	j	co
 
 dskcap:
 	j	dcap
@@ -143,14 +130,23 @@ dskcap:
 dskio:
 	j	dio
 
-reserved1:
-	j	reserved1
+reserved10:
+	j	reserved10
 
-reserved2:
-	j	reserved2
+reserved11:
+	j	reserved11
 
-reserved3:
-	j	reserved3
+reserved12:
+	j	reserved12
+
+reserved13:
+	j	reserved13
+
+reserved14:
+	j	reserved14
+
+reserved15:
+	j	reserved15
 
 ;***************************************************************
 
@@ -198,14 +194,18 @@ clrloop:
 clrtest:
 	bltu	$8,$9,clrloop
 
-	; now do some useful work
+	; initialize I/O
 	add	$29,$0,stacktop		; setup monitor stack
-	jal	dspinit			; init display
 	jal	kbdinit			; init keyboard
+	jal	dspinit			; init display
 	jal	ser0init		; init serial line 0
 	jal	ser1init		; init serial line 1
 	jal	dskinitctl		; init disk (controller)
 	jal	dskinitser		; init disk (serial line)
+	add	$4,$0,CIO_CTL		; set console
+	jal	setcio
+
+	; call main
 	jal	main			; enter command loop
 
 	; main should never return
@@ -237,6 +237,58 @@ setTLB:
 	mvts	$6,TLB_ENTRY_LO
 	tbwi
 	jr	$31
+
+;***************************************************************
+
+	.data
+	.align	4
+
+cioctl:
+	.byte	0
+
+	.code
+	.align	4
+
+	; void setcon(Byte ctl)
+setcio:
+	stb	$4,$0,cioctl
+	j	$31
+
+	; int cinchk(void)
+cichk:
+	ldbu	$8,$0,cioctl
+	and	$8,$8,0x01
+	bne	$8,$0,cichk1
+	j	kbdinchk
+cichk1:
+	j	ser0inchk
+
+	; char cin(void)
+ci:
+	ldbu	$8,$0,cioctl
+	and	$8,$8,0x01
+	bne	$8,$0,ci1
+	j	kbdin
+ci1:
+	j	ser0in
+
+	; int coutchk(void)
+cochk:
+	ldbu	$8,$0,cioctl
+	and	$8,$8,0x02
+	bne	$8,$0,cochk1
+	j	dspoutchk
+cochk1:
+	j	ser0outchk
+
+	; void cout(char c)
+co:
+	ldbu	$8,$0,cioctl
+	and	$8,$8,0x02
+	bne	$8,$0,co1
+	j	dspout
+co1:
+	j	ser0out
 
 ;***************************************************************
 
