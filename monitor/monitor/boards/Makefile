@@ -1,10 +1,10 @@
 #
-# Makefile for building the ECO32 ROM monitor
+# Makefile for building the ECO32 ROM monitor for different boards
 #
 
 BUILD = ../../../build
 
-DIRS = xsa-xst-3 s3e-500
+DIRS = simulator xsa-xst-3 s3e-500
 
 .PHONY:		all install clean
 
