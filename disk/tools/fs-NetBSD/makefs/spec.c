@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/time.h>
 
 #include "mtree.h"
 #include "pack_dev.h"
