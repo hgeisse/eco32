@@ -106,6 +106,8 @@ module eco32(clk_in,
     output slot2_cs_n;
     // ethernet
     output ether_cs_n;
+    // board I/O
+    //!!!!!
 
   // clk_reset
   wire clk;
@@ -192,6 +194,13 @@ module eco32(clk_in,
   wire [31:0] dsk_data_out;
   wire dsk_wt;
   wire dsk_irq;
+  // bio
+  wire bio_en;
+  wire bio_wr;
+  wire bio_addr;
+  wire [31:0] bio_data_in;
+  wire [31:0] bio_data_out;
+  wire bio_wt;
 
   clk_reset clk_reset1(
     .clk_in(clk_in),
@@ -275,7 +284,14 @@ module eco32(clk_in,
     .dsk_addr(dsk_addr[19:2]),
     .dsk_data_in(dsk_data_in[31:0]),
     .dsk_data_out(dsk_data_out[31:0]),
-    .dsk_wt(dsk_wt)
+    .dsk_wt(dsk_wt),
+    // bio
+    .bio_en(bio_en),
+    .bio_wr(bio_wr),
+    .bio_addr(bio_addr),
+    .bio_data_in(bio_data_in[31:0]),
+    .bio_data_out(bio_data_out[31:0]),
+    .bio_wt(bio_wt)
   );
 
   cpu cpu1(
@@ -459,5 +475,16 @@ module eco32(clk_in,
   assign slot1_cs_n = 1;
   assign slot2_cs_n = 1;
   assign ether_cs_n = 1;
+
+  bio bio1(
+    .clk(clk),
+    .reset(reset),
+    .en(bio_en),
+    .wr(bio_wr),
+    .addr(bio_addr),
+    .data_in(bio_data_in[31:0]),
+    .data_out(bio_data_out[31:0]),
+    .wt(bio_wt)
+  );
 
 endmodule

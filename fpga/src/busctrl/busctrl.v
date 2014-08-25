@@ -22,7 +22,9 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
                ser1_en, ser1_wr, ser1_addr,
                ser1_data_in, ser1_data_out, ser1_wt,
                dsk_en, dsk_wr, dsk_addr,
-               dsk_data_in, dsk_data_out, dsk_wt);
+               dsk_data_in, dsk_data_out, dsk_wt,
+               bio_en, bio_wr, bio_addr,
+               bio_data_in, bio_data_out, bio_wt);
     // cpu
     input cpu_en;
     input cpu_wr;
@@ -95,6 +97,13 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
     output [31:0] dsk_data_in;
     input [31:0] dsk_data_out;
     input dsk_wt;
+    // bio
+    output bio_en;
+    output bio_wr;
+    output bio_addr;
+    output [31:0] bio_data_in;
+    input [31:0] bio_data_out;
+    input bio_wt;
 
   wire i_o_en;
 
@@ -132,6 +141,9 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
                  && cpu_addr[19:12] == 8'h01) ? 1 : 0;
   assign dsk_en =
     (i_o_en == 1 && cpu_addr[27:20] == 8'h04) ? 1 : 0;
+  assign bio_en =
+    (i_o_en == 1 && cpu_addr[27:20] == 8'h10
+                 && cpu_addr[19:12] == 8'h00) ? 1 : 0;
 
   // to cpu
   assign cpu_wt =
@@ -144,6 +156,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
     (ser0_en == 1) ? ser0_wt :
     (ser1_en == 1) ? ser1_wt :
     (dsk_en == 1) ? dsk_wt :
+    (bio_en == 1) ? bio_wt :
     1;
   assign cpu_data_in[31:0] =
     (ram_en == 1) ? ram_data_out[31:0] :
@@ -155,6 +168,7 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
     (ser0_en == 1) ? { 24'h000000, ser0_data_out[7:0] } :
     (ser1_en == 1) ? { 24'h000000, ser1_data_out[7:0] } :
     (dsk_en == 1) ? dsk_data_out[31:0] :
+    (bio_en == 1) ? bio_data_out[31:0] :
     32'h00000000;
 
   // to ram
@@ -202,5 +216,10 @@ module busctrl(cpu_en, cpu_wr, cpu_size, cpu_addr,
   assign dsk_wr = cpu_wr;
   assign dsk_addr[19:2] = cpu_addr[19:2];
   assign dsk_data_in[31:0] = cpu_data_out[31:0];
+
+  // to bio
+  assign bio_wr = cpu_wr;
+  assign bio_addr = cpu_addr[2];
+  assign bio_data_in[31:0] = cpu_data_out[31:0];
 
 endmodule
