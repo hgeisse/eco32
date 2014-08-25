@@ -47,7 +47,11 @@ module eco32(clk_in,
              ata_iordy,
              slot1_cs_n,
              slot2_cs_n,
-             ether_cs_n);
+             ether_cs_n,
+             sw1_3_n,
+             sw1_4_n,
+             sw2_n,
+             sw3_n);
 
     // clock and reset
     input clk_in;
@@ -107,7 +111,10 @@ module eco32(clk_in,
     // ethernet
     output ether_cs_n;
     // board I/O
-    //!!!!!
+    input sw1_3_n;
+    input sw1_4_n;
+    input sw2_n;
+    input sw3_n;
 
   // clk_reset
   wire clk;
@@ -484,7 +491,11 @@ module eco32(clk_in,
     .addr(bio_addr),
     .data_in(bio_data_in[31:0]),
     .data_out(bio_data_out[31:0]),
-    .wt(bio_wt)
+    .wt(bio_wt),
+    .sw1_3_n(sw1_3_n),
+    .sw1_4_n(sw1_4_n),
+    .sw2_n(sw2_n),
+    .sw3_n(sw3_n)
   );
 
 endmodule
