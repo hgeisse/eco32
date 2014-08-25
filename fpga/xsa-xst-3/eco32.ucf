@@ -170,7 +170,7 @@ NET "slot2_cs_n"	LOC = "d16";
 #
 # board I/O
 #
-NET "sw1_3_n"		LOC = "k2";
-NET "sw1_4_n"		LOC = "j4";
+NET "sw1_3"		LOC = "k2";
+NET "sw1_4"		LOC = "j4";
 NET "sw2_n"		LOC = "e11";
 NET "sw3_n"		LOC = "a13";

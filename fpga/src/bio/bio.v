@@ -7,7 +7,8 @@ module bio(clk, reset,
            en, wr, addr,
            data_in, data_out,
            wt,
-           sw1_3_n, sw1_4_n,
+           sw1_1, sw1_2,
+           sw1_3, sw1_4,
            sw2_n, sw3_n);
     // internal interface
     input clk;
@@ -19,18 +20,24 @@ module bio(clk, reset,
     output [31:0] data_out;
     output wt;
     // external interface
-    input sw1_3_n;
-    input sw1_4_n;
+    input sw1_1;
+    input sw1_2;
+    input sw1_3;
+    input sw1_4;
     input sw2_n;
     input sw3_n;
 
   reg [31:0] bio_out;
   wire [31:0] bio_in;
 
-  reg sw1_3_p_n;
-  reg sw1_3_s_n;
-  reg sw1_4_p_n;
-  reg sw1_4_s_n;
+  reg sw1_1_p;
+  reg sw1_1_s;
+  reg sw1_2_p;
+  reg sw1_2_s;
+  reg sw1_3_p;
+  reg sw1_3_s;
+  reg sw1_4_p;
+  reg sw1_4_s;
   reg sw2_p_n;
   reg sw2_s_n;
   reg sw3_p_n;
@@ -51,10 +58,14 @@ module bio(clk, reset,
   assign wt = 0;
 
   always @(posedge clk) begin
-    sw1_3_p_n <= sw1_3_n;
-    sw1_3_s_n <= sw1_3_p_n;
-    sw1_4_p_n <= sw1_4_n;
-    sw1_4_s_n <= sw1_4_p_n;
+    sw1_1_p <= sw1_1;
+    sw1_1_s <= sw1_1_p;
+    sw1_2_p <= sw1_2;
+    sw1_2_s <= sw1_2_p;
+    sw1_3_p <= sw1_3;
+    sw1_3_s <= sw1_3_p;
+    sw1_4_p <= sw1_4;
+    sw1_4_s <= sw1_4_p;
     sw2_p_n <= sw2_n;
     sw2_s_n <= sw2_p_n;
     sw3_p_n <= sw3_n;
@@ -62,6 +73,8 @@ module bio(clk, reset,
   end
 
   assign bio_in[31:0] =
-    { 28'h0, ~sw1_3_s_n, ~sw1_4_s_n, ~sw2_s_n, ~sw3_s_n };
+    { 26'h0,
+      ~sw3_s_n, ~sw2_s_n,
+      sw1_4_s, sw1_3_s, sw1_2_s, sw1_1_s };
 
 endmodule

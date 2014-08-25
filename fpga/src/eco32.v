@@ -48,8 +48,8 @@ module eco32(clk_in,
              slot1_cs_n,
              slot2_cs_n,
              ether_cs_n,
-             sw1_3_n,
-             sw1_4_n,
+             sw1_3,
+             sw1_4,
              sw2_n,
              sw3_n);
 
@@ -111,8 +111,8 @@ module eco32(clk_in,
     // ethernet
     output ether_cs_n;
     // board I/O
-    input sw1_3_n;
-    input sw1_4_n;
+    input sw1_3;
+    input sw1_4;
     input sw2_n;
     input sw3_n;
 
@@ -492,8 +492,10 @@ module eco32(clk_in,
     .data_in(bio_data_in[31:0]),
     .data_out(bio_data_out[31:0]),
     .wt(bio_wt),
-    .sw1_3_n(sw1_3_n),
-    .sw1_4_n(sw1_4_n),
+    .sw1_1(flash_a[19]),
+    .sw1_2(flash_a[18]),
+    .sw1_3(sw1_3),
+    .sw1_4(sw1_4),
     .sw2_n(sw2_n),
     .sw3_n(sw3_n)
   );
