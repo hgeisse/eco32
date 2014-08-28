@@ -37,8 +37,8 @@ module ata_buffer (clk,
   assign internal_bus_addr[9:0] = bus_addr[11:2];
   assign internal_ata_addr[9:0] = ata_addr[11:2];
 
-  assign lo_din_bus = bus_din[15:0];
-  assign hi_din_bus = bus_din[31:16];
+  assign lo_din_bus = { bus_din[7:0], bus_din[15:8] };
+  assign hi_din_bus = { bus_din[23:16], bus_din[31:24] };
   assign lo_din_ata = ata_din;
   assign hi_din_ata = ata_din;
 
@@ -47,7 +47,8 @@ module ata_buffer (clk,
     ata_out_muxctrl <= ata_addr[1];
   end
 
-  assign bus_dout = { hi_dout_bus, lo_dout_bus };
+  assign bus_dout = { hi_dout_bus[7:0], hi_dout_bus[15:8],
+                      lo_dout_bus[7:0], lo_dout_bus[15:8] };
   assign ata_dout = ata_out_muxctrl ? lo_dout_ata : hi_dout_ata;
 
   assign lo_write_bus = bus_write;

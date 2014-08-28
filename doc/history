@@ -1243,3 +1243,22 @@ Hardware tests: dsptest verified, README added.
 Hardware tests: kbdtest verified, README added.
 Hardware tests: jalrtest verified, README added.
 Release eco32-0.23 tagged.
+
+27-Aug-2014
+I think I came up with a better solution for the problem of how to
+quickly transfer a disk image to the FPGA board (several hundred
+megabytes): instead of transferring the data over the serial line,
+we write the disk image created on the development system onto
+a hard disk (or SSD), and then swap drives. This can easily be
+done utilizing an USB-to-IDE converter (e.g., from an old external
+hard disk drive enclosure). The disk image is simply written to
+the disk using the "dd" command, with the whole USB mass storage
+device (e.g., /dev/sdb) as the destination.
+
+28-Aug-2014
+Another error in the IDE disk interface showed up yesterday:
+the two bytes of every halfword are byte-swapped on the storage
+medium! This error can only be discovered if the disk is written
+with a non-ECO32 controller and read with the ECO32 controller,
+or vice versa, which is the reason for the error hiding for so
+long.
