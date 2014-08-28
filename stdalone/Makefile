@@ -6,7 +6,7 @@
 BUILD = ../build
 
 DIRS = hello hello2 memsize onetask twotasks-1 twotasks-2 \
-       wrtmbr dskchk mkpart shpart
+       wrtmbr dmpmbr dskchk mkpart shpart
 
 .PHONY:		all install clean
 
