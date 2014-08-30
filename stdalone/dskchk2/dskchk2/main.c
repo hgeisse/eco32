@@ -175,6 +175,7 @@ int readSector(unsigned int sector, unsigned int *buffer) {
   }
   *DISK_SCT = sector;
   *DISK_CNT = 1;
+  *DISK_CTRL = *DISK_CTRL & ~(DISK_CTRL_DONE | DISK_CTRL_ERR);
   *DISK_CTRL = *DISK_CTRL | DISK_CTRL_STRT;
   while ((*DISK_CTRL & DISK_CTRL_DONE) == 0) ;
   if (*DISK_CTRL & DISK_CTRL_ERR) {
@@ -199,11 +200,6 @@ void check(unsigned int numChecks) {
   corrupted = 0;
   for (check = 0; check < numChecks; check++) {
     sectorRequ = nextRandomSector(NUM_SECTORS);
-//----------------------------------------------
-    if (numChecks == 1) {
-      sectorRequ = 0x14001;
-    }
-//----------------------------------------------
     if (!readSector(sectorRequ, buffer)) {
       error("cannot read disk");
     }
