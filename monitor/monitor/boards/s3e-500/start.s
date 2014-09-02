@@ -102,10 +102,13 @@ startup:
 	j	start
 
 interrupt:
-	j	isr
+	j	debug
 
 userMiss:
-	j	umsr
+	j	debug
+
+monitor:
+	j	debug
 
 ;***************************************************************
 
@@ -133,23 +136,20 @@ dskcap:
 dskio:
 	j	dio
 
-reserved10:
-	j	reserved10
+reserved_11:
+	j	reserved_11
 
-reserved11:
-	j	reserved11
+reserved_12:
+	j	reserved_12
 
-reserved12:
-	j	reserved12
+reserved_13:
+	j	reserved_13
 
-reserved13:
-	j	reserved13
+reserved_14:
+	j	reserved_14
 
-reserved14:
-	j	reserved14
-
-reserved15:
-	j	reserved15
+reserved_15:
+	j	reserved_15
 
 ;***************************************************************
 
@@ -434,10 +434,9 @@ resume:
 	rfx
 	.syn
 
-	; interrupt entry
+	; debug entry
 	; use userContext to store state
-isr:
-umsr:
+debug:
 	.nosyn
 	ldhi	$28,userContext
 	or	$28,$28,userContext

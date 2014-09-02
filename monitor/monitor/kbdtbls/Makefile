@@ -9,7 +9,7 @@ all:		kbdtbls.s
 install:	kbdtbls.s
 
 kbdtbls.s:	mkkbdtbls
-		./mkkbdtbls > kbdtbls.s
+		./mkkbdtbls >kbdtbls.s
 
 mkkbdtbls:	mkkbdtbls.c
 		gcc -m32 -g -Wall -o mkkbdtbls mkkbdtbls.c

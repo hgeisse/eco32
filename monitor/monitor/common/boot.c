@@ -12,7 +12,7 @@
 #include "start.h"
 
 
-void boot(int dskno) {
+void boot(int dskno, Bool start) {
   Word capacity;
   Byte sig1, sig2;
 
@@ -42,5 +42,7 @@ void boot(int dskno) {
   cpuSetReg(17, 0);
   cpuSetReg(18, capacity);
   cpuSetPC(VIRT_BOOT);
-  cpuRun();
+  if (start) {
+    cpuRun();
+  }
 }

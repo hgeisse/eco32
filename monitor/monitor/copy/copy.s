@@ -3,7 +3,7 @@
 ;
 
 	.set	dst,0xC0000000		; destination is start of RAM
-	.set	len,0x0000C000		; number of bytes to be copied
+	.set	len,0x0000FF00		; number of bytes to be copied
 
 	.set	PSW,0			; reg # of PSW
 

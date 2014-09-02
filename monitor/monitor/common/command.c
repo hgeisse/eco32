@@ -156,7 +156,8 @@ static void help15(void) {
 
 
 static void help16(void) {
-  printf("  boot <n>          load and execute first sector of disk <n>\n");
+  printf("  boot <n>          load and start first sector of disk <n>\n");
+  printf("  boot <n> *        load first sector of disk <n>, do not start\n");
 }
 
 
@@ -796,7 +797,17 @@ static void doBoot(char *tokens[], int n) {
       printf("illegal disk number\n");
       return;
     }
-    boot(dskno);
+    boot(dskno, true);
+  } else if (n == 3) {
+    if (!getDecNumber(tokens[1], &dskno) || dskno < 0 || dskno > 1) {
+      printf("illegal disk number\n");
+      return;
+    }
+    if (strcmp(tokens[2], "*") != 0) {
+      help16();
+      return;
+    }
+    boot(dskno, false);
   } else {
     help16();
   }

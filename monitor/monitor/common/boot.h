@@ -11,7 +11,7 @@
 #define VIRT_BOOT	0xC0010000	/* where to start the bootstrap */
 
 
-void boot(int dskno);
+void boot(int dskno, Bool start);
 
 
 #endif /* _BOOT_H_ */

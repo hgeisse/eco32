@@ -15,7 +15,7 @@
 #define RR(n)		r[n]
 #define WR(n,d)		((void) ((n) != 0 ? r[n] = (d) : (d)))
 
-#define BREAK		(OP_TRAP << 26)
+#define BREAK		((OP_TRAP << 26) | 0x0001)
 
 
 /**************************************************************/
