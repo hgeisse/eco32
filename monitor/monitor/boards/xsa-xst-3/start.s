@@ -387,52 +387,52 @@ userContext:
 	; use userContext to load state
 resume:
 	mvts	$0,PSW
-	add	$28,$0,userContext
+	add	$24,$0,userContext
 	.nosyn
-	ldw	$8,$28,33*4		; tlbIndex
+	ldw	$8,$24,33*4		; tlbIndex
 	mvts	$8,TLB_INDEX
-	ldw	$8,$28,34*4		; tlbEntryHi
+	ldw	$8,$24,34*4		; tlbEntryHi
 	mvts	$8,TLB_ENTRY_HI
-	ldw	$8,$28,35*4		; tlbEntryLo
+	ldw	$8,$24,35*4		; tlbEntryLo
 	mvts	$8,TLB_ENTRY_LO
-	ldw	$8,$28,36*4		; badAddress
+	ldw	$8,$24,36*4		; badAddress
 	mvts	$8,BAD_ADDRESS
-	ldw	$8,$28,37*4		; badAccess
+	ldw	$8,$24,37*4		; badAccess
 	mvts	$8,BAD_ACCESS
-	;ldw	$0,$28,0*4		; registers
-	ldw	$1,$28,1*4
-	ldw	$2,$28,2*4
-	ldw	$3,$28,3*4
-	ldw	$4,$28,4*4
-	ldw	$5,$28,5*4
-	ldw	$6,$28,6*4
-	ldw	$7,$28,7*4
-	ldw	$8,$28,8*4
-	ldw	$9,$28,9*4
-	ldw	$10,$28,10*4
-	ldw	$11,$28,11*4
-	ldw	$12,$28,12*4
-	ldw	$13,$28,13*4
-	ldw	$14,$28,14*4
-	ldw	$15,$28,15*4
-	ldw	$16,$28,16*4
-	ldw	$17,$28,17*4
-	ldw	$18,$28,18*4
-	ldw	$19,$28,19*4
-	ldw	$20,$28,20*4
-	ldw	$21,$28,21*4
-	ldw	$22,$28,22*4
-	ldw	$23,$28,23*4
-	ldw	$24,$28,24*4
-	ldw	$25,$28,25*4
-	ldw	$26,$28,26*4
-	ldw	$27,$28,27*4
-	;ldw	$28,$28,28*4
-	ldw	$29,$28,29*4
-	ldw	$30,$28,30*4
-	ldw	$31,$28,31*4
-	ldw	$28,$28,32*4		; psw
-	mvts	$28,PSW
+	;ldw	$0,$24,0*4		; registers
+	ldw	$1,$24,1*4
+	ldw	$2,$24,2*4
+	ldw	$3,$24,3*4
+	ldw	$4,$24,4*4
+	ldw	$5,$24,5*4
+	ldw	$6,$24,6*4
+	ldw	$7,$24,7*4
+	ldw	$8,$24,8*4
+	ldw	$9,$24,9*4
+	ldw	$10,$24,10*4
+	ldw	$11,$24,11*4
+	ldw	$12,$24,12*4
+	ldw	$13,$24,13*4
+	ldw	$14,$24,14*4
+	ldw	$15,$24,15*4
+	ldw	$16,$24,16*4
+	ldw	$17,$24,17*4
+	ldw	$18,$24,18*4
+	ldw	$19,$24,19*4
+	ldw	$20,$24,20*4
+	ldw	$21,$24,21*4
+	ldw	$22,$24,22*4
+	ldw	$23,$24,23*4
+	;ldw	$24,$24,24*4
+	ldw	$25,$24,25*4
+	ldw	$26,$24,26*4
+	ldw	$27,$24,27*4
+	ldw	$28,$24,28*4
+	ldw	$29,$24,29*4
+	ldw	$30,$24,30*4
+	ldw	$31,$24,31*4
+	ldw	$24,$24,32*4		; psw
+	mvts	$24,PSW
 	rfx
 	.syn
 
@@ -440,51 +440,51 @@ resume:
 	; use userContext to store state
 debug:
 	.nosyn
-	ldhi	$28,userContext
-	or	$28,$28,userContext
-	stw	$0,$28,0*4		; registers
-	stw	$1,$28,1*4
-	stw	$2,$28,2*4
-	stw	$3,$28,3*4
-	stw	$4,$28,4*4
-	stw	$5,$28,5*4
-	stw	$6,$28,6*4
-	stw	$7,$28,7*4
-	stw	$8,$28,8*4
-	stw	$9,$28,9*4
-	stw	$10,$28,10*4
-	stw	$11,$28,11*4
-	stw	$12,$28,12*4
-	stw	$13,$28,13*4
-	stw	$14,$28,14*4
-	stw	$15,$28,15*4
-	stw	$16,$28,16*4
-	stw	$17,$28,17*4
-	stw	$18,$28,18*4
-	stw	$19,$28,19*4
-	stw	$20,$28,20*4
-	stw	$21,$28,21*4
-	stw	$22,$28,22*4
-	stw	$23,$28,23*4
-	stw	$24,$28,24*4
-	stw	$25,$28,25*4
-	stw	$26,$28,26*4
-	stw	$27,$28,27*4
-	stw	$28,$28,28*4
-	stw	$29,$28,29*4
-	stw	$30,$28,30*4
-	stw	$31,$28,31*4
+	ldhi	$24,userContext
+	or	$24,$24,userContext
+	stw	$0,$24,0*4		; registers
+	stw	$1,$24,1*4
+	stw	$2,$24,2*4
+	stw	$3,$24,3*4
+	stw	$4,$24,4*4
+	stw	$5,$24,5*4
+	stw	$6,$24,6*4
+	stw	$7,$24,7*4
+	stw	$8,$24,8*4
+	stw	$9,$24,9*4
+	stw	$10,$24,10*4
+	stw	$11,$24,11*4
+	stw	$12,$24,12*4
+	stw	$13,$24,13*4
+	stw	$14,$24,14*4
+	stw	$15,$24,15*4
+	stw	$16,$24,16*4
+	stw	$17,$24,17*4
+	stw	$18,$24,18*4
+	stw	$19,$24,19*4
+	stw	$20,$24,20*4
+	stw	$21,$24,21*4
+	stw	$22,$24,22*4
+	stw	$23,$24,23*4
+	stw	$24,$24,24*4
+	stw	$25,$24,25*4
+	stw	$26,$24,26*4
+	stw	$27,$24,27*4
+	stw	$28,$24,28*4
+	stw	$29,$24,29*4
+	stw	$30,$24,30*4
+	stw	$31,$24,31*4
 	mvfs	$8,PSW
-	stw	$8,$28,32*4		; psw
+	stw	$8,$24,32*4		; psw
 	mvfs	$8,TLB_INDEX
-	stw	$8,$28,33*4		; tlbIndex
+	stw	$8,$24,33*4		; tlbIndex
 	mvfs	$8,TLB_ENTRY_HI
-	stw	$8,$28,34*4		; tlbEntryHi
+	stw	$8,$24,34*4		; tlbEntryHi
 	mvfs	$8,TLB_ENTRY_LO
-	stw	$8,$28,35*4		; tlbEntryLo
+	stw	$8,$24,35*4		; tlbEntryLo
 	mvfs	$8,BAD_ADDRESS
-	stw	$8,$28,36*4		; badAddress
+	stw	$8,$24,36*4		; badAddress
 	mvfs	$8,BAD_ACCESS
-	stw	$8,$28,37*4		; badAccess
+	stw	$8,$24,37*4		; badAccess
 	.syn
 	j	loadState

@@ -1,5 +1,5 @@
 /*
- * load.c -- load S-record file from serial line
+ * load.c -- load S-records from serial line
  */
 
 
@@ -82,7 +82,7 @@ static Word serialIn(int serno) {
 }
 
 
-void load(int serno) {
+void load(int serno, Bool start) {
   int i, j;
   Bool run;
   int type;
@@ -220,4 +220,7 @@ void load(int serno) {
   }
   serialOut(serno, 'q');
   printf("Connection to load server closed.\n");
+  if (start) {
+    cpuRun();
+  }
 }

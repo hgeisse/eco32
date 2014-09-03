@@ -12,7 +12,7 @@
 #include "cpu.h"
 
 
-#define VERSION		"1.05"
+#define VERSION		"1.06"
 #define PROMPT		"ECO32 > "
 
 

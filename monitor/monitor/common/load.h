@@ -1,5 +1,5 @@
 /*
- * load.h -- load S-record file from serial line
+ * load.h -- load S-records from serial line
  */
 
 
@@ -7,7 +7,7 @@
 #define _LOAD_H_
 
 
-void load(int serno);
+void load(int serno, Bool start);
 
 
 #endif /* _LOAD_H_ */

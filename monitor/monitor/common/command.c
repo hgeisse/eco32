@@ -151,13 +151,14 @@ static void help14(void) {
 
 
 static void help15(void) {
-  printf("  load <n>          load an S-record file from serial line <n>\n");
+  printf("  load <n>          load/start S-records from serial line <n>\n");
+  printf("  load <n> *        load S-records from serial line <n>\n");
 }
 
 
 static void help16(void) {
-  printf("  boot <n>          load and start first sector of disk <n>\n");
-  printf("  boot <n> *        load first sector of disk <n>, do not start\n");
+  printf("  boot <n>          load/start first sector of disk <n>\n");
+  printf("  boot <n> *        load first sector of disk <n>\n");
 }
 
 
@@ -782,7 +783,17 @@ static void doLoad(char *tokens[], int n) {
       printf("illegal serial line number\n");
       return;
     }
-    load(serno);
+    load(serno, true);
+  } else if (n == 3) {
+    if (!getDecNumber(tokens[1], &serno) || serno < 0 || serno > 1) {
+      printf("illegal serial line number\n");
+      return;
+    }
+    if (strcmp(tokens[2], "*") != 0) {
+      help15();
+      return;
+    }
+    load(serno, false);
   } else {
     help15();
   }
