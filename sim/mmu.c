@@ -67,6 +67,7 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing, int accsWidth) {
     mmuBadAddr = vAddr;
     throwException(EXC_PRV_ADDRESS);
   }
+  updateRandomIndex();
   if ((vAddr & 0xC0000000) == 0xC0000000) {
     /* unmapped address space */
     /* simulate delay introduced by assoc when using mapped
@@ -75,7 +76,6 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing, int accsWidth) {
     pAddr = vAddr & ~0xC0000000;
   } else {
     /* mapped address space */
-    updateRandomIndex();
     page = vAddr & PAGE_MASK;
     offset = vAddr & OFFSET_MASK;
     index = assoc(page);
