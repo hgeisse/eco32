@@ -28,6 +28,17 @@ static Word tlbEntryLo;
 static Word mmuBadAddr;
 static Word mmuBadAccs;
 
+static int randomIndex;
+
+
+static void updateRandomIndex(void) {
+  if (randomIndex == TLB_FIXED) {
+    randomIndex = TLB_MASK;
+  } else {
+    randomIndex--;
+  }
+}
+
 
 static int assoc(Word page) {
   int n, i;
@@ -64,6 +75,7 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing, int accsWidth) {
     pAddr = vAddr & ~0xC0000000;
   } else {
     /* mapped address space */
+    updateRandomIndex();
     page = vAddr & PAGE_MASK;
     offset = vAddr & OFFSET_MASK;
     index = assoc(page);
@@ -217,9 +229,7 @@ void mmuTbwr(void) {
   int index;
 
   /* choose a random index, but don't touch fixed entries */
-  do {
-    index = rand() & TLB_MASK;
-  } while (index < TLB_FIXED);
+  index = randomIndex;
   tlb[index].page = tlbEntryHi & PAGE_MASK;
   tlb[index].frame = tlbEntryLo & PAGE_MASK;
   tlb[index].write = tlbEntryLo & TLB_WRITE ? true : false;
@@ -303,6 +313,7 @@ void mmuReset(void) {
   tlbEntryLo = rand() & (PAGE_MASK | TLB_WRITE | TLB_VALID);
   mmuBadAddr = rand();
   mmuBadAccs = rand() & MMU_ACCS_MASK;
+  randomIndex = TLB_MASK;
 }
 
 
