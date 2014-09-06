@@ -2621,8 +2621,7 @@ module mmu(clk, reset, fnc, virt, phys,
   assign tlb_wbit = tlb_frame[1];
   assign tlb_vbit = tlb_frame[0];
   assign rw_index = (tbwr == 1) ? random_index : tlb_index[4:0];
-  assign tlb_index_new = { tlb_miss | tlb_index[31],
-                           tlb_index[30:5], tlb_found };
+  assign tlb_index_new = { tlb_miss, 26'b0, tlb_found };
   assign tlb_entry_hi_new = { ((tbri == 1) ? r_page : page),
                               tlb_entry_hi[11:0] };
   assign tlb_entry_lo_new = { tlb_entry_lo[31:30], r_frame[19:2],

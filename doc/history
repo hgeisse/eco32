@@ -1262,3 +1262,11 @@ medium! This error can only be discovered if the disk is written
 with a non-ECO32 controller and read with the ECO32 controller,
 or vice versa, which is the reason for the error hiding for so
 long.
+
+06-Sep-2014
+If the TLB hardware detects no matching entry on a "tbs" instruction,
+it does an "or" of the MSB into the index register, in contrast to
+the simulator, which sets the bit (and clears the bit if a matching
+entry is found). In this way the MSB was never cleared automatically,
+which led to strange behavior in the NetBSD kernel. Solved in favor
+of the simulator.
