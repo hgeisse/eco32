@@ -1,0 +1,10 @@
+#
+# Makefile for building a Linux partition
+#
+
+BUILD = ../..
+
+all:
+
+clean:
+		rm -f *~

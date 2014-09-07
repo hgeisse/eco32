@@ -1,0 +1,7 @@
+# dummy
+
+all:
+
+install:
+
+clean:

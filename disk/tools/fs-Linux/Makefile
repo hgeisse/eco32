@@ -1,10 +1,10 @@
 #
-# Makefile for basic disk tools
+# Makefile for Linux disk tools
 #
 
-BUILD = ../../build
+BUILD = ../../../build
 
-DIRS = mkdisk mkmboot mkpart shpart mkdata fs-EOS32 fs-NetBSD fs-Linux
+DIRS = mkboot
 
 .PHONY:		all install clean
 
@@ -17,8 +17,8 @@ install:
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i install ; \
 		done
-		mkdir -p $(BUILD)/run
-		cp Makefile.run $(BUILD)/run/Makefile
+		mkdir -p $(BUILD)/run/fs-Linux
+		cp Makefile.run $(BUILD)/run/fs-Linux/Makefile
 
 clean:
 		for i in $(DIRS) ; do \

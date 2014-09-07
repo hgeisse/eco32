@@ -12,6 +12,7 @@ BUILD = ..
 
 SER_DEV = /dev/tty01
 DSK_IMG = disk.img
+DSK_SIZ = 150M
 RUN_LOG = run.log
 
 all:		$(DSK_IMG)
@@ -25,12 +26,14 @@ run-server:	$(DSK_IMG)
 		$(BUILD)/bin/diskserv $(SER_DEV) $(DSK_IMG)
 
 $(DSK_IMG):
-		$(BUILD)/bin/mkdisk $(DSK_IMG) 100M
+		$(BUILD)/bin/mkdisk $(DSK_IMG) $(DSK_SIZ)
 		$(BUILD)/bin/mkpart $(DSK_IMG) disk.part
 		$(MAKE) -C fs-EOS32 all
 		$(MAKE) -C fs-NetBSD all
+		$(MAKE) -C fs-Linux all
 
 clean:
 		$(MAKE) -C fs-EOS32 clean
 		$(MAKE) -C fs-NetBSD clean
+		$(MAKE) -C fs-Linux clean
 		rm -f *~ $(DSK_IMG) $(RUN_LOG)
