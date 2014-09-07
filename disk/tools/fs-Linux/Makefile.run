@@ -3,8 +3,13 @@
 #
 
 BUILD = ../..
+DISK = ../disk.img
 
 all:
+		cat br.bin mvstrt.bin \
+		  ../../../os-bin/Linux/vmlinux.bin >part.img
+		dd if=part.img of=$(DISK) bs=512 \
+		  seek=204800 conv=notrunc
 
 clean:
-		rm -f *~
+		rm -f *~ part.img
