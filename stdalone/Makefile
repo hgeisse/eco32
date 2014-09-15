@@ -5,8 +5,8 @@
 
 BUILD = ../build
 
-DIRS = hello hello2 memsize onetask twotasks-1 twotasks-2 \
-       dskchk dskchk2 wrtmbr dmpmbr mkpart shpart
+DIRS = hello hello2 bottles memsize memtest onetask twotasks-1 \
+       twotasks-2 dskchk dskchk2 wrtmbr dmpmbr mkpart shpart
 
 .PHONY:		all install clean
 
