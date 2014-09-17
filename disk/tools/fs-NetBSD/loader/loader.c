@@ -461,9 +461,10 @@ Bool loadElf(Dinode *ip, unsigned int *entryPointPtr) {
     for (j = filesize; j < memsize; j++) {
       memPtr[j] = 0;
     }
-    printf("    segment of %u bytes read", filesize);
-    printf(" (+ %u bytes zeroed)", memsize - filesize);
-    printf(", vaddr = 0x%08X\n", address);
+    printf("    segment of %u bytes read ", filesize);
+    printf("(+ %u bytes zeroed)\n", memsize - filesize);
+    printf("    start vaddr = 0x%08X, ", address);
+    printf("end vaddr = 0x%08X\n", address + memsize);
   }
   *entryPointPtr = entry;
   return TRUE;
