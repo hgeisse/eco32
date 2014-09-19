@@ -107,7 +107,7 @@ module eco32(clk_in,
     output spi_ss_b;
     output fpga_init_b;
 
-  // clk_reset
+  // clk_rst
   wire ddr_clk_0;
   wire ddr_clk_90;
   wire ddr_clk_180;
@@ -200,7 +200,7 @@ module eco32(clk_in,
   wire bio_wt;
   wire spi_en;
 
-  clk_reset clk_reset1(
+  clk_rst clk_rst1(
     .clk_in(clk_in),
     .reset_in(reset_in),
     .ddr_clk_0(ddr_clk_0),

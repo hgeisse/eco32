@@ -116,7 +116,7 @@ module eco32(clk_in,
     input sw2_n;
     input sw3_n;
 
-  // clk_reset
+  // clk_rst
   wire clk;
   wire clk_ok;
   wire reset;
@@ -209,7 +209,7 @@ module eco32(clk_in,
   wire [31:0] bio_data_out;
   wire bio_wt;
 
-  clk_reset clk_reset1(
+  clk_rst clk_rst1(
     .clk_in(clk_in),
     .reset_inout_n(reset_inout_n),
     .sdram_clk(sdram_clk),
