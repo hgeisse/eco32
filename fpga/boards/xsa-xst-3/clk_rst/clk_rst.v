@@ -1,11 +1,11 @@
 //
-// clk_reset.v -- clock and reset generator
+// clk_rst.v -- clock and reset generator
 //
 
 
-module clk_reset(clk_in, reset_inout_n,
-                 sdram_clk, sdram_fb,
-                 clk, clk_ok, reset);
+module clk_rst(clk_in, reset_inout_n,
+               sdram_clk, sdram_fb,
+               clk, clk_ok, reset);
     input clk_in;
     inout reset_inout_n;
     output sdram_clk;
