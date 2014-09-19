@@ -26,7 +26,7 @@ module rom(clk, reset,
     input [15:0] d;
 
   reg [3:0] state;
-  reg a0;
+  reg upper_half;
 
   // the following control signals are all
   // either constantly asserted or deasserted
@@ -37,10 +37,10 @@ module rom(clk, reset,
   assign byte_n = 1;
 
   // the flash ROM is organized in 16-bit halfwords
-  // address line a0 is controlled by the state machine
+  // address line a[0] is controlled by the state machine
   // (this is necessary for word accesses)
   assign a[19:1] = addr[20:2];
-  assign a[0] = a0;
+  assign a[0] = upper_half;
 
   // the state machine
   always @(posedge clk) begin
@@ -54,10 +54,10 @@ module rom(clk, reset,
           state <= 1;
           if (size[1] == 1) begin
             // word access
-            a0 <= 0;
+            upper_half <= 0;
           end else begin
             // halfword or byte access
-            a0 <= addr[1];
+            upper_half <= addr[1];
           end
         end
       end else
@@ -68,7 +68,7 @@ module rom(clk, reset,
           data_out[31:24] <= d[7:0];
           data_out[23:16] <= d[15:8];
           state <= 7;
-          a0 <= 1;
+          upper_half <= 1;
         end else begin
           // halfword or byte access
           data_out[31:16] <= 16'h0000;
