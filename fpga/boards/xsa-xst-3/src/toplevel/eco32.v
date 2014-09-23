@@ -45,6 +45,10 @@ module eco32(clk_in,
              ata_dmarq,
              ata_dmack_n,
              ata_iordy,
+             dac_mclk,
+             dac_sclk,
+             dac_lrck,
+             dac_sdti,
              slot1_cs_n,
              slot2_cs_n,
              ether_cs_n,
@@ -104,6 +108,11 @@ module eco32(clk_in,
     input ata_dmarq;
     output ata_dmack_n;
     input ata_iordy;
+    // audio DAC
+    output dac_mclk;
+    output dac_sclk;
+    output dac_lrck;
+    output dac_sdti;
     // expansion slot 1
     output slot1_cs_n;
     // expansion slot 2
@@ -201,6 +210,17 @@ module eco32(clk_in,
   wire [31:0] dsk_data_out;
   wire dsk_wt;
   wire dsk_irq;
+  // fms
+  wire fms_en;
+  wire fms_wr;
+  wire [11:2] fms_addr;
+  wire [31:0] fms_data_in;
+  wire [31:0] fms_data_out;
+  wire fms_wt;
+  // dac
+  wire [15:0] dac_sample_l;
+  wire [15:0] dac_sample_r;
+  wire dac_next;
   // bio
   wire bio_en;
   wire bio_wr;
@@ -292,6 +312,13 @@ module eco32(clk_in,
     .dsk_data_in(dsk_data_in[31:0]),
     .dsk_data_out(dsk_data_out[31:0]),
     .dsk_wt(dsk_wt),
+    // fms
+    .fms_en(fms_en),
+    .fms_wr(fms_wr),
+    .fms_addr(fms_addr[11:2]),
+    .fms_data_in(fms_data_in[31:0]),
+    .fms_data_out(fms_data_out[31:0]),
+    .fms_wt(fms_wt),
     // bio
     .bio_en(bio_en),
     .bio_wr(bio_wr),
@@ -476,6 +503,32 @@ module eco32(clk_in,
     .ata_dmarq(ata_dmarq),
     .ata_dmack_n(ata_dmack_n),
     .ata_iordy(ata_iordy)
+  );
+
+  fms fms1(
+    .clk(clk),
+    .reset(reset),
+    .en(fms_en),
+    .wr(fms_wr),
+    .addr(fms_addr[11:2]),
+    .data_in(fms_data_in[31:0]),
+    .data_out(fms_data_out[31:0]),
+    .wt(fms_wt),
+    .next(dac_next),
+    .sample_l(dac_sample_l[15:0]),
+    .sample_r(dac_sample_r[15:0])
+  );
+
+  dac dac1(
+    .clk(clk),
+    .reset(reset),
+    .sample_l(dac_sample_l[15:0]),
+    .sample_r(dac_sample_r[15:0]),
+    .next(dac_next),
+    .mclk(dac_mclk),
+    .sclk(dac_sclk),
+    .lrck(dac_lrck),
+    .sdti(dac_sdti)
   );
 
   assign pbus_a[4:3] = 2'b00;

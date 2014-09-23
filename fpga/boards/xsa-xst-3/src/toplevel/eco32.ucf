@@ -168,6 +168,14 @@ NET "slot1_cs_n"	LOC = "e15";
 NET "slot2_cs_n"	LOC = "d16";
 
 #
+# audio DAC
+#
+NET "dac_mclk"		LOC = "p11";
+NET "dac_sclk"		LOC = "t12";
+NET "dac_lrck"		LOC = "r12";
+NET "dac_sdti"		LOC = "m10";
+
+#
 # board I/O
 #
 NET "sw1_3"		LOC = "k2";
