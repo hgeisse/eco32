@@ -16,6 +16,7 @@ boot      d--755 2 1
           dmpmbr.bin      ---644 2 1 ../../stdalone/dmpmbr.bin
           mkpart.bin      ---644 2 1 ../../stdalone/mkpart.bin
           shpart.bin      ---644 2 1 ../../stdalone/shpart.bin
+          dactest.bin     ---644 2 1 ../../stdalone/dactest.bin
           eos32.bin       ---644 2 1 ../../../os-bin/EOS32/eos32.bin
           $
 bin       d--755 2 1
