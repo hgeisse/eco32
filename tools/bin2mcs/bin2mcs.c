@@ -48,13 +48,15 @@ int main(int argc, char *argv[]) {
   if (outfile == NULL) {
     error("cannot open output file %s", argv[3]);
   }
-  fprintf(outfile, ":02000004");
-  fprintf(outfile, "%04X", loadAddr >> 16);
-  chksum = 0x02 + 0x04 +
-           ((loadAddr >> 24) & 0xFF) +
-           ((loadAddr >> 16) & 0xFF);
-  fprintf(outfile, "%02X\n", (-chksum) & 0xFF);
   while (1) {
+    if ((loadAddr & 0xFFFF) == 0) {
+      fprintf(outfile, ":02000004");
+      fprintf(outfile, "%04X", loadAddr >> 16);
+      chksum = 0x02 + 0x04 +
+               ((loadAddr >> 24) & 0xFF) +
+               ((loadAddr >> 16) & 0xFF);
+      fprintf(outfile, "%02X\n", (-chksum) & 0xFF);
+    }
     chksum = 0;
     for (numBytes = 0; numBytes < 16; numBytes++) {
       c = fgetc(infile);
