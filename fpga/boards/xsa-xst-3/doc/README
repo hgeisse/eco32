@@ -14,10 +14,9 @@ Notes
    must not exceed 24 * 64 KB (3 quadrants of the Flash ROM).
 
 3. Here is the command which burns the monitor as well as the
-   configuration bitstring to Flash ROM:
-      fpgalab-0.3/build/bin/xsload
-         -usb
-         -fwrite build/monitor/xsa-xst-3/monitor.exo
-                 build/eco32/xsa-xst-3/eco32.exo
+   configuration bitstring into the Flash ROM:
+      ~/fpgalab-0.3/build/bin/xsload \
+         -usb \
+         -fwrite ../../monitor/xsa-xst-3/monitor.exo ./eco32.exo \
          -autoload
 

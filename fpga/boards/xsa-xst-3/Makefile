@@ -14,6 +14,7 @@ install:	build/eco32.bit
 		mkdir -p $(BUILD)/eco32/xsa-xst-3
 		cp build/eco32.bit $(BUILD)/eco32/xsa-xst-3
 		cp build/eco32.exo $(BUILD)/eco32/xsa-xst-3
+		cp doc/README $(BUILD)/eco32/xsa-xst-3
 
 clean:
 		mv build/eco32.xise .
