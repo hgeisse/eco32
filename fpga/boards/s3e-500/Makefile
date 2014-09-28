@@ -9,11 +9,13 @@ BUILD = ../../../build
 all:		build/eco32.bit
 
 install:	build/eco32.bit
-#		$(BUILD)/bin/bit2exo 0x180000 \
-#		  xsa-xst-3/eco32.bit xsa-xst-3/eco32.exo
-#		mkdir -p $(BUILD)/eco32/xsa-xst-3
-#		cp xsa-xst-3/eco32.bit $(BUILD)/eco32/xsa-xst-3
-#		cp xsa-xst-3/eco32.exo $(BUILD)/eco32/xsa-xst-3
+		$(BUILD)/bin/bit2mcs 0x000000 \
+		  build/eco32.bit build/eco32.mcs
+		mkdir -p $(BUILD)/eco32/s3e-500
+		cp build/eco32.bit $(BUILD)/eco32/s3e-500
+		cp build/eco32.mcs $(BUILD)/eco32/s3e-500
+		cp doc/README $(BUILD)/eco32/s3e-500
+		cp doc/prog.cmd $(BUILD)/eco32/s3e-500
 
 clean:
 		mv build/eco32.xise .

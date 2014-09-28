@@ -1,0 +1,28 @@
+
+Notes
+-----
+
+1. Installing JTAG cable drivers under Ubuntu:
+   a) When installing ISE, do NOT install any cable drivers.
+   b) sudo apt-get install \
+        gitk git-gui libusb-dev build-essential libc6-dev fxload
+   c) git clone git://git.zerfleddert.de/usb-driver
+   d) cd usb-driver
+   e) make
+   f) ./setup_pcusb /opt/Xilinx/14.5/ISE_DS/ISE/
+
+2. The configuration bitstring for the FPGA is stored in the
+   "Platform Flash PROM" (XCF04S). The board must therefore
+   be jumpered for "Master Serial Mode" (all 3 jumpers set).
+
+3. Here is the command which burns the configuration bitstring
+   into the Platform Flash PROM:
+      /opt/Xilinx/14.5/ISE_DS/ISE/bin/lin/impact -batch ./prog.cmd
+
+4. The machine monitor is stored in the "StrataFlash Parallel NOR
+   Flash PROM", starting at address 0x000000. The ECO32 CPU can
+   access the machine monitor at virtual address 0xE0000000. The
+   monitor's size must not exceed 16 MB (the size of the Flash ROM).
+
+5.
+
