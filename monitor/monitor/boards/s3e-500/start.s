@@ -2,8 +2,14 @@
 ; start.s -- ECO32 ROM monitor startup and support routines
 ;
 
-	.set	CIO_CTL,0x00		; set console to keyboard/display
-;	.set	CIO_CTL,0x03		; set console to serial line 0
+	.set	BIO_BASE,0xF1000000	; board I/O base address
+	.set	BIO_WR,BIO_BASE+0
+	.set	SPI_EN,0x80000000	; SPI bus enable ctrl bit
+	.set	BIO_RD,BIO_BASE+4
+	.set	CIO_CTRL,0x08		; this bit controls console I/O
+
+	.set	CIO_KBD_DSP,0x00	; set console to keyboard/display
+	.set	CIO_SERIAL_0,0x03	; set console to serial line 0
 
 	.set	dmapaddr,0xC0000000	; base of directly mapped addresses
 	.set	stacktop,0xC0010000	; monitor stack is at top of 64K
@@ -20,9 +26,6 @@
 	.set	BAD_ACCESS,5		; reg # of bad access reg
 
 	.set	USER_CONTEXT_SIZE,38*4	; size of user context
-
-	.set	BIO_OUT,0xF1000000	; board I/O output port
-	.set	SPI_EN,0x80000000	; SPI bus enable ctrl bit
 
 ;***************************************************************
 
@@ -162,7 +165,7 @@ start:
 	mvts	$8,PSW
 
 	; disable flash ROM, enable SPI bus
-	add	$8,$0,BIO_OUT
+	add	$8,$0,BIO_WR
 	add	$9,$0,SPI_EN
 	stw	$9,$8,0
 
@@ -210,7 +213,12 @@ clrtest:
 	jal	ser1init		; init serial line 1
 	jal	dskinitctl		; init disk (controller)
 	jal	dskinitser		; init disk (serial line)
-	add	$4,$0,CIO_CTL		; set console
+	ldw	$8,$0,BIO_RD		; get switch settings
+	and	$8,$8,CIO_CTRL
+	add	$4,$0,CIO_SERIAL_0	; set console to serial line
+	bne	$8,$0,swtchset
+	add	$4,$0,CIO_KBD_DSP	; set console to kbd/dsp
+swtchset:
 	jal	setcio
 
 	; call main

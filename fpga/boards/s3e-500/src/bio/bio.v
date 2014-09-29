@@ -32,6 +32,9 @@ module bio(clk, reset,
   reg [31:0] bio_out;
   wire [31:0] bio_in;
 
+  reg [3:0] sw_p;
+  reg [3:0] sw_s;
+
   always @(posedge clk) begin
     if (reset) begin
       bio_out[31:0] <= 32'h0;
@@ -47,7 +50,12 @@ module bio(clk, reset,
   assign wt = 0;
   assign spi_en = bio_out[31];
 
-  assign bio_in[31:0] = { 28'h0, sw[3:0] };
+  always @(posedge clk) begin
+    sw_p[3:0] <= sw[3:0];
+    sw_s[3:0] <= sw_p[3:0];
+  end
+
+  assign bio_in[31:0] = { 28'h0, sw_s[3:0] };
 
   assign led[7:0] = bio_out[7:0];
 
