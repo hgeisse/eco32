@@ -15,7 +15,9 @@ install:	build/eco32.bit
 		cp build/eco32.bit $(BUILD)/eco32/s3e-500
 		cp build/eco32.mcs $(BUILD)/eco32/s3e-500
 		cp doc/README $(BUILD)/eco32/s3e-500
-		cp doc/prog.cmd $(BUILD)/eco32/s3e-500
+		cp doc/program.cmd $(BUILD)/eco32/s3e-500
+		cp doc/flash-500.cmd $(BUILD)/eco32/s3e-500
+		cp doc/flash-500.bit $(BUILD)/eco32/s3e-500
 
 clean:
 		mv build/eco32.xise .

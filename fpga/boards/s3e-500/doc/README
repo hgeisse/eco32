@@ -20,15 +20,16 @@ Notes
       /opt/Xilinx/14.5/ISE_DS/ISE/bin/lin/impact -batch ./program.cmd
 
 4. The machine monitor is stored in the "StrataFlash Parallel NOR
-   Flash PROM", starting at address 0x000000. The ECO32 CPU can
-   access the machine monitor at virtual address 0xE0000000. The
-   monitor's size must not exceed 16 MB (the size of the Flash ROM).
+   Flash PROM" (28F128J3), starting at address 0x000000. The ECO32
+   CPU can access the machine monitor at virtual address 0xE0000000.
+   The monitor's size must not exceed 16 MB (the size of the Flash PROM).
 
-5. In order to program the Flash ROM proceed as follows (very
-   briefly, the FPGA is used as a Flash ROM programmer):
+5. In order to program the Flash PROM with the machine monitor, proceed
+   as follows (very briefly, the FPGA is used as a Flash PROM programmer):
    a) Connect a serial cable to the starter board. This is needed
-      in order to communicate with the flash programmer.
-   b) Transfer the MCS file you wish to program into the flash ROM
+      in order to communicate with the Flash programmer.
+   b) Transfer the MCS file you wish to program into the Flash PROM
+      (in our case the monitor, ../../monitor/s3e-500/monitor.mcs)
       to the computer to which the serial cable is connected.
    c) Start a serial communication program (e.g. minicom) on the
       computer at the other end of the serial cable. The communication
@@ -45,4 +46,8 @@ Notes
          /opt/Xilinx/14.5/ISE_DS/ISE/bin/lin/impact -batch ./flash-500.cmd
    e)
    f)
+
+x. The two programming tasks (FPGA bistring into Platform Flash PROM
+   and monitor into Parallel NOR Flash PROM) may be carried out in
+   any sequence.
 
