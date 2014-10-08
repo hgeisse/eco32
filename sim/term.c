@@ -223,81 +223,79 @@ void termReset(void) {
 }
 
 
-static int openPty(int *master, int *slave, char *name) {
-  /* try to open master */
-  strcpy(name, "/dev/ptmx");
-  *master = open(name, O_RDWR | O_NONBLOCK);
-  if (*master < 0) {
-    /* open failed */
-    return -1;
-  }
-  grantpt(*master);
-  unlockpt(*master);
-  /* master opened, try to open slave */
-  strcpy(name, ptsname(*master));
-  *slave = open(name, O_RDWR | O_NONBLOCK);
-  if (*slave < 0) {
-    /* open failed, close master */
-    close(*master);
-    return -1;
-  }
-  /* all is well */
-  return 0;
+static void makeRaw(int fd) {
+  struct termios t;
+
+  tcgetattr(fd, &t);
+  t.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+  t.c_oflag &= ~OPOST;
+  t.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+  t.c_cflag &= ~(CSIZE|PARENB);
+  t.c_cflag |= CS8;
+  tcsetattr(fd, TCSANOW, &t);
 }
 
 
-static void makeRaw(struct termios *tp) {
-  tp->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
-  tp->c_oflag &= ~OPOST;
-  tp->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-  tp->c_cflag &= ~(CSIZE|PARENB);
-  tp->c_cflag |= CS8;
-}
-
-
-void termInit(int numTerms) {
-  int master, slave;
-  char ptyName[100];
-  char ptyTitle[100];
-  struct termios termios;
+void termInit(int numTerms, Bool hasTerm[]) {
   int i;
+  int master;
+  char slavePath[100];
+  int slave;
+  char termTitle[100];
+  char termSlave[100];
 
   numTerminals = numTerms;
   for (i = 0; i < numTerminals; i++) {
     /* open pseudo terminal */
-    if (openPty(&master, &slave, ptyName) < 0) {
-      error("cannot open pseudo terminal %d", i);
+    master = open("/dev/ptmx", O_RDWR | O_NONBLOCK);
+    if (master < 0) {
+      error("cannot open pseudo terminal master for serial line %d", i);
     }
+    grantpt(master);
+    unlockpt(master);
+    strcpy(slavePath, ptsname(master));
     if (debug) {
-      cPrintf("pseudo terminal '%s': master fd = %d, slave fd = %d\n",
-              ptyName, master, slave);
+      cPrintf("pseudo terminal %d: master fd = %d, slave path = '%s'\n",
+              i, master, slavePath);
     }
-    /* set mode to raw */
-    tcgetattr(slave, &termios);
-    makeRaw(&termios);
-    tcsetattr(slave, TCSANOW, &termios);
-    /* fork and exec a new xterm */
-    terminals[i].pid = fork();
-    if (terminals[i].pid < 0) {
-      error("cannot fork xterm process %d", i);
-    }
-    if (terminals[i].pid == 0) {
-      /* terminal process */
-      setpgid(0, 0);
-      close(2);
-      close(master);
-      sprintf(ptyName, "-Sab%d", slave);
-      sprintf(ptyTitle, "ECO32 Terminal %d", i);
-      execlp("xterm", "xterm", "-title", ptyTitle, ptyName, NULL);
-      error("cannot exec xterm process %d", i);
+    if (hasTerm[i]) {
+      /* connect a terminal to the serial line */
+      /* i.e., fork and exec a new xterm process */
+      terminals[i].pid = fork();
+      if (terminals[i].pid < 0) {
+        error("cannot fork xterm process for serial line %d", i);
+      }
+      if (terminals[i].pid == 0) {
+        /* terminal process */
+        setpgid(0, 0);
+        close(master);
+        /* open and configure pseudo terminal slave */
+        slave = open(slavePath, O_RDWR | O_NONBLOCK);
+        if (slave < 0) {
+          error("cannot open pseudo terminal slave '%s'\n", slavePath);
+        }
+        makeRaw(slave);
+        /* exec xterm */
+        sprintf(termTitle, "ECO32 Terminal %d", i);
+        sprintf(termSlave, "-Sab%d", slave);
+        execlp("xterm", "xterm", "-title", termTitle, termSlave, NULL);
+        error("cannot exec xterm process for serial line %d", i);
+      }
+    } else {
+      /* leave serial line unconnected */
+      terminals[i].pid = 0;
+      cPrintf("Serial line %d can be accessed by opening device '%s'.\n",
+              i, slavePath);
     }
     fcntl(master, F_SETFL, O_NONBLOCK);
     terminals[i].in = fdopen(master, "r");
     setvbuf(terminals[i].in, NULL, _IONBF, 0);
     terminals[i].out = fdopen(master, "w");
     setvbuf(terminals[i].out, NULL, _IONBF, 0);
-    /* skip the window id written by xterm */
-    while (fgetc(terminals[i].in) != '\n') ;
+    if (hasTerm[i]) {
+      /* skip the window id written by xterm */
+      while (fgetc(terminals[i].in) != '\n') ;
+    }
   }
   termReset();
 }

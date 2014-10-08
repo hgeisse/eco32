@@ -25,7 +25,7 @@ Word termRead(Word addr);
 void termWrite(Word addr, Word data);
 
 void termReset(void);
-void termInit(int numTerms);
+void termInit(int numTerms, Bool hasTerm[]);
 void termExit(void);
 
 

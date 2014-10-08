@@ -26,26 +26,32 @@
 
 static void usage(char *myself) {
   fprintf(stderr, "Usage: %s\n", myself);
-  fprintf(stderr, "         [-i]             set interactive mode\n");
-  fprintf(stderr, "         [-m <n>]         install n MB of RAM (1-%d)\n",
+  fprintf(stderr, "       [-i]             set interactive mode\n");
+  fprintf(stderr, "       [-m <n>]         install n MB of RAM (1-%d)\n",
           RAM_SIZE_MAX / M);
-  fprintf(stderr, "         [-l <prog>]      set program file name\n");
-  fprintf(stderr, "         [-a <addr>]      set program load address\n");
-  fprintf(stderr, "         [-r <rom>]       set ROM image file name\n");
-  fprintf(stderr, "         [-d <disk>]      set disk image file name\n");
-  fprintf(stderr, "         [-t <n>]         connect n terminals (0-%d)\n",
+  fprintf(stderr, "       [-l <prog>]      set program file name\n");
+  fprintf(stderr, "       [-a <addr>]      set program load address\n");
+  fprintf(stderr, "       [-r <rom>]       set ROM image file name\n");
+  fprintf(stderr, "       [-d <disk>]      set disk image file name\n");
+  fprintf(stderr, "       [-t <n>]         connect n terminals (0-%d)\n",
           MAX_NTERMS);
-  fprintf(stderr, "         [-g]             install graphics controller\n");
-  fprintf(stderr, "         [-c]             install console\n");
-  fprintf(stderr, "         [-o <file>]      bind output device to file\n");
+  fprintf(stderr, "       [-n <k>]         no terminal on line k (0-%d)\n",
+          MAX_NTERMS - 1);
+  fprintf(stderr, "       [-g]             install graphics controller\n");
+  fprintf(stderr, "       [-c]             install console\n");
+  fprintf(stderr, "       [-o <file>]      bind output device to file\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
+  fprintf(stderr, "The option -n leaves the specified serial line ");
+  fprintf(stderr, "unconnected.\nIt can be accessed from within another ");
+  fprintf(stderr, "process by opening\nthe corresponding pseudo terminal ");
+  fprintf(stderr, "(path will be shown here).\n");
   exit(1);
 }
 
 
 int main(int argc, char *argv[]) {
-  int i;
+  int i, j;
   char *argp;
   char *endp;
   Bool interactive;
@@ -55,6 +61,7 @@ int main(int argc, char *argv[]) {
   char *romName;
   char *diskName;
   int numTerms;
+  Bool hasTerm[MAX_NTERMS];
   Bool graphics;
   Bool console;
   char *outputName;
@@ -69,6 +76,9 @@ int main(int argc, char *argv[]) {
   romName = NULL;
   diskName = NULL;
   numTerms = 0;
+  for (j = 0; j < MAX_NTERMS; j++) {
+    hasTerm[j] = true;
+  }
   graphics = false;
   console = false;
   outputName = NULL;
@@ -131,6 +141,18 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
         }
         break;
+      case 'n':
+        if (i == argc - 1) {
+          usage(argv[0]);
+        }
+        j = strtol(argv[++i], &endp, 10);
+        if (*endp != '\0' ||
+            j < 0 ||
+            j > MAX_NTERMS - 1) {
+          usage(argv[0]);
+        }
+        hasTerm[j] = false;
+        break;
       case 'g':
         graphics = true;
         break;
@@ -160,7 +182,7 @@ int main(int argc, char *argv[]) {
     displayInit();
     keyboardInit();
   }
-  termInit(numTerms);
+  termInit(numTerms, hasTerm);
   diskInit(diskName);
   outputInit(outputName);
   shutdownInit();
