@@ -9,7 +9,7 @@ hello.o:	hello.s
 		$(BUILD)/bin/as -o hello.o hello.s
 
 run:		hello.bin
-		$(BUILD)/bin/sim -t 1 -l hello.bin
+		$(BUILD)/bin/sim -s 1 -t 0 -l hello.bin
 
 clean:
 		rm -f *~ hello.bin hello.o

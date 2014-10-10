@@ -18,7 +18,7 @@ RUN_LOG = run.log
 all:		$(DSK_IMG)
 
 run-sim:	$(DSK_IMG)
-		$(BUILD)/bin/sim -i -m 32 -c -t 2 \
+		$(BUILD)/bin/sim -i -m 32 -c -s 2 -t 0 -t 1 \
 		  -r $(BUILD)/monitor/simulator/monitor.bin \
 		  -d $(DSK_IMG) -o $(RUN_LOG)
 

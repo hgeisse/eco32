@@ -27,7 +27,7 @@ mklooptest:	mklooptest.c
 		gcc -m32 -g -Wall -o mklooptest mklooptest.c
 
 run:		looptest.bin
-		$(BUILD)/bin/sim -i -t 1 -r looptest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r looptest.bin
 
 clean:
 		rm -f *~ mklooptest looptest.s looptest.o

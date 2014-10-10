@@ -20,7 +20,7 @@ sregtest.o:	sregtest.s
 		$(BUILD)/bin/as -o sregtest.o sregtest.s
 
 run:		sregtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r sregtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r sregtest.bin
 
 clean:
 		rm -f *~ sregtest.o sregtest.bin sregtest.exo

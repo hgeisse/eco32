@@ -9,7 +9,7 @@ intrpt.o:	intrpt.s
 		$(BUILD)/bin/as -o intrpt.o intrpt.s
 
 run:		intrpt.bin
-		$(BUILD)/bin/sim -t 1 -l intrpt.bin
+		$(BUILD)/bin/sim -s 1 -t 0 -l intrpt.bin
 
 clean:
 		rm -f *~ intrpt.bin intrpt.o

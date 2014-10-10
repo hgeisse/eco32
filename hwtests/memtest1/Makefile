@@ -21,7 +21,7 @@ memtest1.o:	memtest1.s
 		$(BUILD)/bin/as -o memtest1.o memtest1.s
 
 run:		memtest1.bin
-		$(BUILD)/bin/sim -i -t 1 -r memtest1.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r memtest1.bin
 
 clean:
 		rm -f *~ memtest1.o memtest1.bin memtest1.exo

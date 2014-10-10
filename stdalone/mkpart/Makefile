@@ -21,7 +21,7 @@ install:	$(BIN) $(EXO)
 		cp $(EXO) $(BUILD)/stdalone
 
 run:		$(BIN)
-		$(BUILD)/bin/sim -i -t 1 -l $(BIN) -a 0x10000 \
+		$(BUILD)/bin/sim -i -s 1 -t 0 -l $(BIN) -a 0x10000 \
 		  -d $(BUILD)/run/disk.img
 
 $(EXO):		$(BIN)

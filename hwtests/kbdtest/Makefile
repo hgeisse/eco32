@@ -20,7 +20,7 @@ kbdtest.bin:	$(KBDTEST_SRC)
 		  -Wl-m -Wlkbdtest.map -o kbdtest.bin $(KBDTEST_SRC)
 
 run:		kbdtest.bin
-		$(BUILD)/bin/sim -i -c -t 1 -r kbdtest.bin
+		$(BUILD)/bin/sim -i -c -s 1 -t 0 -r kbdtest.bin
 
 clean:
 		rm -f *~

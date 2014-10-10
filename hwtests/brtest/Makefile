@@ -26,7 +26,7 @@ mkbrtest:	mkbrtest.c
 		gcc -m32 -g -Wall -o mkbrtest mkbrtest.c
 
 run:		brtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r brtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r brtest.bin
 
 clean:
 		rm -f *~ mkbrtest brtest.s brtest.o

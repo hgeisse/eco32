@@ -26,7 +26,7 @@ mkshtest:	mkshtest.c
 		gcc -m32 -g -Wall -o mkshtest mkshtest.c
 
 run:		shtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r shtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r shtest.bin
 
 clean:
 		rm -f *~ mkshtest shtest.s shtest.o

@@ -20,7 +20,7 @@ ldtest.o:	ldtest.s
 		$(BUILD)/bin/as -o ldtest.o ldtest.s
 
 run:		ldtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r ldtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r ldtest.bin
 
 clean:
 		rm -f *~ ldtest.o ldtest.bin ldtest.exo

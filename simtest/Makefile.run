@@ -39,34 +39,34 @@ run-rom01:
 		$(BUILD)/bin/sim -i -r rom01.bin
 
 run-rom02:
-		$(BUILD)/bin/sim -i -r rom02.bin -t 1
+		$(BUILD)/bin/sim -i -r rom02.bin -s 1 -t 0
 
 run-rom03:
-		$(BUILD)/bin/sim -i -r rom03.bin -t 1
+		$(BUILD)/bin/sim -i -r rom03.bin -s 1 -t 0
 
 run-rom04:
-		$(BUILD)/bin/sim -i -r rom04.bin -t 1
+		$(BUILD)/bin/sim -i -r rom04.bin -s 1 -t 0
 
 run-rom05:
-		$(BUILD)/bin/sim -i -r rom05.bin -t 2
+		$(BUILD)/bin/sim -i -r rom05.bin -s 2 -t 0 -t 1
 
 run-rom06:
-		$(BUILD)/bin/sim -i -r rom06.bin -t 2
+		$(BUILD)/bin/sim -i -r rom06.bin -s 2 -t 0 -t 1
 
 run-rom07:
 		$(BUILD)/bin/sim -i -r rom07.bin -o $(LOGFILE)
 
 run-rom08:
-		$(BUILD)/bin/sim -i -r rom08.bin -t 1
+		$(BUILD)/bin/sim -i -r rom08.bin -s 1 -t 0
 
 run-rom09:
-		$(BUILD)/bin/sim -i -r rom09.bin -t 1
+		$(BUILD)/bin/sim -i -r rom09.bin -s 1 -t 0
 
 run-rom10:
 		$(BUILD)/bin/sim -i -r rom10.bin -c
 
 run-romboot:	$(DSKNAME)
-		$(BUILD)/bin/sim -i -r romboot.bin -t 1 -d $(DSKNAME)
+		$(BUILD)/bin/sim -i -r romboot.bin -s 1 -t 0 -d $(DSKNAME)
 
 clean:
 		rm -f *~ $(LOGFILE) $(DSKNAME)

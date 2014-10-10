@@ -26,7 +26,7 @@ mkdivtest:	mkdivtest.c
 		gcc -m32 -g -Wall -o mkdivtest mkdivtest.c
 
 run:		divtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r divtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r divtest.bin
 
 clean:
 		rm -f *~ mkdivtest divtest.s divtest.o

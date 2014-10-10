@@ -26,7 +26,7 @@ mkremtest:	mkremtest.c
 		gcc -m32 -g -Wall -o mkremtest mkremtest.c
 
 run:		remtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r remtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r remtest.bin
 
 clean:
 		rm -f *~ mkremtest remtest.s remtest.o

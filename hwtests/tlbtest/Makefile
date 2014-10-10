@@ -20,7 +20,7 @@ tlbtest.bin:	$(TLBTEST_SRC)
 		  -Wl-m -Wltlbtest.map -o tlbtest.bin $(TLBTEST_SRC)
 
 run:		tlbtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r tlbtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r tlbtest.bin
 
 clean:
 		rm -f *~

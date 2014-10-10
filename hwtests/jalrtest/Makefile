@@ -21,7 +21,7 @@ jalrtest.o:	jalrtest.s
 		$(BUILD)/bin/as -o jalrtest.o jalrtest.s
 
 run:		jalrtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r jalrtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r jalrtest.bin
 
 clean:
 		rm -f *~ jalrtest.o jalrtest.bin jalrtest.exo

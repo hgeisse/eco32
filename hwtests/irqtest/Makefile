@@ -21,7 +21,7 @@ irqtest.o:	irqtest.s
 		$(BUILD)/bin/as -o irqtest.o irqtest.s
 
 run:		irqtest.bin
-		$(BUILD)/bin/sim -i -t 1 -r irqtest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r irqtest.bin
 
 clean:
 		rm -f *~ irqtest.o irqtest.bin irqtest.exo

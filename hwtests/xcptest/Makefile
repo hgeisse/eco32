@@ -20,7 +20,7 @@ xcptest.bin:	$(XCPTEST_SRC)
 		  -Wl-m -Wlxcptest.map -o xcptest.bin $(XCPTEST_SRC)
 
 run:		xcptest.bin
-		$(BUILD)/bin/sim -i -t 1 -r xcptest.bin
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r xcptest.bin
 
 clean:
 		rm -f *~
