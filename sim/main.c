@@ -26,26 +26,24 @@
 
 static void usage(char *myself) {
   fprintf(stderr, "Usage: %s\n", myself);
-  fprintf(stderr, "       [-i]             set interactive mode\n");
-  fprintf(stderr, "       [-m <n>]         install n MB of RAM (1-%d)\n",
+  fprintf(stderr, "    [-i]           set interactive mode\n");
+  fprintf(stderr, "    [-m <n>]       install n MB of RAM (1-%d)\n",
           RAM_SIZE_MAX / M);
-  fprintf(stderr, "       [-l <prog>]      set program file name\n");
-  fprintf(stderr, "       [-a <addr>]      set program load address\n");
-  fprintf(stderr, "       [-r <rom>]       set ROM image file name\n");
-  fprintf(stderr, "       [-d <disk>]      set disk image file name\n");
-  fprintf(stderr, "       [-t <n>]         connect n terminals (0-%d)\n",
+  fprintf(stderr, "    [-l <prog>]    set program file name\n");
+  fprintf(stderr, "    [-a <addr>]    set program load address\n");
+  fprintf(stderr, "    [-r <rom>]     set ROM image file name\n");
+  fprintf(stderr, "    [-d <disk>]    set disk image file name\n");
+  fprintf(stderr, "    [-s <n>]       install n serial lines (0-%d)\n",
           MAX_NTERMS);
-  fprintf(stderr, "       [-n <k>]         no terminal on line k (0-%d)\n",
+  fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
           MAX_NTERMS - 1);
-  fprintf(stderr, "       [-g]             install graphics controller\n");
-  fprintf(stderr, "       [-c]             install console\n");
-  fprintf(stderr, "       [-o <file>]      bind output device to file\n");
+  fprintf(stderr, "    [-g]           install graphics controller\n");
+  fprintf(stderr, "    [-c]           install console\n");
+  fprintf(stderr, "    [-o <file>]    bind output device to file\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
-  fprintf(stderr, "The option -n leaves the specified serial line ");
-  fprintf(stderr, "unconnected.\nIt can be accessed from within another ");
-  fprintf(stderr, "process by opening\nthe corresponding pseudo terminal ");
-  fprintf(stderr, "(path will be shown here).\n");
+  fprintf(stderr, "Unconnected serial lines can be accessed by opening\n");
+  fprintf(stderr, "their corresponding pseudo terminal (path is shown).\n");
   exit(1);
 }
 
@@ -77,7 +75,7 @@ int main(int argc, char *argv[]) {
   diskName = NULL;
   numTerms = 0;
   for (j = 0; j < MAX_NTERMS; j++) {
-    hasTerm[j] = true;
+    hasTerm[j] = false;
   }
   graphics = false;
   console = false;
@@ -130,7 +128,7 @@ int main(int argc, char *argv[]) {
         }
         diskName = argv[++i];
         break;
-      case 't':
+      case 's':
         if (i == argc - 1) {
           usage(argv[0]);
         }
@@ -141,7 +139,7 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
         }
         break;
-      case 'n':
+      case 't':
         if (i == argc - 1) {
           usage(argv[0]);
         }
@@ -151,7 +149,7 @@ int main(int argc, char *argv[]) {
             j > MAX_NTERMS - 1) {
           usage(argv[0]);
         }
-        hasTerm[j] = false;
+        hasTerm[j] = true;
         break;
       case 'g':
         graphics = true;
