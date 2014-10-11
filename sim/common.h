@@ -26,8 +26,8 @@
 #define TIMER_BASE	0x30000000	/* physical timer base address */
 #define DISPLAY_BASE	0x30100000	/* physical display base address */
 #define KEYBOARD_BASE	0x30200000	/* physical keyboard base address */
-#define TERM_BASE	0x30300000	/* physical terminal base address */
-#define MAX_NTERMS	2		/* max number of terminals */
+#define SERIAL_BASE	0x30300000	/* physical serial line base address */
+#define MAX_NSERIALS	2		/* max number of serial lines */
 #define DISK_BASE	0x30400000	/* physical disk base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */
 #define SHUTDOWN_BASE	0x3F100000	/* physical shutdown device address */

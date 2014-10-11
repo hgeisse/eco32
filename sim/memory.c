@@ -16,7 +16,7 @@
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
-#include "term.h"
+#include "serial.h"
 #include "disk.h"
 #include "output.h"
 #include "shutdown.h"
@@ -63,8 +63,8 @@ Word memoryReadWord(Word pAddr) {
     data = keyboardRead(pAddr & IO_REG_MASK);
     return data;
   }
-  if ((pAddr & IO_DEV_MASK) == TERM_BASE) {
-    data = termRead(pAddr & IO_REG_MASK);
+  if ((pAddr & IO_DEV_MASK) == SERIAL_BASE) {
+    data = serialRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_DEV_MASK) == DISK_BASE) {
@@ -153,8 +153,8 @@ void memoryWriteWord(Word pAddr, Word data) {
     keyboardWrite(pAddr & IO_REG_MASK, data);
     return;
   }
-  if ((pAddr & IO_DEV_MASK) == TERM_BASE) {
-    termWrite(pAddr & IO_REG_MASK, data);
+  if ((pAddr & IO_DEV_MASK) == SERIAL_BASE) {
+    serialWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_DEV_MASK) == DISK_BASE) {

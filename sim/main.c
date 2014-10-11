@@ -17,7 +17,7 @@
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
-#include "term.h"
+#include "serial.h"
 #include "disk.h"
 #include "output.h"
 #include "shutdown.h"
@@ -34,9 +34,9 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-r <rom>]     set ROM image file name\n");
   fprintf(stderr, "    [-d <disk>]    set disk image file name\n");
   fprintf(stderr, "    [-s <n>]       install n serial lines (0-%d)\n",
-          MAX_NTERMS);
+          MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
-          MAX_NTERMS - 1);
+          MAX_NSERIALS - 1);
   fprintf(stderr, "    [-g]           install graphics controller\n");
   fprintf(stderr, "    [-c]           install console\n");
   fprintf(stderr, "    [-o <file>]    bind output device to file\n");
@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
   unsigned int loadAddr;
   char *romName;
   char *diskName;
-  int numTerms;
-  Bool hasTerm[MAX_NTERMS];
+  int numSerials;
+  Bool connectTerminals[MAX_NSERIALS];
   Bool graphics;
   Bool console;
   char *outputName;
@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
   loadAddr = 0;
   romName = NULL;
   diskName = NULL;
-  numTerms = 0;
-  for (j = 0; j < MAX_NTERMS; j++) {
-    hasTerm[j] = false;
+  numSerials = 0;
+  for (j = 0; j < MAX_NSERIALS; j++) {
+    connectTerminals[j] = false;
   }
   graphics = false;
   console = false;
@@ -132,10 +132,10 @@ int main(int argc, char *argv[]) {
         if (i == argc - 1) {
           usage(argv[0]);
         }
-        numTerms = strtol(argv[++i], &endp, 10);
+        numSerials = strtol(argv[++i], &endp, 10);
         if (*endp != '\0' ||
-            numTerms < 0 ||
-            numTerms > MAX_NTERMS) {
+            numSerials < 0 ||
+            numSerials > MAX_NSERIALS) {
           usage(argv[0]);
         }
         break;
@@ -146,10 +146,10 @@ int main(int argc, char *argv[]) {
         j = strtol(argv[++i], &endp, 10);
         if (*endp != '\0' ||
             j < 0 ||
-            j > MAX_NTERMS - 1) {
+            j > MAX_NSERIALS - 1) {
           usage(argv[0]);
         }
-        hasTerm[j] = true;
+        connectTerminals[j] = true;
         break;
       case 'g':
         graphics = true;
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     displayInit();
     keyboardInit();
   }
-  termInit(numTerms, hasTerm);
+  serialInit(numSerials, connectTerminals);
   diskInit(diskName);
   outputInit(outputName);
   shutdownInit();
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
   timerExit();
   displayExit();
   keyboardExit();
-  termExit();
+  serialExit();
   diskExit();
   outputExit();
   shutdownExit();

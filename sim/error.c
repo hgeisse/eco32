@@ -16,7 +16,7 @@
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
-#include "term.h"
+#include "serial.h"
 #include "disk.h"
 #include "output.h"
 #include "shutdown.h"
@@ -32,7 +32,7 @@ void error(char *fmt, ...) {
   timerExit();
   displayExit();
   keyboardExit();
-  termExit();
+  serialExit();
   diskExit();
   outputExit();
   shutdownExit();

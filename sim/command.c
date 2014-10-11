@@ -20,7 +20,7 @@
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
-#include "term.h"
+#include "serial.h"
 #include "disk.h"
 #include "output.h"
 #include "shutdown.h"
@@ -855,7 +855,7 @@ static void doInit(char *tokens[], int n) {
     timerReset();
     displayReset();
     keyboardReset();
-    termReset();
+    serialReset();
     diskReset();
     outputReset();
     shutdownReset();

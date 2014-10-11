@@ -15,7 +15,7 @@
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
-#include "term.h"
+#include "serial.h"
 #include "disk.h"
 #include "output.h"
 #include "shutdown.h"
@@ -36,7 +36,7 @@ void shutdownWrite(Word addr, Word data) {
   timerExit();
   displayExit();
   keyboardExit();
-  termExit();
+  serialExit();
   diskExit();
   outputExit();
   shutdownExit();
