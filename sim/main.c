@@ -174,6 +174,14 @@ int main(int argc, char *argv[]) {
     cPrintf("specified, so interactive mode is assumed.\n");
     interactive = true;
   }
+  for (j = MAX_NSERIALS - 1; j >= 0; j--) {
+    if (connectTerminals[j] && j >= numSerials) {
+      /* user wants a terminal on a line which is not installed */
+      numSerials = j + 1;
+      cPrintf("Serial lines 0..%d automatically installed.\n", j);
+      break;
+    }
+  }
   initInstrTable();
   timerInit();
   if (console) {
