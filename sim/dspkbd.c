@@ -19,7 +19,7 @@
 
 static Bool debug = false;
 static Bool debugKeycode = false;
-static volatile Bool installed = false;
+static Bool volatile installed = false;
 
 
 static void blinkScreen(void);
@@ -49,7 +49,8 @@ static void keyReleased(unsigned int xKeycode);
 
 
 #define C2B(c,ch)		(((((c) & 0xFF) * ch.scale) >> 8) * ch.factor)
-#define RGB2PIXEL(r,g,b)	(C2B(r, vga.red) | \
+#define RGB2PIXEL(r,g,b)	(0xFF000000 | \
+				 C2B(r, vga.red) | \
 				 C2B(g, vga.green) | \
 				 C2B(b, vga.blue))
 
@@ -228,8 +229,7 @@ static void initMonitor(int argc, char *argv[]) {
   vga.shutdown.display = vga.display;
   vga.shutdown.window = vga.win;
   vga.shutdown.message_type = XA_WM_COMMAND;
-  vga.shutdown.format = 32;
-  vga.shutdown.data.l[0] = 0xDEADBEEF;
+  vga.shutdown.format = 8;
   /* say that the graphics controller is installed */
   XSync(vga.display, False);
   installed = true;
@@ -272,8 +272,7 @@ static void *server(void *ignore) {
         break;
       case ClientMessage:
         if (event.xclient.message_type == XA_WM_COMMAND &&
-            event.xclient.format == 32 &&
-            event.xclient.data.l[0] == 0xDEADBEEF) {
+            event.xclient.format == 8) {
           run = false;
         }
         break;
@@ -297,8 +296,8 @@ static void *server(void *ignore) {
 /* refresh timer */
 
 
-static Bool refreshRunning = false;
-static Bool blink = false;
+static Bool volatile refreshRunning = false;
+static Bool volatile blink = false;
 
 
 static void *refresh(void *ignore) {
@@ -331,25 +330,21 @@ static char *myArgv[] = {
   NULL
 };
 
+static pthread_t monitorThread;
+static pthread_t refreshThread;
+
 
 static void vgaInit(void) {
-  pthread_attr_t attr;
-  pthread_t thread;
-
   /* start monitor server in a separate thread */
   vga.argc = myArgc;
   vga.argv = myArgv;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  if (pthread_create(&thread, &attr, server, NULL) != 0) {
+  if (pthread_create(&monitorThread, NULL, server, NULL) != 0) {
     error("cannot start monitor server");
   }
-  while (!installed) sleep(1);
+  while (!installed) ;
   /* start refresh timer in another thread */
   refreshRunning = true;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  if (pthread_create(&thread, &attr, refresh, NULL) != 0) {
+  if (pthread_create(&refreshThread, NULL, refresh, NULL) != 0) {
     error("cannot start refresh timer");
   }
 }
@@ -357,10 +352,10 @@ static void vgaInit(void) {
 
 static void vgaExit(void) {
   refreshRunning = false;
-  sleep(1);
+  pthread_join(refreshThread, NULL);
   XSendEvent(vga.display, vga.win, False, 0, (XEvent *) &vga.shutdown);
   XSync(vga.display, False);
-  while (installed) sleep(1);
+  pthread_join(monitorThread, NULL);
 }
 
 

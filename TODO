@@ -22,6 +22,7 @@ sim:
    4. beim dspkbd sollte man auch den alpha-wert bei den pixeln
    angeben. wenn man z.B. compiz verwendet, was das unterstützt, ist sonst
    alles transparent :)
+   *** DONE ***
 
    5. die positionierung des fensters von dspkbd mit XCreateWindow
    wird gerne mal vom window-manager ignoriert. daher sollte man am

@@ -2,7 +2,7 @@
 # Makefile for the getline library
 #
 
-CC      = gcc -m32
+CC      = gcc
 CFLAGS  = -O -DPOSIX
 LDFLAGS = -L.
 LDLIBS  = -lgetline
