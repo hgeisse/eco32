@@ -13,7 +13,7 @@ install:	bit2mcs
 		cp bit2mcs $(BUILD)/bin
 
 bit2mcs:	bit2mcs.c
-		gcc -m32 -g -Wall -o bit2mcs bit2mcs.c
+		gcc -g -Wall -o bit2mcs bit2mcs.c
 
 clean:
 		rm -f *~ bit2mcs

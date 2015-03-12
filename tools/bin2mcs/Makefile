@@ -13,7 +13,7 @@ install:	bin2mcs
 		cp bin2mcs $(BUILD)/bin
 
 bin2mcs:	bin2mcs.c
-		gcc -m32 -g -Wall -o bin2mcs bin2mcs.c
+		gcc -g -Wall -o bin2mcs bin2mcs.c
 
 clean:
 		rm -f *~ bin2mcs

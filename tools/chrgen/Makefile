@@ -21,7 +21,7 @@ chrgenhi.init:	mkinit
 		./mkinit
 
 mkinit:		mkinit.c font-8x16
-		gcc -m32 -g -Wall -o mkinit mkinit.c
+		gcc -g -Wall -o mkinit mkinit.c
 
 clean:
 		rm -f *~ mkinit

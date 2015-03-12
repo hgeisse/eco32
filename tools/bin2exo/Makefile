@@ -13,7 +13,7 @@ install:	bin2exo
 		cp bin2exo $(BUILD)/bin
 
 bin2exo:	bin2exo.c
-		gcc -m32 -g -Wall -o bin2exo bin2exo.c
+		gcc -g -Wall -o bin2exo bin2exo.c
 
 clean:
 		rm -f *~ bin2exo

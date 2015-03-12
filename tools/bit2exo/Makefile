@@ -13,7 +13,7 @@ install:	bit2exo
 		cp bit2exo $(BUILD)/bin
 
 bit2exo:	bit2exo.c
-		gcc -m32 -g -Wall -o bit2exo bit2exo.c
+		gcc -g -Wall -o bit2exo bit2exo.c
 
 clean:
 		rm -f *~ bit2exo

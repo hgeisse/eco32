@@ -29,7 +29,7 @@ dspchrlo.init:	mkinit
 		./mkinit
 
 mkinit:		mkinit.c screen
-		gcc -m32 -g -Wall -o mkinit mkinit.c
+		gcc -g -Wall -o mkinit mkinit.c
 
 clean:
 		rm -f *~ mkinit
