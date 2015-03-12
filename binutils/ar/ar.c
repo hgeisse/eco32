@@ -122,7 +122,7 @@ void showAttributes(void) {
 
   printMode();
   printf("%4d/%4d", arbuf.uid, arbuf.gid);
-  printf("%8ld", arbuf.size);
+  printf("%8d", arbuf.size);
   cp = ctime(&arbuf.date);
   printf(" %-12.12s %-4.4s ", cp + 4, cp + 20);
 }

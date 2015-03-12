@@ -21,7 +21,7 @@ typedef struct {
   int uid;
   int gid;
   int mode;
-  long size;
+  int size;
 } ArHeader;
 
 
