@@ -1,8 +1,9 @@
 A=.a
 O=.o
 E=
-CC=gcc -m32
-CFLAGS=-g
+CC=gcc
+# -Wno-psabi suppresses notes about changed ABI conventions
+CFLAGS=-g -Wno-psabi
 LDFLAGS=-g
 LD=$(CC)
 AR=ar ruv

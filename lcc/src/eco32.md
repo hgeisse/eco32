@@ -469,7 +469,7 @@ static void defconst(int suffix, int size, Value v) {
     print("\t.word\t0x%x\n", p[1 - swap]);
   } else
   if (suffix == P) {
-    print("\t.word\t0x%x\n", (unsigned) v.p);
+    print("\t.word\t0x%lx\n", (unsigned long) v.p);
   } else
   if (size == 1) {
     print("\t.byte\t0x%x\n",

@@ -858,7 +858,7 @@ static void defconst(int suffix, int size, Value v) {
                 print(".word 0x%x\n.word 0x%x\n", p[swap], p[!swap]);
         }
         else if (suffix == P)
-                print(".word 0x%x\n", (unsigned)v.p);
+                print(".word 0x%lx\n", (unsigned long)v.p);
         else if (size == 1)
                 print(".byte 0x%x\n", (unsigned)((unsigned char)(suffix == I ? v.i : v.u)));
         else if (size == 2)
