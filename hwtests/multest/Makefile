@@ -23,7 +23,7 @@ multest.s:	mkmultest
 		./mkmultest > multest.s
 
 mkmultest:	mkmultest.c
-		gcc -m32 -g -Wall -o mkmultest mkmultest.c
+		gcc -g -Wall -o mkmultest mkmultest.c
 
 run:		multest.bin
 		$(BUILD)/bin/sim -i -s 1 -t 0 -r multest.bin

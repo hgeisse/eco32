@@ -29,7 +29,7 @@ echo1.exo:	echo1.bin
 		$(BUILD)/bin/bin2exo -S2 0 echo1.bin echo1.exo
 
 sertest:	sertest.c
-		gcc -m32 -g -Wall -o sertest sertest.c
+		gcc -g -Wall -o sertest sertest.c
 
 clean:
 		rm -f *~

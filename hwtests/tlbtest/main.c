@@ -281,7 +281,7 @@ void mapTest(void) {
     /* compute pseudo-random virtual word address (page number 0..31) */
     page = (page * 13 + 1) & 0x1F;
     offset = (offset * 109) & 0x00000FFF;
-    virt = (page << 12) | (offset & ~0x3);
+    virt = (page << 12) | (offset & 0xFFFFFFFC);
     /* lookup frame number in TLB and construct physical word address */
     index = probeTLB(virt);
     if (index & 0x80000000) {
@@ -289,7 +289,7 @@ void mapTest(void) {
       break;
     }
     frame = getTLB_LO(index) & 0xFFFFF000;
-    phys = frame | (offset & ~0x3);
+    phys = frame | (offset & 0xFFFFFFFC);
     /* access memory by dereferencing the virtual address */
     cont = *(Word *)virt;
     /* word read should equal physical address */

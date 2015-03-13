@@ -29,7 +29,7 @@ send1.exo:	send1.bin
 		$(BUILD)/bin/bin2exo -S2 0 send1.bin send1.exo
 
 receive:	receive.c
-		gcc -m32 -g -Wall -o receive receive.c
+		gcc -g -Wall -o receive receive.c
 
 clean:
 		rm -f *~

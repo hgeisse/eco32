@@ -23,7 +23,7 @@ remtest.s:	mkremtest
 		./mkremtest > remtest.s
 
 mkremtest:	mkremtest.c
-		gcc -m32 -g -Wall -o mkremtest mkremtest.c
+		gcc -g -Wall -o mkremtest mkremtest.c
 
 run:		remtest.bin
 		$(BUILD)/bin/sim -i -s 1 -t 0 -r remtest.bin

@@ -168,7 +168,7 @@ static int execTest(void (*run)(InterruptContext *icp),
     result = 9;
   }
   if (execInUserMode) {
-    initial.psw &= ~(1 << 26);
+    initial.psw &= ~((unsigned) 1 << 26);
   }
   return result;
 }
