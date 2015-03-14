@@ -13,7 +13,7 @@ install:	loadserv
 		cp loadserv $(BUILD)/bin
 
 loadserv:	loadserv.c
-		gcc -m32 -g -Wall -o loadserv loadserv.c
+		gcc -g -Wall -o loadserv loadserv.c
 
 clean:
 		rm -f *~ loadserv

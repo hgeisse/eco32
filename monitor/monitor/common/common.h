@@ -7,8 +7,8 @@
 #define _COMMON_H_
 
 
-#define PAGE_SHIFT	12			/* log2 of page size */
-#define PAGE_SIZE	(1 << PAGE_SHIFT)	/* page size in bytes */
+#define PAGE_SHFT	12			/* log2 of page size */
+#define PAGE_SIZE	((Word) 1 << PAGE_SHFT)	/* page size in bytes */
 #define OFFSET_MASK	(PAGE_SIZE - 1)		/* mask for offset in page */
 #define PAGE_MASK	(~OFFSET_MASK)		/* mask for page number */
 

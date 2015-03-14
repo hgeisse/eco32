@@ -280,7 +280,7 @@ static void doAssemble(char *tokens[], int n) {
     help02();
     return;
   }
-  addr &= ~0x00000003;
+  addr &= 0xFFFFFFFC;
   psw = cpuGetPSW();
   while (1) {
     sprintf(prompt, "ASM # %08X: ", addr);
@@ -331,7 +331,7 @@ static void doUnassemble(char *tokens[], int n) {
     help03();
     return;
   }
-  addr &= ~0x00000003;
+  addr &= 0xFFFFFFFC;
   psw = cpuGetPSW();
   for (i = 0; i < count; i++) {
     instr = mmuReadWord(addr);
@@ -357,7 +357,7 @@ static void doBreak(char *tokens[], int n) {
       printf("illegal address\n");
       return;
     }
-    addr &= ~0x00000003;
+    addr &= 0xFFFFFFFC;
     cpuSetBreak(addr);
     showBreak();
   } else {
@@ -421,7 +421,7 @@ static void doPC(char *tokens[], int n) {
       printf("illegal address\n");
       return;
     }
-    addr &= ~0x00000003;
+    addr &= 0xFFFFFFFC;
     cpuSetPC(addr);
     showPC();
   } else {
@@ -562,7 +562,7 @@ static void doDump(char *tokens[], int n) {
     return;
   }
   psw = cpuGetPSW();
-  lo = addr & ~0x0000000F;
+  lo = addr & 0xFFFFFFF0;
   hi = addr + count - 1;
   if (hi < lo) {
     /* wrap-around */

@@ -37,7 +37,7 @@ static Word getByte(int index) {
   if (hi >= 'a' && hi <= 'f') {
     hi -= 'a' - 10;
   } else {
-    return -1;
+    return (Word) -1;
   }
   lo = line[index + 1];
   if (lo >= '0' && lo <= '9') {
@@ -49,7 +49,7 @@ static Word getByte(int index) {
   if (lo >= 'a' && lo <= 'f') {
     lo -= 'a' - 10;
   } else {
-    return -1;
+    return (Word) -1;
   }
   return (hi << 4) | lo;
 }
