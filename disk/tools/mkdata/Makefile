@@ -4,7 +4,7 @@
 
 BUILD = ../../../build
 
-CC = gcc -m32
+CC = gcc
 CFLAGS = -g -Wall
 
 .PHONY:		all install clean

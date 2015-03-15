@@ -15,9 +15,9 @@
 
 
 typedef struct {
-  unsigned long type;
-  unsigned long start;
-  unsigned long size;
+  unsigned int type;
+  unsigned int start;
+  unsigned int size;
   char descr[DESCR_SIZE];
 } PartEntry;
 
@@ -42,11 +42,11 @@ void error(char *fmt, ...) {
 /**************************************************************/
 
 
-unsigned long getNumber(unsigned char *p) {
-  return (unsigned long) *(p + 0) << 24 |
-         (unsigned long) *(p + 1) << 16 |
-         (unsigned long) *(p + 2) <<  8 |
-         (unsigned long) *(p + 3) <<  0;
+unsigned int getNumber(unsigned char *p) {
+  return (unsigned int) *(p + 0) << 24 |
+         (unsigned int) *(p + 1) << 16 |
+         (unsigned int) *(p + 2) <<  8 |
+         (unsigned int) *(p + 3) <<  0;
 }
 
 
@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
   char *diskName;
   FILE *disk;
   unsigned long diskSize;
-  unsigned long numSectors;
-  unsigned long partLast;
+  unsigned int numSectors;
+  unsigned int partLast;
   int i, j;
   char c;
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   diskSize = ftell(disk);
   numSectors = diskSize / SECTOR_SIZE;
   fclose(disk);
-  printf("Disk '%s' has %lu (0x%lX) sectors.\n",
+  printf("Disk '%s' has %u (0x%X) sectors.\n",
          diskName, numSectors, numSectors);
   if (numSectors < 32) {
     error("disk is too small");
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     } else {
       partLast = 0;
     }
-    printf("%2d %s 0x%08lX 0x%08lX 0x%08lX 0x%08lX ",
+    printf("%2d %s 0x%08X 0x%08X 0x%08X 0x%08X ",
            i,
            ptr[i].type & 0x80000000 ? "*" : " ",
            ptr[i].type & 0x7FFFFFFF,

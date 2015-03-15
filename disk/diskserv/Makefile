@@ -13,7 +13,7 @@ install:	diskserv
 		cp diskserv $(BUILD)/bin
 
 diskserv:	diskserv.c
-		gcc -m32 -g -Wall -o diskserv diskserv.c
+		gcc -g -Wall -o diskserv diskserv.c
 
 clean:
 		rm -f *~ diskserv

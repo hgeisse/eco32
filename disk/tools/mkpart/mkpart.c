@@ -20,9 +20,9 @@ unsigned char buf[32 * SECTOR_SIZE];
 
 
 typedef struct {
-  unsigned long type;
-  unsigned long start;
-  unsigned long size;
+  unsigned int type;
+  unsigned int start;
+  unsigned int size;
   char descr[DESCR_SIZE];
 } PartEntry;
 
@@ -47,7 +47,7 @@ void error(char *fmt, ...) {
 /**************************************************************/
 
 
-void convertNumber(unsigned char *p, unsigned long val) {
+void convertNumber(unsigned char *p, unsigned int val) {
   *(p + 0) = val >> 24;
   *(p + 1) = val >> 16;
   *(p + 2) = val >>  8;
@@ -71,10 +71,10 @@ void convertPartitionTable(PartEntry *e, int n) {
 /**************************************************************/
 
 
-int parseNumber(char **pc, unsigned long *pi) {
+int parseNumber(char **pc, unsigned int *pi) {
   char *p;
   unsigned int base, dval;
-  unsigned long n;
+  unsigned int n;
 
   p = *pc;
   while (*p == ' ' || *p == '\t') {
@@ -163,19 +163,19 @@ int main(int argc, char *argv[]) {
   FILE *disk;
   FILE *conf;
   unsigned long diskSize;
-  unsigned long numSectors;
+  unsigned int numSectors;
   char line[LINE_SIZE];
   char *p, *q;
   int lineNumber;
   FILE *mbootblk;
   long mbootblkSize;
   int i;
-  unsigned long partNum;
-  unsigned long bootable;
-  unsigned long partType;
-  unsigned long partStart;
-  unsigned long partLast;
-  unsigned long partSize;
+  unsigned int partNum;
+  unsigned int bootable;
+  unsigned int partType;
+  unsigned int partStart;
+  unsigned int partLast;
+  unsigned int partSize;
   char descr[LINE_SIZE];
 
   /* check command line arguments */
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
   diskSize = ftell(disk);
   numSectors = diskSize / SECTOR_SIZE;
   fclose(disk);
-  printf("Disk '%s' has %lu (0x%lX) sectors.\n",
+  printf("Disk '%s' has %u (0x%X) sectors.\n",
          diskName, numSectors, numSectors);
   if (numSectors < 32) {
     error("disk is too small");
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
     } else {
       partLast = 0;
     }
-    printf("%2lu %s 0x%08lX 0x%08lX 0x%08lX 0x%08lX %s\n",
+    printf("%2u %s 0x%08X 0x%08X 0x%08X 0x%08X %s\n",
            partNum,
            ptr[partNum].type & 0x80000000 ? "*" : " ",
            ptr[partNum].type & 0x7FFFFFFF,
