@@ -23,9 +23,9 @@ unsigned int numSectors = 0;	/* gets loaded by previous stage */
 
 
 typedef struct {
-  unsigned long type;
-  unsigned long start;
-  unsigned long size;
+  unsigned int type;
+  unsigned int start;
+  unsigned int size;
   char descr[DESCR_SIZE];
 } PartEntry;
 
@@ -102,8 +102,8 @@ void getline(char *prompt, char *line, int n) {
 }
 
 
-int countPrintn(long n) {
-  long a;
+int countPrintn(int n) {
+  int a;
   int res;
 
   res = 0;
@@ -119,8 +119,8 @@ int countPrintn(long n) {
 }
 
 
-void printn(long n) {
-  long a;
+void printn(int n) {
+  int a;
 
   if (n < 0) {
     putchar('-');

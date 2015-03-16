@@ -22,13 +22,13 @@ chk:		chkimg $(DISK_IMG)
 		./chkimg $(DISK_IMG) $(NUM_CHECKS)
 
 chkimg:		chkimg.c
-		gcc -m32 -Wall -o chkimg chkimg.c
+		gcc -Wall -o chkimg chkimg.c
 
 $(DISK_IMG):	genimg
 		./genimg $(DISK_IMG)
 
 genimg:		genimg.c
-		gcc -m32 -Wall -o genimg genimg.c
+		gcc -Wall -o genimg genimg.c
 
 clean:
 		$(MAKE) -C dskchk2 clean

@@ -98,12 +98,12 @@ Bool checkDiskReady(void) {
 }
 
 
-unsigned long getDiskSize(void) {
+unsigned int getDiskSize(void) {
   return *DISK_CAP;
 }
 
 
-Bool readDisk(unsigned long sector,
+Bool readDisk(unsigned int sector,
               unsigned int count,
               unsigned int *addr) {
   unsigned int n;
@@ -134,7 +134,7 @@ Bool readDisk(unsigned long sector,
 
 
 void main(void) {
-  unsigned long numSectors;
+  unsigned int numSectors;
   unsigned int buffer[SECTOR_SIZE / sizeof(unsigned int)];
   int i, j;
   unsigned char *p, *q;
@@ -148,7 +148,7 @@ void main(void) {
   }
   /* determine disk size */
   numSectors = getDiskSize();
-  printf("Disk has %lu (0x%lX) sectors.\n",
+  printf("Disk has %u (0x%X) sectors.\n",
          numSectors, numSectors);
   if (numSectors < 32) {
     error("disk is too small");

@@ -9,7 +9,7 @@ all:		dump
 install:	dump
 
 dump:		dump.c
-		gcc -m32 -g -Wall -o dump dump.c
+		gcc -g -Wall -o dump dump.c
 
 clean:
 		rm -f *~ dump

@@ -12,7 +12,7 @@ mbr.dump:	dump mbr.bin
 		./dump mbr.bin mbr.dump
 
 dump:		dump.c
-		gcc -m32 -g -Wall -o dump dump.c
+		gcc -g -Wall -o dump dump.c
 
 mbr.bin:	mbr.o
 		$(BUILD)/bin/ld -h -rc 0xC0010000 -o mbr.bin mbr.o

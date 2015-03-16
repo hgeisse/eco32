@@ -21,7 +21,7 @@
 #define RAND_MAX	0x7FFF
 
 
-static unsigned long randomNumber = 1;
+static unsigned int randomNumber = 1;
 
 
 void srand(int seed) {

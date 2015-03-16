@@ -19,12 +19,12 @@
 #define DISK_CAP	(DISK_BASE + 3)		/* disk capacity register */
 #define DISK_BUFFER	((unsigned *) 0xF0480000)  /* address of disk buffer */
 
-#define DISK_CTRL_STRT	0x01	/* a 1 written here starts the disk command */
-#define DISK_CTRL_IEN	0x02	/* enable disk interrupt */
-#define DISK_CTRL_WRT	0x04	/* command type: 0 = read, 1 = write */
-#define DISK_CTRL_ERR	0x08	/* 0 = ok, 1 = error; valid when DONE = 1 */
-#define DISK_CTRL_DONE	0x10	/* 1 = disk has finished the command */
-#define DISK_CTRL_READY	0x20	/* 1 = capacity valid, disk accepts command */
+#define DISK_CTRL_STRT	0x01U	/* a 1 written here starts the disk command */
+#define DISK_CTRL_IEN	0x02U	/* enable disk interrupt */
+#define DISK_CTRL_WRT	0x04U	/* command type: 0 = read, 1 = write */
+#define DISK_CTRL_ERR	0x08U	/* 0 = ok, 1 = error; valid when DONE = 1 */
+#define DISK_CTRL_DONE	0x10U	/* 1 = disk has finished the command */
+#define DISK_CTRL_READY	0x20U	/* 1 = capacity valid, disk accepts command */
 
 #define DISK_IRQ	8	/* disk interrupt number */
 

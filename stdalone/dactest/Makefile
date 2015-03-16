@@ -42,7 +42,7 @@ $(SRC2):	genbell
 		./genbell >$(SRC2)
 
 genbell:	genbell.c
-		gcc -m32 -g -Wall -o genbell genbell.c -lm
+		gcc -g -Wall -o genbell genbell.c -lm
 
 clean:
 		rm -f genbell $(SRC2) $(OBJ2)
