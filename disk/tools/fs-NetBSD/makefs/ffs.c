@@ -916,7 +916,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 			    (char *)buf, (long long)bufleft);
 		else if (nread != chunk)
 			errx(EXIT_FAILURE, "Reading `%s', %lld bytes to go, "
-			    "read %zd bytes, expected %ju bytes, does "
+			    "read %zd bytes, expected %llu bytes, does "
 			    "metalog size= attribute mismatch source size?",
 			    (char *)buf, (long long)bufleft, nread,
 			    (uintmax_t)chunk);

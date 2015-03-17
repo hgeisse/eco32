@@ -226,8 +226,8 @@ void dlFromX86ToEco(DiskLabel *lp) {
 
 
 FILE *diskFile;
-unsigned long sliceStart;
-unsigned long sliceSize;
+unsigned int sliceStart;
+unsigned int sliceSize;
 
 
 void readSector(unsigned int sno, unsigned char *buf) {
@@ -575,7 +575,7 @@ int main(int argc, char *argv[]) {
   char *endptr;
   unsigned char partTable[SSIZE];
   unsigned char *ptptr;
-  unsigned long partType;
+  unsigned int partType;
   DiskLabel dl;
   int endian;
 
@@ -638,7 +638,7 @@ int main(int argc, char *argv[]) {
     sliceStart = read4FromEco(ptptr + 4);
     sliceSize = read4FromEco(ptptr + 8);
   }
-  printf("Slice size is %lu (0x%lX) sectors of %d bytes each.\n",
+  printf("Slice size is %u (0x%X) sectors of %d bytes each.\n",
          sliceSize, sliceSize, SSIZE);
   if (optionCheck) {
     /* check endianness */

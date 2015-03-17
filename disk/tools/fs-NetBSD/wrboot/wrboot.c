@@ -57,13 +57,13 @@ int main(int argc, char *argv[]) {
   int bootSize;
   char *diskName;
   FILE *diskFile;
-  unsigned long sliceStart;
-  unsigned long sliceSize;
+  unsigned int sliceStart;
+  unsigned int sliceSize;
   int part;
   char *endptr;
   unsigned char partTable[SSIZE];
   unsigned char *ptptr;
-  unsigned long partType;
+  unsigned int partType;
   unsigned char bootCode[BSIZE];
   unsigned char diskLabel[SSIZE];
 
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     sliceStart = read4FromEco(ptptr + 4);
     sliceSize = read4FromEco(ptptr + 8);
   }
-  printf("Slice size is %lu (0x%lX) sectors of %d bytes each.\n",
+  printf("Slice size is %u (0x%X) sectors of %d bytes each.\n",
          sliceSize, sliceSize, SSIZE);
   /* read disklabel from disk */
   fseek(diskFile, (sliceStart + 1) * SSIZE, SEEK_SET);
