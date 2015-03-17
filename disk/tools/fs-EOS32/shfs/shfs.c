@@ -42,10 +42,10 @@
 #define IOEXEC		000001	/* other's execute permission */
 
 
-typedef unsigned long EOS32_ino_t;
-typedef unsigned long EOS32_daddr_t;
-typedef unsigned long EOS32_off_t;
-typedef long EOS32_time_t;
+typedef unsigned int EOS32_ino_t;
+typedef unsigned int EOS32_daddr_t;
+typedef unsigned int EOS32_off_t;
+typedef int EOS32_time_t;
 
 
 void error(char *fmt, ...) {
@@ -60,7 +60,7 @@ void error(char *fmt, ...) {
 }
 
 
-unsigned long fsStart;		/* file system start sector */
+unsigned int fsStart;		/* file system start sector */
 
 
 void readBlock(FILE *disk,
@@ -73,11 +73,11 @@ void readBlock(FILE *disk,
 }
 
 
-unsigned long get4Bytes(unsigned char *addr) {
-  return (unsigned long) addr[0] << 24 |
-         (unsigned long) addr[1] << 16 |
-         (unsigned long) addr[2] <<  8 |
-         (unsigned long) addr[3] <<  0;
+unsigned int get4Bytes(unsigned char *addr) {
+  return (unsigned int) addr[0] << 24 |
+         (unsigned int) addr[1] << 16 |
+         (unsigned int) addr[2] <<  8 |
+         (unsigned int) addr[3] <<  0;
 }
 
 
@@ -168,19 +168,19 @@ void superBlock(unsigned char *p) {
   if (checkBatch(1)) return;
   fsize = get4Bytes(p);
   p += 4;
-  printf("file system size = %lu (0x%lX) blocks\n", fsize, fsize);
+  printf("file system size = %u (0x%X) blocks\n", fsize, fsize);
   if (checkBatch(1)) return;
   isize = get4Bytes(p);
   p += 4;
-  printf("inode list size  = %lu (0x%lX) blocks\n", isize, isize);
+  printf("inode list size  = %u (0x%X) blocks\n", isize, isize);
   if (checkBatch(1)) return;
   freeblks = get4Bytes(p);
   p += 4;
-  printf("free blocks = %lu (0x%lX)\n", freeblks, freeblks);
+  printf("free blocks = %u (0x%X)\n", freeblks, freeblks);
   if (checkBatch(1)) return;
   freeinos = get4Bytes(p);
   p += 4;
-  printf("free inodes = %lu (0x%lX)\n", freeinos, freeinos);
+  printf("free inodes = %u (0x%X)\n", freeinos, freeinos);
   if (checkBatch(1)) return;
   ninode = get4Bytes(p);
   p += 4;
@@ -190,7 +190,7 @@ void superBlock(unsigned char *p) {
     ino = get4Bytes(p);
     p += 4;
     if (i < ninode) {
-      printf("  free inode[%3d] = %lu (0x%lX)\n", i, ino, ino);
+      printf("  free inode[%3d] = %u (0x%X)\n", i, ino, ino);
       if (checkBatch(1)) return;
     }
   }
@@ -202,7 +202,7 @@ void superBlock(unsigned char *p) {
     free = get4Bytes(p);
     p += 4;
     if (i < nfree) {
-      printf("  %s block[%3d] = %lu (0x%lX)\n",
+      printf("  %s block[%3d] = %u (0x%X)\n",
              i == 0 ? "link" : "free", i, free, free);
       if (checkBatch(1)) return;
     }
@@ -211,7 +211,7 @@ void superBlock(unsigned char *p) {
   p += 4;
   dat = ctime((time_t *) &tim);
   dat[strlen(dat) - 1] = '\0';
-  printf("last super block update = %ld (%s)\n", tim, dat);
+  printf("last super block update = %d (%s)\n", tim, dat);
   if (checkBatch(1)) return;
   flag = *p++;
   printf("free list locked flag = %d\n", (int) flag);
@@ -306,7 +306,7 @@ void inodeBlock(unsigned char *p) {
     dat = ctime((time_t *) &tim);
     dat[strlen(dat) - 1] = '\0';
     if (mode != 0) {
-      printf("  time inode created = %ld (%s)\n", tim, dat);
+      printf("  time inode created = %d (%s)\n", tim, dat);
       if (checkBatch(1)) return;
     }
     tim = get4Bytes(p);
@@ -314,7 +314,7 @@ void inodeBlock(unsigned char *p) {
     dat = ctime((time_t *) &tim);
     dat[strlen(dat) - 1] = '\0';
     if (mode != 0) {
-      printf("  time last modified = %ld (%s)\n", tim, dat);
+      printf("  time last modified = %d (%s)\n", tim, dat);
       if (checkBatch(1)) return;
     }
     tim = get4Bytes(p);
@@ -322,33 +322,33 @@ void inodeBlock(unsigned char *p) {
     dat = ctime((time_t *) &tim);
     dat[strlen(dat) - 1] = '\0';
     if (mode != 0) {
-      printf("  time last accessed = %ld (%s)\n", tim, dat);
+      printf("  time last accessed = %d (%s)\n", tim, dat);
       if (checkBatch(1)) return;
     }
     size = get4Bytes(p);
     p += 4;
     if (mode != 0) {
-      printf("  size = %lu (0x%lX)\n", size, size);
+      printf("  size = %u (0x%X)\n", size, size);
       if (checkBatch(1)) return;
     }
     for (j = 0; j < 6; j++) {
       addr = get4Bytes(p);
       p += 4;
       if (mode != 0) {
-        printf("  direct block[%1d] = %lu (0x%lX)\n", j, addr, addr);
+        printf("  direct block[%1d] = %u (0x%X)\n", j, addr, addr);
         if (checkBatch(1)) return;
       }
     }
     addr = get4Bytes(p);
     p += 4;
     if (mode != 0) {
-      printf("  single indirect = %lu (0x%lX)\n", addr, addr);
+      printf("  single indirect = %u (0x%X)\n", addr, addr);
       if (checkBatch(1)) return;
     }
     addr = get4Bytes(p);
     p += 4;
     if (mode != 0) {
-      printf("  double indirect = %lu (0x%lX)\n", addr, addr);
+      printf("  double indirect = %u (0x%X)\n", addr, addr);
       if (checkBatch(1)) return;
     }
   }
@@ -365,7 +365,7 @@ void directoryBlock(unsigned char *p) {
     printf("%02d:  ", i);
     ino = get4Bytes(p);
     p += 4;
-    printf("inode = %lu (0x%lX)\n", ino, ino);
+    printf("inode = %u (0x%X)\n", ino, ino);
     if (checkBatch(1)) return;
     printf("     name  = ");
     if (*p == '\0') {
@@ -404,7 +404,7 @@ void freeBlock(unsigned char *p) {
     addr = get4Bytes(p);
     p += 4;
     if (i < nfree) {
-      printf("  %s block[%3d] = %lu (0x%lX)\n",
+      printf("  %s block[%3d] = %u (0x%X)\n",
              i == 0 ? "link" : "free", i, addr, addr);
       if (checkBatch(1)) return;
     }
@@ -420,7 +420,7 @@ void indirectBlock(unsigned char *p) {
   for (i = 0; i < BLOCK_SIZE / sizeof(EOS32_daddr_t); i++) {
     addr = get4Bytes(p);
     p += 4;
-    printf("block[%4d] = %lu (0x%lX)\n", i, addr, addr);
+    printf("block[%4d] = %u (0x%X)\n", i, addr, addr);
     if (checkBatch(1)) return;
   }
 }
@@ -444,10 +444,10 @@ void help(void) {
 }
 
 
-int parseNumber(char **pc, unsigned long *pi) {
+int parseNumber(char **pc, unsigned int *pi) {
   char *p;
   unsigned int base, dval;
-  unsigned long n;
+  unsigned int n;
 
   p = *pc;
   while (*p == ' ' || *p == '\t') {
@@ -502,19 +502,19 @@ int parseNumber(char **pc, unsigned long *pi) {
 
 int main(int argc, char *argv[]) {
   FILE *disk;
-  unsigned long fsSize;
+  unsigned int fsSize;
   int part;
   char *endptr;
   unsigned char partTable[SECTOR_SIZE];
   unsigned char *ptptr;
-  unsigned long partType;
+  unsigned int partType;
   EOS32_daddr_t numBlocks;
   EOS32_daddr_t currBlock;
   unsigned char blockBuffer[BLOCK_SIZE];
   char line[LINE_SIZE];
   int quit;
   char *p;
-  unsigned long n;
+  unsigned int n;
 
   if (argc != 3) {
     printf("Usage: %s <disk> <partition>\n", argv[0]);
@@ -551,13 +551,13 @@ int main(int argc, char *argv[]) {
     fsStart = get4Bytes(ptptr + 4);
     fsSize = get4Bytes(ptptr + 8);
   }
-  printf("File system has size %lu (0x%lX) sectors of %d bytes each.\n",
+  printf("File system has size %u (0x%X) sectors of %d bytes each.\n",
          fsSize, fsSize, SECTOR_SIZE);
   if (fsSize % SPB != 0) {
     printf("File system size is not a multiple of block size.\n");
   }
   numBlocks = fsSize / SPB;
-  printf("This equals %lu (0x%lX) blocks of %d bytes each.\n",
+  printf("This equals %u (0x%X) blocks of %d bytes each.\n",
          numBlocks, numBlocks, BLOCK_SIZE);
   if (numBlocks < 2) {
     error("file system has less than 2 blocks");
@@ -567,7 +567,7 @@ int main(int argc, char *argv[]) {
   help();
   quit = 0;
   while (!quit) {
-    printf("shfs [block %lu (0x%lX)] > ", currBlock, currBlock);
+    printf("shfs [block %u (0x%X)] > ", currBlock, currBlock);
     fflush(stdout);
     if (fgets(line, LINE_SIZE, stdin) == NULL) {
       printf("\n");
@@ -645,7 +645,7 @@ int main(int argc, char *argv[]) {
           printf("Error: cannot parse inode number!\n");
           break;
         }
-        printf("inode %lu (0x%lX) is in block %lu (0x%lX), inode %lu\n",
+        printf("inode %u (0x%X) is in block %u (0x%X), inode %u\n",
                n, n, n / INOPB + 2, n / INOPB + 2, n % INOPB);
         break;
       default:

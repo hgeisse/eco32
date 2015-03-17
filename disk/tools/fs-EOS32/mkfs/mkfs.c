@@ -26,9 +26,9 @@
 #define DOUBLE_INDIR	(NDADDR + 1)	/* index of double indirect block */
 #define DIRSIZ		60	/* max length of a path name component */
 
-#define NIPB		(BSIZE / sizeof(Dinode))
-#define NDIRENT		(BSIZE / sizeof(Dirent))
-#define NINDIR		(BSIZE / sizeof(EOS32_daddr_t))
+#define NIPB		(BSIZE / (int) sizeof(Dinode))
+#define NDIRENT		(BSIZE / (int) sizeof(Dirent))
+#define NINDIR		(BSIZE / (int) sizeof(EOS32_daddr_t))
 
 #define SUPER_MAGIC	0x44FCB67D
 
@@ -71,10 +71,10 @@
 
 /* EOS32 types */
 
-typedef unsigned long EOS32_ino_t;
-typedef unsigned long EOS32_daddr_t;
-typedef unsigned long EOS32_off_t;
-typedef long EOS32_time_t;
+typedef unsigned int EOS32_ino_t;
+typedef unsigned int EOS32_daddr_t;
+typedef unsigned int EOS32_off_t;
+typedef int EOS32_time_t;
 
 
 /* super block */
@@ -448,7 +448,7 @@ void directoryFromX86ToEco(unsigned char *p) {
 /**************************************************************/
 
 
-unsigned long fsStart;		/* file system start sector */
+unsigned int fsStart;		/* file system start sector */
 
 
 void rdfs(EOS32_daddr_t bno, unsigned char *bf, int blkType) {
@@ -457,7 +457,7 @@ void rdfs(EOS32_daddr_t bno, unsigned char *bf, int blkType) {
   fseek(fs, fsStart * SSIZE + bno * BSIZE, SEEK_SET);
   n = fread(bf, 1, BSIZE, fs);
   if (n != BSIZE) {
-    printf("read error: %ld\n", bno);
+    printf("read error: %d\n", bno);
     exit(1);
   }
   switch (blkType) {
@@ -515,7 +515,7 @@ void wtfs(EOS32_daddr_t bno, unsigned char *bf, int blkType) {
   fseek(fs, fsStart * SSIZE + bno * BSIZE, SEEK_SET);
   n = fwrite(bf, 1, BSIZE, fs);
   if(n != BSIZE) {
-    printf("write error: %ld\n", bno);
+    printf("write error: %d\n", bno);
     exit(1);
   }
   switch (blkType) {
@@ -627,9 +627,9 @@ int getMode(char c, char *s, int m0, int m1, int m2, int m3) {
 }
 
 
-long getNum(void) {
+int getNum(void) {
   int i, c;
-  long n;
+  int n;
 
   getStr();
   n = 0;
@@ -982,10 +982,10 @@ void showSizes(void) {
   printf("NIPB    = %d\n", NIPB);
   printf("NDIRENT = %d\n", NDIRENT);
   printf("NINDIR  = %d\n", NINDIR);
-  printf("sizeof(Filsys) = %d\n", sizeof(Filsys));
-  printf("sizeof(Dinode) = %d\n", sizeof(Dinode));
-  printf("sizeof(Dirent) = %d\n", sizeof(Dirent));
-  printf("sizeof(Fblk)   = %d\n", sizeof(Fblk));
+  printf("sizeof(Filsys) = %d\n", (int) sizeof(Filsys));
+  printf("sizeof(Dinode) = %d\n", (int) sizeof(Dinode));
+  printf("sizeof(Dirent) = %d\n", (int) sizeof(Dirent));
+  printf("sizeof(Fblk)   = %d\n", (int) sizeof(Fblk));
 }
 
 
@@ -993,12 +993,12 @@ int main(int argc, char *argv[]) {
   char *fsnam;
   char *proto;
   char protoBuf[20];
-  unsigned long fsSize;
+  unsigned int fsSize;
   int part;
   char *endptr;
   unsigned char partTable[SSIZE];
   unsigned char *ptptr;
-  unsigned long partType;
+  unsigned int partType;
   EOS32_daddr_t maxBlocks;
   EOS32_daddr_t numBlocks;
   EOS32_ino_t numInodes;
@@ -1048,19 +1048,19 @@ int main(int argc, char *argv[]) {
     fsStart = read4FromEco(ptptr + 4);
     fsSize = read4FromEco(ptptr + 8);
   }
-  printf("File system space is %lu (0x%lX) sectors of %d bytes each.\n",
+  printf("File system space is %u (0x%X) sectors of %d bytes each.\n",
          fsSize, fsSize, SSIZE);
   if (fsSize % SPB != 0) {
     printf("File system space is not a multiple of block size.\n");
   }
   maxBlocks = fsSize / SPB;
-  printf("This equals %lu (0x%lX) blocks of %d bytes each.\n",
+  printf("This equals %u (0x%X) blocks of %d bytes each.\n",
          maxBlocks, maxBlocks, BSIZE);
   if (argc == 4) {
     proto = argv[3];
   } else {
     proto = protoBuf;
-    sprintf(protoBuf, "%lu", maxBlocks);
+    sprintf(protoBuf, "%u", maxBlocks);
   }
   /* initialize super block and possibly write boot block */
   filsys.s_magic = SUPER_MAGIC;
@@ -1120,8 +1120,8 @@ int main(int argc, char *argv[]) {
     error("bad block ratio (total/inode = %lu/%lu)",
           filsys.s_fsize, filsys.s_isize);
   }
-  printf("File system size = %ld blocks\n", filsys.s_fsize);
-  printf("Number of inodes = %ld inodes\n", numInodes);
+  printf("File system size = %d blocks\n", filsys.s_fsize);
+  printf("Number of inodes = %d inodes\n", numInodes);
   filsys.s_freeblks = 0;
   filsys.s_freeinos = 0;
   filsys.s_ninode = 0;

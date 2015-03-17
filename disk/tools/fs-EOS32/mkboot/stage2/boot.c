@@ -41,10 +41,10 @@
 #define NULL		0
 
 
-typedef unsigned long EOS32_ino_t;
-typedef unsigned long EOS32_daddr_t;
-typedef unsigned long EOS32_off_t;
-typedef long EOS32_time_t;
+typedef unsigned int EOS32_ino_t;
+typedef unsigned int EOS32_daddr_t;
+typedef unsigned int EOS32_off_t;
+typedef int EOS32_time_t;
 
 
 #define IFMT		070000	/* type of file */
@@ -243,9 +243,9 @@ void readBlock(unsigned int blkno, void *buffer) {
 /* file operations*/
 
 
-EOS32_daddr_t sibn = -1;
+EOS32_daddr_t sibn = (EOS32_daddr_t) -1;
 EOS32_daddr_t singleIndirectBlock[NINDIR];
-EOS32_daddr_t dibn = -1;
+EOS32_daddr_t dibn = (EOS32_daddr_t) -1;
 EOS32_daddr_t doubleIndirectBlock[NINDIR];
 
 
