@@ -102,8 +102,8 @@ void getline(char *prompt, char *line, int n) {
 }
 
 
-int countPrintn(long n) {
-  long a;
+int countPrintn(int n) {
+  int a;
   int res;
 
   res = 0;
@@ -119,8 +119,8 @@ int countPrintn(long n) {
 }
 
 
-void printn(long n) {
-  long a;
+void printn(int n) {
+  int a;
 
   if (n < 0) {
     putchar('-');

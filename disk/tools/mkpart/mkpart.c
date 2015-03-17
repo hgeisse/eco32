@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   char *p, *q;
   int lineNumber;
   FILE *mbootblk;
-  long mbootblkSize;
+  unsigned long mbootblkSize;
   int i;
   unsigned int partNum;
   unsigned int bootable;
