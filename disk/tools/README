@@ -17,3 +17,6 @@ Usage: mkpart <disk image file> <configuration file>
 shpart: show partitions on a disk
 Usage: shpart <disk image file>
 
+wrpart: write a binary image to a partition on a disk
+Usage: wrpart <disk image file> <partition number> <partition image file>
+

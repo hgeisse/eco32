@@ -1,10 +1,10 @@
 #
-# Makefile for basic disk tools
+# Makefile for a fake EOS32 partition
 #
 
-BUILD = ../../build
+BUILD = ../../../build
 
-DIRS = mkdisk mkmboot mkpart shpart wrpart fs-EOS32 fs-NetBSD fs-Linux
+DIRS = mkpboot
 
 .PHONY:		all install clean
 
@@ -17,8 +17,8 @@ install:
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i install ; \
 		done
-		mkdir -p $(BUILD)/run
-		cp Makefile.run $(BUILD)/run/Makefile
+		mkdir -p $(BUILD)/run/fs-EOS32
+		cp Makefile.run $(BUILD)/run/fs-EOS32/Makefile
 
 clean:
 		for i in $(DIRS) ; do \
