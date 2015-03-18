@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = mkdisk mkmboot mkpart shpart mkdata fs-EOS32 fs-NetBSD fs-Linux
+DIRS = mkdisk mkmboot mkpart shpart fs-EOS32 fs-NetBSD fs-Linux
 
 .PHONY:		all install clean
 
