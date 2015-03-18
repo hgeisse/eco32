@@ -69,7 +69,7 @@ strtmsg:
 	.byte	"You didn't expect this tiny program to be "
 	.byte	"a full-fledged operating system, did you? ;-) "
 	.byte	"The real EOS32 for ECO32 is a project all by "
-	.byze	"itself. You can find it on GitHub, under the "
+	.byte	"itself. You can find it on GitHub, under the "
 	.byte	"name 'eos32-on-eco32'.", 0x0D, 0x0A, 0
 hltmsg:
 	.byte	"bootstrap halted", 0x0D, 0x0A, 0
