@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     error("cannot read partition table from disk image '%s'", diskName);
   }
   convertPartitionTable(ptr, NPE);
-  /* get partition number, start and size of partition */
+  /* get partition number, determine start and size of partition */
   partno = strtol(partNmbr, &endp, 10);
   if (*endp != '\0') {
     error("cannot read partition number");
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     error("partition %d is larger than the disk", partno);
   }
   fseek(disk, partStart * SECTOR_SIZE, SEEK_SET);
-  /* open partition image, check size */
+  /* open partition image, check size (rounded up to whole sectors) */
   image = fopen(partName, "rb");
   if (image == NULL) {
     error("cannot open partition image '%s'", partName);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   imageSize = (ftell(image) + SECTOR_SIZE - 1) / SECTOR_SIZE;
   printf("partition image '%s' occupies %d (0x%X) sectors\n",
          partName, imageSize, imageSize);
-  if (imageSize >= partSize) {
+  if (imageSize > partSize) {
     error("partition image (%d sectors) too big for partition (%d sectors)",
           imageSize, partSize);
   }

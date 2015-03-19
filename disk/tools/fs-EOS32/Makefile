@@ -1,5 +1,5 @@
 #
-# Makefile for a fake EOS32 partition
+# Makefile for building a fake EOS32 partition
 #
 
 BUILD = ../../../build

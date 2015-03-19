@@ -1,5 +1,5 @@
 #
-# Makefile for a fake Linux partition
+# Makefile for building a fake Linux partition
 #
 
 BUILD = ../../../build

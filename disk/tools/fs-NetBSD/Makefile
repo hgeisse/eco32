@@ -1,5 +1,5 @@
 #
-# Makefile for a fake NetBSD partition
+# Makefile for building a fake NetBSD partition
 #
 
 BUILD = ../../../build

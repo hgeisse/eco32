@@ -66,11 +66,15 @@ halt1:
 
 	; messages
 strtmsg:
-	.byte	"You didn't expect this tiny program to be "
-	.byte	"a full-fledged operating system, did you? ;-) "
-	.byte	"The real NetBSD for ECO32 is a project all by "
-	.byte	"itself. You can find it on GitHub, under the "
-	.byte	"name 'netbsd-on-eco32'.", 0x0D, 0x0A, 0
+	.byte	0x0D, 0x0A
+	.byte	"You didn't expect this tiny program to be"
+	.byte	0x0D, 0x0A
+	.byte	"a full-fledged operating system, did you?"
+	.byte	0x0D, 0x0A
+	.byte	"You can find the real NetBSD for ECO32 on"
+	.byte	0x0D, 0x0A
+	.byte	"GitHub, under the name 'netbsd-on-eco32'."
+	.byte	0x0D, 0x0A, 0x0D, 0x0A, 0
 hltmsg:
 	.byte	"bootstrap halted", 0x0D, 0x0A, 0
 
