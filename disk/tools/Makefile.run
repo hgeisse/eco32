@@ -12,7 +12,7 @@ BUILD = ..
 
 SER_DEV = /dev/tty01
 DSK_IMG = disk.img
-DSK_SIZ = 150M
+DSK_SIZ = 590M
 RUN_LOG = run.log
 
 all:		$(DSK_IMG)
