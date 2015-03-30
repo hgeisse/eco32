@@ -22,6 +22,7 @@
 void throwException(int exception);
 void pushEnvironment(jmp_buf *environment);
 void popEnvironment(void);
+char *exceptionToString(int exception);
 
 
 #endif /* _EXCEPT_H_ */

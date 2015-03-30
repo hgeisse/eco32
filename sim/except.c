@@ -42,3 +42,48 @@ void popEnvironment(void) {
   }
   currentEnvironment--;
 }
+
+
+static char *cause[32] = {
+  /*  0 */  "serial line 0 xmt interrupt",
+  /*  1 */  "serial line 0 rcv interrupt",
+  /*  2 */  "serial line 1 xmt interrupt",
+  /*  3 */  "serial line 1 rcv interrupt",
+  /*  4 */  "keyboard interrupt",
+  /*  5 */  "unknown interrupt",
+  /*  6 */  "unknown interrupt",
+  /*  7 */  "unknown interrupt",
+  /*  8 */  "disk interrupt",
+  /*  9 */  "unknown interrupt",
+  /* 10 */  "unknown interrupt",
+  /* 11 */  "unknown interrupt",
+  /* 12 */  "unknown interrupt",
+  /* 13 */  "unknown interrupt",
+  /* 14 */  "timer 0 interrupt",
+  /* 15 */  "timer 1 interrupt",
+  /* 16 */  "bus timeout exception",
+  /* 17 */  "illegal instruction exception",
+  /* 18 */  "privileged instruction exception",
+  /* 19 */  "divide instruction exception",
+  /* 20 */  "trap instruction exception",
+  /* 21 */  "TLB miss exception",
+  /* 22 */  "TLB write exception",
+  /* 23 */  "TLB invalid exception",
+  /* 24 */  "illegal address exception",
+  /* 25 */  "privileged address exception",
+  /* 26 */  "unknown exception",
+  /* 27 */  "unknown exception",
+  /* 28 */  "unknown exception",
+  /* 29 */  "unknown exception",
+  /* 30 */  "unknown exception",
+  /* 31 */  "unknown exception"
+};
+
+
+char *exceptionToString(int exception) {
+  if (exception < 0 ||
+      exception >= sizeof(cause)/sizeof(cause[0])) {
+    error("exception number out of bounds");
+  }
+  return cause[exception];
+}

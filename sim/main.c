@@ -13,6 +13,7 @@
 #include "command.h"
 #include "instr.h"
 #include "cpu.h"
+#include "trace.h"
 #include "mmu.h"
 #include "memory.h"
 #include "timer.h"
@@ -197,6 +198,7 @@ int main(int argc, char *argv[]) {
   }
   memoryInit(memSize * M, progName, loadAddr, romName);
   mmuInit();
+  traceInit();
   if (progName != NULL) {
     initialPC = 0xC0000000 | loadAddr;
   } else {
@@ -220,6 +222,7 @@ int main(int argc, char *argv[]) {
     }
   }
   cpuExit();
+  traceExit();
   mmuExit();
   memoryExit();
   timerExit();

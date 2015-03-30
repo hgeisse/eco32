@@ -11,6 +11,7 @@
 #include "console.h"
 #include "error.h"
 #include "cpu.h"
+#include "trace.h"
 #include "mmu.h"
 #include "memory.h"
 #include "timer.h"
@@ -31,6 +32,7 @@ Word shutdownRead(Word addr) {
 void shutdownWrite(Word addr, Word data) {
   /* the device supports a single function: exiting the simulator */
   cpuExit();
+  traceExit();
   mmuExit();
   memoryExit();
   timerExit();

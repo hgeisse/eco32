@@ -16,6 +16,7 @@
 #include "asm.h"
 #include "disasm.h"
 #include "cpu.h"
+#include "trace.h"
 #include "mmu.h"
 #include "memory.h"
 #include "timer.h"
@@ -60,6 +61,7 @@ static void help(void) {
   cPrintf("  mh      show/set memory halfword\n");
   cPrintf("  mb      show/set memory byte\n");
   cPrintf("  t       show/set TLB contents\n");
+  cPrintf("  l       list trace buffer\n");
   cPrintf("  i       initialize hardware\n");
   cPrintf("  q       quit simulator\n");
   cPrintf("type 'help <cmd>' to get help for <cmd>\n");
@@ -164,57 +166,19 @@ static void help14(void) {
 
 
 static void help15(void) {
-  cPrintf("  i                 initialize hardware\n");
+  cPrintf("  l                 list 16 trace entries starting at -16\n");
+  cPrintf("  l <i>             list 16 trace entries starting at <i>\n");
+  cPrintf("  l <i> <cnt>       list <cnt> trace entries starting at <i>\n");
 }
 
 
 static void help16(void) {
-  cPrintf("  q                 quit simulator\n");
+  cPrintf("  i                 initialize hardware\n");
 }
 
 
-static char *cause[32] = {
-  /*  0 */  "serial line 0 xmt interrupt",
-  /*  1 */  "serial line 0 rcv interrupt",
-  /*  2 */  "serial line 1 xmt interrupt",
-  /*  3 */  "serial line 1 rcv interrupt",
-  /*  4 */  "keyboard interrupt",
-  /*  5 */  "unknown interrupt",
-  /*  6 */  "unknown interrupt",
-  /*  7 */  "unknown interrupt",
-  /*  8 */  "disk interrupt",
-  /*  9 */  "unknown interrupt",
-  /* 10 */  "unknown interrupt",
-  /* 11 */  "unknown interrupt",
-  /* 12 */  "unknown interrupt",
-  /* 13 */  "unknown interrupt",
-  /* 14 */  "timer 0 interrupt",
-  /* 15 */  "timer 1 interrupt",
-  /* 16 */  "bus timeout exception",
-  /* 17 */  "illegal instruction exception",
-  /* 18 */  "privileged instruction exception",
-  /* 19 */  "divide instruction exception",
-  /* 20 */  "trap instruction exception",
-  /* 21 */  "TLB miss exception",
-  /* 22 */  "TLB write exception",
-  /* 23 */  "TLB invalid exception",
-  /* 24 */  "illegal address exception",
-  /* 25 */  "privileged address exception",
-  /* 26 */  "unknown exception",
-  /* 27 */  "unknown exception",
-  /* 28 */  "unknown exception",
-  /* 29 */  "unknown exception",
-  /* 30 */  "unknown exception",
-  /* 31 */  "unknown exception"
-};
-
-
-static char *exceptionToString(int exception) {
-  if (exception < 0 ||
-      exception >= sizeof(cause)/sizeof(cause[0])) {
-    error("exception number out of bounds");
-  }
-  return cause[exception];
+static void help17(void) {
+  cPrintf("  q                 quit simulator\n");
 }
 
 
@@ -850,6 +814,47 @@ static void doTLB(char *tokens[], int n) {
 }
 
 
+static void doList(char *tokens[], int n) {
+  int start, count, stop;
+  int back;
+
+  if (n == 1) {
+    start = 16;
+    count = 16;
+  } else if (n == 2) {
+    if (!getDecNumber(tokens[1], &start) || start >= 0) {
+      cPrintf("illegal trace buffer index (must be < 0)\n");
+      return;
+    }
+    start = -start;
+    count = 16;
+  } else if (n == 3) {
+    if (!getDecNumber(tokens[1], &start) || start >= 0) {
+      cPrintf("illegal trace buffer index (must be < 0)\n");
+      return;
+    }
+    start = -start;
+    if (!getDecNumber(tokens[2], &count) || count <= 0) {
+      cPrintf("illegal trace buffer count (must be > 0)\n");
+      return;
+    }
+  } else {
+    help15();
+    return;
+  }
+  if (start > TRACE_BUF_SIZE) {
+    start = TRACE_BUF_SIZE;
+  }
+  stop = start - count;
+  if (stop < 0) {
+    stop = 0;
+  }
+  for (back = start; back > stop; back--) {
+    cPrintf("trace[%5d]:  %s\n", -back, traceShow(back));
+  }
+}
+
+
 static void doInit(char *tokens[], int n) {
   if (n == 1) {
     timerReset();
@@ -864,7 +869,7 @@ static void doInit(char *tokens[], int n) {
     mmuReset();
     cpuReset();
   } else {
-    help15();
+    help16();
   }
 }
 
@@ -873,7 +878,7 @@ static void doQuit(char *tokens[], int n) {
   if (n == 1) {
     quit = true;
   } else {
-    help16();
+    help17();
   }
 }
 
@@ -894,8 +899,9 @@ Command commands[] = {
   { "mh",   help12, doMemoryHalf },
   { "mb",   help13, doMemoryByte },
   { "t",    help14, doTLB        },
-  { "i",    help15, doInit       },
-  { "q",    help16, doQuit       },
+  { "l",    help15, doList       },
+  { "i",    help16, doInit       },
+  { "q",    help17, doQuit       },
 };
 
 int numCommands = sizeof(commands) / sizeof(commands[0]);

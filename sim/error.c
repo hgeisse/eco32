@@ -12,6 +12,7 @@
 #include "console.h"
 #include "error.h"
 #include "cpu.h"
+#include "trace.h"
 #include "mmu.h"
 #include "memory.h"
 #include "timer.h"
@@ -27,6 +28,7 @@ void error(char *fmt, ...) {
   va_list ap;
 
   cpuExit();
+  traceExit();
   mmuExit();
   memoryExit();
   timerExit();

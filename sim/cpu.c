@@ -14,6 +14,7 @@
 #include "except.h"
 #include "instr.h"
 #include "cpu.h"
+#include "trace.h"
 #include "mmu.h"
 #include "timer.h"
 
@@ -88,6 +89,7 @@ static void handleInterrupts(void) {
   }
   /* acknowledge exception, or interrupt if enabled */
   if (priority >= 16 || IE != 0) {
+    traceException(priority);
     if (priority >= 16) {
       /* clear corresponding bit in irqPending vector */
       /* only done for exceptions, since interrupts are level-sensitive */
@@ -150,11 +152,14 @@ static void execNextInstruction(void) {
   int scnt;
   Word smsk;
   Word aux;
+  Word addr;
 
   /* count the instruction */
   total++;
   /* fetch the instruction */
+  traceFetch(pc);
   instr = mmuReadWord(pc, UM);
+  traceExec(instr, pc);
   /* decode the instruction */
   op = (instr >> 26) & 0x3F;
   reg1 = (instr >> 21) & 0x1F;
@@ -385,30 +390,44 @@ static void execNextInstruction(void) {
       next = RR(30);
       break;
     case OP_LDW:
-      WR(reg2, mmuReadWord(RR(reg1) + SEXT16(immed), UM));
+      addr = RR(reg1) + SEXT16(immed);
+      traceLoadWord(addr);
+      WR(reg2, mmuReadWord(addr, UM));
       break;
     case OP_LDH:
-      WR(reg2, (signed int) (signed short)
-               mmuReadHalf(RR(reg1) + SEXT16(immed), UM));
+      addr = RR(reg1) + SEXT16(immed);
+      traceLoadHalf(addr);
+      WR(reg2, (signed int) (signed short) mmuReadHalf(addr, UM));
       break;
     case OP_LDHU:
-      WR(reg2, mmuReadHalf(RR(reg1) + SEXT16(immed), UM));
+      addr = RR(reg1) + SEXT16(immed);
+      traceLoadHalf(addr);
+      WR(reg2, mmuReadHalf(addr, UM));
       break;
     case OP_LDB:
-      WR(reg2, (signed int) (signed char)
-               mmuReadByte(RR(reg1) + SEXT16(immed), UM));
+      addr = RR(reg1) + SEXT16(immed);
+      traceLoadByte(addr);
+      WR(reg2, (signed int) (signed char) mmuReadByte(addr, UM));
       break;
     case OP_LDBU:
-      WR(reg2, mmuReadByte(RR(reg1) + SEXT16(immed), UM));
+      addr = RR(reg1) + SEXT16(immed);
+      traceLoadByte(addr);
+      WR(reg2, mmuReadByte(addr, UM));
       break;
     case OP_STW:
-      mmuWriteWord(RR(reg1) + SEXT16(immed), RR(reg2), UM);
+      addr = RR(reg1) + SEXT16(immed);
+      traceStoreWord(addr);
+      mmuWriteWord(addr, RR(reg2), UM);
       break;
     case OP_STH:
-      mmuWriteHalf(RR(reg1) + SEXT16(immed), RR(reg2), UM);
+      addr = RR(reg1) + SEXT16(immed);
+      traceStoreHalf(addr);
+      mmuWriteHalf(addr, RR(reg2), UM);
       break;
     case OP_STB:
-      mmuWriteByte(RR(reg1) + SEXT16(immed), RR(reg2), UM);
+      addr = RR(reg1) + SEXT16(immed);
+      traceStoreByte(addr);
+      mmuWriteByte(addr, RR(reg2), UM);
       break;
     case OP_MVFS:
       switch (immed) {
