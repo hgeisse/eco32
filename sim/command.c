@@ -490,7 +490,7 @@ static void explainPSW(Word data) {
   cPrintf("old interrupt enable               : %s (%s)\n",
           data & PSW_OIE ? "on " : "off",
           data & PSW_OIE ? "enabled" : "disabled");
-  cPrintf("last interrupt acknowledged        : %02X  (%s)\n",
+  cPrintf("last interrupt acknowledged        : %02d  (%s)\n",
           (data & PSW_PRIO_MASK) >> 16,
           exceptionToString((data & PSW_PRIO_MASK) >> 16));
   for (i = 15; i >= 0; i--) {
