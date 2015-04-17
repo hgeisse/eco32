@@ -5,7 +5,7 @@
 BUILD = ../..
 
 all:
-		$(BUILD)/bin/wrpart ../disk.img 3 pbr.bin
+		$(BUILD)/bin/wrpart ../disk.img 4 pbr.bin
 
 clean:
 		rm -f *~
