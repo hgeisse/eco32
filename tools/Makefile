@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = bin2dat bin2exo bin2mcs bit2exo bit2mcs chrgen dspmem
+DIRS = bin2dat bin2exo bin2mcs bit2exo bit2mcs chrgen dspmem vcdchk
 
 .PHONY:		all install clean
 
