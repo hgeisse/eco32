@@ -189,7 +189,7 @@ Word mmuGetEntryLo(void) {
 
 
 void mmuSetEntryLo(Word value) {
-  tlbEntryLo = value & (PAGE_MASK | TLB_WRITE | TLB_VALID);
+  tlbEntryLo = value & (FRAME_MASK | TLB_WRITE | TLB_VALID);
 }
 
 
@@ -231,7 +231,7 @@ void mmuTbwr(void) {
   /* choose a random index, but don't touch fixed entries */
   index = randomIndex;
   tlb[index].page = tlbEntryHi & PAGE_MASK;
-  tlb[index].frame = tlbEntryLo & PAGE_MASK;
+  tlb[index].frame = tlbEntryLo & FRAME_MASK;
   tlb[index].write = tlbEntryLo & TLB_WRITE ? true : false;
   tlb[index].valid = tlbEntryLo & TLB_VALID ? true : false;
   if (debugWrite) {
@@ -263,7 +263,7 @@ void mmuTbwi(void) {
 
   index = tlbIndex & TLB_MASK;
   tlb[index].page = tlbEntryHi & PAGE_MASK;
-  tlb[index].frame = tlbEntryLo & PAGE_MASK;
+  tlb[index].frame = tlbEntryLo & FRAME_MASK;
   tlb[index].write = tlbEntryLo & TLB_WRITE ? true : false;
   tlb[index].valid = tlbEntryLo & TLB_VALID ? true : false;
   if (debugWrite) {
@@ -298,7 +298,7 @@ void mmuReset(void) {
   cPrintf("Resetting MMU...\n");
   for (i = 0; i < TLB_SIZE; i++) {
     tlb[i].page = rand() & PAGE_MASK;
-    tlb[i].frame = rand() & PAGE_MASK;
+    tlb[i].frame = rand() & FRAME_MASK;
     tlb[i].write = rand() & 0x1000 ? true : false;
     tlb[i].valid = rand() & 0x1000 ? true : false;
     if (debugWrite) {
@@ -310,7 +310,7 @@ void mmuReset(void) {
   }
   tlbIndex = rand() & TLB_MASK;
   tlbEntryHi = rand() & PAGE_MASK;
-  tlbEntryLo = rand() & (PAGE_MASK | TLB_WRITE | TLB_VALID);
+  tlbEntryLo = rand() & (FRAME_MASK | TLB_WRITE | TLB_VALID);
   mmuBadAddr = rand();
   mmuBadAccs = rand() & MMU_ACCS_MASK;
   randomIndex = TLB_MASK;

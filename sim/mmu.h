@@ -25,7 +25,7 @@
 
 typedef struct {
   Word page;		/* 20 high-order bits of virtual address */
-  Word frame;		/* 20 high-order bits of physical address */
+  Word frame;		/* 18 high-order bits of physical address */
   Bool write;		/* must be true to allow writing to the page */
   Bool valid;		/* must be true for the entry to be valid */
 } TLB_Entry;

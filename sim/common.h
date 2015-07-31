@@ -36,7 +36,8 @@
 
 #define PAGE_SIZE	(4 * K)		/* size of a page and a page frame */
 #define OFFSET_MASK	(PAGE_SIZE - 1)	/* mask for offset within a page */
-#define PAGE_MASK	(~OFFSET_MASK)	/* mask for page number */
+#define PAGE_MASK	(~OFFSET_MASK)		   /* mask for page number */
+#define FRAME_MASK	(PAGE_MASK & ~0xC0000000)  /* mask for frame number */
 
 #define CC_PER_USEC	50		/* clock cycles per microsecond */
 #define CC_PER_INSTR	18		/* clock cycles per instruction */

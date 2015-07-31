@@ -796,7 +796,7 @@ static void doTLB(char *tokens[], int n) {
       tlbEntry.page = data & PAGE_MASK;
     } else
     if (strcmp(tokens[2], "f") == 0) {
-      tlbEntry.frame = data & PAGE_MASK;
+      tlbEntry.frame = data & FRAME_MASK;
       tlbEntry.write = data & TLB_WRITE ? true : false;
       tlbEntry.valid = data & TLB_VALID ? true : false;
     } else {
