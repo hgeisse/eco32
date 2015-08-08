@@ -1,10 +1,10 @@
 #
-# Makefile for multicycle implementations of ECO32
+# Makefile for FPGA implementations of ECO32
 #
 
-BUILD = ../../../build
+BUILD = ../build
 
-DIRS = xsa-xst-3 s3e-500
+DIRS = mc
 
 .PHONY:		all install clean
 

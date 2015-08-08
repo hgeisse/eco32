@@ -1,8 +1,8 @@
 #
-# Makefile for FPGA implementations of ECO32
+# Makefile for multicycle implementations of ECO32
 #
 
-BUILD = ../build
+BUILD = ../../build
 
 .PHONY:		all install clean
 

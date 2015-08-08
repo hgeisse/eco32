@@ -2,7 +2,7 @@
 # Makefile for ECO32 on Digilent S3E starter kit board
 #
 
-BUILD = ../../../build
+BUILD = ../../../../build
 
 .PHONY:		all install clean
 
