@@ -1,21 +1,25 @@
 //
 // rom.v -- parallel flash ROM interface
+//          512K x 32 bit = 2 MB
 //
 
 
-module rom(clk, reset,
-           en, wr, size, addr,
-           data_out, wt,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module rom(clk, rst,
+           stb, we, addr,
+           data_out, ack,
            ce_n, oe_n, we_n, rst_n, byte_n, a, d);
     // internal interface signals
     input clk;
-    input reset;
-    input en;
-    input wr;
-    input [1:0] size;
-    input [20:0] addr;
+    input rst;
+    input stb;
+    input we;
+    input [20:2] addr;
     output reg [31:0] data_out;
-    output reg wt;
+    output reg ack;
     // flash ROM interface signals
     output ce_n;
     output oe_n;
@@ -38,70 +42,40 @@ module rom(clk, reset,
 
   // the flash ROM is organized in 16-bit halfwords
   // address line a[0] is controlled by the state machine
-  // (this is necessary for word accesses)
+  // ("upper half" means "at higher address in ROM")
   assign a[19:1] = addr[20:2];
   assign a[0] = upper_half;
 
   // the state machine
   always @(posedge clk) begin
-    if (reset == 1) begin
+    if (rst) begin
       state <= 0;
-      wt <= 1;
+      ack <= 0;
     end else begin
       if (state == 0) begin
         // wait for start of access
-        if (en == 1 && wr == 0) begin
+        if (stb & ~we) begin
           state <= 1;
-          if (size[1] == 1) begin
-            // word access
-            upper_half <= 0;
-          end else begin
-            // halfword or byte access
-            upper_half <= addr[1];
-          end
+          upper_half <= 0;
         end
       end else
       if (state == 6) begin
-        if (size[1] == 1) begin
-          // word access
-          // latch upper halfword
-          data_out[31:24] <= d[7:0];
-          data_out[23:16] <= d[15:8];
-          state <= 7;
-          upper_half <= 1;
-        end else begin
-          // halfword or byte access
-          data_out[31:16] <= 16'h0000;
-          if (size[0] == 1) begin
-            // halfword access
-            data_out[15:8] <= d[7:0];
-            data_out[7:0] <= d[15:8];
-          end else begin
-            // byte access
-            data_out[15:8] <= 8'h00;
-            if (addr[0] == 0) begin
-              // even address
-              data_out[7:0] <= d[7:0];
-            end else begin
-              // odd address
-              data_out[7:0] <= d[15:8];
-            end
-          end
-          state <= 13;
-          wt <= 0;
-        end
+        // latch upper halfword
+        data_out[31:24] <= d[7:0];
+        data_out[23:16] <= d[15:8];
+        state <= 7;
+        upper_half <= 1;
       end else
       if (state == 12) begin
-        // word access (state is only reached in this case)
         // latch lower halfword
         data_out[15:8] <= d[7:0];
         data_out[7:0] <= d[15:8];
         state <= 13;
-        wt <= 0;
+        ack <= 1;
       end else
       if (state == 13) begin
         // end of access
-        wt <= 1;
+        ack <= 0;
         state <= 0;
       end else begin
         // wait for flash ROM access time to pass

@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module timing(clk, pixclk,
               txtrow, txtcol,
               chrrow, chrcol,

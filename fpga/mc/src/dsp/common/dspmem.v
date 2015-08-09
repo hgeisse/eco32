@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module dspmem(rdwr_row, rdwr_col, wr_data, rd_data, en, wr,
               clk, pixclk,
               txtrow, txtcol, attcode, chrcode,

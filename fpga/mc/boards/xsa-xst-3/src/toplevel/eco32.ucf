@@ -7,7 +7,7 @@
 #
 NET "clk_in"		PERIOD = 20.0ns HIGH 40%;
 NET "clk_in"		LOC = "p8";
-NET "reset_inout_n"	LOC = "d15";
+NET "rst_inout_n"	LOC = "d15";
 
 #
 # SDRAM

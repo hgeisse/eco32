@@ -48,6 +48,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module ddr_sdram(sd_CK_P, sd_CK_N,
                  sd_A_O, sd_BA_O, sd_D_IO, 
                  sd_RAS_O, sd_CAS_O, sd_WE_O,

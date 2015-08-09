@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module xmtbuf(clk, reset, write, ready, data_in, serial_out);
     input clk;
     input reset;
@@ -16,7 +20,7 @@ module xmtbuf(clk, reset, write, ready, data_in, serial_out);
   reg load;
   wire empty;
 
-  xmt xmt1(clk, reset, load, empty, data_hold, serial_out);
+  xmt xmt_1(clk, reset, load, empty, data_hold, serial_out);
 
   always @(posedge clk) begin
     if (reset == 1) begin

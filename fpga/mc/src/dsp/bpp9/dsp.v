@@ -3,20 +3,25 @@
 //
 
 
-module dsp(clk, reset,
-           addr, en, wr, wt,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module dsp(clk, rst,
+           stb, we, addr,
            data_in, data_out,
+           ack,
            hsync, vsync,
            r, g, b);
     // internal interface
     input clk;
-    input reset;
+    input rst;
+    input stb;
+    input we;
     input [13:2] addr;
-    input en;
-    input wr;
-    output wt;
     input [15:0] data_in;
     output [15:0] data_out;
+    output ack;
     // external interface
     output hsync;
     output vsync;
@@ -26,12 +31,12 @@ module dsp(clk, reset,
 
   reg state;
 
-  display display1(
+  display display_1(
     .clk(clk),
     .dsp_row(addr[13:9]),
     .dsp_col(addr[8:2]),
-    .dsp_en(en),
-    .dsp_wr(wr),
+    .dsp_en(stb),
+    .dsp_wr(we),
     .dsp_wr_data(data_in[15:0]),
     .dsp_rd_data(data_out[15:0]),
     .hsync(hsync),
@@ -42,13 +47,13 @@ module dsp(clk, reset,
   );
 
   always @(posedge clk) begin
-    if (reset == 1) begin
+    if (rst) begin
       state <= 1'b0;
     end else begin
       case (state)
         1'b0:
           begin
-            if (en == 1 && wr == 0) begin
+            if (stb & ~we) begin
               state <= 1'b1;
             end
           end
@@ -60,6 +65,6 @@ module dsp(clk, reset,
     end
   end
 
-  assign wt = (en == 1 && wr == 0 && state == 1'b0) ? 1 : 0;
+  assign ack = stb & (we | state);
 
 endmodule

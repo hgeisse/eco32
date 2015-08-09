@@ -3,16 +3,20 @@
 //
 
 
-module clk_rst(clk_in, reset_inout_n,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module clk_rst(clk_in, rst_inout_n,
                sdram_clk, sdram_fb,
-               clk, clk_ok, reset);
+               clk, clk_ok, rst);
     input clk_in;
-    inout reset_inout_n;
+    inout rst_inout_n;
     output sdram_clk;
     input sdram_fb;
     output clk;
     output clk_ok;
-    output reset;
+    output rst;
 
   wire clk_in_buf;
   wire int_clk;
@@ -21,10 +25,10 @@ module clk_rst(clk_in, reset_inout_n,
   wire ext_fb;
   wire ext_locked;
 
-  reg reset_p_n;
-  reg reset_s_n;
-  reg [23:0] reset_counter;
-  wire reset_counting;
+  reg rst_p_n;
+  reg rst_s_n;
+  reg [23:0] rst_counter;
+  wire rst_counting;
 
   //------------------------------------------------------------
 
@@ -79,21 +83,21 @@ module clk_rst(clk_in, reset_inout_n,
 
   //------------------------------------------------------------
 
-  assign reset_counting = (reset_counter == 24'hFFFFFF) ? 0 : 1;
-  assign reset_inout_n = (reset_counter[23] == 0) ? 1'b0 : 1'bz;
+  assign rst_counting = (rst_counter == 24'hFFFFFF) ? 0 : 1;
+  assign rst_inout_n = (rst_counter[23] == 0) ? 1'b0 : 1'bz;
 
   always @(posedge clk_in_buf) begin
-    reset_p_n <= reset_inout_n;
-    reset_s_n <= reset_p_n;
-    if (reset_counting == 1) begin
-      reset_counter <= reset_counter + 1;
+    rst_p_n <= rst_inout_n;
+    rst_s_n <= rst_p_n;
+    if (rst_counting) begin
+      rst_counter <= rst_counter + 1;
     end else begin
-      if (~reset_s_n | ~clk_ok) begin
-        reset_counter <= 24'h000000;
+      if (~rst_s_n | ~clk_ok) begin
+        rst_counter <= 24'h000000;
       end
     end
   end
 
-  assign reset = reset_counting;
+  assign rst = rst_counting;
 
 endmodule

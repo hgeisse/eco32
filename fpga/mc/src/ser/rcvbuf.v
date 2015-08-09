@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module rcvbuf(clk, reset, read, ready, data_out, serial_in);
     input clk;
     input reset;
@@ -14,7 +18,7 @@ module rcvbuf(clk, reset, read, ready, data_out, serial_in);
   wire full;
   wire [7:0] parallel_out;
 
-  rcv rcv1(clk, reset, full, parallel_out, serial_in);
+  rcv rcv_1(clk, reset, full, parallel_out, serial_in);
 
   always @(posedge clk) begin
     if (reset == 1) begin

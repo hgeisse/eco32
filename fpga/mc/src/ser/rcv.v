@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module rcv(clk, reset, full, parallel_out, serial_in);
     input clk;
     input reset;

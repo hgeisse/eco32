@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module ata_io (clk, reset,
                bus_en, bus_wr, bus_addr, bus_din, bus_dout, bus_wait,
                ata_d, ata_a, ata_cs0_n, ata_cs1_n,

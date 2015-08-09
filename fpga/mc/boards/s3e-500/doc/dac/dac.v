@@ -2,7 +2,10 @@
 // dac.v -- DAC control circuit
 //
 
+
 `timescale 1ns/1ns
+`default_nettype none
+
 
 module dac(clk, reset,
            sample_l, sample_r, next,

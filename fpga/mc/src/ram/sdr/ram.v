@@ -1,11 +1,16 @@
 //
-// ram.v -- main memory, using SDRAM
+// ram.v -- external RAM interface, using SDRAM
+//          8M x 32 bit = 32 MB
 //
 
 
-module ram(clk, clk_ok, reset,
-           en, wr, size, addr,
-           data_in, data_out, wt,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module ram(clk, clk_ok, rst,
+           stb, we, addr,
+           data_in, data_out, ack,
            sdram_cke, sdram_cs_n,
            sdram_ras_n, sdram_cas_n,
            sdram_we_n, sdram_ba, sdram_a,
@@ -13,14 +18,13 @@ module ram(clk, clk_ok, reset,
     // internal interface signals
     input clk;
     input clk_ok;
-    input reset;
-    input en;
-    input wr;
-    input [1:0] size;
-    input [24:0] addr;
+    input rst;
+    input stb;
+    input we;
+    input [24:2] addr;
     input [31:0] data_in;
     output reg [31:0] data_out;
-    output reg wt;
+    output reg ack;
     // SDRAM interface signals
     output sdram_cke;
     output sdram_cs_n;
@@ -33,7 +37,7 @@ module ram(clk, clk_ok, reset,
     output sdram_ldqm;
     inout [15:0] sdram_dq;
 
-  reg [3:0] state;
+  reg [2:0] state;
   reg a0;
   reg cntl_read;
   reg cntl_write;
@@ -47,7 +51,7 @@ module ram(clk, clk_ok, reset,
 
 //--------------------------------------------------------------
 
-  sdramCntl sdramCntl1(
+  sdramCntl sdramCntl_1(
     // clock
     .clk(clk),
     .clk_ok(clk_ok),
@@ -79,145 +83,73 @@ module ram(clk, clk_ok, reset,
 
   // the SDRAM is organized in 16-bit halfwords
   // address line 0 is controlled by the state machine
-  // (this is necessary for word accesses)
   assign cntl_addr[23:1] = addr[24:2];
   assign cntl_addr[0] = a0;
 
   // state machine for SDRAM access
   always @(posedge clk) begin
-    if (reset == 1) begin
-      state <= 4'b0000;
-      wt <= 1;
+    if (rst) begin
+      state <= 3'b000;
+      ack <= 0;
     end else begin
       case (state)
-        4'b0000:
+        3'b000:
           // wait for access
           begin
-            if (en == 1) begin
+            if (stb) begin
               // access
-              if (wr == 1) begin
+              if (we) begin
                 // write
-                if (size[1] == 1) begin
-                  // write word
-                  state <= 4'b0001;
-                end else begin
-                  if (size[0] == 1) begin
-                    // write halfword
-                    state <= 4'b0101;
-                  end else begin
-                    // write byte
-                    state <= 4'b0111;
-                  end
-                end
+                state <= 3'b001;
               end else begin
                 // read
-                if (size[1] == 1) begin
-                  // read word
-                  state <= 4'b0011;
-                end else begin
-                  if (size[0] == 1) begin
-                    // read halfword
-                    state <= 4'b0110;
-                  end else begin
-                    // read byte
-                    state <= 4'b1001;
-                  end
-                end
+                state <= 3'b011;
               end
             end
           end
-        4'b0001:
+        3'b001:
           // write word, upper 16 bits
           begin
-            if (cntl_done == 1) begin
-              state <= 4'b0010;
+            if (cntl_done) begin
+              state <= 3'b010;
             end
           end
-        4'b0010:
+        3'b010:
           // write word, lower 16 bits
           begin
-            if (cntl_done == 1) begin
-              state <= 4'b1111;
-              wt <= 0;
+            if (cntl_done) begin
+              state <= 3'b111;
+              ack <= 1;
             end
           end
-        4'b0011:
+        3'b011:
           // read word, upper 16 bits
           begin
-            if (cntl_done == 1) begin
-              state <= 4'b0100;
+            if (cntl_done) begin
+              state <= 3'b100;
               data_out[31:16] <= cntl_dout;
             end
           end
-        4'b0100:
+        3'b100:
           // read word, lower 16 bits
           begin
-            if (cntl_done == 1) begin
-              state <= 4'b1111;
+            if (cntl_done) begin
+              state <= 3'b111;
               data_out[15:0] <= cntl_dout;
-              wt <= 0;
+              ack <= 1;
             end
           end
-        4'b0101:
-          // write halfword
-          begin
-            if (cntl_done == 1) begin
-              state <= 4'b1111;
-              wt <= 0;
-            end
-          end
-        4'b0110:
-          // read halfword
-          begin
-            if (cntl_done == 1) begin
-              state <= 4'b1111;
-              data_out[31:16] <= 16'h0000;
-              data_out[15:0] <= cntl_dout;
-              wt <= 0;
-            end
-          end
-        4'b0111:
-          // write byte (read halfword cycle)
-          begin
-            if (cntl_done == 1) begin
-              state <= 4'b1000;
-              data_out[31:16] <= 16'h0000;
-              data_out[15:0] <= cntl_dout;
-            end
-          end
-        4'b1000:
-          // write byte (write halfword cycle)
-          begin
-            if (cntl_done == 1) begin
-              state <= 4'b1111;
-              wt <= 0;
-            end
-          end
-        4'b1001:
-          // read byte
-          begin
-            if (cntl_done == 1) begin
-              state <= 4'b1111;
-              data_out[31:8] <= 24'h000000;
-              if (addr[0] == 0) begin
-                data_out[7:0] <= cntl_dout[15:8];
-              end else begin
-                data_out[7:0] <= cntl_dout[7:0];
-              end
-              wt <= 0;
-            end
-          end
-        4'b1111:
+        3'b111:
           // end of bus cycle
           begin
-            state <= 4'b0000;
-            wt <= 1;
+            state <= 3'b000;
+            ack <= 0;
           end
         default:
           // all other states: reset
           begin
-            state <= 4'b0000;
-            wt <= 1;
+            state <= 3'b000;
+            ack <= 0;
           end
       endcase
     end
@@ -226,7 +158,7 @@ module ram(clk, clk_ok, reset,
   // output of state machine
   always @(*) begin
     case (state)
-      4'b0000:
+      3'b000:
         // wait for access
         begin
           a0 = 1'bx;
@@ -234,7 +166,7 @@ module ram(clk, clk_ok, reset,
           cntl_write = 0;
           cntl_din = 16'hxxxx;
         end
-      4'b0001:
+      3'b001:
         // write word, upper 16 bits
         begin
           a0 = 1'b0;
@@ -242,7 +174,7 @@ module ram(clk, clk_ok, reset,
           cntl_write = 1;
           cntl_din = data_in[31:16];
         end
-      4'b0010:
+      3'b010:
         // write word, lower 16 bits
         begin
           a0 = 1'b1;
@@ -250,7 +182,7 @@ module ram(clk, clk_ok, reset,
           cntl_write = 1;
           cntl_din = data_in[15:0];
         end
-      4'b0011:
+      3'b011:
         // read word, upper 16 bits
         begin
           a0 = 1'b0;
@@ -258,7 +190,7 @@ module ram(clk, clk_ok, reset,
           cntl_write = 0;
           cntl_din = 16'hxxxx;
         end
-      4'b0100:
+      3'b100:
         // read word, lower 16 bits
         begin
           a0 = 1'b1;
@@ -266,51 +198,7 @@ module ram(clk, clk_ok, reset,
           cntl_write = 0;
           cntl_din = 16'hxxxx;
         end
-      4'b0101:
-        // write halfword
-        begin
-          a0 = addr[1];
-          cntl_read = 0;
-          cntl_write = 1;
-          cntl_din = data_in[15:0];
-        end
-      4'b0110:
-        // read halfword
-        begin
-          a0 = addr[1];
-          cntl_read = 1;
-          cntl_write = 0;
-          cntl_din = 16'hxxxx;
-        end
-      4'b0111:
-        // write byte (read halfword cycle)
-        begin
-          a0 = addr[1];
-          cntl_read = 1;
-          cntl_write = 0;
-          cntl_din = 16'hxxxx;
-        end
-      4'b1000:
-        // write byte (write halfword cycle)
-        begin
-          a0 = addr[1];
-          cntl_read = 0;
-          cntl_write = 1;
-          if (addr[0] == 0) begin
-            cntl_din = { data_in[7:0], data_out[7:0] };
-          end else begin
-            cntl_din = { data_out[15:8], data_in[7:0] };
-          end
-        end
-      4'b1001:
-        // read byte
-        begin
-          a0 = addr[1];
-          cntl_read = 1;
-          cntl_write = 0;
-          cntl_din = 16'hxxxx;
-        end
-      4'b1111:
+      3'b111:
         // end of bus cycle
         begin
           a0 = 1'bx;

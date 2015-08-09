@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module chrgen(clk, pixclk,
               chrcode, chrrow, chrcol,
               pixel,

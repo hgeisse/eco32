@@ -9,7 +9,7 @@ NET "clk_in"
     PERIOD = 20.0ns HIGH 40%;
 NET "clk_in"
     LOC = "C9"  | IOSTANDARD = LVCMOS33;
-NET "reset_in"
+NET "rst_in"
     LOC = "K17" | IOSTANDARD = LVTTL | PULLDOWN;
 
 #

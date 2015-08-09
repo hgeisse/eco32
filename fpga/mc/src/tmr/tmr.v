@@ -3,18 +3,22 @@
 //
 
 
-module tmr(clk, reset,
-           en, wr, addr,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module tmr(clk, rst,
+           stb, we, addr,
            data_in, data_out,
-           wt, irq);
+           ack, irq);
     input clk;
-    input reset;
-    input en;
-    input wr;
+    input rst;
+    input stb;
+    input we;
     input [3:2] addr;
     input [31:0] data_in;
     output reg [31:0] data_out;
-    output wt;
+    output ack;
     output irq;
 
   reg [31:0] counter;
@@ -25,7 +29,7 @@ module tmr(clk, reset,
   reg ien;
 
   always @(posedge clk) begin
-    if (divisor_loaded == 1) begin
+    if (divisor_loaded) begin
       counter <= divisor;
       expired <= 0;
     end else begin
@@ -40,20 +44,22 @@ module tmr(clk, reset,
   end
 
   always @(posedge clk) begin
-    if (reset == 1) begin
+    if (rst) begin
       divisor <= 32'hFFFFFFFF;
       divisor_loaded <= 1;
       alarm <= 0;
       ien <= 0;
     end else begin
-      if (expired == 1) begin
+      if (expired) begin
         alarm <= 1;
       end else begin
-        if (en == 1 && wr == 1 && addr[3:2] == 2'b00) begin
+        if (stb == 1 && we == 1 && addr[3:2] == 2'b00) begin
+          // ctrl
           alarm <= data_in[0];
           ien <= data_in[1];
         end
-        if (en == 1 && wr == 1 && addr[3:2] == 2'b01) begin
+        if (stb == 1 && we == 1 && addr[3:2] == 2'b01) begin
+          // divisor
           divisor <= data_in;
           divisor_loaded <= 1;
         end else begin
@@ -82,7 +88,7 @@ module tmr(clk, reset,
     endcase
   end
 
-  assign wt = 0;
+  assign ack = stb;
   assign irq = ien & alarm;
 
 endmodule

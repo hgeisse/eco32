@@ -3,11 +3,15 @@
 //
 
 
-module dac(clk, reset,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module dac(clk, rst,
            sample_l, sample_r, next,
            mclk, sclk, lrck, sdti);
     input clk;
-    input reset;
+    input rst;
     input [15:0] sample_l;
     input [15:0] sample_r;
     output next;
@@ -21,7 +25,7 @@ module dac(clk, reset,
   wire shift;
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (rst) begin
       timing <= 10'h0;
     end else begin
       timing <= timing + 1;
@@ -36,7 +40,7 @@ module dac(clk, reset,
   assign shift = (timing[3:0] == 4'hF) ? 1 : 0;
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (rst) begin
       sr <= 64'h0;
     end else begin
       if (next) begin

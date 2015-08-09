@@ -3,7 +3,11 @@
 //
 
 
-module spi(clk, reset, spi_en,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module spi(clk, rst, spi_en,
            dac_sample_l, dac_sample_r, dac_next,
            spi_sck, spi_mosi,
            dac_cs_n, dac_clr_n,
@@ -11,7 +15,7 @@ module spi(clk, reset, spi_en,
            ad_conv);
     // internal interface
     input clk;
-    input reset;
+    input rst;
     input spi_en;
     // DAC controller interface
     input [15:0] dac_sample_l;
@@ -35,7 +39,7 @@ module spi(clk, reset, spi_en,
   reg [9:0] timing;
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (rst) begin
       timing <= 10'h0;
     end else begin
       if (spi_en == 1'b0 && timing == 10'h0) begin
@@ -63,7 +67,7 @@ module spi(clk, reset, spi_en,
   assign dac_next = (timing[9:0] == 10'h001) ? 1 : 0;
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (rst) begin
       dac_ld <= 1'b1;
     end else begin
       if (timing[9:0] == 10'h001) begin
@@ -84,7 +88,7 @@ module spi(clk, reset, spi_en,
   assign dac_shift = spi_sck & ~dac_ld;
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (rst) begin
       dac_sr <= 48'h0;
     end else begin
       if (dac_next) begin
@@ -106,7 +110,7 @@ module spi(clk, reset, spi_en,
   end
 
   assign dac_cs_n = dac_ld;
-  assign dac_clr_n = ~reset;
+  assign dac_clr_n = ~rst;
 
   //------------------------------------------------------------
 
@@ -115,7 +119,7 @@ module spi(clk, reset, spi_en,
   //
 
   assign amp_cs_n = 1;
-  assign amp_shdn = reset;
+  assign amp_shdn = rst;
 
   //------------------------------------------------------------
 

@@ -3,13 +3,17 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module keyboard(ps2_clk, ps2_data,
-                clk, reset,
+                clk, rst,
                 keyboard_data, keyboard_rdy);
     input ps2_clk;
     input ps2_data;
     input clk;
-    input reset;
+    input rst;
     output [7:0] keyboard_data;
     output keyboard_rdy;
 
@@ -53,7 +57,7 @@ module keyboard(ps2_clk, ps2_data,
 
   // clock level detector with hysteresis
   always @(posedge clk) begin
-    if (reset == 1) begin
+    if (rst) begin
       ps2_clk_lvl_prv <= 1;
       ps2_clk_lvl <= 1;
     end else begin
@@ -74,7 +78,7 @@ module keyboard(ps2_clk, ps2_data,
 
   // shift ps2 data into a register
   assign data_x =
-    (ps2_clk_fall == 1) ? { ps2_data_s, data_r[9:1]} : data_r;
+    (ps2_clk_fall == 1) ? { ps2_data_s, data_r[9:1] } : data_r;
 
   // clear timer if clock is pulsing, otherwise count
   assign timer_x =
@@ -104,7 +108,7 @@ module keyboard(ps2_clk, ps2_data,
 
   // update state registers
   always @(posedge clk) begin
-    if (reset == 1 || err_r == 1) begin
+    if (rst | err_r) begin
       ps2_clk_int_r <= 4'b1111;
       data_r <= 10'b0000000000;
       timer_r <= 13'b0000000000000;

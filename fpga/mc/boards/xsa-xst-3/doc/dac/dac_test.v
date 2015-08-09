@@ -2,9 +2,13 @@
 // dac_test.v -- test bench for DAC control circuit
 //
 
+
 `include "dac.v"
 
+
 `timescale 1ns/1ns
+`default_nettype none
+
 
 module dac_test;
 

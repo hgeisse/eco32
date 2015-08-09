@@ -3,22 +3,26 @@
 //
 
 
-module bio(clk, reset,
-           en, wr, addr,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module bio(clk, rst,
+           stb, we, addr,
            data_in, data_out,
-           wt, spi_en,
+           ack, spi_en,
            sw, led,
            lcd_e, lcd_rw, lcd_rs,
            spi_ss_b, fpga_init_b);
     // internal interface
     input clk;
-    input reset;
-    input en;
-    input wr;
+    input rst;
+    input stb;
+    input we;
     input addr;
     input [31:0] data_in;
     output [31:0] data_out;
-    output wt;
+    output ack;
     output spi_en;
     // external interface
     input [3:0] sw;
@@ -36,10 +40,10 @@ module bio(clk, reset,
   reg [3:0] sw_s;
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (rst) begin
       bio_out[31:0] <= 32'h0;
     end else begin
-      if (en & wr & ~addr) begin
+      if (stb & we & ~addr) begin
         bio_out[31:0] <= data_in[31:0];
       end
     end
@@ -47,7 +51,7 @@ module bio(clk, reset,
 
   assign data_out[31:0] =
     (addr == 0) ? bio_out[31:0] : bio_in[31:0];
-  assign wt = 0;
+  assign ack = stb;
   assign spi_en = bio_out[31];
 
   always @(posedge clk) begin

@@ -3,18 +3,22 @@
 //
 
 
-module clk_rst(clk_in, reset_in,
+`timescale 1ns/10ps
+`default_nettype none
+
+
+module clk_rst(clk_in, rst_in,
                ddr_clk_0, ddr_clk_90, ddr_clk_180,
-               ddr_clk_270, ddr_clk_ok, clk, reset);
+               ddr_clk_270, ddr_clk_ok, clk, rst);
     input clk_in;
-    input reset_in;
+    input rst_in;
     output ddr_clk_0;
     output ddr_clk_90;
     output ddr_clk_180;
     output ddr_clk_270;
     output ddr_clk_ok;
     output clk;
-    output reset;
+    output rst;
 
   wire clk50_in;
   wire clk50_out;
@@ -27,10 +31,10 @@ module clk_rst(clk_in, reset_in,
   wire clk100_270;
   wire clk100_ok;
 
-  reg reset_p;
-  reg reset_s;
-  reg [23:0] reset_counter;
-  wire reset_counting;
+  reg rst_p;
+  reg rst_s;
+  reg [23:0] rst_counter;
+  wire rst_counting;
 
   //------------------------------------------------------------
 
@@ -127,20 +131,20 @@ module clk_rst(clk_in, reset_in,
 
   //------------------------------------------------------------
 
-  assign reset_counting = (reset_counter == 24'hFFFFFF) ? 0 : 1;
+  assign rst_counting = (rst_counter == 24'hFFFFFF) ? 0 : 1;
 
   always @(posedge clk) begin
-    reset_p <= reset_in;
-    reset_s <= reset_p;
-    if (reset_s | ~clk50_ok | ~clk100_ok) begin
-      reset_counter <= 24'h000000;
+    rst_p <= rst_in;
+    rst_s <= rst_p;
+    if (rst_s | ~clk50_ok | ~clk100_ok) begin
+      rst_counter <= 24'h000000;
     end else begin
-      if (reset_counting == 1) begin
-        reset_counter <= reset_counter + 1;
+      if (rst_counting == 1) begin
+        rst_counter <= rst_counter + 1;
       end
     end
   end
 
-  assign reset = reset_counting;
+  assign rst = rst_counting;
 
 endmodule

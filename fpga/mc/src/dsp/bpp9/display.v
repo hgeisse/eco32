@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module display(clk,
                dsp_row, dsp_col, dsp_en, dsp_wr,
                dsp_wr_data, dsp_rd_data,
@@ -44,7 +48,7 @@ module display(clk,
   wire chrgen_vsync;
   wire chrgen_blink;
 
-  timing timing1(
+  timing timing_1(
     .clk(clk),
     .pixclk(pixclk),
     .txtrow(timing_txtrow[4:0]),
@@ -57,7 +61,7 @@ module display(clk,
     .blink(timing_blink)
   );
 
-  dspmem dspmem1(
+  dspmem dspmem_1(
     .rdwr_row(dsp_row[4:0]),
     .rdwr_col(dsp_col[6:0]),
     .wr_data(dsp_wr_data[15:0]),
@@ -84,7 +88,7 @@ module display(clk,
     .blink_out(dspmem_blink)
   );
 
-  chrgen chrgen1(
+  chrgen chrgen_1(
     .clk(clk),
     .pixclk(pixclk),
     .chrcode(dspmem_chrcode[7:0]),
@@ -103,7 +107,7 @@ module display(clk,
     .blink_out(chrgen_blink)
   );
 
-  pixel pixel1(
+  pixel pixel_1(
     .clk(clk),
     .pixclk(pixclk),
     .attcode(chrgen_attcode[7:0]),

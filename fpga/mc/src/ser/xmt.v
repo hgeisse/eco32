@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 module xmt(clk, reset, load, empty, parallel_in, serial_out);
     input clk;
     input reset;

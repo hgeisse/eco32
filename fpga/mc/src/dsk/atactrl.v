@@ -3,6 +3,10 @@
 //
 
 
+`timescale 1ns/10ps
+`default_nettype none
+
+
 `define ADDR_ALTERNATE_STATUS	4'b0110
 `define ADDR_DEVICE_CONTROL	4'b0110
 `define ADDR_DEVICE_ADDRESS	4'b0111
@@ -57,7 +61,7 @@ wire buffer_bus_addressed;
 wire buffer_bus_write;
 reg buffer_bus_second_cycle;
 
-ata_buffer buffer1 (
+ata_buffer ata_buffer_1(
     .clk (clk),
     .bus_write (buffer_bus_write),
     .bus_addr (bus_addr [11:2]),
