@@ -9,7 +9,7 @@ Notes
    c) git clone git://git.zerfleddert.de/usb-driver
    d) cd usb-driver
    e) make
-   f) ./setup_pcusb /opt/Xilinx/14.5/ISE_DS/ISE/
+   f) ./setup_pcusb /opt/Xilinx/14.7/ISE_DS/ISE/
 
 2. The configuration bitstring for the FPGA is stored in the
    "Platform Flash PROM" (XCF04S). The board must therefore be
@@ -17,7 +17,7 @@ Notes
 
 3. Here is the command which burns the configuration bitstring
    into the Platform Flash PROM:
-      /opt/Xilinx/14.5/ISE_DS/ISE/bin/lin/impact -batch ./program.cmd
+      /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin/impact -batch ./program.cmd
 
 4. The machine monitor is stored in the "StrataFlash Parallel NOR
    Flash PROM" (28F128J3), starting at address 0x000000. The ECO32
@@ -44,7 +44,7 @@ Notes
          - add linefeed on (the programmer sends CR, but not LF)
          - local echo off (the programmer does echo itself)
    d) Here is the command that loads the FPGA with the programmer:
-         /opt/Xilinx/14.5/ISE_DS/ISE/bin/lin/impact -batch ./flash-500.cmd
+         /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin/impact -batch ./flash-500.cmd
       If the download succeeds, you should see the message "PicoBlaze NOR
       FLASH Programmer v1.00" on the computer which is connected via the
       serial line to the starter board, as well as a menue of commands

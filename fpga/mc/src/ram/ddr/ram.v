@@ -46,6 +46,26 @@ module ram(ddr_clk_0, ddr_clk_90, ddr_clk_180,
     inout sdram_ldqs;
     inout [15:0] sdram_dq;
 
+  //----------------------------------------------------
+
+  // This is a hack. The synthesizer detected setup timing
+  // violations on wDAT_I that resulted from crossing the
+  // 50 MHz to 100 MHz clock domain border. The circuit would
+  // have functioned perfectly ok, because the signals are
+  // used only on the following 100 MHz clock edge, a fact
+  // that the synthesizer was unable to deduce. Instead of
+  // tolerating formal errors during synthesis, I tried to
+  // insert a register that is clocked with the trailing
+  // edge of the 50 MHz clock. Surprisingly, this worked.
+
+  reg [31:0] data_in_buf;
+
+  always @(negedge clk) begin
+    data_in_buf[31:0] <= data_in[31:0];
+  end
+
+  //----------------------------------------------------
+
   ddr_sdram ddr_sdram_1(
     .sd_CK_P(sdram_ck_p),
     .sd_CK_N(sdram_ck_n),
@@ -70,7 +90,7 @@ module ram(ddr_clk_0, ddr_clk_90, ddr_clk_180,
     .wSTB_I(stb),
     .wWE_I(we),
     .wWRB_I(4'b1111),
-    .wDAT_I(data_in[31:0]),
+    .wDAT_I(data_in_buf[31:0]),
     .wDAT_O(data_out[31:0]),
     .wACK_O(ack)
   );
