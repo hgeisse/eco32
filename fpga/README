@@ -1,0 +1,26 @@
+Contents of Subdirectories
+--------------------------
+
+mc
+multicycle implementations of ECO32
+(DONE)
+
+mc-sim
+multicycle simulation of ECO32
+(NOT YET)
+
+mc-vl
+Verilator-translated multicycle simulation of ECO32
+(NOT YET)
+
+pl
+pipeline implementations of ECO32
+(NOT YET)
+
+pl-sim
+pipeline simulation of ECO32
+(NOT YET)
+
+pl-vl
+Verilator-translated pipeline simulation of ECO32
+(NOT YET)
