@@ -1,0 +1,28 @@
+#
+# Makefile to build a test
+#
+
+BUILD = ../../../build
+
+ROM_SIZE_KB = 64
+
+SRC = $(wildcard *.s)
+OBJ = $(patsubst %.s,%.o,$(SRC))
+BIN = $(patsubst %.s,%.bin,$(SRC))
+DAT = $(patsubst %.s,%.dat,$(SRC))
+
+all:		$(DAT)
+
+install:	$(DAT)
+
+$(DAT):		$(BIN)
+		$(BUILD)/bin/bin2dat $(BIN) $(DAT) $(ROM_SIZE_KB)
+
+$(BIN):		$(OBJ)
+		$(BUILD)/bin/ld -h -rc 0xE0000000 -o $(BIN) $(OBJ)
+
+$(OBJ):		$(SRC)
+		$(BUILD)/bin/as -o $(OBJ) $(SRC)
+
+clean:
+		rm -f *~ $(OBJ) $(BIN) $(DAT)
