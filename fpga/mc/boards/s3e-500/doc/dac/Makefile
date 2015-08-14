@@ -4,8 +4,8 @@
 
 all:		dac_test
 
-dac_test:	dac.v dac_test.v
-		iverilog -Wall -o dac_test dac_test.v
+dac_test:	dac_test.v dac.v
+		iverilog -Wall -o dac_test dac_test.v dac.v
 
 run:		dac_test
 		./dac_test
