@@ -55,11 +55,11 @@ module ram(clk, rst,
       if (counter[3:0] == 4'h0) begin
         if (stb & ~we) begin
           // a read may need some clock cycles
-          counter <= `RD_CYCLES - 1;
+          counter[3:0] <= `RD_CYCLES - 1;
         end
         if (stb & we) begin
           // a write may need some clock cycles
-          counter <= `WR_CYCLES - 1;
+          counter[3:0] <= `WR_CYCLES - 1;
         end
       end else begin
         counter[3:0] <= counter[3:0] - 1;
