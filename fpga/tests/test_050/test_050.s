@@ -11,8 +11,8 @@
 	add	$0,$0,$0
 	add	$0,$0,$0
 
-lbl1:
-	j	lbl1
+stop:
+	j	stop
 
 	add	$0,$0,$0
 	add	$0,$0,$0
