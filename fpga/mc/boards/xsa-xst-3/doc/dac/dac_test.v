@@ -3,10 +3,7 @@
 //
 
 
-`include "dac.v"
-
-
-`timescale 1ns/1ns
+`timescale 1ns/10ps
 `default_nettype none
 
 
