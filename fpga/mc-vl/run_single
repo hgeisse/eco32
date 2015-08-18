@@ -1,0 +1,45 @@
+#! /bin/bash
+
+if (( $# == 0 ))
+then
+  echo "usage: run_single <test>"
+  exit
+fi
+
+BUILD=../tests/$1
+if [ ! -r $BUILD/$1.dat ]
+then
+  echo "test file '$BUILD/$1.dat' not found"
+  exit
+fi
+
+make clean
+
+echo "cp $BUILD/$1.dat rom.dat"
+cp $BUILD/$1.dat rom.dat
+
+if [ -r $BUILD/duration.dat ]
+then
+  echo "cp $BUILD/duration.dat duration.dat"
+  cp $BUILD/duration.dat duration.dat
+fi
+
+if [ -r $BUILD/kbd.dat ]
+then
+  echo "cp $BUILD/kbd.dat kbd.dat"
+  cp $BUILD/kbd.dat kbd.dat
+fi
+
+if [ -r $BUILD/ser0.dat ]
+then
+  echo "cp $BUILD/ser0.dat ser0.dat"
+  cp $BUILD/ser0.dat ser0.dat
+fi
+
+if [ -r $BUILD/ser1.dat ]
+then
+  echo "cp $BUILD/ser1.dat ser1.dat"
+  cp $BUILD/ser1.dat ser1.dat
+fi
+
+make run
