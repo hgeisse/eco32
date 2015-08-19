@@ -4,6 +4,9 @@
 
 BUILD = ../../build
 
+# set TRACE to '--trace' if VCD traces should be generated
+# see the 'show' target below
+
 SRCS = eco32test.v \
        src/eco32/eco32.v \
        src/clk_rst/clk_rst.v \
@@ -18,7 +21,7 @@ SRCS = eco32test.v \
        src/ser/ser.v
 BIN = Veco32test
 
-.PHONY:		all install run clean
+.PHONY:		all install run show clean
 
 all:
 
@@ -26,7 +29,7 @@ install:
 
 $(BIN):		$(SRCS) main.cpp
 		verilator -Wall -Wno-style -Wno-CASEX -Wno-CASEOVERLAP \
-		  --cc $(SRCS) --exe main.cpp
+		  $(TRACE) --cc $(SRCS) --exe main.cpp
 		make -C obj_dir -j -f $(BIN).mk $(BIN)
 		cp obj_dir/$(BIN) .
 
@@ -53,8 +56,12 @@ run:		$(BIN)
 		fi
 		./$(BIN)
 
+show:
+		$(MAKE) run TRACE='--trace'
+		gtkwave dump.vcd eco32test.cfg
+
 clean:
-		rm -f *~ $(BIN)
+		rm -f *~ $(BIN) dump.vcd
 		rm -f duration.dat rom.dat
 		rm -f kbd.dat dsp.out
 		rm -f ser0.dat ser0.out
