@@ -1,0 +1,37 @@
+Structure
+---------
+
+A top-level module (memtest.v) creates instances of a memory
+test circuit (ramtest/ramtest.v) and a memory controller
+(ramctrl/ramctrl.v), which in turn builds an internal model
+of the external SDRAM (ramctrl/k4s561632e.v).
+
+
+Intended Use
+------------
+
+The memory controller offers a complete simulation of the memory
+subsystem, including a simulation model of a 256 Mbit SDRAM chip
+(provided by Samsung Electronics). The controller can also be
+synthesized for use on a real FPGA (but the DLL for clock phase
+shifting required in this case is not included here).
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^26 * 64 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+data read/write:
+2^26 * 64 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to SDRAM)
+-----------------------------
+
+This is the standard SDRAM interface for 256 Mbit devices,
+organized as 16 M x 16 bit (in 4 banks, 8192 rows each).
+4 banks * 8192 rows * 512 columns * 16 bit = 256 Mbit = 32 MB
