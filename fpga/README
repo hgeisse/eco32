@@ -1,17 +1,23 @@
 Contents of Subdirectories
 --------------------------
 
+experiments
+different experiments to explore implementation alternatives
+
+	memdelay
+	RAM simulation with adjustable read/write delays
+
+	memspeed
+	SDRAM speed measurement circuit for XESS board, old controller
+
 mc
 multicycle implementations of ECO32
-(DONE)
 
 mc-sim
 multicycle simulation of ECO32
-(NOT YET)
 
 mc-vl
 Verilator-translated multicycle simulation of ECO32
-(NOT YET)
 
 pl
 pipeline implementations of ECO32
@@ -24,3 +30,6 @@ pipeline simulation of ECO32
 pl-vl
 Verilator-translated pipeline simulation of ECO32
 (NOT YET)
+
+tests
+different tests that can be run on any implementation
