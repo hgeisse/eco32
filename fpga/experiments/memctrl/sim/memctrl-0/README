@@ -1,0 +1,44 @@
+Structure
+---------
+
+A top-level module (memtest.v) creates instances of a memory
+test circuit (ramtest/ramtest.v) and a memory controller
+(ramctrl/ramctrl.v), which in turn builds an internal model
+of the external RAM (ramctrl/ram.v).
+
+
+Intended Use
+------------
+
+The memory controller offers a complete simulation of the memory
+subsystem, if the given (simplistic) RAM implementation is used.
+If the RAM is substituted by a word-oriented, single-access SDRAM
+controller, the memory controller will in fact do its job on a real
+FPGA too, although it won't exploit the full potential of the SDRAM
+chip.
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^26 * 64 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+data read/write:
+2^26 * 64 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to RAM)
+---------------------------
+
+2^23 * 32 bit = 32 MB
+strobe/acknowledge handshake
+
+
+RAM
+---
+
+The RAM has got separately adjustable access times for read and
+write operations (minimum is two clock cycles each).
