@@ -7,7 +7,8 @@ the on-board SDRAM of the XESS board. To do timing
 measurements of reads or writes, wire the "we" signal
 to 0 or 1, respectively. It is also possible to get a
 mix of reads and writes if the "we" signal is a function
-of (some bits of) the counter "count".
+of (some bits of) the counter "count". Note that only
+32-bit accesses are performed. The clock rate is 50 MHz.
 
 
 Read
