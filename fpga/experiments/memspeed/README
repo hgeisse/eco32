@@ -21,6 +21,7 @@ Read
 average:
 41.8 s / 2^27 read cycles = 311.4 ns / read cycle
 which means 15.6 clock cycles per read
+(the corresponding data rate is 12.8 MB/s)
 
 
 Write
@@ -33,6 +34,7 @@ Write
 average:
 19.6 s / 2^27 write cycles = 146.0 ns / write cycle
 which means 7.3 clock cycles per write
+(the corresponding data rate is 27.4 MB/s)
 
 
 Mix (75% read, 25% write)
