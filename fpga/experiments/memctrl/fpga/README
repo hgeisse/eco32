@@ -1,9 +1,9 @@
 Here are two implementations of a memory controller, intended
 to be used on a real FPGA. The names of the subdirectories are
 the same as the corresponding ones in ../sim. memctrl-0 does
-not exist here, because the underlying RAM model cannot be
+not exist here, because its underlying RAM model cannot be
 synthesized on the real FPGA. memctrl-1 is a memory controller
-for SDRAM running at 100 MHz, where test circuit uses the same
-clock rate. memctrl-2 is very similar to this, but runs the
-test circuit at 50 MHz. For details see the README files in
-the corresponding subdirectories of ../sim.
+for SDRAM running at 100 MHz, where the test circuit uses the
+same clock rate. memctrl-2 is very similar to this, but runs
+the test circuit at 50 MHz. For details see the README files
+in the corresponding subdirectories of ../sim.
