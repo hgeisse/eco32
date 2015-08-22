@@ -1,0 +1,68 @@
+Purpose
+-------
+
+This test circuit allows speed measurements of the new memory
+controller, driving the on-board SDRAM of the XESS board. To do
+timing measurements of reads or writes, wire the "we" signal
+to 0 or 1, respectively. It is also possible to get a mix of
+reads and writes if the "we" signal is a function of (some bits
+of) the counter "count". Note that only 64-bit accesses are
+performed. The clock rate is 100 MHz.
+
+
+Read
+----
+
+20.5 s
+20.6 s
+20.7 s
+
+average:
+20.6 s / 2^27 read cycles = 153.5 ns / read cycle
+which means 15.35 clock cyles per read
+(the corresponding data rate is 52.1 MB/s)
+
+
+Write
+-----
+
+15.2 s
+15.1 s
+15.1 s
+
+average:
+15.1 s / 2^27 write cycles = 112.5 ns / write cycle
+which means 11.25 clock cycles per write
+(the corresponding data rate is 71.1 MB/s)
+
+
+Mix (75% read, 25% write)
+-------------------------
+
+19.1 s
+19.1 s
+19.3 s
+
+average:
+19.2 s / 2^27 operations = 143.1 ns / operation
+which means 14.3 clock cycles per operation
+
+
+Conclusions
+-----------
+
+1) The weighted average from read and write operations
+   (0.75*15.35 + 0.25*11.25) is a very good approximation
+   for the value measured in the "mixed" case. This
+   confirms the different values for the "read" and
+   "write" cases.
+
+2) The test circuit needs one clock cycle to recover
+   from a read or write operation before the next one
+   is started. The recommended number of clock cycles
+   for a memory simulation are therefore
+       read   : 14 clock cycles
+       write  : 10 clock cycles
+   measured from start of the operation (leading edge
+   of signal stb) to end of the operation (trailing
+   edge of signal ack).
