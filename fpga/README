@@ -7,8 +7,11 @@ different experiments to explore implementation alternatives
 	memdelay
 	RAM simulation with adjustable read/write delays
 
-	memspeed
+	memspeed-1
 	SDRAM speed measurement circuit for XESS board, old controller
+
+	memspeed-2
+	SDRAM speed measurement circuit for XESS board, new controller
 
 mc
 multicycle implementations of ECO32
