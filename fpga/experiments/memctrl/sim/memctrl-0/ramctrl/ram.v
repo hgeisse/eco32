@@ -11,14 +11,14 @@
 //
 // use this set of parameters for minimal access times
 //
-`define RD_CYCLES	4'd2	// # cycles for read, min = 2
-`define WR_CYCLES	4'd2	// # cycles for write, min = 2
+//`define RD_CYCLES	4'd2	// # cycles for read, min = 2
+//`define WR_CYCLES	4'd2	// # cycles for write, min = 2
 
 //
 // use this set of parameters for realistic access times
 //
-//`define RD_CYCLES	4'd14	// # cycles for read, min = 2
-//`define WR_CYCLES	4'd6	// # cycles for write, min = 2
+`define RD_CYCLES	4'd6	// # cycles for read, min = 2
+`define WR_CYCLES	4'd4	// # cycles for write, min = 2
 
 
 module ram(clk, rst,
