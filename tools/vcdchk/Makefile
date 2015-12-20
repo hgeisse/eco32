@@ -11,7 +11,7 @@ install:	vcdchk
 		cp vcdchk $(BUILD)/bin
 
 vcdchk:		vcdchk.c
-		gcc -m32 -g -Wall -o vcdchk vcdchk.c
+		gcc -g -Wall -o vcdchk vcdchk.c
 
 clean:
 		rm -f *~ vcdchk
