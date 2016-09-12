@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "getline.h"
 
-main()
+int main()
 /* 
  * just echo user input lines, letting user edit them and move through
  * history list
