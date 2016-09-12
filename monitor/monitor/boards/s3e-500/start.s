@@ -207,12 +207,6 @@ clrtest:
 
 	; initialize I/O
 	add	$29,$0,stacktop		; setup monitor stack
-	jal	kbdinit			; init keyboard
-	jal	dspinit			; init display
-	jal	ser0init		; init serial line 0
-	jal	ser1init		; init serial line 1
-	jal	dskinitctl		; init disk (controller)
-	jal	dskinitser		; init disk (serial line)
 	ldw	$8,$0,BIO_RD		; get switch settings
 	and	$8,$8,CIO_CTRL
 	add	$4,$0,CIO_SERIAL_0	; set console to serial line
@@ -220,6 +214,20 @@ clrtest:
 	add	$4,$0,CIO_KBD_DSP	; set console to kbd/dsp
 swtchset:
 	jal	setcio
+	ldbu	$8,$0,cioctl		; get control byte
+	and	$8,$8,0x01		; keyboard input wanted?
+	bne	$8,$0,nokbd		; no - then don't touch
+	jal	kbdinit			; else init keyboard
+nokbd:
+	ldbu	$8,$0,cioctl		; get control byte
+	and	$8,$8,0x02		; display output wanted?
+	bne	$8,$0,nodsp		; no - then don't touch
+	jal	dspinit			; else init display
+nodsp:
+	jal	ser0init		; init serial line 0
+	jal	ser1init		; init serial line 1
+	jal	dskinitctl		; init disk (controller)
+	jal	dskinitser		; init disk (serial line)
 
 	; call main
 	jal	main			; enter command loop
