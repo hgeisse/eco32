@@ -43,3 +43,7 @@ einzuführen, dass die anzahl der bisher ausgeführten instruktionen liefert?
 die laufzeit messung der einzelnen prozesse momentan darauf. und bei x86
 gibts rdtsc und bei mmix rC, nur bei eco32 gibt es das nicht :)
 
+---------------------------------------------------
+
+Perhaps move to GitHub?
+
