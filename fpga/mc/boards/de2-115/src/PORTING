@@ -1,0 +1,29 @@
+
+State of Porting
+----------------
+
+
+Hardware:
+
+toplevel	preliminary
+clk_rst		preliminary
+cpu		empty
+bio		empty
+dac		empty
+dsk		empty
+dsp		finished
+fms		empty
+kbd		empty
+ram		empty
+rom		empty
+ser		empty
+tmr		empty
+
+
+Software:
+
+binutils	not yet started
+lcc		not yet started
+roms		not yet started
+monitor		not yet started
+
