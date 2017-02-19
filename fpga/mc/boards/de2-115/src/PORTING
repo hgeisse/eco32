@@ -1,21 +1,21 @@
 
-State of Porting
-----------------
+Porting Status
+--------------
 
 
 Hardware:
 
 toplevel	preliminary
 clk_rst		preliminary
-cpu		empty
+cpu		dummy
 bio		empty
 dac		empty
 dsk		empty
 dsp		finished
 fms		empty
 kbd		empty
-ram		empty
-rom		empty
+ram		dummy
+rom		dummy
 ser		empty
 tmr		empty
 
