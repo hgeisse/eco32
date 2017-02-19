@@ -65,12 +65,23 @@ module eco32(clk_in,
   wire clk;				// system clock
   wire rst;				// system reset
   // cpu
+  wire bus_stb;				// bus strobe
   wire bus_we;				// bus write enable
   wire [31:2] bus_addr;			// bus address (word address)
+  wire [31:0] bus_din;			// bus data input, for reads
   wire [31:0] bus_dout;			// bus data output, for writes
+  wire bus_ack;				// bus acknowledge
+  wire [15:0] bus_irq;			// bus interrupt requests
   // ram
+  wire ram_stb;				// ram strobe
+  wire [31:0] ram_dout;			// ram data output
+  wire ram_ack;				// ram acknowledge
   // rom
+  wire rom_stb;				// rom strobe
+  wire [31:0] rom_dout;			// rom data output
+  wire rom_ack;				// rom acknowledge
   // i/o
+  wire i_o_stb;				// i/o strobe
   // tmr0
   // tmr1
   // dsp
@@ -91,6 +102,39 @@ module eco32(clk_in,
     .rst_in_n(rst_in_n),
     .clk(clk),
     .rst(rst)
+  );
+
+  cpu cpu_1(
+    .clk(clk),
+    .rst(rst),
+    .bus_stb(bus_stb),
+    .bus_we(bus_we),
+    .bus_addr(bus_addr[31:2]),
+    .bus_din(bus_din[31:0]),
+    .bus_dout(bus_dout[31:0]),
+    .bus_ack(bus_ack),
+    .bus_irq(bus_irq[15:0])
+  );
+
+  ram ram_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(ram_stb),
+    .we(bus_we),
+    .addr(bus_addr[26:2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(ram_dout[31:0]),
+    .ack(ram_ack)
+  );
+
+  rom rom_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(rom_stb),
+    .we(bus_we),
+    .addr(bus_addr[22:2]),
+    .data_out(rom_dout[31:0]),
+    .ack(rom_ack)
   );
 
   dsp dsp_1(
@@ -116,13 +160,98 @@ module eco32(clk_in,
   // address decoder
   //--------------------------------------
 
+  // RAM: architectural limit  = 512 MB
+  //      implementation limit = 128 MB
+  assign ram_stb =
+    (bus_stb == 1'b1 && bus_addr[31:29] == 3'b000
+                     && bus_addr[28:27] == 2'b00) ? 1'b1 : 1'b0;
+
+  // ROM: architectural limit  = 256 MB
+  //      implementation limit =   8 MB
+  assign rom_stb =
+    (bus_stb == 1'b1 && bus_addr[31:28] == 4'b0010
+                     && bus_addr[27:23] == 5'b00000) ? 1'b1 : 1'b0;
+
+  // I/O: architectural limit  = 256 MB
+  assign i_o_stb =
+    (bus_stb == 1'b1 && bus_addr[31:28] == 4'b0011) ? 1'b1 : 1'b0;
+//  assign tmr0_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h00
+//                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+//  assign tmr1_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h00
+//                     && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
+  assign dsp_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h01) ? 1'b1 : 1'b0;
+//  assign kbd_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02) ? 1'b1 : 1'b0;
+//  assign ser0_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
+//                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+//  assign ser1_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
+//                     && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
+//  assign dsk_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h04) ? 1'b1 : 1'b0;
+//  assign fms_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h05
+//                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+//  assign bio_stb =
+//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h10
+//                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+
   //--------------------------------------
   // data and acknowledge multiplexers
   //--------------------------------------
 
+  assign bus_din[31:0] =
+    (ram_stb == 1'b1)  ? ram_dout[31:0] :
+    (rom_stb == 1'b1)  ? rom_dout[31:0] :
+//    (tmr0_stb == 1'b1) ? tmr0_dout[31:0] :
+//    (tmr1_stb == 1'b1) ? tmr1_dout[31:0] :
+    (dsp_stb == 1'b1)  ? { 16'h0000, dsp_dout[15:0] } :
+//    (kbd_stb == 1'b1)  ? { 24'h000000, kbd_dout[7:0] } :
+//    (ser0_stb == 1'b1) ? { 24'h000000, ser0_dout[7:0] } :
+//    (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
+//    (dsk_stb == 1'b1)  ? dsk_dout[31:0] :
+//    (fms_stb == 1'b1)  ? fms_dout[31:0] :
+//    (bio_stb == 1'b1)  ? bio_dout[31:0] :
+    32'h00000000;
+
+  assign bus_ack =
+    (ram_stb == 1'b1)  ? ram_ack :
+    (rom_stb == 1'b1)  ? rom_ack :
+//    (tmr0_stb == 1'b1) ? tmr0_ack :
+//    (tmr1_stb == 1'b1) ? tmr1_ack :
+    (dsp_stb == 1'b1)  ? dsp_ack :
+//    (kbd_stb == 1'b1)  ? kbd_ack :
+//    (ser0_stb == 1'b1) ? ser0_ack :
+//    (ser1_stb == 1'b1) ? ser1_ack :
+//    (dsk_stb == 1'b1)  ? dsk_ack :
+//    (fms_stb == 1'b1)  ? fms_ack :
+//    (bio_stb == 1'b1)  ? bio_ack :
+    1'b0;
+
   //--------------------------------------
   // bus interrupt request assignments
   //--------------------------------------
+
+  assign bus_irq[15] = 1'b0;
+  assign bus_irq[14] = 1'b0;
+  assign bus_irq[13] = 1'b0;
+  assign bus_irq[12] = 1'b0;
+  assign bus_irq[11] = 1'b0;
+  assign bus_irq[10] = 1'b0;
+  assign bus_irq[ 9] = 1'b0;
+  assign bus_irq[ 8] = 1'b0;
+  assign bus_irq[ 7] = 1'b0;
+  assign bus_irq[ 6] = 1'b0;
+  assign bus_irq[ 5] = 1'b0;
+  assign bus_irq[ 4] = 1'b0;
+  assign bus_irq[ 3] = 1'b0;
+  assign bus_irq[ 2] = 1'b0;
+  assign bus_irq[ 1] = 1'b0;
+  assign bus_irq[ 0] = 1'b0;
 
   //--------------------------------------
   // !!!!! TEST !!!!!
@@ -173,46 +302,5 @@ module eco32(clk_in,
   assign hex2_n[6:0] = key2_n ? 7'b1111111 : counter[22:16];
   assign hex1_n[6:0] = ~counter[24:18];
   assign hex0_n[6:0] = key1_n ? 7'b1111111 : counter[24:18];
-
-  //-------------------
-
-  wire en;
-  wire wr;
-  wire [4:0] rdwr_row;
-  wire [6:0] rdwr_col;
-  wire [7:0] wr_data;
-
-  reg [17:0] prescaler;
-  reg [11:0] position;
-
-  always @(posedge clk) begin
-    prescaler <= prescaler + 18'h1;
-  end
-
-  assign en = (prescaler == 18'h3FFFF) &&
-              (position != 12'hFFF);
-
-  always @(posedge clk) begin
-    if (en) begin
-      position <= position + 12'h1;
-    end
-  end
-
-  assign wr = en;
-  assign rdwr_row[4:0] = position[11:7];
-  assign rdwr_col[6:0] = position[6:0];
-  assign wr_data =
-    (rdwr_row == 5'd14 && rdwr_col == 7'd36) ? 8'h54 :
-    (rdwr_row == 5'd14 && rdwr_col == 7'd38) ? 8'h65 :
-    (rdwr_row == 5'd14 && rdwr_col == 7'd40) ? 8'h73 :
-    (rdwr_row == 5'd14 && rdwr_col == 7'd42) ? 8'h74 :
-                                               8'h20;
-
-  assign dsp_stb = en;
-  assign bus_we = wr;
-  assign bus_addr[13:2] = { rdwr_row[4:0], rdwr_col[6:0] };
-  assign bus_dout[15:0] = { 8'h07, wr_data[7:0] };
-
-  //-------------------
 
 endmodule
