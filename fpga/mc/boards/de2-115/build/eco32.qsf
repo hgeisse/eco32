@@ -328,6 +328,9 @@ set_location_assignment PIN_A10 -to vga_b[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to vga_b[1]
 set_location_assignment PIN_B10 -to vga_b[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to vga_b[0]
+set_global_assignment -name VERILOG_FILE ../src/rom/rom.v
+set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/cpu.v
 set_global_assignment -name VERILOG_FILE ../src/dsp/pixel.v
 set_global_assignment -name VERILOG_FILE ../src/dsp/chrgen.v
 set_global_assignment -name VERILOG_FILE ../src/dsp/dspmem.v
