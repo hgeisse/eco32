@@ -36,55 +36,55 @@ module timing(clk, pixclk,
   assign pixclk = pclk;
 
   always @(posedge clk) begin
-    if (pclk == 1) begin
+    if (pclk == 1'b1) begin
       if (hcnt == 10'd799) begin
         hcnt <= 10'd0;
-        hblank <= 1;
+        hblank <= 1'b1;
       end else begin
         hcnt <= hcnt + 10'd1;
       end
       if (hcnt == 10'd639) begin
-        hblank <= 0;
+        hblank <= 1'b0;
       end
       if (hcnt == 10'd655) begin
-        hsynch <= 0;
+        hsynch <= 1'b0;
       end
       if (hcnt == 10'd751) begin
-        hsynch <= 1;
+        hsynch <= 1'b1;
       end
     end
   end
 
   always @(posedge clk) begin
-    if (pclk == 1 && hcnt == 10'd799) begin
+    if (pclk == 1'b1 && hcnt == 10'd799) begin
       if (vcnt == 10'd524) begin
         vcnt <= 10'd0;
-        vblank <= 1;
+        vblank <= 1'b1;
       end else begin
         vcnt <= vcnt + 10'd1;
       end
       if (vcnt == 10'd479) begin
-        vblank <= 0;
+        vblank <= 1'b0;
       end
       if (vcnt == 10'd489) begin
-        vsynch <= 0;
+        vsynch <= 1'b0;
       end
       if (vcnt == 10'd491) begin
-        vsynch <= 1;
+        vsynch <= 1'b1;
       end
     end
   end
 
   always @(posedge clk) begin
-    if (pclk == 1 && hcnt == 10'd799 && vcnt == 10'd524) begin
+    if (pclk == 1'b1 && hcnt == 10'd799 && vcnt == 10'd524) begin
       if (bcnt == 6'd59) begin
         bcnt <= 6'd0;
-        blink <= 1;
+        blink <= 1'b1;
       end else begin
         bcnt <= bcnt + 6'd1;
       end
       if (bcnt == 6'd29) begin
-        blink <= 0;
+        blink <= 1'b0;
       end
     end
   end
