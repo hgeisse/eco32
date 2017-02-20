@@ -7,7 +7,7 @@ Hardware:
 
 toplevel	preliminary
 clk_rst		preliminary
-cpu		dummy
+cpu		finished
 bio		empty
 dac		empty
 dsk		empty
