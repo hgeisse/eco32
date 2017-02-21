@@ -16,7 +16,7 @@ fms		empty
 kbd		empty
 ram		dummy
 rom		dummy
-ser		empty
+ser		finished
 tmr		empty
 
 

@@ -17,6 +17,10 @@ module eco32(clk_in,
              vga_r,
              vga_g,
              vga_b,
+             rs232_0_rxd,
+             rs232_0_txd,
+             rs232_1_rxd,
+             rs232_1_txd,
              led_g,
              led_r,
              hex7_n,
@@ -45,6 +49,12 @@ module eco32(clk_in,
     output [7:0] vga_r;
     output [7:0] vga_g;
     output [7:0] vga_b;
+    // serial line 0
+    input rs232_0_rxd;
+    output rs232_0_txd;
+    // serial line 1
+    input rs232_1_rxd;
+    output rs232_1_txd;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -90,7 +100,17 @@ module eco32(clk_in,
   wire dsp_ack;				// dsp acknowledge
   // kbd
   // ser0
+  wire ser0_stb;			// ser 0 strobe
+  wire [7:0] ser0_dout;			// ser 0 data output
+  wire ser0_ack;			// ser 0 acknowledge
+  wire ser0_irq_r;			// ser 0 rcv interrupt request
+  wire ser0_irq_t;			// ser 0 xmt interrupt request
   // ser1
+  wire ser1_stb;			// ser 1 strobe
+  wire [7:0] ser1_dout;			// ser 1 data output
+  wire ser1_ack;			// ser 1 acknowledge
+  wire ser1_irq_r;			// ser 1 rcv interrupt request
+  wire ser1_irq_t;			// ser 1 xmt interrupt request
   // bio
 
   //--------------------------------------
@@ -156,6 +176,36 @@ module eco32(clk_in,
     .b(vga_b[7:0])
   );
 
+  ser ser_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(ser0_stb),
+    .we(bus_we),
+    .addr(bus_addr[3:2]),
+    .data_in(bus_dout[7:0]),
+    .data_out(ser0_dout[7:0]),
+    .ack(ser0_ack),
+    .irq_r(ser0_irq_r),
+    .irq_t(ser0_irq_t),
+    .rxd(rs232_0_rxd),
+    .txd(rs232_0_txd)
+  );
+
+  ser ser_2(
+    .clk(clk),
+    .rst(rst),
+    .stb(ser1_stb),
+    .we(bus_we),
+    .addr(bus_addr[3:2]),
+    .data_in(bus_dout[7:0]),
+    .data_out(ser1_dout[7:0]),
+    .ack(ser1_ack),
+    .irq_r(ser1_irq_r),
+    .irq_t(ser1_irq_t),
+    .rxd(rs232_1_rxd),
+    .txd(rs232_1_txd)
+  );
+
   //--------------------------------------
   // address decoder
   //--------------------------------------
@@ -185,12 +235,12 @@ module eco32(clk_in,
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h01) ? 1'b1 : 1'b0;
 //  assign kbd_stb =
 //    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02) ? 1'b1 : 1'b0;
-//  assign ser0_stb =
-//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
-//                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
-//  assign ser1_stb =
-//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
-//                     && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
+  assign ser0_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
+                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+  assign ser1_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
+                     && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
 //  assign dsk_stb =
 //    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h04) ? 1'b1 : 1'b0;
 //  assign fms_stb =
@@ -211,8 +261,8 @@ module eco32(clk_in,
 //    (tmr1_stb == 1'b1) ? tmr1_dout[31:0] :
     (dsp_stb == 1'b1)  ? { 16'h0000, dsp_dout[15:0] } :
 //    (kbd_stb == 1'b1)  ? { 24'h000000, kbd_dout[7:0] } :
-//    (ser0_stb == 1'b1) ? { 24'h000000, ser0_dout[7:0] } :
-//    (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
+    (ser0_stb == 1'b1) ? { 24'h000000, ser0_dout[7:0] } :
+    (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
 //    (dsk_stb == 1'b1)  ? dsk_dout[31:0] :
 //    (fms_stb == 1'b1)  ? fms_dout[31:0] :
 //    (bio_stb == 1'b1)  ? bio_dout[31:0] :
@@ -225,8 +275,8 @@ module eco32(clk_in,
 //    (tmr1_stb == 1'b1) ? tmr1_ack :
     (dsp_stb == 1'b1)  ? dsp_ack :
 //    (kbd_stb == 1'b1)  ? kbd_ack :
-//    (ser0_stb == 1'b1) ? ser0_ack :
-//    (ser1_stb == 1'b1) ? ser1_ack :
+    (ser0_stb == 1'b1) ? ser0_ack :
+    (ser1_stb == 1'b1) ? ser1_ack :
 //    (dsk_stb == 1'b1)  ? dsk_ack :
 //    (fms_stb == 1'b1)  ? fms_ack :
 //    (bio_stb == 1'b1)  ? bio_ack :
@@ -248,10 +298,10 @@ module eco32(clk_in,
   assign bus_irq[ 6] = 1'b0;
   assign bus_irq[ 5] = 1'b0;
   assign bus_irq[ 4] = 1'b0;
-  assign bus_irq[ 3] = 1'b0;
-  assign bus_irq[ 2] = 1'b0;
-  assign bus_irq[ 1] = 1'b0;
-  assign bus_irq[ 0] = 1'b0;
+  assign bus_irq[ 3] = ser1_irq_r;
+  assign bus_irq[ 2] = ser1_irq_t;
+  assign bus_irq[ 1] = ser0_irq_r;
+  assign bus_irq[ 0] = ser0_irq_t;
 
   //--------------------------------------
   // !!!!! TEST !!!!!

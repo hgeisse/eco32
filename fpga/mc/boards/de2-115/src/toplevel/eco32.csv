@@ -44,6 +44,18 @@ vga_b[1],Output,PIN_A10,8,B8_N0,3.3-V LVTTL,
 vga_b[0],Output,PIN_B10,8,B8_N0,3.3-V LVTTL,
 
 #
+# serial line 0
+#
+rs232_0_rxd,Input,PIN_G12,8,B8_N1,3.3-V LVTTL,
+rs232_0_txd,Output,PIN_G9,8,B8_N2,3.3-V LVTTL,
+
+#
+# serial line 1
+#
+rs232_1_rxd,Input,PIN_J13,8,B8_N0,3.3-V LVTTL,
+rs232_1_txd,Output,PIN_G14,8,B8_N0,3.3-V LVTTL,
+
+#
 # board I/O
 #
 led_g[8],Output,PIN_F17,7,B7_N2,2.5 V,
@@ -502,10 +514,6 @@ sw[0],Input,PIN_AB28,5,B5_N1,2.5 V,
 #TD_HS,Input,PIN_E5,8,B8_N2,3.3-V LVTTL,
 #TD_RESET_N,Output,PIN_G7,8,B8_N2,3.3-V LVTTL,
 #TD_VS,Input,PIN_E4,8,B8_N2,3.3-V LVTTL,
-#UART_CTS,Output,PIN_G14,8,B8_N0,3.3-V LVTTL,
-#UART_RTS,Input,PIN_J13,8,B8_N0,3.3-V LVTTL,
-#UART_RXD,Input,PIN_G12,8,B8_N1,3.3-V LVTTL,
-#UART_TXD,Output,PIN_G9,8,B8_N2,3.3-V LVTTL,
 #HSMC_CLKIN_N1,Unknown,PIN_J28,6,B6_N2,LVDS,
 #HSMC_CLKIN_N2,Unknown,PIN_Y28,5,B5_N0,LVDS,
 #HSMC_TX_D_N[0],Unknown,PIN_D28,6,B6_N0,LVDS,
