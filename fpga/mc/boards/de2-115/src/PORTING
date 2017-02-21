@@ -19,6 +19,8 @@ rom		dummy
 ser		finished
 tmr		finished
 
+flashprog	early design
+
 
 Software:
 
@@ -26,4 +28,6 @@ binutils	not yet started
 lcc		not yet started
 roms		not yet started
 monitor		not yet started
+
+flashprog	early design
 
