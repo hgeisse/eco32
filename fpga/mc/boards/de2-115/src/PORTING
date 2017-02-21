@@ -17,7 +17,7 @@ kbd		empty
 ram		dummy
 rom		dummy
 ser		finished
-tmr		empty
+tmr		finished
 
 
 Software:
