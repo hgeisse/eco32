@@ -9,6 +9,13 @@
 
 module eco32(clk_in,
              rst_in_n,
+             fl_ce_n,
+             fl_oe_n,
+             fl_we_n,
+             fl_wp_n,
+             fl_rst_n,
+             fl_addr,
+             fl_dq,
              vga_hsync,
              vga_vsync,
              vga_clk,
@@ -40,6 +47,14 @@ module eco32(clk_in,
     // clock and reset
     input clk_in;
     input rst_in_n;
+    // Flash ROM
+    output fl_ce_n;
+    output fl_oe_n;
+    output fl_we_n;
+    output fl_wp_n;
+    output fl_rst_n;
+    output [22:0] fl_addr;
+    input [7:0] fl_dq;
     // VGA display
     output vga_hsync;
     output vga_vsync;
@@ -162,7 +177,14 @@ module eco32(clk_in,
     .we(bus_we),
     .addr(bus_addr[22:2]),
     .data_out(rom_dout[31:0]),
-    .ack(rom_ack)
+    .ack(rom_ack),
+    .ce_n(fl_ce_n),
+    .oe_n(fl_oe_n),
+    .we_n(fl_we_n),
+    .wp_n(fl_wp_n),
+    .rst_n(fl_rst_n),
+    .a(fl_addr[22:0]),
+    .d(fl_dq[7:0])
   );
 
   tmr tmr_1(

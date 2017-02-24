@@ -15,11 +15,11 @@ dsp		finished
 fms		empty
 kbd		empty
 ram		dummy
-rom		dummy
+rom		finished
 ser		finished
 tmr		finished
 
-flashprog	early design
+flashprog	preliminary
 
 
 Software:
