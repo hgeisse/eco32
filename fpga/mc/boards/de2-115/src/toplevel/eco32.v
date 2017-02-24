@@ -244,13 +244,13 @@ module eco32(clk_in,
 
   // RAM: architectural limit  = 512 MB
   //      implementation limit = 128 MB
-  assign rom_stb =
+  assign ram_stb =
     (bus_stb == 1'b1 && bus_addr[31:29] == 3'b000
                      && bus_addr[28:27] == 2'b00) ? 1'b1 : 1'b0;
 
   // ROM: architectural limit  = 256 MB
   //      implementation limit =   8 MB
-  assign ram_stb =
+  assign rom_stb =
     (bus_stb == 1'b1 && bus_addr[31:28] == 4'b0010
                      && bus_addr[27:23] == 5'b00000) ? 1'b1 : 1'b0;
 
