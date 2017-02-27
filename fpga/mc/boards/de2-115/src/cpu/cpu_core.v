@@ -116,8 +116,7 @@ module cpu_core(clk, rst,
 
   // program counter
   assign pc_next = (pc_src == 3'b000) ? alu_res :
-//                   (pc_src == 3'b001) ? 32'hE0000000 :
-                   (pc_src == 3'b001) ? 32'hC0000000 :
+                   (pc_src == 3'b001) ? 32'hE0000000 :
                    (pc_src == 3'b010) ? 32'hE0000004 :
                    (pc_src == 3'b011) ? 32'hC0000004 :
                    (pc_src == 3'b100) ? 32'hE0000008 :
