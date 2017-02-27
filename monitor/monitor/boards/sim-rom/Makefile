@@ -1,11 +1,11 @@
 #
-# Makefile for ECO32 ROM monitor
+# Makefile for ECO32 ROM monitor, running from ROM
 #
 
 BUILD = ../../../../build
 
 SRC = start.s \
-      ../../common/main.c \
+      main.c \
       ../../common/command.c \
       ../../common/instr.c \
       ../../common/asm.c \
@@ -29,17 +29,16 @@ SRC = start.s \
 all:		monitor.bin
 
 install:	monitor.bin
-		mkdir -p $(BUILD)/monitor/simulator
-		cp monitor.bin $(BUILD)/monitor/simulator
+		mkdir -p $(BUILD)/monitor/sim-rom
+		cp monitor.bin $(BUILD)/monitor/sim-rom
 
 monitor.bin:	$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rc -Wl0xC0000000 \
+		$(BUILD)/bin/lcc -A -Wo-rom -I../../common \
+		  -Wl-rc -Wl0xE0000000 \
 		  -Wl-rd -Wl0xC000C000 \
 		  -Wl-m -Wlmonitor.map \
-		  -o prelim.bin $(SRC)
-		cat ../../copy/copy.bin prelim.bin >monitor.bin
-		rm prelim.bin
+		  -o monitor.bin $(SRC)
 
 clean:
 		rm -f *~
-		rm -f prelim.bin monitor.map monitor.bin
+		rm -f monitor.map monitor.bin
