@@ -21,11 +21,14 @@ clean:
 		mv build/eco32.qsf .
 		mv build/eco32.qws .
 		mv build/eco32.srf .
-		#mv build/output_files .
+		mv build/output_files/eco32.sof .
+		mv build/output_files/eco32.cdf .
 		rm -rf build/*
+		mkdir build/output_files
 		mv eco32.qpf build
 		mv eco32.qsf build
 		mv eco32.qws build
 		mv eco32.srf build
-		#mv output_files build
+		mv eco32.sof build/output_files
+		mv eco32.cdf build/output_files
 		rm -f *~

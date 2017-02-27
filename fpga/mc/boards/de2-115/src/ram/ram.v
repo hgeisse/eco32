@@ -22,12 +22,12 @@ module ram(clk, rst,
     output ack;
 
   wire en;
-  wire [9:0] ad;
-  reg [31:0] ram[0:1023];
+  wire [13:0] ad;
+  reg [31:0] ram[0:16383];
   reg state;
 
-  assign en = stb & ~(|addr[26:12]);
-  assign ad[9:0] = addr[11:2];
+  assign en = stb & ~(|addr[26:16]);
+  assign ad[13:0] = addr[15:2];
 
   always @(posedge clk) begin
     if (en) begin
@@ -36,10 +36,6 @@ module ram(clk, rst,
       end
       data_out <= ram[ad];
     end
-  end
-
-  initial begin
-    $readmemh("ram.init", ram);
   end
 
   always @(posedge clk) begin
