@@ -1,11 +1,11 @@
 #
-# Makefile for ECO32 ROM monitor, running from RAM
+# Makefile for ECO32 ROM monitor
 #
 
 BUILD = ../../../../build
 
 SRC = start.s \
-      main.c \
+      ../../common/main.c \
       ../../common/command.c \
       ../../common/instr.c \
       ../../common/asm.c \
@@ -29,11 +29,11 @@ SRC = start.s \
 all:		monitor.bin
 
 install:	monitor.bin
-		mkdir -p $(BUILD)/monitor/sim-ram
-		cp monitor.bin $(BUILD)/monitor/sim-ram
+		mkdir -p $(BUILD)/monitor/simulator
+		cp monitor.bin $(BUILD)/monitor/simulator
 
 monitor.bin:	$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-rom -I../../common \
+		$(BUILD)/bin/lcc -A -Wo-rom \
 		  -Wl-rc -Wl0xC0000000 \
 		  -Wl-rd -Wl0xC000C000 \
 		  -Wl-m -Wlmonitor.map \
