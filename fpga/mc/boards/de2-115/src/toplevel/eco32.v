@@ -135,6 +135,9 @@ module eco32(clk_in,
   wire ser1_irq_r;			// ser 1 rcv interrupt request
   wire ser1_irq_t;			// ser 1 xmt interrupt request
   // bio
+  wire bio_stb;				// bio strobe
+  wire [31:0] bio_dout;			// bio data output
+  wire bio_ack;				// bio acknowledge
 
   //--------------------------------------
   // module instances
@@ -260,6 +263,31 @@ module eco32(clk_in,
     .txd(rs232_1_txd)
   );
 
+  bio bio_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(bio_stb),
+    .we(bus_we),
+    .addr(bus_addr[5:2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(bio_dout[31:0]),
+    .ack(bio_ack),
+    .led_g(led_g[8:0]),
+    .led_r(led_r[17:0]),
+    .hex7_n(hex7_n[6:0]),
+    .hex6_n(hex6_n[6:0]),
+    .hex5_n(hex5_n[6:0]),
+    .hex4_n(hex4_n[6:0]),
+    .hex3_n(hex3_n[6:0]),
+    .hex2_n(hex2_n[6:0]),
+    .hex1_n(hex1_n[6:0]),
+    .hex0_n(hex0_n[6:0]),
+    .key3_n(key3_n),
+    .key2_n(key2_n),
+    .key1_n(key1_n),
+    .sw(sw[17:0])
+  );
+
   //--------------------------------------
   // address decoder
   //--------------------------------------
@@ -300,9 +328,9 @@ module eco32(clk_in,
 //  assign fms_stb =
 //    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h05
 //                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
-//  assign bio_stb =
-//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h10
-//                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+  assign bio_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h10
+                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
 
   //--------------------------------------
   // data and acknowledge multiplexers
@@ -319,7 +347,7 @@ module eco32(clk_in,
     (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
 //    (dsk_stb == 1'b1)  ? dsk_dout[31:0] :
 //    (fms_stb == 1'b1)  ? fms_dout[31:0] :
-//    (bio_stb == 1'b1)  ? bio_dout[31:0] :
+    (bio_stb == 1'b1)  ? bio_dout[31:0] :
     32'h00000000;
 
   assign bus_ack =
@@ -333,7 +361,7 @@ module eco32(clk_in,
     (ser1_stb == 1'b1) ? ser1_ack :
 //    (dsk_stb == 1'b1)  ? dsk_ack :
 //    (fms_stb == 1'b1)  ? fms_ack :
-//    (bio_stb == 1'b1)  ? bio_ack :
+    (bio_stb == 1'b1)  ? bio_ack :
     1'b0;
 
   //--------------------------------------
@@ -356,55 +384,5 @@ module eco32(clk_in,
   assign bus_irq[ 2] = ser1_irq_t;
   assign bus_irq[ 1] = ser0_irq_r;
   assign bus_irq[ 0] = ser0_irq_t;
-
-  //--------------------------------------
-  // !!!!! TEST !!!!!
-  //--------------------------------------
-
-  reg [24:0] counter;
-
-  always @(posedge clk) begin
-    if (rst) begin
-      counter <= 25'h0;
-    end else begin
-      counter <= counter + 25'h1;
-    end
-  end
-
-  assign led_g[8] = key3_n;
-  assign led_g[7] = counter[23];
-  assign led_g[6] = counter[22];
-  assign led_g[5] = counter[21];
-  assign led_g[4] = counter[20];
-  assign led_g[3] = counter[19];
-  assign led_g[2] = counter[18];
-  assign led_g[1] = key2_n;
-  assign led_g[0] = key1_n;
-  assign led_r[17] = sw[17] ? 1'b0 : counter[24];
-  assign led_r[16] = sw[16] ? 1'b0 : counter[23];
-  assign led_r[15] = sw[15] ? 1'b0 : counter[22];
-  assign led_r[14] = sw[14] ? 1'b0 : counter[21];
-  assign led_r[13] = sw[13] ? 1'b0 : counter[20];
-  assign led_r[12] = sw[12] ? 1'b0 : counter[19];
-  assign led_r[11] = sw[11] ? 1'b0 : counter[18];
-  assign led_r[10] = sw[10] ? 1'b0 : counter[17];
-  assign led_r[9] = sw[9] ? 1'b0 : counter[16];
-  assign led_r[8] = sw[8] ? 1'b0 : counter[15];
-  assign led_r[7] = sw[7] ? 1'b0 : counter[14];
-  assign led_r[6] = sw[6] ? 1'b0 : counter[13];
-  assign led_r[5] = sw[5] ? 1'b0 : counter[12];
-  assign led_r[4] = sw[4] ? 1'b0 : counter[11];
-  assign led_r[3] = sw[3];
-  assign led_r[2] = sw[2];
-  assign led_r[1] = sw[1];
-  assign led_r[0] = sw[0];
-  assign hex7_n[6:0] = (sw[0] == 1'b0) ? 7'b0000000 : 7'b1111111;
-  assign hex6_n[6:0] = counter[22:16];
-  assign hex5_n[6:0] = ~counter[24:18];
-  assign hex4_n[6:0] = key3_n ? 7'b1111111 : counter[24:18];
-  assign hex3_n[6:0] = ~counter[22:16];
-  assign hex2_n[6:0] = key2_n ? 7'b1111111 : counter[22:16];
-  assign hex1_n[6:0] = ~counter[24:18];
-  assign hex0_n[6:0] = key1_n ? 7'b1111111 : counter[24:18];
 
 endmodule

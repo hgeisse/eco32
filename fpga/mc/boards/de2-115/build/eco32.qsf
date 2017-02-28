@@ -408,6 +408,7 @@ set_location_assignment PIN_AF10 -to fl_dq[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to fl_dq[1]
 set_location_assignment PIN_AH8 -to fl_dq[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to fl_dq[0]
+set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
 set_global_assignment -name VERILOG_FILE ../src/tmr/tmr.v
 set_global_assignment -name VERILOG_FILE ../src/ser/xmt.v
 set_global_assignment -name VERILOG_FILE ../src/ser/rcv.v

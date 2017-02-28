@@ -8,7 +8,7 @@ Hardware:
 toplevel	preliminary
 clk_rst		preliminary
 cpu		finished
-bio		empty
+bio		finished
 dac		empty
 dsk		empty
 dsp		finished
