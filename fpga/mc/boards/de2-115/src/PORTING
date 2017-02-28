@@ -24,9 +24,9 @@ flashprog	finished
 
 Software:
 
-binutils	not yet started
-lcc		not yet started
-roms		not yet started
+binutils	checked
+lcc		checked
+roms		checked
 monitor		not yet started
 
 flashprog	finished
