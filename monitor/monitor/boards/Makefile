@@ -4,7 +4,7 @@
 
 BUILD = ../../../build
 
-DIRS = simulator xsa-xst-3 s3e-500
+DIRS = simulator xsa-xst-3 s3e-500 de2-115
 
 .PHONY:		all install clean
 

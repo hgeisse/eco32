@@ -27,7 +27,7 @@ Software:
 binutils	checked
 lcc		checked
 roms		checked
-monitor		not yet started
+monitor		finished
 
 flashprog	finished
 
