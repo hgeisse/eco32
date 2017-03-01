@@ -8,16 +8,16 @@ Hardware:
 toplevel	preliminary
 clk_rst		preliminary
 cpu		finished
-bio		finished
-dac		empty
-dsk		empty
-dsp		finished
-fms		empty
-kbd		empty
 ram		dummy
 rom		finished
-ser		finished
 tmr		finished
+dsp		finished
+kbd		finished
+ser		finished
+dsk		empty
+fms		empty
+dac		empty
+bio		finished
 
 flashprog	finished
 

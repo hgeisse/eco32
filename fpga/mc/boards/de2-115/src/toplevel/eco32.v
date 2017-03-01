@@ -24,6 +24,8 @@ module eco32(clk_in,
              vga_r,
              vga_g,
              vga_b,
+             ps2_clk,
+             ps2_data,
              rs232_0_rxd,
              rs232_0_txd,
              rs232_1_rxd,
@@ -64,6 +66,9 @@ module eco32(clk_in,
     output [7:0] vga_r;
     output [7:0] vga_g;
     output [7:0] vga_b;
+    // keyboard
+    input ps2_clk;
+    input ps2_data;
     // serial line 0
     input rs232_0_rxd;
     output rs232_0_txd;
@@ -122,6 +127,10 @@ module eco32(clk_in,
   wire [15:0] dsp_dout;			// dsp data output
   wire dsp_ack;				// dsp acknowledge
   // kbd
+  wire kbd_stb;				// kbd strobe
+  wire [7:0] kbd_dout;			// kbd data output
+  wire kbd_ack;				// kbd acknowledge
+  wire kbd_irq;				// kbd interrupt request
   // ser0
   wire ser0_stb;			// ser 0 strobe
   wire [7:0] ser0_dout;			// ser 0 data output
@@ -233,6 +242,20 @@ module eco32(clk_in,
     .b(vga_b[7:0])
   );
 
+  kbd kbd_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(kbd_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[7:0]),
+    .data_out(kbd_dout[7:0]),
+    .ack(kbd_ack),
+    .irq(kbd_irq),
+    .ps2_clk(ps2_clk),
+    .ps2_data(ps2_data)
+  );
+
   ser ser_1(
     .clk(clk),
     .rst(rst),
@@ -315,8 +338,8 @@ module eco32(clk_in,
                      && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
   assign dsp_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h01) ? 1'b1 : 1'b0;
-//  assign kbd_stb =
-//    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02) ? 1'b1 : 1'b0;
+  assign kbd_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02) ? 1'b1 : 1'b0;
   assign ser0_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
                      && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
@@ -342,7 +365,7 @@ module eco32(clk_in,
     (tmr0_stb == 1'b1) ? tmr0_dout[31:0] :
     (tmr1_stb == 1'b1) ? tmr1_dout[31:0] :
     (dsp_stb == 1'b1)  ? { 16'h0000, dsp_dout[15:0] } :
-//    (kbd_stb == 1'b1)  ? { 24'h000000, kbd_dout[7:0] } :
+    (kbd_stb == 1'b1)  ? { 24'h000000, kbd_dout[7:0] } :
     (ser0_stb == 1'b1) ? { 24'h000000, ser0_dout[7:0] } :
     (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
 //    (dsk_stb == 1'b1)  ? dsk_dout[31:0] :
@@ -356,7 +379,7 @@ module eco32(clk_in,
     (tmr0_stb == 1'b1) ? tmr0_ack :
     (tmr1_stb == 1'b1) ? tmr1_ack :
     (dsp_stb == 1'b1)  ? dsp_ack :
-//    (kbd_stb == 1'b1)  ? kbd_ack :
+    (kbd_stb == 1'b1)  ? kbd_ack :
     (ser0_stb == 1'b1) ? ser0_ack :
     (ser1_stb == 1'b1) ? ser1_ack :
 //    (dsk_stb == 1'b1)  ? dsk_ack :
@@ -379,7 +402,7 @@ module eco32(clk_in,
   assign bus_irq[ 7] = 1'b0;
   assign bus_irq[ 6] = 1'b0;
   assign bus_irq[ 5] = 1'b0;
-  assign bus_irq[ 4] = 1'b0;
+  assign bus_irq[ 4] = kbd_irq;
   assign bus_irq[ 3] = ser1_irq_r;
   assign bus_irq[ 2] = ser1_irq_t;
   assign bus_irq[ 1] = ser0_irq_r;
