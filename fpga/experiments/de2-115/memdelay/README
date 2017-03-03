@@ -1,0 +1,3 @@
+This circuit implements a RAM simulation with adjustable
+read/write delays. The test FSM allows verifying both
+access times.
