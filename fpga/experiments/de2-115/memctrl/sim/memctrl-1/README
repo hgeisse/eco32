@@ -1,0 +1,35 @@
+Structure
+---------
+
+A top-level module (memtest.v) creates instances of a memory
+test circuit (ramtest/ramtest.v) and a memory controller
+(ramctrl/ramctrl.v), which in turn builds an internal model of
+the external SDRAM (ramctrl/sdr.v, ramctrl/sdr_parameters.vh).
+
+
+Intended Use
+------------
+
+The memory controller offers a complete simulation of the memory
+subsystem, including a simulation model of a 512 Mbit SDRAM chip
+(provided by Micron Technology). The controller can also be
+synthesized for use on a real FPGA (but the PLL for clock phase
+shifting required in this case is not included here).
+
+
+Front-End (interface to caches)
+-------------------------------
+
+data read/write:
+2^27 * 32 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to SDRAMs)
+------------------------------
+
+This is the standard SDRAM interface for 512 Mbit devices,
+organized as 32 M x 16 bit (in 4 banks, 8192 rows each).
+4 banks * 8192 rows * 1024 columns * 16 bit = 512 Mbit = 64 MB
+The data pins of two of these memory chips are concatenated
+to provide a total memory of 32 M x 32 bit = 128 MB.
