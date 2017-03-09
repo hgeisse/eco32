@@ -72,7 +72,7 @@ module ramtest(clk, rst,
           if (data_timer == `DATA_PERIOD - 1) begin
             data_timer <= 0;
           end else begin
-            data_timer <= data_timer + 1;
+            data_timer <= data_timer + 5'd1;
           end
           if (data_timer == `DATA_PHASE) begin
             data_stb <= 1;
@@ -82,7 +82,7 @@ module ramtest(clk, rst,
           if (data_ack) begin
             data_stb <= 0;
             data_we <= 0;
-            data_counter <= data_counter + 1;
+            data_counter <= data_counter + 10'd1;
 `ifdef SIMULATE
 `ifdef VERBOSE
             if (data_we == 1) begin
