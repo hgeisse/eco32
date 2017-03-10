@@ -2,7 +2,7 @@
 # Makefile for memory speedometer on XESS XSA-XST-3 board
 #
 
-BUILD = ../../../build
+BUILD = ../../../../build
 
 .PHONY:		all install clean
 
