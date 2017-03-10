@@ -195,7 +195,7 @@ module ramctrl(clk_ok, clk,
       data_ld <= 0;
       ram_cmd <= `CMD_NOP;
       ram_dqm <= 1;
-      count <= `T_INIT0 - 1;
+      count <= `T_INIT0 - 14'd1;
       state <= `ST_INIT0;
       refrst <= 0;
     end else begin
@@ -204,7 +204,7 @@ module ramctrl(clk_ok, clk,
         // if count is loaded with N on a state transition, the
         // new state will last for (N+1)/fclk cycles before (!)
         // any action specified in the new state will take place
-        count <= count - 1;
+        count <= count - 14'd1;
       end else begin
         case (state)
           //----------------------------
@@ -215,7 +215,7 @@ module ramctrl(clk_ok, clk,
               sdram_cke <= 1;
               sdram_cs_n <= 0;
               ram_cmd <= `CMD_NOP;
-              count <= `T_INIT1 - 1;
+              count <= `T_INIT1 - 14'd1;
               state <= `ST_INIT1;
             end
           `ST_INIT1:
@@ -228,7 +228,7 @@ module ramctrl(clk_ok, clk,
           `ST_INIT2:
             begin
               ram_cmd <= `CMD_NOP;
-              count <= `T_RP - 2;
+              count <= `T_RP - 14'd2;
               state <= `ST_INIT3;
             end
           `ST_INIT3:
@@ -239,7 +239,7 @@ module ramctrl(clk_ok, clk,
           `ST_INIT4:
             begin
               ram_cmd <= `CMD_NOP;
-              count <= `T_RFC - 2;
+              count <= `T_RFC - 14'd2;
               state <= `ST_INIT5;
             end
           `ST_INIT5:
@@ -250,7 +250,7 @@ module ramctrl(clk_ok, clk,
           `ST_INIT6:
             begin
               ram_cmd <= `CMD_NOP;
-              count <= `T_RFC - 2;
+              count <= `T_RFC - 14'd2;
               state <= `ST_INIT7;
             end
           `ST_INIT7:
@@ -264,7 +264,7 @@ module ramctrl(clk_ok, clk,
             begin
               ram_cmd <= `CMD_NOP;
               ram_dqm <= 0;
-              count <= `T_MRD - 2;
+              count <= `T_MRD - 14'd2;
               state <= `ST_IDLE;
             end
           //----------------------------
@@ -312,7 +312,7 @@ module ramctrl(clk_ok, clk,
           `ST_RFRSH:
             begin
               ram_cmd <= `CMD_NOP;
-              count <= `T_RFC - 2;
+              count <= `T_RFC - 14'd2;
               state <= `ST_IDLE;
               refrst <= 0;
             end
@@ -322,7 +322,7 @@ module ramctrl(clk_ok, clk,
           `ST_WRDATA0:
             begin
               ram_cmd <= `CMD_NOP;
-              count <= `T_RCD - 2;
+              count <= `T_RCD - 14'd2;
               state <= `ST_WRDATA1;
             end
           `ST_WRDATA1:
@@ -353,7 +353,7 @@ module ramctrl(clk_ok, clk,
           `ST_RDDATA0:
             begin
               ram_cmd <= `CMD_NOP;
-              count <= `T_RCD - 2;
+              count <= `T_RCD - 14'd2;
               state <= `ST_RDDATA1;
             end
           `ST_RDDATA1:
@@ -415,7 +415,7 @@ module ramctrl(clk_ok, clk,
               data_ld <= 0;
               ram_cmd <= `CMD_NOP;
               ram_dqm <= 1;
-              count <= `T_INIT0 - 1;
+              count <= `T_INIT0 - 14'd1;
               state <= `ST_INIT0;
               refrst <= 0;
             end
@@ -436,7 +436,7 @@ module ramctrl(clk_ok, clk,
         refcnt <= `REFCNT;
         refflg <= 1;
       end else begin
-        refcnt <= refcnt - 1;
+        refcnt <= refcnt - 10'd1;
         if (refrst) begin
           refflg <= 0;
         end
