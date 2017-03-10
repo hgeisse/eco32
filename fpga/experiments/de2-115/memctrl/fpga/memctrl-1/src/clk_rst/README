@@ -1,0 +1,36 @@
+In order to determine the correct phase shift for the SDRAM clock,
+I synthesized the test circuit with different phase shift settings
+and observed its behavior (10 times for every setting). The first
+thing I noted: either the test succeeded or it failed every time
+I tried. So it seems that the phase shift never assumed the value
+that would be necessary to let clock and data edges coincide.
+
+First, I did a coarse measurement in steps of 45 degrees (which
+at the given clock rate of 100 MHz equals 10 ns / 8 = 1250 ps):
+
+ delta phi (ps)      result
+----------------------------
+       0             ok
+    1250             ok
+    2500             failed
+    3750             failed
+    5000             ok
+    6250             ok
+    7500             ok
+    8750             ok
+
+Next, I tried to narrow down the boundaries between success
+and failure:
+
+1250:  ok
+1450:  failed
+4400:  failed
+4500:  ok
+
+Even more precise measurements could not be performed due to
+the finite resolution of the phase shift control of the PLL.
+
+Conclusion: The "forbidden range" for the phase shift is
+1350 ps through 4450 ps, with a mean value of 2900 ps.
+Therefore the recommended phase shift is 10000 ps - 2900 ps,
+which is 7100 ps.
