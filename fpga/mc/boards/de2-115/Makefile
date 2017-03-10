@@ -25,8 +25,12 @@ clean:
 		if [ -f build/eco32.srf ] ; then \
 		  mv build/eco32.srf . ; \
 		fi
-		mv build/output_files/eco32.sof .
-		mv build/output_files/eco32.cdf .
+		if [ -f build/output_files/eco32.sof ] ; then \
+		  mv build/output_files/eco32.sof . ; \
+		fi
+		if [ -f build/output_files/eco32.cdf ] ; then \
+		  mv build/output_files/eco32.cdf . ; \
+		fi
 		rm -rf build/*
 		mkdir build/output_files
 		mv eco32.qpf build
@@ -37,6 +41,10 @@ clean:
 		if [ -f eco32.srf ] ; then \
 		  mv eco32.srf build ; \
 		fi
-		mv eco32.sof build/output_files
-		mv eco32.cdf build/output_files
+		if [ -f eco32.sof ] ; then \
+		  mv eco32.sof build/output_files ; \
+		fi
+		if [ -f eco32.cdf ] ; then \
+		  mv eco32.cdf build/output_files ; \
+		fi
 		rm -f *~
