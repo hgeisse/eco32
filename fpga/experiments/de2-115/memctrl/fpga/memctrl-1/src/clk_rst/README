@@ -32,5 +32,5 @@ the finite resolution of the phase shift control of the PLL.
 
 Conclusion: The "forbidden range" for the phase shift is
 1350 ps through 4450 ps, with a mean value of 2900 ps.
-Therefore the recommended phase shift is 10000 ps - 2900 ps,
-which is 7100 ps.
+Therefore the recommended phase shift is 2900 ps + 10000/2 ps,
+which is 7900 ps.
