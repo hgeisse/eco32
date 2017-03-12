@@ -6,7 +6,7 @@ Porting Status
 Hardware:
 
 toplevel	preliminary
-clk_rst		preliminary
+clk_rst		finished
 cpu		finished
 ram		dummy
 rom		finished

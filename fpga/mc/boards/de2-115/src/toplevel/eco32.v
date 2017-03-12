@@ -155,7 +155,10 @@ module eco32(clk_in,
   clk_rst clk_rst_1(
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
-    .clk(clk),
+    .clk_ok(),
+    .clk_100_ps(),
+    .clk_100(),
+    .clk_50(clk),
     .rst(rst)
   );
 
