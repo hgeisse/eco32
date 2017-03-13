@@ -11,7 +11,8 @@
 #define K		1024
 #define M		(K * K)
 #define MEM_ADDR	((void *) (0xC0000000 + 0x10000 + 0x3000))
-#define MEM_SIZE	(32 * M - (0x10000 + 0x3000))
+/* #define MEM_SIZE	(32 * M - (0x10000 + 0x3000)) */
+#define MEM_SIZE	(128 * M - (0x10000 + 0x3000))
 #define PASSES		3
 
 
