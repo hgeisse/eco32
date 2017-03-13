@@ -387,6 +387,7 @@ module ramctrl(clk_ok, clk,
             begin
               data_ack <= 0;
               ram_cmd <= `CMD_NOP;
+              count <= 2;
               state <= `ST_IDLE;
             end
           //----------------------------
