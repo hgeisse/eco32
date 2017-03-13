@@ -9,6 +9,16 @@
 
 module eco32(clk_in,
              rst_in_n,
+             sdram_clk,
+             sdram_cke,
+             sdram_cs_n,
+             sdram_ras_n,
+             sdram_cas_n,
+             sdram_we_n,
+             sdram_ba,
+             sdram_a,
+             sdram_dqm,
+             sdram_dq,
              fl_ce_n,
              fl_oe_n,
              fl_we_n,
@@ -49,6 +59,17 @@ module eco32(clk_in,
     // clock and reset
     input clk_in;
     input rst_in_n;
+    // SDRAM
+    output sdram_clk;
+    output sdram_cke;
+    output sdram_cs_n;
+    output sdram_ras_n;
+    output sdram_cas_n;
+    output sdram_we_n;
+    output [1:0] sdram_ba;
+    output [12:0] sdram_a;
+    output [3:0] sdram_dqm;
+    inout [31:0] sdram_dq;
     // Flash ROM
     output fl_ce_n;
     output fl_oe_n;
@@ -92,7 +113,9 @@ module eco32(clk_in,
     input [17:0] sw;
 
   // clk_rst
-  wire clk;				// system clock
+  wire clk_ok;				// system clocks stable
+  wire clk2;				// system clock, 100 MHz
+  wire clk;				// system clock, 50 MHz
   wire rst;				// system reset
   // cpu
   wire bus_stb;				// bus strobe
@@ -155,9 +178,9 @@ module eco32(clk_in,
   clk_rst clk_rst_1(
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
-    .clk_ok(),
-    .clk_100_ps(),
-    .clk_100(),
+    .clk_ok(clk_ok),
+    .clk_100_ps(sdram_clk),
+    .clk_100(clk2),
     .clk_50(clk),
     .rst(rst)
   );
@@ -175,6 +198,8 @@ module eco32(clk_in,
   );
 
   ram ram_1(
+    .clk_ok(clk_ok),
+    .clk2(clk2),
     .clk(clk),
     .rst(rst),
     .stb(ram_stb),
@@ -182,7 +207,16 @@ module eco32(clk_in,
     .addr(bus_addr[26:2]),
     .data_in(bus_dout[31:0]),
     .data_out(ram_dout[31:0]),
-    .ack(ram_ack)
+    .ack(ram_ack),
+    .sdram_cke(sdram_cke),
+    .sdram_cs_n(sdram_cs_n),
+    .sdram_ras_n(sdram_ras_n),
+    .sdram_cas_n(sdram_cas_n),
+    .sdram_we_n(sdram_we_n),
+    .sdram_ba(sdram_ba[1:0]),
+    .sdram_a(sdram_a[12:0]),
+    .sdram_dqm(sdram_dqm[3:0]),
+    .sdram_dq(sdram_dq[31:0])
   );
 
   rom rom_1(

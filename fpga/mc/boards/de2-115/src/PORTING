@@ -8,7 +8,7 @@ Hardware:
 toplevel	preliminary
 clk_rst		finished
 cpu		finished
-ram		dummy
+ram		finished
 rom		finished
 tmr		finished
 dsp		finished
