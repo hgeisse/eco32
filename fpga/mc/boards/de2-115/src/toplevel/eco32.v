@@ -40,6 +40,10 @@ module eco32(clk_in,
              rs232_0_txd,
              rs232_1_rxd,
              rs232_1_txd,
+             sdcard_clk,
+             sdcard_cmd,
+             sdcard_dat,
+             sdcard_wp,
              led_g,
              led_r,
              hex7_n,
@@ -96,6 +100,11 @@ module eco32(clk_in,
     // serial line 1
     input rs232_1_rxd;
     output rs232_1_txd;
+    // SD card
+    output sdcard_clk;
+    inout sdcard_cmd;
+    inout [3:0] sdcard_dat;
+    input sdcard_wp;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -166,6 +175,10 @@ module eco32(clk_in,
   wire ser1_ack;			// ser 1 acknowledge
   wire ser1_irq_r;			// ser 1 rcv interrupt request
   wire ser1_irq_t;			// ser 1 xmt interrupt request
+  // sdc
+  wire sdc_stb;				// sdc strobe
+  wire [31:0] sdc_dout;			// sdc data output
+  wire sdc_ack;				// sdc acknowledge
   // bio
   wire bio_stb;				// bio strobe
   wire [31:0] bio_dout;			// bio data output
@@ -323,6 +336,20 @@ module eco32(clk_in,
     .txd(rs232_1_txd)
   );
 
+  sdc sdc_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(sdc_stb),
+    .we(bus_we),
+    .data_in(bus_dout[31:0]),
+    .data_out(sdc_dout[31:0]),
+    .ack(sdc_ack),
+    .sdcard_clk(sdcard_clk),
+    .sdcard_cmd(sdcard_cmd),
+    .sdcard_dat(sdcard_dat[3:0]),
+    .sdcard_wp(sdcard_wp)
+  );
+
   bio bio_1(
     .clk(clk),
     .rst(rst),
@@ -388,6 +415,9 @@ module eco32(clk_in,
 //  assign fms_stb =
 //    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h05
 //                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+  assign sdc_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h06
+                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
   assign bio_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h10
                      && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
@@ -407,6 +437,7 @@ module eco32(clk_in,
     (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
 //    (dsk_stb == 1'b1)  ? dsk_dout[31:0] :
 //    (fms_stb == 1'b1)  ? fms_dout[31:0] :
+    (sdc_stb == 1'b1)  ? sdc_dout[31:0] :
     (bio_stb == 1'b1)  ? bio_dout[31:0] :
     32'h00000000;
 
@@ -421,6 +452,7 @@ module eco32(clk_in,
     (ser1_stb == 1'b1) ? ser1_ack :
 //    (dsk_stb == 1'b1)  ? dsk_ack :
 //    (fms_stb == 1'b1)  ? fms_ack :
+    (sdc_stb == 1'b1)  ? sdc_ack :
     (bio_stb == 1'b1)  ? bio_ack :
     1'b0;
 

@@ -164,6 +164,17 @@ rs232_1_rxd,Input,PIN_J13,8,B8_N0,3.3-V LVTTL,
 rs232_1_txd,Output,PIN_G14,8,B8_N0,3.3-V LVTTL,
 
 #
+# SD card
+#
+sdcard_clk,Output,PIN_AE13,3,B3_N0,3.3-V LVTTL,
+sdcard_cmd,Bidir,PIN_AD14,3,B3_N0,3.3-V LVTTL,
+sdcard_dat[3],Bidir,PIN_AC14,3,B3_N0,3.3-V LVTTL,
+sdcard_dat[2],Bidir,PIN_AB14,3,B3_N0,3.3-V LVTTL,
+sdcard_dat[1],Bidir,PIN_AF13,3,B3_N0,3.3-V LVTTL,
+sdcard_dat[0],Bidir,PIN_AE14,3,B3_N0,3.3-V LVTTL,
+sdcard_wp,Input,PIN_AF14,3,B3_N0,3.3-V LVTTL,
+
+#
 # board I/O
 #
 led_g[8],Output,PIN_F17,7,B7_N2,2.5 V,
@@ -464,13 +475,6 @@ sw[0],Input,PIN_AB28,5,B5_N1,2.5 V,
 #OTG_WR_N,Output,PIN_A4,8,B8_N2,3.3-V LVTTL,
 #PS2_CLK2,Bidir,PIN_G5,1,B1_N0,3.3-V LVTTL,
 #PS2_DAT2,Bidir,PIN_F5,1,B1_N0,3.3-V LVTTL,
-#SD_CLK,Output,PIN_AE13,3,B3_N0,3.3-V LVTTL,
-#SD_CMD,Bidir,PIN_AD14,3,B3_N0,3.3-V LVTTL,
-#SD_DAT[3],Bidir,PIN_AC14,3,B3_N0,3.3-V LVTTL,
-#SD_DAT[2],Bidir,PIN_AB14,3,B3_N0,3.3-V LVTTL,
-#SD_DAT[1],Bidir,PIN_AF13,3,B3_N0,3.3-V LVTTL,
-#SD_DAT[0],Bidir,PIN_AE14,3,B3_N0,3.3-V LVTTL,
-#SD_WP_N,Input,PIN_AF14,3,B3_N0,3.3-V LVTTL,
 #SMA_CLKIN,Input,PIN_AH14,3,B3_N0,3.3-V LVTTL,
 #SMA_CLKOUT,Output,PIN_AE23,4,B4_N0,3.3-V LVTTL,
 #SRAM_ADDR[19],Output,PIN_T8,2,B2_N1,3.3-V LVTTL,

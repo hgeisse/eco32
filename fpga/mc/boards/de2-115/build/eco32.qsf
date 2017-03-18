@@ -526,6 +526,21 @@ set_location_assignment PIN_W2 -to sdram_dq[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdram_dq[1]
 set_location_assignment PIN_W3 -to sdram_dq[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdram_dq[0]
+set_location_assignment PIN_AE13 -to sdcard_clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_clk
+set_location_assignment PIN_AD14 -to sdcard_cmd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_cmd
+set_location_assignment PIN_AC14 -to sdcard_dat[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_dat[3]
+set_location_assignment PIN_AB14 -to sdcard_dat[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_dat[2]
+set_location_assignment PIN_AF13 -to sdcard_dat[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_dat[1]
+set_location_assignment PIN_AE14 -to sdcard_dat[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_dat[0]
+set_location_assignment PIN_AF14 -to sdcard_wp
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_wp
+set_global_assignment -name VERILOG_FILE ../src/sdc/sdc.v
 set_global_assignment -name VERILOG_FILE ../src/kbd/keyboard.v
 set_global_assignment -name VERILOG_FILE ../src/kbd/kbd.v
 set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
