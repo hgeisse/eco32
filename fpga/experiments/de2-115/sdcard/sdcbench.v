@@ -20,7 +20,7 @@ module sdcbench;
 
   wire stb;
   wire we;
-  wire addr;
+  wire [3:2] addr;
   wire [31:0] test_out;
   wire [31:0] test_in;
   wire ack;
@@ -29,7 +29,7 @@ module sdcbench;
   wire sclk;
   wire mosi;
   wire miso;
-  wire wp;
+  wire wr_protect;
 
   initial begin
     #0       $dumpfile("dump.vcd");
@@ -53,7 +53,7 @@ module sdcbench;
     .rst(rst),
     .stb(stb),
     .we(we),
-    .addr(addr),
+    .addr(addr[3:2]),
     .dout(test_out[31:0]),
     .din(test_in[31:0]),
     .ack(ack)
@@ -64,7 +64,7 @@ module sdcbench;
     .rst(rst),
     .stb(stb),
     .we(we),
-    .addr(addr),
+    .addr(addr[3:2]),
     .data_in(test_out[31:0]),
     .data_out(test_in[31:0]),
     .ack(ack),
@@ -72,7 +72,7 @@ module sdcbench;
     .sclk(sclk),
     .mosi(mosi),
     .miso(miso),
-    .wp(wp)
+    .wr_protect(wr_protect)
   );
 
   sdcard sdcard_1(
@@ -80,7 +80,7 @@ module sdcbench;
     .sclk(sclk),
     .di(mosi),
     .do(miso),
-    .wp(wp)
+    .wp(wr_protect)
   );
 
 endmodule

@@ -15,7 +15,7 @@ module sdctest(clk, rst,
     input rst;
     output reg stb;
     output reg we;
-    output reg addr;
+    output reg [3:2] addr;
     output reg [31:0] dout;
     input [31:0] din;
     input ack;
