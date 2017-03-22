@@ -7,11 +7,12 @@
 `default_nettype none
 
 
-module sdcard(cs_n, sclk, di, do);
+module sdcard(cs_n, sclk, di, do, wp);
     input cs_n;
     input sclk;
     input di;
     output do;
+    output wp;
 
   reg [8:0] sreg;
 
@@ -32,5 +33,6 @@ module sdcard(cs_n, sclk, di, do);
   end
 
   assign do = cs_n ? 1'bz : sreg[8];
+  assign wp = 1'b0;
 
 endmodule

@@ -4,7 +4,8 @@
 
 
 `include "sdctest.v"
-`include "sdcctrl.v"
+`include "sdc.v"
+`include "sdcard.v"
 
 
 `timescale 1ns/10ps
@@ -20,8 +21,15 @@ module sdcbench;
   wire stb;
   wire we;
   wire addr;
-  wire [7:0] test_out;
-  wire [7:0] test_in;
+  wire [31:0] test_out;
+  wire [31:0] test_in;
+  wire ack;
+
+  wire ss_n;
+  wire sclk;
+  wire mosi;
+  wire miso;
+  wire wp;
 
   initial begin
     #0       $dumpfile("dump.vcd");
@@ -46,18 +54,33 @@ module sdcbench;
     .stb(stb),
     .we(we),
     .addr(addr),
-    .dout(test_out[7:0]),
-    .din(test_in[7:0])
+    .dout(test_out[31:0]),
+    .din(test_in[31:0]),
+    .ack(ack)
   );
 
-  sdcctrl sdcctrl_1(
+  sdc sdc_1(
     .clk(clk),
     .rst(rst),
     .stb(stb),
     .we(we),
     .addr(addr),
-    .din(test_out[7:0]),
-    .dout(test_in[7:0])
+    .data_in(test_out[31:0]),
+    .data_out(test_in[31:0]),
+    .ack(ack),
+    .ss_n(ss_n),
+    .sclk(sclk),
+    .mosi(mosi),
+    .miso(miso),
+    .wp(wp)
+  );
+
+  sdcard sdcard_1(
+    .cs_n(ss_n),
+    .sclk(sclk),
+    .di(mosi),
+    .do(miso),
+    .wp(wp)
   );
 
 endmodule

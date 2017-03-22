@@ -9,18 +9,20 @@
 
 module sdctest(clk, rst,
                stb, we, addr,
-               dout, din);
+               dout, din,
+               ack);
     input clk;
     input rst;
     output reg stb;
     output reg we;
     output reg addr;
-    output reg [7:0] dout;
-    input [7:0] din;
+    output reg [31:0] dout;
+    input [31:0] din;
+    input ack;
 
   reg [4:0] state;
   reg [5:0] count;
-  reg [7:0] data;
+  reg [31:0] data;
 
   always @(posedge clk) begin
     if (rst) begin
@@ -29,7 +31,7 @@ module sdctest(clk, rst,
       stb   <= 0;
       we    <= 0;
       addr  <= 0;
-      dout  <= 8'h00;
+      dout  <= 0;
     end else begin
       if (count != 0) begin
         count <= count - 1;
@@ -43,8 +45,8 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 1;
               addr  <= 0;
-              dout  <= 8'h03;  // use this for fast SCLK
-//              dout  <= 8'h01;  // use this for slow SCLK
+              dout  <= 32'h00000003;  // use this for fast SCLK
+//              dout  <= 32'h00000001;  // use this for slow SCLK
             end
           5'd1:
             // done
@@ -64,7 +66,7 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 1;
               addr  <= 1;
-              dout  <= 8'hB1;
+              dout  <= 32'h000000B1;
             end
           5'd3:
             // done
@@ -84,7 +86,7 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 0;
               addr  <= 0;
-              dout  <= 8'h00;
+              dout  <= 0;
             end
           5'd5:
             // done
@@ -95,7 +97,7 @@ module sdctest(clk, rst,
               we    <= 0;
               addr  <= 0;
               dout  <= 0;
-              data  <= din;
+              data[31:0] <= din[31:0];
             end
           5'd6:
             // check ready
@@ -114,7 +116,7 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 0;
               addr  <= 1;
-              dout  <= 8'h00;
+              dout  <= 0;
             end
           5'd8:
             // done
@@ -125,7 +127,7 @@ module sdctest(clk, rst,
               we    <= 0;
               addr  <= 0;
               dout  <= 0;
-              data  <= din;
+              data[31:0] <= din[31:0];
             end
           5'd9:
             // send 0xFF
@@ -135,7 +137,7 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 1;
               addr  <= 1;
-              dout  <= 8'hFF;
+              dout  <= 32'h000000FF;
             end
           5'd10:
             // done
@@ -155,7 +157,7 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 0;
               addr  <= 0;
-              dout  <= 8'h00;
+              dout  <= 0;
             end
           5'd12:
             // done
@@ -166,7 +168,7 @@ module sdctest(clk, rst,
               we    <= 0;
               addr  <= 0;
               dout  <= 0;
-              data  <= din;
+              data[31:0] <= din[31:0];
             end
           5'd13:
             // check ready
@@ -185,7 +187,7 @@ module sdctest(clk, rst,
               stb   <= 1;
               we    <= 0;
               addr  <= 1;
-              dout  <= 8'h00;
+              dout  <= 0;
             end
           5'd15:
             // done
@@ -196,7 +198,7 @@ module sdctest(clk, rst,
               we    <= 0;
               addr  <= 0;
               dout  <= 0;
-              data  <= din;
+              data[31:0] <= din[31:0];
             end
           5'd31:
             // halt
