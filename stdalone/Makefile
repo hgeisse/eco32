@@ -7,7 +7,7 @@ BUILD = ../build
 
 DIRS = hello hello2 bottles memsize memtest onetask twotasks-1 \
        twotasks-2 dskchk dskchk2 wrtmbr dmpmbr mkpart shpart dactest \
-       dhrystone
+       dhrystone sdctest
 
 .PHONY:		all install clean
 
