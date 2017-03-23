@@ -256,7 +256,7 @@ module sdc(clk, rst,
                             { 16'h0, crc16[15:0] };
   assign ack = stb;
 
-  assign crc7_in = sreg[8];
+  assign crc7_in = mosi;
 
   always @(posedge clk) begin
     if (rst) begin
