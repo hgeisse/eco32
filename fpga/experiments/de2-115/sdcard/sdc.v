@@ -21,7 +21,7 @@ module sdc(clk, rst,
            ack,
            ss_n, sclk,
            mosi, miso,
-           wr_protect);
+           wp);
     // internal interface
     input clk;
     input rst;
@@ -36,7 +36,7 @@ module sdc(clk, rst,
     output reg sclk;
     output mosi;
     input miso;
-    input wr_protect;
+    input wp;
 
   reg [8:0] sreg;
   wire load;
@@ -50,7 +50,7 @@ module sdc(clk, rst,
 
   reg crc16_miso;
   reg fast_clock;
-  reg data_ready;
+  reg rdy;
 
   wire crc7_in;
   reg [7:0] crc7;
@@ -241,16 +241,16 @@ module sdc(clk, rst,
 
   always @(posedge clk) begin
     if (rst) begin
-      data_ready <= 0;
+      rdy <= 0;
     end else begin
       if (ready | (stb & ~we & ~addr[3] & addr[2])) begin
-        data_ready <= ready;
+        rdy <= ready;
       end
     end
   end
 
   assign data_out[31:0] =
-    (~addr[3] & ~addr[2]) ? { 30'h0, wr_protect, data_ready } :
+    (~addr[3] & ~addr[2]) ? { 30'h0, wp, rdy } :
     (~addr[3] &  addr[2]) ? { 24'h0, sreg[8:1] } :
     ( addr[3] & ~addr[2]) ? { 24'h0, crc7[7:0] } :
                             { 16'h0, crc16[15:0] };

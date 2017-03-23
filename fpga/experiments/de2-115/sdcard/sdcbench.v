@@ -29,7 +29,7 @@ module sdcbench;
   wire sclk;
   wire mosi;
   wire miso;
-  wire wr_protect;
+  wire wp;
 
   initial begin
     #0       $dumpfile("dump.vcd");
@@ -72,7 +72,7 @@ module sdcbench;
     .sclk(sclk),
     .mosi(mosi),
     .miso(miso),
-    .wr_protect(wr_protect)
+    .wp(wp)
   );
 
   sdcard sdcard_1(
@@ -80,7 +80,7 @@ module sdcbench;
     .sclk(sclk),
     .di(mosi),
     .do(miso),
-    .wp(wr_protect)
+    .wp(wp)
   );
 
 endmodule
