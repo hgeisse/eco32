@@ -166,12 +166,19 @@ rs232_1_txd,Output,PIN_G14,8,B8_N0,3.3-V LVTTL,
 #
 # SD card
 #
-sdcard_clk,Output,PIN_AE13,3,B3_N0,3.3-V LVTTL,
-sdcard_cmd,Bidir,PIN_AD14,3,B3_N0,3.3-V LVTTL,
-sdcard_dat[3],Bidir,PIN_AC14,3,B3_N0,3.3-V LVTTL,
-sdcard_dat[2],Bidir,PIN_AB14,3,B3_N0,3.3-V LVTTL,
-sdcard_dat[1],Bidir,PIN_AF13,3,B3_N0,3.3-V LVTTL,
-sdcard_dat[0],Bidir,PIN_AE14,3,B3_N0,3.3-V LVTTL,
+# SD mode
+#sdcard_clk,Output,PIN_AE13,3,B3_N0,3.3-V LVTTL,
+#sdcard_cmd,Bidir,PIN_AD14,3,B3_N0,3.3-V LVTTL,
+#sdcard_dat[3],Bidir,PIN_AC14,3,B3_N0,3.3-V LVTTL,
+#sdcard_dat[2],Bidir,PIN_AB14,3,B3_N0,3.3-V LVTTL,
+#sdcard_dat[1],Bidir,PIN_AF13,3,B3_N0,3.3-V LVTTL,
+#sdcard_dat[0],Bidir,PIN_AE14,3,B3_N0,3.3-V LVTTL,
+#sdcard_wp,Input,PIN_AF14,3,B3_N0,3.3-V LVTTL,
+# SPI mode
+sdcard_ss_n,Output,PIN_AC14,3,B3_N0,3.3-V LVTTL,
+sdcard_sclk,Output,PIN_AE13,3,B3_N0,3.3-V LVTTL,
+sdcard_mosi,Output,PIN_AD14,3,B3_N0,3.3-V LVTTL,
+sdcard_miso,Input,PIN_AE14,3,B3_N0,3.3-V LVTTL,
 sdcard_wp,Input,PIN_AF14,3,B3_N0,3.3-V LVTTL,
 
 #

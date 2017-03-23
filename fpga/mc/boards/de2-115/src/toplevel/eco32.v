@@ -40,9 +40,10 @@ module eco32(clk_in,
              rs232_0_txd,
              rs232_1_rxd,
              rs232_1_txd,
-             sdcard_clk,
-             sdcard_cmd,
-             sdcard_dat,
+             sdcard_ss_n,
+             sdcard_sclk,
+             sdcard_mosi,
+             sdcard_miso,
              sdcard_wp,
              led_g,
              led_r,
@@ -101,9 +102,10 @@ module eco32(clk_in,
     input rs232_1_rxd;
     output rs232_1_txd;
     // SD card
-    output sdcard_clk;
-    inout sdcard_cmd;
-    inout [3:0] sdcard_dat;
+    output sdcard_ss_n;
+    output sdcard_sclk;
+    output sdcard_mosi;
+    input sdcard_miso;
     input sdcard_wp;
     // board I/O
     output [8:0] led_g;
@@ -341,13 +343,15 @@ module eco32(clk_in,
     .rst(rst),
     .stb(sdc_stb),
     .we(bus_we),
+    .addr(bus_addr[3:2]),
     .data_in(bus_dout[31:0]),
     .data_out(sdc_dout[31:0]),
     .ack(sdc_ack),
-    .sdcard_clk(sdcard_clk),
-    .sdcard_cmd(sdcard_cmd),
-    .sdcard_dat(sdcard_dat[3:0]),
-    .sdcard_wp(sdcard_wp)
+    .ss_n(sdcard_ss_n),
+    .sclk(sdcard_sclk),
+    .mosi(sdcard_mosi),
+    .miso(sdcard_miso),
+    .wp(sdcard_wp)
   );
 
   bio bio_1(
