@@ -8,16 +8,21 @@
 #include "iolib.h"
 
 
+/* SDC addresses */
 #define SDC_BASE	((unsigned int *) 0xF0600000)
+#define SDC_CTRL	(SDC_BASE + 0)
+#define SDC_DATA	(SDC_BASE + 1)
+#define SDC_CRC7	(SDC_BASE + 2)
+#define SDC_CRC16	(SDC_BASE + 3)
 
-#define CTRL_000	0x00	/* SS_N = 0, MOSI = 0, SCLK = 0 */
-#define CTRL_001	0x20	/* SS_N = 0, MOSI = 0, SCLK = 1 */
-#define CTRL_010	0x10	/* SS_N = 0, MOSI = 1, SCLK = 0 */
-#define CTRL_011	0x30	/* SS_N = 0, MOSI = 1, SCLK = 1 */
-#define CTRL_100	0x08	/* SS_N = 1, MOSI = 0, SCLK = 0 */
-#define CTRL_101	0x28	/* SS_N = 1, MOSI = 0, SCLK = 1 */
-#define CTRL_110	0x18	/* SS_N = 1, MOSI = 1, SCLK = 0 */
-#define CTRL_111	0x38	/* SS_N = 1, MOSI = 1, SCLK = 1 */
+/* SDC control bits */
+#define SDC_CRC16MISO	((unsigned int) 0x04)
+#define SDC_FASTCLK	((unsigned int) 0x02)
+#define SDC_SELECT	((unsigned int) 0x01)
+
+/* SDC status bits */
+#define SDC_WPROT	((unsigned int) 0x02)
+#define SDC_READY	((unsigned int) 0x01)
 
 
 /**************************************************************/
@@ -39,66 +44,69 @@ void ledOff(void) {
 /**************************************************************/
 
 
-void interfaceActive(void) {
-  ledOn();
-  *SDC_BASE = 0x00000718;
-}
-
-
-void interfacePassive(void) {
-  *SDC_BASE = 0x0000FFFF;
-  ledOff();
-}
-
-
-void interfacePut(unsigned char b) {
-  *SDC_BASE = 0x0700 | (unsigned int) b;
-}
-
-
-unsigned char interfaceGet(void) {
-  return (unsigned char) (*SDC_BASE & 0x007F);
-}
+unsigned int lastSent = 0;
 
 
 void select(void) {
-  interfacePut(CTRL_010);
+  lastSent |= SDC_SELECT;
+  *SDC_CTRL = lastSent;
 }
 
 
 void deselect(void) {
-  interfacePut(CTRL_110);
+  lastSent &= ~SDC_SELECT;
+  *SDC_CTRL = lastSent;
 }
 
 
-void toggleClock(int n) {
-  while (n--) {
-    interfacePut(CTRL_111);
-    interfacePut(CTRL_110);
-  }
+void fastClk(void) {
+  lastSent |= SDC_FASTCLK;
+  *SDC_CTRL = lastSent;
+}
+
+
+void slowClk(void) {
+  lastSent &= ~SDC_FASTCLK;
+  *SDC_CTRL = lastSent;
 }
 
 
 unsigned char sndRcv(unsigned char b) {
-  int i;
   unsigned char r;
 
-  r = 0x00;
-  for (i = 0; i < 8; i++) {
-    r <<= 1;
-    if (b & 0x80) {
-      interfacePut(CTRL_010);
-      r |= interfaceGet() & 1;
-      interfacePut(CTRL_011);
-    } else {
-      interfacePut(CTRL_000);
-      r |= interfaceGet() & 1;
-      interfacePut(CTRL_001);
-    }
-    b <<= 1;
-  }
-  interfacePut(CTRL_010);
+  *SDC_DATA = b;
+  while ((*SDC_CTRL & SDC_READY) == 0) ;
+  r = *SDC_DATA;
   return r;
+}
+
+
+void resetCRC7(void) {
+  *SDC_CRC7 = 0x01;
+}
+
+
+unsigned char getCRC7(void) {
+  return *SDC_CRC7;
+}
+
+
+void resetCRC16(Bool fromMISO) {
+  if (fromMISO) {
+    /* compute CRC for bits from MISO */
+    lastSent |= SDC_CRC16MISO;
+    *SDC_CTRL = lastSent;
+  } else {
+    /* compute CRC for bits from MOSI */
+    lastSent &= ~SDC_CRC16MISO;
+    *SDC_CTRL = lastSent;
+  }
+  *SDC_CRC16 = 0x0000;
+}
+
+
+unsigned short getCRC16(void) {
+  return *SDC_CRC16;
 }
 
 
@@ -107,41 +115,58 @@ unsigned char sndRcv(unsigned char b) {
 
 void test(void) {
   int i;
+  unsigned char dummy;
   unsigned char rcv1, rcv2, rcv3, rcv4, rcv5;
   unsigned char sector[512];
   int j, k;
   unsigned char c;
+  unsigned char crc7;
+  unsigned short crc16;
 
-  interfaceActive();
-  toggleClock(80);
-  /**********/
+  /***********************************/
+  /* initialize                      */
+  /***********************************/
+  slowClk();
+  deselect();
+  for (i = 0; i < 10; i++) {
+    dummy = sndRcv(0xFF);
+  }
+  /***********************************/
+  /* reset                           */
+  /***********************************/
   select();
-  rcv1 = sndRcv(0x40);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x95);
+  resetCRC7();
+  dummy = sndRcv(0x40);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
   i = 8;
   do {
     rcv1 = sndRcv(0xFF);
   } while (rcv1 == 0xFF && --i > 0);
   deselect();
-  toggleClock(8);
+  dummy = sndRcv(0xFF);
   printf("CMD0 (0) : ");
   if (i == 0) {
     printf("no answer\n");
   } else {
     printf("answer = 0x%02x\n", rcv1);
   }
-  /**********/
+  /***********************************/
+  /* send interface condition        */
+  /***********************************/
   select();
-  rcv1 = sndRcv(0x48);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x01);
-  rcv1 = sndRcv(0xAA);
-  rcv1 = sndRcv(0x87);
+  resetCRC7();
+  dummy = sndRcv(0x48);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x01);
+  dummy = sndRcv(0xAA);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
   i = 8;
   do {
     rcv1 = sndRcv(0xFF);
@@ -151,7 +176,7 @@ void test(void) {
   rcv4 = sndRcv(0xFF);
   rcv5 = sndRcv(0xFF);
   deselect();
-  toggleClock(8);
+  dummy = sndRcv(0xFF);
   printf("CMD8 (0x1AA) : ");
   if (i == 0) {
     printf("no answer\n");
@@ -159,56 +184,96 @@ void test(void) {
     printf("answer = 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
            rcv1, rcv2, rcv3, rcv4, rcv5);
   }
-  /**********/
-again:
+  /***********************************/
+  /* set CRC option to ON            */
+  /***********************************/
   select();
-  rcv1 = sndRcv(0x77);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x65);
+  resetCRC7();
+  dummy = sndRcv(0x7B);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x01);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
   i = 8;
   do {
     rcv1 = sndRcv(0xFF);
   } while (rcv1 == 0xFF && --i > 0);
   deselect();
-  toggleClock(8);
+  dummy = sndRcv(0xFF);
+  printf("CMD59 (0) : ");
+  if (i == 0) {
+    printf("no answer\n");
+  } else {
+    printf("answer = 0x%02x\n", rcv1);
+  }
+  /***********************************/
+again:
+  /***********************************/
+  /* prepare app-specific cmd        */
+  /***********************************/
+  select();
+  resetCRC7();
+  dummy = sndRcv(0x77);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
+  i = 8;
+  do {
+    rcv1 = sndRcv(0xFF);
+  } while (rcv1 == 0xFF && --i > 0);
+  deselect();
+  dummy = sndRcv(0xFF);
   printf("CMD55 (0) : ");
   if (i == 0) {
     printf("no answer\n");
   } else {
     printf("answer = 0x%02x\n", rcv1);
   }
-  /**********/
+  /***********************************/
+  /* send host capacity support      */
+  /***********************************/
   select();
-  rcv1 = sndRcv(0x69);
-  rcv1 = sndRcv(0x40);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x77);
+  resetCRC7();
+  dummy = sndRcv(0x69);
+  dummy = sndRcv(0x40);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
   i = 8;
   do {
     rcv1 = sndRcv(0xFF);
   } while (rcv1 == 0xFF && --i > 0);
   deselect();
-  toggleClock(8);
+  dummy = sndRcv(0xFF);
   printf("ACMD41 (0x40000000) : ");
   if (i == 0) {
     printf("no answer\n");
   } else {
     printf("answer = 0x%02x\n", rcv1);
   }
+  /****************************************/
+  /* repeat as long as in idle state      */
+  /****************************************/
   if (rcv1 == 0x01) goto again;
-  /**********/
+  /****************************************/
+  /* read OCR                             */
+  /****************************************/
   select();
-  rcv1 = sndRcv(0x7A);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0xFD);
+  resetCRC7();
+  dummy = sndRcv(0x7A);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
   i = 8;
   do {
     rcv1 = sndRcv(0xFF);
@@ -218,7 +283,7 @@ again:
   rcv4 = sndRcv(0xFF);
   rcv5 = sndRcv(0xFF);
   deselect();
-  toggleClock(8);
+  dummy = sndRcv(0xFF);
   printf("CMD58 (0) : ");
   if (i == 0) {
     printf("no answer\n");
@@ -226,14 +291,23 @@ again:
     printf("answer = 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
            rcv1, rcv2, rcv3, rcv4, rcv5);
   }
-  /**********/
+  /***********************************/
+  /* switch to fast clock            */
+  /***********************************/
+  fastClk();
+  /***********************************/
+  /* read single block               */
+  /***********************************/
   select();
-  rcv1 = sndRcv(0x51);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x00);
-  rcv1 = sndRcv(0x07);
-  rcv1 = sndRcv(0xC2);
-  rcv1 = sndRcv(0x00);
+  resetCRC7();
+  dummy = sndRcv(0x51);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x07);
+  dummy = sndRcv(0xC2);
+  //dummy = sndRcv(0xC3);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
   i = 8;
   do {
     rcv1 = sndRcv(0xFF);
@@ -241,13 +315,15 @@ again:
   do {
     rcv2 = sndRcv(0xFF);
   } while (rcv2 != 0xFE);
+  resetCRC16(TRUE);
   for (j = 0; j < 512; j++) {
     sector[j] = sndRcv(0xFF);
   }
   rcv2 = sndRcv(0xFF);
   rcv3 = sndRcv(0xFF);
+  crc16 = getCRC16();
   deselect();
-  toggleClock(8);
+  dummy = sndRcv(0xFF);
   printf("CMD17 (0x000007C2) : ");
   if (i == 0) {
     printf("no answer\n");
@@ -269,10 +345,74 @@ again:
       }
       printf("\n");
     }
-    printf("CRC    = 0x%02x%02x\n", rcv3, rcv4);
+    printf("CRC check : 0x%04x\n", crc16);
   }
-  /**********/
-  interfacePassive();
+  /***********************************/
+  /* read 2048 blocks, slow clock    */
+  /***********************************/
+  printf("slow read of 1 MB started\n");
+  slowClk();
+  for (k = 0; k < 2048; k++) {
+    select();
+    resetCRC7();
+    dummy = sndRcv(0x51);
+    dummy = sndRcv(0x00);
+    dummy = sndRcv(0x00);
+    dummy = sndRcv((k >> 8) & 0x00FF);
+    dummy = sndRcv((k >> 0) & 0x00FF);
+    crc7 = getCRC7();
+    dummy = sndRcv(crc7);
+    i = 8;
+    do {
+      rcv1 = sndRcv(0xFF);
+    } while (rcv1 == 0xFF && --i > 0);
+    do {
+      rcv2 = sndRcv(0xFF);
+    } while (rcv2 != 0xFE);
+    resetCRC16(TRUE);
+    for (j = 0; j < 512; j++) {
+      sector[j] = sndRcv(0xFF);
+    }
+    rcv2 = sndRcv(0xFF);
+    rcv3 = sndRcv(0xFF);
+    crc16 = getCRC16();
+    deselect();
+    dummy = sndRcv(0xFF);
+  }
+  printf("slow read done\n");
+  /***********************************/
+  /* read 2048 blocks, fast clock    */
+  /***********************************/
+  printf("fast read of 1 MB started\n");
+  fastClk();
+  for (k = 0; k < 2048; k++) {
+    select();
+    resetCRC7();
+    dummy = sndRcv(0x51);
+    dummy = sndRcv(0x00);
+    dummy = sndRcv(0x00);
+    dummy = sndRcv((k >> 8) & 0x00FF);
+    dummy = sndRcv((k >> 0) & 0x00FF);
+    crc7 = getCRC7();
+    dummy = sndRcv(crc7);
+    i = 8;
+    do {
+      rcv1 = sndRcv(0xFF);
+    } while (rcv1 == 0xFF && --i > 0);
+    do {
+      rcv2 = sndRcv(0xFF);
+    } while (rcv2 != 0xFE);
+    resetCRC16(TRUE);
+    for (j = 0; j < 512; j++) {
+      sector[j] = sndRcv(0xFF);
+    }
+    rcv2 = sndRcv(0xFF);
+    rcv3 = sndRcv(0xFF);
+    crc16 = getCRC16();
+    deselect();
+    dummy = sndRcv(0xFF);
+  }
+  printf("fast read done\n");
 }
 
 
@@ -281,7 +421,9 @@ again:
 
 int main(void) {
   printf("\nECO32 SD card interface test started\n\n");
+  ledOn();
   test();
+  ledOff();
   printf("\nECO32 SD card interface test finished\n");
   return 0;
 }
