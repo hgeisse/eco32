@@ -20,6 +20,7 @@
 #include "dspkbd.h"
 #include "serial.h"
 #include "disk.h"
+#include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph.h"
@@ -33,7 +34,7 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-l <prog>]    set program file name\n");
   fprintf(stderr, "    [-a <addr>]    set program load address\n");
   fprintf(stderr, "    [-r <rom>]     set ROM image file name\n");
-  fprintf(stderr, "    [-d <disk>]    set disk image file name\n");
+  fprintf(stderr, "    [-d <disk>]    set disk/SD card image file name\n");
   fprintf(stderr, "    [-s <n>]       install n serial lines (0-%d)\n",
           MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
@@ -191,6 +192,7 @@ int main(int argc, char *argv[]) {
   }
   serialInit(numSerials, connectTerminals);
   diskInit(diskName);
+  sdcardInit(diskName);
   outputInit(outputName);
   shutdownInit();
   if (graphics) {
@@ -230,6 +232,7 @@ int main(int argc, char *argv[]) {
   keyboardExit();
   serialExit();
   diskExit();
+  sdcardExit();
   outputExit();
   shutdownExit();
   graphExit();

@@ -29,6 +29,7 @@
 #define SERIAL_BASE	0x30300000	/* physical serial line base address */
 #define MAX_NSERIALS	2		/* max number of serial lines */
 #define DISK_BASE	0x30400000	/* physical disk base address */
+#define SDCARD_BASE	0x30600000	/* physical SD card base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */
 #define SHUTDOWN_BASE	0x3F100000	/* physical shutdown device address */
 #define GRAPH_BASE	0x3FC00000	/* physical grahics base address */

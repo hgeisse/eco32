@@ -18,6 +18,7 @@
 #include "dspkbd.h"
 #include "serial.h"
 #include "disk.h"
+#include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph.h"
@@ -40,6 +41,7 @@ void shutdownWrite(Word addr, Word data) {
   keyboardExit();
   serialExit();
   diskExit();
+  sdcardExit();
   outputExit();
   shutdownExit();
   graphExit();

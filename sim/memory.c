@@ -18,6 +18,7 @@
 #include "dspkbd.h"
 #include "serial.h"
 #include "disk.h"
+#include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph.h"
@@ -69,6 +70,10 @@ Word memoryReadWord(Word pAddr) {
   }
   if ((pAddr & IO_DEV_MASK) == DISK_BASE) {
     data = diskRead(pAddr & IO_REG_MASK);
+    return data;
+  }
+  if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
+    data = sdcardRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_DEV_MASK) == OUTPUT_BASE) {
@@ -159,6 +164,10 @@ void memoryWriteWord(Word pAddr, Word data) {
   }
   if ((pAddr & IO_DEV_MASK) == DISK_BASE) {
     diskWrite(pAddr & IO_REG_MASK, data);
+    return;
+  }
+  if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
+    sdcardWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_DEV_MASK) == OUTPUT_BASE) {
