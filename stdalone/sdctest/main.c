@@ -168,6 +168,8 @@ void test(void) {
   int i;
   unsigned char dummy;
   unsigned char rcv1, rcv2, rcv3, rcv4, rcv5;
+  unsigned char csd[16];
+  unsigned int csize;
   unsigned char rdsector[512], wrsector[512];
   int j, k;
   unsigned char c;
@@ -361,6 +363,63 @@ again:
   /***********************************/
   fastClk();
   /***********************************/
+  /* send card-specific data         */
+  /***********************************/
+  select();
+  resetCRC7();
+  dummy = sndRcv(0x49);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
+  i = 8;
+  do {
+    rcv1 = sndRcv(0xFF);
+  } while (rcv1 == 0xFF && --i > 0);
+  do {
+    rcv2 = sndRcv(0xFF);
+  } while (rcv2 != START_BLOCK_TOKEN);
+  resetCRC16(TRUE);
+  for (j = 0; j < 16; j++) {
+    csd[j] = sndRcv(0xFF);
+  }
+  rcv2 = sndRcv(0xFF);
+  rcv3 = sndRcv(0xFF);
+  crc16 = getCRC16();
+  deselect();
+  dummy = sndRcv(0xFF);
+#if !SPI_LOG
+  printf("CMD9   (0x00000000) : ");
+  if (i == 0) {
+    printf("no answer\n");
+  } else {
+    printf("answer = 0x%02X\n", rcv1);
+    printf("       CRC = 0x%04X\n", crc16);
+    printf("       CSD = ");
+    for (k = 0; k < 8; k++) {
+      printf("0x%02X ", csd[k]);
+    }
+    printf("\n");
+    printf("             ");
+    for (k = 8; k < 16; k++) {
+      printf("0x%02X ", csd[k]);
+    }
+    printf("\n");
+    if ((csd[0] & 0xC0) != 0x40) {
+      printf("       CSD structure version unknown\n");
+    } else {
+      printf("       CSD structure version 2.0\n");
+      csize = (((unsigned int) csd[7] & 0x3F) << 16) |
+              (((unsigned int) csd[8] & 0xFF) <<  8) |
+              (((unsigned int) csd[9] & 0xFF) <<  0);
+      printf("       capacity = 0x%08X sectors (512 bytes each)\n",
+             (csize + 1) << 10);
+    }
+  }
+#endif
+  /***********************************/
   /* read single block               */
   /***********************************/
   select();
@@ -394,8 +453,8 @@ again:
     printf("no answer\n");
   } else {
     printf("answer = 0x%02X\n", rcv1);
-    printf("                   ");
-    printf("CRC check = 0x%04X\n", crc16);
+    printf("       ");
+    printf("CRC = 0x%04X\n", crc16);
     for (j = 0; j < 32; j++) {
       printf("%03X:  ", 16 * j);
       for (k = 0; k < 16; k++) {
@@ -572,8 +631,8 @@ again:
     printf("no answer\n");
   } else {
     printf("answer = 0x%02X\n", rcv1);
-    printf("                   ");
-    printf("CRC check = 0x%04X\n", crc16);
+    printf("       ");
+    printf("CRC = 0x%04X\n", crc16);
     for (j = 0; j < 32; j++) {
       printf("%03X:  ", 16 * j);
       for (k = 0; k < 16; k++) {
@@ -625,8 +684,8 @@ again:
     printf("no answer\n");
   } else {
     printf("answer = 0x%02X\n", rcv1);
-    printf("                   ");
-    printf("CRC check = 0x%04X\n", crc16);
+    printf("       ");
+    printf("CRC = 0x%04X\n", crc16);
     for (j = 0; j < 32; j++) {
       printf("%03X:  ", 16 * j);
       for (k = 0; k < 16; k++) {
