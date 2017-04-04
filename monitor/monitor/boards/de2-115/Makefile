@@ -22,6 +22,7 @@ SRC = start.s \
       ../../common/serial.s \
       ../../common/dskctl.s \
       ../../common/dskser.s \
+      ../../common/dsksdc.c \
       ../../common/end.s
 
 .PHONY:		all install clean

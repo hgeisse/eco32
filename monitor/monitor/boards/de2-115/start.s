@@ -59,6 +59,10 @@
 	.import	dskcapser
 	.import	dskioser
 
+	.import	dskinitsdc
+	.import	dskcapsdc
+	.import	dskiosdc
+
 	.import	main
 
 	.export	_bcode
@@ -221,6 +225,7 @@ nodsp:
 	jal	ser1init		; init serial line 1
 	jal	dskinitctl		; init disk (controller)
 	jal	dskinitser		; init disk (serial line)
+	jal	dskinitsdc		; init disk (SD card)
 
 	; call main
 	jal	main			; enter command loop
@@ -314,25 +319,47 @@ co1:
 
 	; int dskcap(int dskno)
 dcap:
-	bne	$4,$0,dcapser
+	bne	$4,$0,dcap1
 	j	dskcapctl
-dcapser:
+dcap1:
+	sub	$4,$4,1
+	bne	$4,$0,dcap2
 	j	dskcapser
+dcap2:
+	sub	$4,$4,1
+	bne	$4,$0,dcap3
+	j	dskcapsdc
+dcap3:
+	add	$2,$0,0
+	jr	$31
 
 	; int dskio(int dskno, char cmd, int sct, Word addr, int nscts)
 dio:
-	bne	$4,$0,dioser
+	bne	$4,$0,dio1
 	add	$4,$5,$0
 	add	$5,$6,$0
 	add	$6,$7,$0
 	ldw	$7,$29,16
 	j	dskioctl
-dioser:
+dio1:
+	sub	$4,$4,1
+	bne	$4,$0,dio2
 	add	$4,$5,$0
 	add	$5,$6,$0
 	add	$6,$7,$0
 	ldw	$7,$29,16
 	j	dskioser
+dio2:
+	sub	$4,$4,1
+	bne	$4,$0,dio3
+	add	$4,$5,$0
+	add	$5,$6,$0
+	add	$6,$7,$0
+	ldw	$7,$29,16
+	j	dskiosdc
+dio3:
+	add	$2,$0,0xFF
+	jr	$31
 
 ;***************************************************************
 
