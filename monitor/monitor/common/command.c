@@ -779,13 +779,15 @@ static void doLoad(char *tokens[], int n) {
   int serno;
 
   if (n == 2) {
-    if (!getDecNumber(tokens[1], &serno) || serno < 0 || serno > 1) {
+    if (!getDecNumber(tokens[1], &serno) ||
+        serno < 0 || serno >= 2) {
       printf("illegal serial line number\n");
       return;
     }
     load(serno, true);
   } else if (n == 3) {
-    if (!getDecNumber(tokens[1], &serno) || serno < 0 || serno > 1) {
+    if (!getDecNumber(tokens[1], &serno) ||
+        serno < 0 || serno >= 2) {
       printf("illegal serial line number\n");
       return;
     }
@@ -804,13 +806,15 @@ static void doBoot(char *tokens[], int n) {
   int dskno;
 
   if (n == 2) {
-    if (!getDecNumber(tokens[1], &dskno) || dskno < 0 || dskno > 1) {
+    if (!getDecNumber(tokens[1], &dskno) ||
+        dskno < 0 || dskno >= NUM_DISKS) {
       printf("illegal disk number\n");
       return;
     }
     boot(dskno, true);
   } else if (n == 3) {
-    if (!getDecNumber(tokens[1], &dskno) || dskno < 0 || dskno > 1) {
+    if (!getDecNumber(tokens[1], &dskno) ||
+        dskno < 0 || dskno >= NUM_DISKS) {
       printf("illegal disk number\n");
       return;
     }
