@@ -37,16 +37,16 @@ static unsigned short crc16;
 static unsigned char dataBuf[SDC_SECTOR_SIZE];
 
 
-static void blockRead(unsigned int blkno) {
-  fseek(sdcardImage, blkno * SDC_SECTOR_SIZE, SEEK_SET);
+static void sectorRead(unsigned int sctno) {
+  fseek(sdcardImage, sctno * SDC_SECTOR_SIZE, SEEK_SET);
   if (fread(dataBuf, SDC_SECTOR_SIZE, 1, sdcardImage) != 1) {
     error("cannot read from SD card image");
   }
 }
 
 
-static void blockWrite(unsigned int blkno) {
-  fseek(sdcardImage, blkno * SDC_SECTOR_SIZE, SEEK_SET);
+static void sectorWrite(unsigned int sctno) {
+  fseek(sdcardImage, sctno * SDC_SECTOR_SIZE, SEEK_SET);
   if (fwrite(dataBuf, SDC_SECTOR_SIZE, 1, sdcardImage) != 1) {
     error("cannot write to SD card image");
   }
@@ -61,7 +61,7 @@ static void blockWrite(unsigned int blkno) {
  * the additional '1' bit appended to each command. A single '1'
  * transforms the checksum from 0 to the divisor polynomial, which
  * is found at crc7_table[1]. This does not hold for data transfers,
- * i.e. crc16 must be zero after receiving a data block.
+ * i.e. crc16 must be zero after receiving a data sector.
  */
 
 
@@ -155,6 +155,20 @@ static unsigned short crc16_update(unsigned short crc16,
 /**************************************************************/
 
 
+static unsigned char csd[16] = {
+  0x40, 0x0E, 0x00, 0x32, 0x5B, 0x59, 0x00, 0x00,
+  0x00, 0x00, 0x7F, 0x80, 0x0A, 0x40, 0x40, 0xC3,
+};
+
+static unsigned char cid[16] = {
+  0x03, 0x53, 0x44, 0x53, 0x4C, 0x33, 0x32, 0x47,
+  0x80, 0x69, 0x0D, 0x44, 0x29, 0x01, 0x0B, 0x1D,
+};
+
+
+/**************************************************************/
+
+
 #define ST_ACCUM_CMD	0
 #define ST_INTERP_CMD	1
 #define ST_ANSWER	2
@@ -170,23 +184,27 @@ static unsigned short crc16_update(unsigned short crc16,
 
 #define PRM_INIT_COUNT	10	/* realistic value: 389 */
 #define SEC_INIT_COUNT	5	/* realistic value: 20 */
+#define CSD_DELAY_COUNT	2	/* realistic value: ?? */
 #define RD_DELAY_COUNT	5	/* realistic value: 150 */
 #define WR_BUSY_COUNT	7	/* realistic value: 170 */
 
 
 static int state;
-static int cmdCnt;
+static int currCnt;
 static unsigned char cmd[6];
 static Bool idle;
-static int ansCnt;
+static int xpctCnt;
+static int dataCnt;
 static unsigned char ans[4];
 static Bool crcChecked;
 static Bool appCmdSeen;
 static int initCnt;
-static unsigned int blkno;
+static unsigned int sctno;
 
 
 static void sdcardCallback(int n) {
+  int i;
+
   if (debugCallback) {
     cPrintf("\n**** SDCARD CALLBACK, state = %d ****\n", state);
   }
@@ -197,9 +215,9 @@ static void sdcardCallback(int n) {
   }
   switch (state) {
     case ST_ACCUM_CMD:
-      if (cmdCnt < 6) {
-        cmd[cmdCnt] = dataReg;
-        cmdCnt++;
+      if (currCnt < 6) {
+        cmd[currCnt] = dataReg;
+        currCnt++;
         crc7 = crc7_update(crc7, dataReg);
         dataReg = 0xFF;
         status |= SDC_STAT_READY;
@@ -214,7 +232,7 @@ static void sdcardCallback(int n) {
         cPrintf("SDCARD cmd = 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n",
                 cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5]);
       }
-      cmdCnt = 0;
+      currCnt = 0;
       state = ST_ACCUM_CMD;
       dataReg = 0x00;
       status |= SDC_STAT_READY;
@@ -222,13 +240,14 @@ static void sdcardCallback(int n) {
         dataReg |= SDC_ANS_COM_CRC_ERR;
       } else
       if (!appCmdSeen && cmd[0] == 0x40) {
-        /* reset */
+        /* CMD0: reset */
         idle = true;
         crcChecked = false;
       } else
       if (!appCmdSeen && cmd[0] == 0x48) {
-        /* send interface condition */
-        ansCnt = 4;
+        /* CMD8: send interface condition */
+        /* response R7 */
+        xpctCnt = 4;
         ans[0] = 0x00;
         ans[1] = 0x00;
         ans[2] = 0x01;
@@ -236,15 +255,15 @@ static void sdcardCallback(int n) {
         state = ST_ANSWER;
       } else
       if (!appCmdSeen && cmd[0] == 0x7B) {
-        /* turn CRC on/off */
+        /* CMD59: turn CRC on/off */
         crcChecked = (cmd[4] & 1) ? true : false;
       } else
       if (!appCmdSeen && cmd[0] == 0x77) {
-        /* application command follows */
+        /* CMD55: application command follows */
         appCmdSeen = true;
       } else
       if (appCmdSeen && cmd[0] == 0x69) {
-        /* initialize SD card */
+        /* ACMD41: initialize SD card */
         appCmdSeen = false;
         initCnt--;
         if (initCnt == 0) {
@@ -253,24 +272,44 @@ static void sdcardCallback(int n) {
         }
       } else
       if (!appCmdSeen && cmd[0] == 0x7A) {
-        /* read OCR */
-        ansCnt = 4;
+        /* CMD58: read OCR */
+        /* response R3 */
+        xpctCnt = 4;
         ans[0] = 0xC0;
         ans[1] = 0xFF;
         ans[2] = 0x80;
         ans[3] = 0x00;
         state = ST_ANSWER;
       } else
+      if (!appCmdSeen && cmd[0] == 0x49) {
+        /* CMD9: send card-specific data */
+        for (i = 0; i < 16; i++) {
+          dataBuf[i] = csd[i];
+        }
+        xpctCnt = CSD_DELAY_COUNT;
+        dataCnt = 16;
+        state = ST_RD_DELAY;
+      } else
+      if (!appCmdSeen && cmd[0] == 0x4A) {
+        /* CMD10: send card identification data */
+        for (i = 0; i < 16; i++) {
+          dataBuf[i] = cid[i];
+        }
+        xpctCnt = CSD_DELAY_COUNT;
+        dataCnt = 16;
+        state = ST_RD_DELAY;
+      } else
       if (!appCmdSeen && cmd[0] == 0x51) {
-        /* read single block */
-        blkno = ((unsigned int) cmd[1] << 24) |
+        /* CMD17: read single sector */
+        sctno = ((unsigned int) cmd[1] << 24) |
                 ((unsigned int) cmd[2] << 16) |
                 ((unsigned int) cmd[3] <<  8) |
                 ((unsigned int) cmd[4] <<  0);
-        if (blkno < totalSectors) {
+        if (sctno < totalSectors) {
           /* valid address */
-          blockRead(blkno);
-          ansCnt = RD_DELAY_COUNT;
+          sectorRead(sctno);
+          xpctCnt = RD_DELAY_COUNT;
+          dataCnt = SDC_SECTOR_SIZE;
           state = ST_RD_DELAY;
         } else {
           /* address out of range */
@@ -278,12 +317,12 @@ static void sdcardCallback(int n) {
         }
       } else
       if (!appCmdSeen && cmd[0] == 0x58) {
-        /* write single block */
-        blkno = ((unsigned int) cmd[1] << 24) |
+        /* CMD24: write single sector */
+        sctno = ((unsigned int) cmd[1] << 24) |
                 ((unsigned int) cmd[2] << 16) |
                 ((unsigned int) cmd[3] <<  8) |
                 ((unsigned int) cmd[4] <<  0);
-        if (blkno < totalSectors) {
+        if (sctno < totalSectors) {
           /* valid address */
           state = ST_WR_WAIT;
         } else {
@@ -299,39 +338,39 @@ static void sdcardCallback(int n) {
       }
       break;
     case ST_ANSWER:
-      dataReg = ans[cmdCnt];
+      dataReg = ans[currCnt];
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
-        cmdCnt = 0;
+      currCnt++;
+      if (currCnt == xpctCnt) {
+        currCnt = 0;
         state = ST_ACCUM_CMD;
       }
       break;
     case ST_RD_DELAY:
       dataReg = 0xFF;
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
+      currCnt++;
+      if (currCnt == xpctCnt) {
         dataReg = 0xFE;
-        cmdCnt = 0;
-        ansCnt = SDC_SECTOR_SIZE;
+        currCnt = 0;
+        xpctCnt = dataCnt;
         state = ST_RD_DATA;
       }
       break;
     case ST_RD_DATA:
       if (control & SDC_CTRL_CRC16MISO) {
         /* bits from MISO */
-        crc16 = crc16_update(crc16, dataBuf[cmdCnt]);
+        crc16 = crc16_update(crc16, dataBuf[currCnt]);
       } else {
         /* bits from MOSI */
         crc16 = crc16_update(crc16, dataReg & 0xFF);
       }
-      dataReg = dataBuf[cmdCnt];
+      dataReg = dataBuf[currCnt];
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
-        cmdCnt = 0;
-        ansCnt = 2;
+      currCnt++;
+      if (currCnt == xpctCnt) {
+        currCnt = 0;
+        xpctCnt = 2;
         ans[0] = (crc16 >> 8) & 0xFF;
         ans[1] = crc16 & 0xFF;
         state = ST_RD_CRC;
@@ -340,30 +379,30 @@ static void sdcardCallback(int n) {
     case ST_RD_CRC:
       if (control & SDC_CTRL_CRC16MISO) {
         /* bits from MISO */
-        crc16 = crc16_update(crc16, ans[cmdCnt]);
+        crc16 = crc16_update(crc16, ans[currCnt]);
       } else {
         /* bits from MOSI */
         crc16 = crc16_update(crc16, dataReg & 0xFF);
       }
-      dataReg = ans[cmdCnt];
+      dataReg = ans[currCnt];
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
-        cmdCnt = 0;
+      currCnt++;
+      if (currCnt == xpctCnt) {
+        currCnt = 0;
         state = ST_ACCUM_CMD;
       }
       break;
     case ST_WR_WAIT:
       if (dataReg == 0xFE) {
-        cmdCnt = 0;
-        ansCnt = SDC_SECTOR_SIZE;
+        currCnt = 0;
+        xpctCnt = SDC_SECTOR_SIZE;
         state = ST_WR_DATA;
       }
       dataReg = 0xFF;
       status |= SDC_STAT_READY;
       break;
     case ST_WR_DATA:
-      dataBuf[cmdCnt] = dataReg & 0xFF;
+      dataBuf[currCnt] = dataReg & 0xFF;
       if (control & SDC_CTRL_CRC16MISO) {
         /* bits from MISO */
         crc16 = crc16_update(crc16, 0xFF);
@@ -373,10 +412,10 @@ static void sdcardCallback(int n) {
       }
       dataReg = 0xFF;
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
-        cmdCnt = 0;
-        ansCnt = 2;
+      currCnt++;
+      if (currCnt == xpctCnt) {
+        currCnt = 0;
+        xpctCnt = 2;
         state = ST_WR_CRC;
       }
       break;
@@ -390,31 +429,31 @@ static void sdcardCallback(int n) {
       }
       dataReg = 0xFF;
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
+      currCnt++;
+      if (currCnt == xpctCnt) {
         state = ST_WR_RSP;
       }
       break;
     case ST_WR_RSP:
       dataReg = 0xE0;
       if (crc16 == 0x0000) {
-        blockWrite(blkno);
+        sectorWrite(sctno);
         dataReg |= 0x05;
       } else {
         dataReg |= 0x0B;
       }
       status |= SDC_STAT_READY;
-      cmdCnt = 0;
-      ansCnt = WR_BUSY_COUNT;
+      currCnt = 0;
+      xpctCnt = WR_BUSY_COUNT;
       state = ST_WR_BUSY;
       break;
     case ST_WR_BUSY:
       dataReg = 0x00;
       status |= SDC_STAT_READY;
-      cmdCnt++;
-      if (cmdCnt == ansCnt) {
+      currCnt++;
+      if (currCnt == xpctCnt) {
         dataReg = 0xFF;
-        cmdCnt = 0;
+        currCnt = 0;
         state = ST_ACCUM_CMD;
       }
       break;
@@ -503,7 +542,7 @@ void sdcardReset(void) {
   crc16Reg = 0;
   crc16 = 0;
   state = ST_ACCUM_CMD;
-  cmdCnt = 0;
+  currCnt = 0;
   idle = true;
   crcChecked = false;
   appCmdSeen = false;
@@ -517,6 +556,7 @@ void sdcardReset(void) {
 
 void sdcardInit(char *sdcardImageName) {
   long numBytes;
+  unsigned int csize;
 
   if (sdcardImageName == NULL) {
     /* do not install SD card */
@@ -531,11 +571,15 @@ void sdcardInit(char *sdcardImageName) {
     fseek(sdcardImage, 0, SEEK_END);
     numBytes = ftell(sdcardImage);
     fseek(sdcardImage, 0, SEEK_SET);
-    if (numBytes % SDC_SECTOR_SIZE != 0) {
-      error("size of SD card image '%s' is not a multiple of %d",
-            sdcardImageName, SDC_SECTOR_SIZE);
+    if (numBytes % (1024 * SDC_SECTOR_SIZE) != 0) {
+      cPrintf("Warning: SD card image '%s' ", sdcardImageName);
+      cPrintf("is not a multiple of 1024 sectors\n");
     }
     totalSectors = numBytes / SDC_SECTOR_SIZE;
+    csize = totalSectors / 1024 - 1;
+    csd[7] = (csize >> 16) & 0x3F;
+    csd[8] = (csize >>  8) & 0xFF;
+    csd[9] = (csize >>  0) & 0xFF;
   }
   sdcardReset();
 }
