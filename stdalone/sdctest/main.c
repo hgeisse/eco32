@@ -170,6 +170,7 @@ void test(void) {
   unsigned char rcv1, rcv2, rcv3, rcv4, rcv5;
   unsigned char csd[16];
   unsigned int csize;
+  unsigned char cid[16];
   unsigned char rdsector[512], wrsector[512];
   int j, k;
   unsigned char c;
@@ -417,6 +418,53 @@ again:
       printf("       capacity = 0x%08X sectors (512 bytes each)\n",
              (csize + 1) << 10);
     }
+  }
+#endif
+  /***********************************/
+  /* send card identification data   */
+  /***********************************/
+  select();
+  resetCRC7();
+  dummy = sndRcv(0x4A);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  dummy = sndRcv(0x00);
+  crc7 = getCRC7();
+  dummy = sndRcv(crc7);
+  i = 8;
+  do {
+    rcv1 = sndRcv(0xFF);
+  } while (rcv1 == 0xFF && --i > 0);
+  do {
+    rcv2 = sndRcv(0xFF);
+  } while (rcv2 != START_BLOCK_TOKEN);
+  resetCRC16(TRUE);
+  for (j = 0; j < 16; j++) {
+    cid[j] = sndRcv(0xFF);
+  }
+  rcv2 = sndRcv(0xFF);
+  rcv3 = sndRcv(0xFF);
+  crc16 = getCRC16();
+  deselect();
+  dummy = sndRcv(0xFF);
+#if !SPI_LOG
+  printf("CMD10  (0x00000000) : ");
+  if (i == 0) {
+    printf("no answer\n");
+  } else {
+    printf("answer = 0x%02X\n", rcv1);
+    printf("       CRC = 0x%04X\n", crc16);
+    printf("       CID = ");
+    for (k = 0; k < 8; k++) {
+      printf("0x%02X ", cid[k]);
+    }
+    printf("\n");
+    printf("             ");
+    for (k = 8; k < 16; k++) {
+      printf("0x%02X ", cid[k]);
+    }
+    printf("\n");
   }
 #endif
   /***********************************/
