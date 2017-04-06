@@ -34,7 +34,8 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-l <prog>]    set program file name\n");
   fprintf(stderr, "    [-a <addr>]    set program load address\n");
   fprintf(stderr, "    [-r <rom>]     set ROM image file name\n");
-  fprintf(stderr, "    [-d <disk>]    set disk/SD card image file name\n");
+  fprintf(stderr, "    [-d <disk>]    set disk image file name\n");
+  fprintf(stderr, "    [-D <sdcard>]  set SD card image file name\n");
   fprintf(stderr, "    [-s <n>]       install n serial lines (0-%d)\n",
           MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
@@ -60,6 +61,7 @@ int main(int argc, char *argv[]) {
   unsigned int loadAddr;
   char *romName;
   char *diskName;
+  char *sdcardName;
   int numSerials;
   Bool connectTerminals[MAX_NSERIALS];
   Bool graphics;
@@ -75,6 +77,7 @@ int main(int argc, char *argv[]) {
   loadAddr = 0;
   romName = NULL;
   diskName = NULL;
+  sdcardName = NULL;
   numSerials = 0;
   for (j = 0; j < MAX_NSERIALS; j++) {
     connectTerminals[j] = false;
@@ -129,6 +132,12 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
         }
         diskName = argv[++i];
+        break;
+      case 'D':
+        if (i == argc - 1 || sdcardName != NULL) {
+          usage(argv[0]);
+        }
+        sdcardName = argv[++i];
         break;
       case 's':
         if (i == argc - 1) {
@@ -192,7 +201,7 @@ int main(int argc, char *argv[]) {
   }
   serialInit(numSerials, connectTerminals);
   diskInit(diskName);
-  sdcardInit(diskName);
+  sdcardInit(sdcardName);
   outputInit(outputName);
   shutdownInit();
   if (graphics) {
