@@ -31,6 +31,8 @@
 #define TEST_READ_SLOW	0	/* do NOT enable if SPI_LOG is 1 */
 #define TEST_READ_FAST	0	/* do NOT enable if SPI_LOG is 1 */
 
+#define RANDOM_SEED	10373
+
 
 /**************************************************************/
 
@@ -524,7 +526,7 @@ again:
   /***********************************/
   /* write block, high address       */
   /***********************************/
-  setRandomNumber(10307);
+  setRandomNumber(RANDOM_SEED);
   for (i = 0; i < 512; i++) {
     wrsector[i] = (getRandomNumber() >> 8) & 0xFF;
   }
@@ -551,7 +553,9 @@ again:
   dummy = sndRcv((crc16 >> 8) & 0xFF);
   dummy = sndRcv((crc16 >> 0) & 0xFF);
   /* get data response token */
-  rcv2 = sndRcv(0xFF);
+  do {
+    rcv2 = sndRcv(0xFF);
+  } while (rcv2 == 0xFF);
   /* wait while busy */
   do {
     rcv3 = sndRcv(0xFF);
@@ -610,7 +614,9 @@ again:
   dummy = sndRcv((crc16 >> 8) & 0xFF);
   dummy = sndRcv((crc16 >> 0) & 0xFF);
   /* get data response token */
-  rcv2 = sndRcv(0xFF);
+  do {
+    rcv2 = sndRcv(0xFF);
+  } while (rcv2 == 0xFF);
   /* wait while busy */
   do {
     rcv3 = sndRcv(0xFF);
@@ -643,7 +649,7 @@ again:
   /***********************************/
   /* read block, high address        */
   /***********************************/
-  setRandomNumber(10307);
+  setRandomNumber(RANDOM_SEED);
   for (i = 0; i < 512; i++) {
     wrsector[i] = (getRandomNumber() >> 8) & 0xFF;
   }
