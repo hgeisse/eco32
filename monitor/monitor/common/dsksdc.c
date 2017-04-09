@@ -28,6 +28,9 @@
 #define SDC_READY	((unsigned int) 0x01)
 
 
+#define START_BLOCK_TOKEN	0xFE
+
+
 Bool debug = false;
 
 
@@ -109,11 +112,13 @@ static int sndCmd(unsigned char *cmd,
   unsigned char r;
 
   select();
+  /* send command */
   resetCRC7();
   for (i = 0; i < 5; i++) {
     (void) sndRcv(cmd[i]);
   }
   (void) sndRcv(getCRC7());
+  /* receive answer */
   i = 8;
   do {
     r = sndRcv(0xFF);
@@ -122,6 +127,7 @@ static int sndCmd(unsigned char *cmd,
     return 0;
   }
   rcv[0] = r;
+  /* possibly receive more answer bytes */
   for (i = 1; i < size; i++) {
     rcv[i] = sndRcv(0xFF);
   }
@@ -139,11 +145,13 @@ static int sndCmdRcvData(unsigned char *cmd,
   unsigned short crc16;
 
   select();
+  /* send command */
   resetCRC7();
   for (i = 0; i < 5; i++) {
     (void) sndRcv(cmd[i]);
   }
   (void) sndRcv(getCRC7());
+  /* receive answer */
   i = 8;
   do {
     r = sndRcv(0xFF);
@@ -152,17 +160,20 @@ static int sndCmdRcvData(unsigned char *cmd,
     return 0;
   }
   rcv[0] = r;
+  /* wait for start block token */
   i = 2048;
   do {
     r = sndRcv(0xFF);
-  } while (r != 0xFE && --i > 0);
+  } while (r != START_BLOCK_TOKEN && --i > 0);
   if (i == 0) {
     return 0;
   }
+  /* receive data bytes */
   resetCRC16(true);
   for (i = 0; i < size; i++) {
     ptr[i] = sndRcv(0xFF);
   }
+  /* receive CRC */
   (void) sndRcv(0xFF);
   (void) sndRcv(0xFF);
   crc16 = getCRC16();
@@ -172,6 +183,59 @@ static int sndCmdRcvData(unsigned char *cmd,
     /* CRC error */
     return 0;
   }
+  return size;
+}
+
+
+static int sndCmdSndData(unsigned char *cmd,
+                         unsigned char *rcv,
+                         unsigned char *ptr, int size) {
+  int i;
+  unsigned char r;
+  unsigned short crc16;
+
+  select();
+  /* send command */
+  resetCRC7();
+  for (i = 0; i < 5; i++) {
+    (void) sndRcv(cmd[i]);
+  }
+  (void) sndRcv(getCRC7());
+  /* receive answer */
+  i = 8;
+  do {
+    r = sndRcv(0xFF);
+  } while (r == 0xFF && --i > 0);
+  if (i == 0) {
+    return 0;
+  }
+  rcv[0] = r;
+  /* send start block token */
+  (void) sndRcv(START_BLOCK_TOKEN);
+  /* send data bytes */
+  resetCRC16(false);
+  for (i = 0; i < size; i++) {
+    (void) sndRcv(ptr[i]);
+  }
+  /* send CRC */
+  crc16 = getCRC16();
+  (void) sndRcv((crc16 >> 8) & 0xFF);
+  (void) sndRcv((crc16 >> 0) & 0xFF);
+  /* receive data respose token */
+  do {
+    r = sndRcv(0xFF);
+  } while (r == 0xFF);
+  rcv[1] = r;
+  if ((r & 0x1F) != 0x05) {
+    /* rejected */
+    return 0;
+  }
+  /* wait while busy */
+  do {
+    r = sndRcv(0xFF);
+  } while (r == 0x00);
+  deselect();
+  (void) sndRcv(0xFF);
   return size;
 }
 
@@ -337,7 +401,7 @@ static void sendCardSpecData(unsigned char *csd) {
 }
 
 
-static void readSingleBlock(unsigned int sct, unsigned char *ptr) {
+static void readSingleSector(unsigned int sct, unsigned char *ptr) {
   unsigned char cmd[5] = { 0x51, 0x00, 0x00, 0x00, 0x00 };
   unsigned char rcv[1];
   int n;
@@ -354,6 +418,29 @@ static void readSingleBlock(unsigned int sct, unsigned char *ptr) {
       printf("no answer\n");
     } else {
       printf("0x%02X\n", rcv[0]);
+    }
+  }
+}
+
+
+static void writeSingleSector(unsigned int sct, unsigned char *ptr) {
+  unsigned char cmd[5] = { 0x58, 0x00, 0x00, 0x00, 0x00 };
+  unsigned char rcv[2];
+  int n;
+
+  cmd[1] = (sct >> 24) & 0xFF;
+  cmd[2] = (sct >> 16) & 0xFF;
+  cmd[3] = (sct >>  8) & 0xFF;
+  cmd[4] = (sct >>  0) & 0xFF;
+  n = sndCmdSndData(cmd, rcv, ptr, 512);
+  if (debug) {
+    printf("CMD58  (0x%02X%02X%02X%02X) : ",
+           cmd[1], cmd[2], cmd[3], cmd[4]);
+    if (n == 0) {
+      printf("no answer\n");
+    } else {
+      printf("0x%02X\n", rcv[0]);
+      printf("       data response token = 0x%02X\n", rcv[1]);
     }
   }
 }
@@ -412,23 +499,29 @@ int dskiosdc(char cmd, int sct, Word addr, int nscts) {
   int i;
   unsigned char *ptr;
 
-  if (!sdcInitialized) {
-    initSDC();
-  }
   if (cmd == 'r') {
     ptr = (unsigned char *) (0xC0000000 | addr);
     for (i = 0; i < nscts; i++) {
       if (sct >= numSectors) {
         return -1;
       }
-      readSingleBlock(sct, ptr);
+      readSingleSector(sct, ptr);
       sct++;
       ptr += 512;
     }
     return 0;
   }
   if (cmd == 'w') {
-    return -1;
+    ptr = (unsigned char *) (0xC0000000 | addr);
+    for (i = 0; i < nscts; i++) {
+      if (sct >= numSectors) {
+        return -1;
+      }
+      writeSingleSector(sct, ptr);
+      sct++;
+      ptr += 512;
+    }
+    return 0;
   }
   return -1;
 }
