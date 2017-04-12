@@ -9,12 +9,9 @@ BUILD = ../../../../build
 all:		build/output_files/eco32.sof
 
 install:	build/output_files/eco32.sof
-		#$(BUILD)/bin/bit2exo 0x180000 \
-		#  build/eco32.bit build/eco32.exo
-		#mkdir -p $(BUILD)/eco32/xsa-xst-3
-		#cp build/eco32.bit $(BUILD)/eco32/xsa-xst-3
-		#cp build/eco32.exo $(BUILD)/eco32/xsa-xst-3
-		#cp doc/README $(BUILD)/eco32/xsa-xst-3
+		mkdir -p $(BUILD)/eco32/de2-115
+		cp build/output_files/eco32.sof $(BUILD)/eco32/de2-115
+		cp doc/README $(BUILD)/eco32/de2-115
 
 clean:
 		mv build/eco32.qpf .
