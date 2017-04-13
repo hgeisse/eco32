@@ -1,20 +1,27 @@
 #
-# Makefile to build a bootable disk, and either start the
-# ECO32 simulator with a ROM monitor (goal: run an OS within
-# the simulator) or start the serial line disk server (goal:
-# run an OS on an FPGA board with a disk simulation over the
-# serial line).
+# Makefile to build a bootable disk, and use it in one of four ways:
 #
-# The simulator can either be started with an IDE disk interface
-# (run-sim-dsk) or with an SD card interface (run-sim-sdc).
+# 1. Start the simulator with an IDE disk interface (run-sim-dsk).
 #
-# NOTE: Please set SER_DEV to the serial line device on which
-#       the disk server should wait for commands!
+# 2. Start the simulator with an SD card interface (run-sim-sdc).
+#
+# 3. Start the simulator with a 'dangling' serial line to which
+#    the disk server can connect (run-sim-ser). Note that in this
+#    case you must start the disk server manually with the correct
+#    serial line device specified on the command line. The name of
+#    this pseudoterminal is shown during startup of the simulator.
+#    Let the server connect to the pseudoterminal before you start
+#    running the machine monitor.
+#
+# 4. Start the disk server alone to make the disk available over
+#    a real serial line for an FPGA board (run-server). Note that
+#    in this case SER_DEV must be set to the serial line device on
+#    which the disk server should wait for commands.
 #
 
 BUILD = ..
 
-SER_DEV = /dev/tty01
+SER_DEV = /dev/ttyUSB1
 DSK_IMG = disk.img
 DSK_SIZ = 650M
 RUN_LOG = run.log
@@ -30,6 +37,11 @@ run-sim-sdc:	$(DSK_IMG)
 		$(BUILD)/bin/sim -i -m 32 -c -s 2 -t 0 -t 1 \
 		  -r $(BUILD)/monitor/simulator/monitor.bin \
 		  -D $(DSK_IMG) -o $(RUN_LOG)
+
+run-sim-ser:	$(DSK_IMG)
+		$(BUILD)/bin/sim -i -m 32 -c -s 2 -t 0 \
+		  -r $(BUILD)/monitor/simulator/monitor.bin \
+		  -o $(RUN_LOG)
 
 run-server:	$(DSK_IMG)
 		$(BUILD)/bin/diskserv $(SER_DEV) $(DSK_IMG)
