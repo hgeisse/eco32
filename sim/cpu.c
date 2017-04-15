@@ -292,6 +292,11 @@ static void execNextInstruction(void) {
       smsk = (RR(reg1) & 0x80000000 ? ~(((Word) 0xFFFFFFFF) >> scnt) : 0);
       WR(reg2, smsk | (RR(reg1) >> scnt));
       break;
+    case OP_CCTL:
+      /*
+       * Nothing to do here: no simulation of caches.
+       */
+      break;
     case OP_LDHI:
       WR(reg2, ZEXT16(immed) << 16);
       break;

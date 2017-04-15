@@ -68,6 +68,8 @@
 #define OP_SAR		0x1C
 #define OP_SARI		0x1D
 
+#define OP_CCTL		0x1E
+
 #define OP_LDHI		0x1F
 
 #define OP_BEQ		0x20
