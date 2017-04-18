@@ -11,7 +11,7 @@ char *cGetLine(char *prompt);
 void cAddHist(char *line);
 void cPrintf(char *format, ...);
 
-void cInit(void);
+void cInit(Bool expect);
 void cExit(void);
 
 

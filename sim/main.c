@@ -43,6 +43,7 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-g]           install graphics controller\n");
   fprintf(stderr, "    [-c]           install console\n");
   fprintf(stderr, "    [-o <file>]    bind output device to file\n");
+  fprintf(stderr, "    [-x]           use simulator with DejaGnu/expect\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
   fprintf(stderr, "Unconnected serial lines can be accessed by opening\n");
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
   Bool graphics;
   Bool console;
   char *outputName;
+  Bool expect;
   Word initialPC;
   char command[20];
   char *line;
@@ -85,6 +87,7 @@ int main(int argc, char *argv[]) {
   graphics = false;
   console = false;
   outputName = NULL;
+  expect = false;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (*argp != '-') {
@@ -174,11 +177,14 @@ int main(int argc, char *argv[]) {
         }
         outputName = argv[++i];
         break;
+      case 'x':
+        expect = true;
+        break;
       default:
         usage(argv[0]);
     }
   }
-  cInit();
+  cInit(expect);
   cPrintf("ECO32 Simulator started\n");
   if (progName == NULL && romName == NULL && !interactive) {
     cPrintf("Neither a program to load nor a system ROM was\n");
@@ -199,7 +205,7 @@ int main(int argc, char *argv[]) {
     displayInit();
     keyboardInit();
   }
-  serialInit(numSerials, connectTerminals);
+  serialInit(numSerials, connectTerminals, expect);
   diskInit(diskName);
   sdcardInit(sdcardName);
   outputInit(outputName);

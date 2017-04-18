@@ -25,7 +25,7 @@ Word serialRead(Word addr);
 void serialWrite(Word addr, Word data);
 
 void serialReset(void);
-void serialInit(int numSerials, Bool connectTerminals[]);
+void serialInit(int numSerials, Bool connectTerminals[], Bool expect);
 void serialExit(void);
 
 

@@ -49,6 +49,8 @@ typedef struct {
 static Serial serials[MAX_NSERIALS];
 static int nSerials;
 
+static Bool controlledByExpect;
+
 
 /**************************************************************/
 
@@ -80,6 +82,10 @@ static void xmtrCallback(int dev) {
     cPrintf("\n**** SERIAL XMTR CALLBACK ****\n");
   }
   fputc(serials[dev].xmtrData & 0xFF, serials[dev].out);
+  if (controlledByExpect) {
+    /* copy serial data to stdout */
+    fputc(serials[dev].xmtrData & 0xFF, stdout);
+  }
   serials[dev].xmtrCtrl |= SERIAL_XMTR_RDY;
   if (serials[dev].xmtrCtrl & SERIAL_XMTR_IEN) {
     /* raise serial line xmtr interrupt */
@@ -236,7 +242,7 @@ static void makeRaw(int fd) {
 }
 
 
-void serialInit(int numSerials, Bool connectTerminals[]) {
+void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
   int i;
   int master;
   char slavePath[100];
@@ -297,6 +303,7 @@ void serialInit(int numSerials, Bool connectTerminals[]) {
       while (fgetc(serials[i].in) != '\n') ;
     }
   }
+  controlledByExpect = expect;
   serialReset();
 }
 

@@ -17,6 +17,7 @@
 #include "getline.h"
 
 
+static Bool controlledByExpect;
 static void (*oldSigIntHandler)(int signum);
 
 
@@ -39,13 +40,18 @@ void cAddHist(char *line) {
 void cPrintf(char *format, ...) {
   va_list ap;
 
+  if (controlledByExpect) {
+    /* don't output any simulator messages */
+    return;
+  }
   va_start(ap, format);
   vprintf(format, ap);
   va_end(ap);
 }
 
 
-void cInit(void) {
+void cInit(Bool expect) {
+  controlledByExpect = expect;
   oldSigIntHandler = signal(SIGINT, newSigIntHandler);
 }
 
