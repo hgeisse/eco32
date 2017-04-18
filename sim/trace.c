@@ -25,7 +25,9 @@
 #define TRACE_STORE_WORD	6
 #define TRACE_STORE_HALF	7
 #define TRACE_STORE_BYTE	8
-#define TRACE_EXCEPTION		9
+#define TRACE_LOAD_LINK_WORD	9
+#define TRACE_STORE_COND_WORD	10
+#define TRACE_EXCEPTION		11
 
 
 typedef struct {
@@ -99,6 +101,20 @@ void traceStoreByte(Word addr) {
 }
 
 
+void traceLoadLinkWord(Word addr) {
+  traceBuffer[nextWrite].type = TRACE_LOAD_LINK_WORD;
+  traceBuffer[nextWrite].data1 = addr;
+  nextWrite = (nextWrite + 1) & TRACE_BUF_MASK;
+}
+
+
+void traceStoreCondWord(Word addr) {
+  traceBuffer[nextWrite].type = TRACE_STORE_COND_WORD;
+  traceBuffer[nextWrite].data1 = addr;
+  nextWrite = (nextWrite + 1) & TRACE_BUF_MASK;
+}
+
+
 void traceException(Word priority) {
   traceBuffer[nextWrite].type = TRACE_EXCEPTION;
   traceBuffer[nextWrite].data1 = priority;
@@ -119,37 +135,45 @@ char *traceShow(int back) {
       sprintf(answer, "-- empty --");
       break;
     case TRACE_FETCH:
-      sprintf(answer, "instr fetch, addr = %08X",
+      sprintf(answer, "instr fetch, addr     = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_EXEC:
-      sprintf(answer, "instr exec, instr = %08X    %s",
+      sprintf(answer, "instr exec, instr     = %08X    %s",
               traceBuffer[index].data1,
               disasm(traceBuffer[index].data1,
                      traceBuffer[index].data2));
       break;
     case TRACE_LOAD_WORD:
-      sprintf(answer, "load word, addr   = %08X",
+      sprintf(answer, "load word, addr       = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_LOAD_HALF:
-      sprintf(answer, "load half, addr   = %08X",
+      sprintf(answer, "load half, addr       = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_LOAD_BYTE:
-      sprintf(answer, "load byte, addr   = %08X",
+      sprintf(answer, "load byte, addr       = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_STORE_WORD:
-      sprintf(answer, "store word, addr  = %08X",
+      sprintf(answer, "store word, addr      = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_STORE_HALF:
-      sprintf(answer, "store half, addr  = %08X",
+      sprintf(answer, "store half, addr      = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_STORE_BYTE:
-      sprintf(answer, "store byte, addr  = %08X",
+      sprintf(answer, "store byte, addr      = %08X",
+              traceBuffer[index].data1);
+      break;
+    case TRACE_LOAD_LINK_WORD:
+      sprintf(answer, "load-link word, addr  = %08X",
+              traceBuffer[index].data1);
+      break;
+    case TRACE_STORE_COND_WORD:
+      sprintf(answer, "store-cond word, addr = %08X",
               traceBuffer[index].data1);
       break;
     case TRACE_EXCEPTION:

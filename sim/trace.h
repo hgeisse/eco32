@@ -20,6 +20,8 @@ void traceLoadByte(Word addr);
 void traceStoreWord(Word addr);
 void traceStoreHalf(Word addr);
 void traceStoreByte(Word addr);
+void traceLoadLinkWord(Word addr);
+void traceStoreCondWord(Word addr);
 void traceException(Word priority);
 char *traceShow(int back);
 

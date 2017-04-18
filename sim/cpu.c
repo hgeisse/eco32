@@ -55,6 +55,10 @@ static Bool run;		/* CPU runs continuously if true */
 static Word startAddr;		/* start of ROM (or start of RAM, */
 				/* in case a program was loaded) */
 
+static Bool linked;		/* true means: load-link has been */
+				/* executed, not yet followed by */
+				/* store-cond, without any exception */
+
 
 /**************************************************************/
 
@@ -139,6 +143,8 @@ static void handleInterrupts(void) {
       /* any other exception or interrupt */
       pc |= 0x00000004;
     }
+    /* reset link status */
+    linked = false;
   }
 }
 
@@ -511,6 +517,23 @@ static void execNextInstruction(void) {
       }
       mmuTbwi();
       break;
+    case OP_LDLW:
+      addr = RR(reg1) + SEXT16(immed);
+      traceLoadLinkWord(addr);
+      WR(reg2, mmuReadWord(addr, UM));
+      linked = true;
+      break;
+    case OP_STCW:
+      addr = RR(reg1) + SEXT16(immed);
+      traceStoreCondWord(addr);
+      if (linked) {
+        linked = false;
+        mmuWriteWord(addr, RR(reg2), UM);
+        WR(reg2, 1);
+      } else {
+        WR(reg2, 0);
+      }
+      break;
     default:
       throwException(EXC_ILL_INSTRCT);
       break;
@@ -660,6 +683,7 @@ void cpuReset(void) {
   pc = startAddr;
   r[0] = 0;
   psw = 0;
+  linked = false;
   /* reset simulator control variables */
   irqPending = 0;
   total = 0;
