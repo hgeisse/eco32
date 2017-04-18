@@ -73,7 +73,11 @@ L2:
 
 	mvfs	$5,1
 	mvts	$5,1
+
 	tbs
 	tbwr
 	tbri
 	tbwi
+
+	ldlw	$5,$2,13
+	stcw	$5,$2,13
