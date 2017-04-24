@@ -30,6 +30,7 @@ Instr instrTbl[] = {
   { "sll",   FORMAT_RRX, OP_SLL  },
   { "slr",   FORMAT_RRX, OP_SLR  },
   { "sar",   FORMAT_RRX, OP_SAR  },
+  { "cctl",  FORMAT_N,   OP_CCTL },
   { "ldhi",  FORMAT_RHH, OP_LDHI },
   { "beq",   FORMAT_RRB, OP_BEQ  },
   { "bne",   FORMAT_RRB, OP_BNE  },
@@ -60,7 +61,9 @@ Instr instrTbl[] = {
   { "tbs",   FORMAT_N,   OP_TBS  },
   { "tbwr",  FORMAT_N,   OP_TBWR },
   { "tbri",  FORMAT_N,   OP_TBRI },
-  { "tbwi",  FORMAT_N,   OP_TBWI }
+  { "tbwi",  FORMAT_N,   OP_TBWI },
+  { "ldlw",  FORMAT_RRS, OP_LDLW },
+  { "stcw",  FORMAT_RRS, OP_STCW },
 };
 
 

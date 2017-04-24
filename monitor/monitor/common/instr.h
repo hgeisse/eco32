@@ -68,6 +68,8 @@
 #define OP_SAR		0x1C
 #define OP_SARI		0x1D
 
+#define OP_CCTL		0x1E
+
 #define OP_LDHI		0x1F
 
 #define OP_BEQ		0x20
@@ -101,10 +103,14 @@
 
 #define OP_MVFS		0x38
 #define OP_MVTS		0x39
+
 #define OP_TBS		0x3A
 #define OP_TBWR		0x3B
 #define OP_TBRI		0x3C
 #define OP_TBWI		0x3D
+
+#define OP_LDLW		0x3E
+#define OP_STCW		0x3F
 
 
 typedef struct {
