@@ -1,0 +1,9 @@
+Here are three implementations of a memory controller, all
+three intended to be used in simulations. memctrl-0 provides
+a very simple underlying RAM model (array of values, constant
+access delays for read and write). memctrl-1 utilizes a more
+realistic SDRAM model (provided by Micron Technology).
+memctrl-2 is very similar to memctrl-1, but clocks the test
+circuit with half the frequency (50 MHz) of the SDRAM's
+(and SDRAM controller's) clock (100 MHz). For details see
+the README files in the subdirectories.

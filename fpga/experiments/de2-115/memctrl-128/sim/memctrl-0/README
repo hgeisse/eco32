@@ -1,0 +1,40 @@
+Structure
+---------
+
+A top-level module (memtest.v) creates instances of a memory
+test circuit (ramtest/ramtest.v) and a memory controller
+(ramctrl/ramctrl.v), which in turn builds an internal model
+of the external RAM (ramctrl/ram.v).
+
+
+Intended Use
+------------
+
+The memory controller offers a complete simulation of the memory
+subsystem, if the given (simplistic) RAM implementation is used.
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^25 * 128 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+data read/write:
+2^25 * 128 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to RAM)
+---------------------------
+
+2 * 2^25 * 16 bit = 128 MB
+strobe/acknowledge handshake
+
+
+RAM
+---
+
+The RAM has got separately adjustable access times for read and
+write operations (minimum is two clock cycles each).
