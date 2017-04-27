@@ -4,14 +4,56 @@ Contents of Subdirectories
 experiments
 different experiments to explore implementation alternatives
 
-	memdelay
-	RAM simulation with adjustable read/write delays
+    xsa-xst-3
+    experiments using XESS board
 
-	memspeed-1
-	SDRAM speed measurement circuit for XESS board, old controller
+        memctrl-64
+        64-bit memory controller for pipelined CPU
+        (split I/D, pipelined RAM access, 32 MB RAM total)
 
-	memspeed-2
-	SDRAM speed measurement circuit for XESS board, new controller
+            sim
+            controller simulations
+
+            fpga
+            controller implementations
+
+        memdelay
+        RAM simulation with adjustable read/write delays
+
+        memspeed-1
+        SDRAM speed measurement circuit, old controller
+
+        memspeed-2
+        SDRAM speed measurement circuit, new controller
+
+    de2-115
+    experiments using Terasic board
+
+        memctrl-32
+        32-bit memory controller for multi-cycle CPU
+        (unified I/D, single-word RAM access, 128 MB RAM total)
+
+            sim
+            controller simulations
+
+            fpga
+            controller implementations
+
+        memctrl-128
+        128-bit memory controller for pipelined CPU
+        (split I/D, pipelined RAM access, 128 MB RAM total)
+
+            sim
+            controller simulations
+
+            fpga
+            controller implementations
+
+        memdelay
+        RAM simulation with adjustable read/write delays
+
+        sdcard
+        basic SD card interface simulation
 
 mc
 multicycle implementations of ECO32
