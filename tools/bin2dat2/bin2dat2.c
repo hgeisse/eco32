@@ -37,8 +37,9 @@ int main(int argc, char *argv[]) {
   unsigned char lineData[16];
 
   if (argc != 5) {
-    printf("Usage: %s <input file> <high output file>\n", argv[0]);
-    printf("                  <low output file> <memory size in KB>\n");
+    printf("Usage: %s\n", argv[0]);
+    printf("           <input file> <high output file>\n");
+    printf("           <low output file> <memory size in KB>\n");
     exit(1);
   }
   infile = fopen(argv[1], "rb");
