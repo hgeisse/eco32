@@ -83,7 +83,7 @@ module ramtest(clk, rst,
 `endif
       error_2 <= 0;
     end else begin
-      if (~test_ended) begin
+      if (~test_ended | inst_stb) begin
         if (~inst_stb) begin
           if (inst_timer == `INST_PERIOD - 1) begin
             inst_timer <= 0;
@@ -138,7 +138,7 @@ module ramtest(clk, rst,
 `endif
       error_4 <= 0;
     end else begin
-      if (~test_ended) begin
+      if (~test_ended | data_stb) begin
         if (~data_stb) begin
           if (data_timer == `DATA_PERIOD - 1) begin
             data_timer <= 0;
