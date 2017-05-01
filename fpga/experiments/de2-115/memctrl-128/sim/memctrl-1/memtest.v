@@ -46,7 +46,7 @@ module memtest;
                 rst_in = 1;
     #43         clk_ok_in = 1;
     #200400     rst_in = 0;
-    #260000     $finish;
+    #263000     $finish;
   end
 
   // clock generator

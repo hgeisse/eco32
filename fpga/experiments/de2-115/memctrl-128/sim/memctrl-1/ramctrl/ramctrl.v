@@ -51,16 +51,18 @@
 `define ST_WRDATA4	5'd17		// NOP, ack=0, wait 3 cycles
 `define ST_RDDATA0	5'd18		// NOP, wait tRCD - 1 cycle
 `define ST_RDDATA1	5'd19		// READ
-`define ST_RDDATA2	5'd20		// NOP, ld=1, wait 4 cycles
-`define ST_RDDATA3	5'd21		// NOP, ack=1, ld=0
-`define ST_RDDATA4	5'd22		// NOP, ack=0, wait 4 cycles
-`define ST_ILLIA0	5'd23		// NOP, inst_timeout=1
-`define ST_ILLIA1	5'd24		// NOP, inst_timeout=0
-`define ST_RDINST0	5'd25		// NOP, wait tRCD - 1 cycle
-`define ST_RDINST1	5'd26		// READ
-`define ST_RDINST2	5'd27		// NOP, ld=1, wait 4 cycles
-`define ST_RDINST3	5'd28		// NOP, ack=1, ld=0
-`define ST_RDINST4	5'd29		// NOP, ack=0, wait 4 cycles
+`define ST_RDDATA2	5'd20		// NOP, wait 1 cycle
+`define ST_RDDATA3	5'd21		// NOP, ld=1, wait 4 cycles
+`define ST_RDDATA4	5'd22		// NOP, ack=1, ld=0
+`define ST_RDDATA5	5'd23		// NOP, ack=0, wait 4 cycles
+`define ST_ILLIA0	5'd24		// NOP, inst_timeout=1
+`define ST_ILLIA1	5'd25		// NOP, inst_timeout=0
+`define ST_RDINST0	5'd26		// NOP, wait tRCD - 1 cycle
+`define ST_RDINST1	5'd27		// READ
+`define ST_RDINST2	5'd28		// NOP, wait 1 cycle
+`define ST_RDINST3	5'd29		// NOP, ld=1, wait 4 cycles
+`define ST_RDINST4	5'd30		// NOP, ack=1, ld=0
+`define ST_RDINST5	5'd31		// NOP, ack=0, wait 4 cycles
 
 `define T_INIT0		14'd10000	// min 100 usec with CKE = 0
 `define T_INIT1		14'd10000	// min 100 usec with CKE = 1
@@ -164,8 +166,8 @@ module ramctrl(clk_ok, clk,
   // a PLL if the controller is implemented on an FPGA
   //
 
-  not #1 not_1(sdram_clk_aux, clk);
-  not #1 not_2(sdram_clk, sdram_clk_aux);
+  not #4 not_1(sdram_clk_aux, clk);
+  not #5 not_2(sdram_clk, sdram_clk_aux);
 
   //
   // data output to ram
@@ -471,20 +473,25 @@ module ramctrl(clk_ok, clk,
             end
           `ST_RDDATA2:
             begin
-              ram_cnt <= 0;
-              data_ld <= 1;
               ram_cmd <= `CMD_NOP;
-              count <= 3;
               state <= `ST_RDDATA3;
             end
           `ST_RDDATA3:
             begin
-              data_ack <= 1;
-              data_ld <= 0;
+              ram_cnt <= 0;
+              data_ld <= 1;
               ram_cmd <= `CMD_NOP;
+              count <= 3;
               state <= `ST_RDDATA4;
             end
           `ST_RDDATA4:
+            begin
+              data_ack <= 1;
+              data_ld <= 0;
+              ram_cmd <= `CMD_NOP;
+              state <= `ST_RDDATA5;
+            end
+          `ST_RDDATA5:
             begin
               data_ack <= 0;
               ram_cmd <= `CMD_NOP;
@@ -524,20 +531,25 @@ module ramctrl(clk_ok, clk,
             end
           `ST_RDINST2:
             begin
-              ram_cnt <= 0;
-              data_ld <= 1;
               ram_cmd <= `CMD_NOP;
-              count <= 3;
               state <= `ST_RDINST3;
             end
           `ST_RDINST3:
             begin
-              inst_ack <= 1;
-              data_ld <= 0;
+              ram_cnt <= 0;
+              data_ld <= 1;
               ram_cmd <= `CMD_NOP;
+              count <= 3;
               state <= `ST_RDINST4;
             end
           `ST_RDINST4:
+            begin
+              inst_ack <= 1;
+              data_ld <= 0;
+              ram_cmd <= `CMD_NOP;
+              state <= `ST_RDINST5;
+            end
+          `ST_RDINST5:
             begin
               inst_ack <= 0;
               ram_cmd <= `CMD_NOP;
