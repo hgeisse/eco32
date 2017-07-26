@@ -23,7 +23,7 @@ BUILD = ..
 
 SER_DEV = /dev/ttyUSB1
 DSK_IMG = disk.img
-DSK_SIZ = 650M
+DSK_SIZ = 600M
 RUN_LOG = run.log
 
 all:		$(DSK_IMG)

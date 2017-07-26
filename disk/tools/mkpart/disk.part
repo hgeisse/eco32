@@ -41,11 +41,12 @@
 #   max. 512 / 16 - 12 = 20 characters (includes trailing 0)
 #   this may be displayed during bootstrap
 #
-# The following example exactly fits on a 650M disk:
+# The following example exactly fits on a 600 MB disk:
 
 0 * 0x0058      32   17919 "EOS32 root"
 1   0x0059   17920   33919 "EOS32 swap"
 2   0x0058   33920   73919 "EOS32 usr"
 3   0x0058   73920   81919 "EOS32 home"
-4 * 0x00A9   81920 1228799 "NetBSD 6.1"
-5 * 0x0083 1228800 1331199 "Linux"
+4 * 0x00A9   81920  593919 "NetBSD"
+5 * 0x0083  593920 1105919 "Linux"
+6   0x0082 1105920 1228799 "Linux swap"
