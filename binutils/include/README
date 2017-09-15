@@ -15,12 +15,12 @@ The file consists of a header and up to 6 sections:
   - code relocation records
   - data relocation records
   - symbol table records
-  - symbol string storage
+  - symbol string space
 
 
 1) Header
 
-The header specifies the sizes of all following sections,
+The header specifies the sizes of the following sections,
 but has itself a fixed length (and is always present):
 
 typedef struct {
@@ -31,7 +31,7 @@ typedef struct {
   unsigned int crsize;		/* size of code relocation info in bytes */
   unsigned int drsize;		/* size of data relocation info in bytes */
   unsigned int symsize;		/* size of symbol table in bytes */
-  unsigned int strsize;		/* size of string space in bytes */
+  unsigned int entry;		/* the program's entry point */
 } ExecHeader;
 
 The magic number is used to distinguish executable files from
@@ -67,8 +67,9 @@ information about symbols which are exported from or imported
 into this object file. It is mainly used during the link step
 and may not be present (size = 0) if the file is an executable.
 
-The string space is used to store the names of the symbols in
-the symbol table.
+The program's starting address is given by the value of "entry".
+It only has meaning in executable files, and is thus set to zero
+in object files.
 
 
 2) Code/Initialized Data
@@ -135,9 +136,11 @@ the "value" holds its value. Otherwise, the symbol is not defined
 here (i.e., it is imported), and the "value" has no meaning.
 
 
-5) Symbol String Storage
+5) Symbol String Space
 
-The strings are null-terminated and stored without any padding.
+The symbol string space is used to store the names of all symbols in
+the symbol table. The strings are null-terminated and stored without
+any padding. The symbol string space extends to the end of the file.
 
 
 6) Executing an Executable
@@ -160,3 +163,5 @@ The stack is located in the highest possible locations in the virtual
 address space, which are accessible in user mode, and thus expanding
 downwards from (but excluding) the address 0x80000000. It is extended
 automatically by the operating system.
+
+After loading the program, execution begins at its entry point.

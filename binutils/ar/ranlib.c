@@ -284,7 +284,7 @@ int updateSymbols(char *archive, int verbose) {
     conv4FromEcoToNative((unsigned char *) &exhdr.crsize);
     conv4FromEcoToNative((unsigned char *) &exhdr.drsize);
     conv4FromEcoToNative((unsigned char *) &exhdr.symsize);
-    conv4FromEcoToNative((unsigned char *) &exhdr.strsize);
+    conv4FromEcoToNative((unsigned char *) &exhdr.entry);
     skip = exhdr.csize + exhdr.dsize + exhdr.crsize + exhdr.drsize;
     fseek(fi, skip, SEEK_CUR);
     numSymbols = exhdr.symsize / sizeof(SymbolRecord);

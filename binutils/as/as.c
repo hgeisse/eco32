@@ -1912,7 +1912,7 @@ void writeRealHeader(void) {
   execHeader.crsize = crelSize;
   execHeader.drsize = drelSize;
   execHeader.symsize = symtblSize;
-  execHeader.strsize = stringSize;
+  execHeader.entry = 0;
   conv4FromNativeToEco((unsigned char *) &execHeader.magic);
   conv4FromNativeToEco((unsigned char *) &execHeader.csize);
   conv4FromNativeToEco((unsigned char *) &execHeader.dsize);
@@ -1920,7 +1920,7 @@ void writeRealHeader(void) {
   conv4FromNativeToEco((unsigned char *) &execHeader.crsize);
   conv4FromNativeToEco((unsigned char *) &execHeader.drsize);
   conv4FromNativeToEco((unsigned char *) &execHeader.symsize);
-  conv4FromNativeToEco((unsigned char *) &execHeader.strsize);
+  conv4FromNativeToEco((unsigned char *) &execHeader.entry);
   fwrite(&execHeader, sizeof(ExecHeader), 1, outFile);
 }
 

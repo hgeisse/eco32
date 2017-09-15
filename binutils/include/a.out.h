@@ -29,7 +29,7 @@ typedef struct {
   unsigned int crsize;		/* size of code relocation info in bytes */
   unsigned int drsize;		/* size of data relocation info in bytes */
   unsigned int symsize;		/* size of symbol table in bytes */
-  unsigned int strsize;		/* size of string space in bytes */
+  unsigned int entry;		/* the program's entry point */
 } ExecHeader;
 
 typedef struct {

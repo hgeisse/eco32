@@ -98,18 +98,18 @@ void dumpHeader(void) {
   conv4FromEcoToNative((unsigned char *) &execHeader.crsize);
   conv4FromEcoToNative((unsigned char *) &execHeader.drsize);
   conv4FromEcoToNative((unsigned char *) &execHeader.symsize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.strsize);
+  conv4FromEcoToNative((unsigned char *) &execHeader.entry);
   if (execHeader.magic != EXEC_MAGIC) {
     error("wrong magic number in exec header");
   }
   printf("Header\n");
-  printf("    size of code         : %8u bytes\n", execHeader.csize);
-  printf("    size of data         : %8u bytes\n", execHeader.dsize);
-  printf("    size of bss          : %8u bytes\n", execHeader.bsize);
-  printf("    size of code relocs  : %8u bytes\n", execHeader.crsize);
-  printf("    size of data relocs  : %8u bytes\n", execHeader.drsize);
-  printf("    size of symbol table : %8u bytes\n", execHeader.symsize);
-  printf("    size of string space : %8u bytes\n", execHeader.strsize);
+  printf("    size of code         : %10u bytes\n", execHeader.csize);
+  printf("    size of data         : %10u bytes\n", execHeader.dsize);
+  printf("    size of bss          : %10u bytes\n", execHeader.bsize);
+  printf("    size of code relocs  : %10u bytes\n", execHeader.crsize);
+  printf("    size of data relocs  : %10u bytes\n", execHeader.drsize);
+  printf("    size of symbol table : %10u bytes\n", execHeader.symsize);
+  printf("    entry point          : 0x%08X\n", execHeader.entry);
 }
 
 

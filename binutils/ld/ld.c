@@ -459,7 +459,7 @@ void readHeader(void) {
   conv4FromEcoToNative((unsigned char *) &inHeader.crsize);
   conv4FromEcoToNative((unsigned char *) &inHeader.drsize);
   conv4FromEcoToNative((unsigned char *) &inHeader.symsize);
-  conv4FromEcoToNative((unsigned char *) &inHeader.strsize);
+  conv4FromEcoToNative((unsigned char *) &inHeader.entry);
   if (inHeader.magic != EXEC_MAGIC) {
     error("wrong magic number in exec header");
   }
@@ -687,7 +687,7 @@ void writeHeader(void) {
     outHeader.crsize = 0;
     outHeader.drsize = 0;
     outHeader.symsize = 0;
-    outHeader.strsize = 0;
+    outHeader.entry = 0;
     conv4FromNativeToEco((unsigned char *) &outHeader.magic);
     conv4FromNativeToEco((unsigned char *) &outHeader.csize);
     conv4FromNativeToEco((unsigned char *) &outHeader.dsize);
@@ -695,7 +695,7 @@ void writeHeader(void) {
     conv4FromNativeToEco((unsigned char *) &outHeader.crsize);
     conv4FromNativeToEco((unsigned char *) &outHeader.drsize);
     conv4FromNativeToEco((unsigned char *) &outHeader.symsize);
-    conv4FromNativeToEco((unsigned char *) &outHeader.strsize);
+    conv4FromNativeToEco((unsigned char *) &outHeader.entry);
     fwrite(&outHeader, sizeof(ExecHeader), 1, outFile);
   }
 }
