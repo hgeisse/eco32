@@ -1994,7 +1994,7 @@ void writeCodeRelocs(void) {
   f = fixupList;
   while (f != NULL) {
     if (f->segment != SEGMENT_CODE && f->segment != SEGMENT_DATA) {
-      /* this should never happan */
+      /* this should never happen */
       error("fixup found in a segment other than code or data");
     }
     if (f->segment == SEGMENT_CODE) {
@@ -2022,7 +2022,7 @@ void writeDataRelocs(void) {
   f = fixupList;
   while (f != NULL) {
     if (f->segment != SEGMENT_CODE && f->segment != SEGMENT_DATA) {
-      /* this should never happan */
+      /* this should never happen */
       error("fixup found in a segment other than code or data");
     }
     if (f->segment == SEGMENT_DATA) {
