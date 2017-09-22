@@ -8,7 +8,7 @@
 #include <string.h>
 
 
-unsigned long currentRandom = 0x3AE82DD4;
+unsigned int currentRandom = 0x3AE82DD4;
 
 
 void nextRandom(void) {
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   }
   n = atoi(argv[1]);
   for (i = 0; i < n; i++) {
-    printf("%3d: 0x%08lX\n", i, currentRandom);
+    printf("%3d: 0x%08X\n", i, currentRandom);
     nextRandom();
   }
   return 0;
