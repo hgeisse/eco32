@@ -32,7 +32,9 @@ typedef struct {
   unsigned int orels;		/* offset of relocation table in file */
   unsigned int nrels;		/* number of relocation table entries */
   unsigned int odata;		/* offset of segment data in file */
+  unsigned int sdata;		/* size of segment data in file */
   unsigned int ostrs;		/* offset of string space in file */
+  unsigned int sstrs;		/* size of string space in file */
   unsigned int entry;		/* entry point (if executable) */
 } ExecHeader;
 

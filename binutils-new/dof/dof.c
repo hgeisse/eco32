@@ -178,7 +178,9 @@ void readHeader(void) {
   conv4FromEcoToNative((unsigned char *) &execHeader.orels);
   conv4FromEcoToNative((unsigned char *) &execHeader.nrels);
   conv4FromEcoToNative((unsigned char *) &execHeader.odata);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sdata);
   conv4FromEcoToNative((unsigned char *) &execHeader.ostrs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sstrs);
   conv4FromEcoToNative((unsigned char *) &execHeader.entry);
 }
 
@@ -188,6 +190,7 @@ void dumpHeader(void) {
     error("wrong magic number in exec header");
   }
   printf("Header\n");
+  printf("    magic number              : 0x%08X\n", execHeader.magic);
   printf("    offset of segment table   : 0x%08X\n", execHeader.osegs);
   printf("    number of segment entries : %10u\n", execHeader.nsegs);
   printf("    offset of symbol table    : 0x%08X\n", execHeader.osyms);
@@ -195,7 +198,9 @@ void dumpHeader(void) {
   printf("    offset of reloc table     : 0x%08X\n", execHeader.orels);
   printf("    number of reloc entries   : %10u\n", execHeader.nrels);
   printf("    offset of segment data    : 0x%08X\n", execHeader.odata);
+  printf("    size of segment data      : 0x%08X\n", execHeader.sdata);
   printf("    offset of string space    : 0x%08X\n", execHeader.ostrs);
+  printf("    size of string space      : 0x%08X\n", execHeader.sstrs);
   printf("    entry point               : 0x%08X\n", execHeader.entry);
 }
 

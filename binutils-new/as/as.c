@@ -1943,7 +1943,7 @@ void conv4FromNativeToEco(unsigned char *p) {
 static ExecHeader execHeader;
 
 static int fileOffset;
-static int dataOffset;
+static int dataSize;
 static int stringSize;
 
 static int nsyms;
@@ -1969,7 +1969,9 @@ static void writeRealHeader(void) {
   conv4FromNativeToEco((unsigned char *) &execHeader.orels);
   conv4FromNativeToEco((unsigned char *) &execHeader.nrels);
   conv4FromNativeToEco((unsigned char *) &execHeader.odata);
+  conv4FromNativeToEco((unsigned char *) &execHeader.sdata);
   conv4FromNativeToEco((unsigned char *) &execHeader.ostrs);
+  conv4FromNativeToEco((unsigned char *) &execHeader.sstrs);
   conv4FromNativeToEco((unsigned char *) &execHeader.entry);
   fwrite(&execHeader, sizeof(ExecHeader), 1, outFile);
   conv4FromEcoToNative((unsigned char *) &execHeader.magic);
@@ -1980,7 +1982,9 @@ static void writeRealHeader(void) {
   conv4FromEcoToNative((unsigned char *) &execHeader.orels);
   conv4FromEcoToNative((unsigned char *) &execHeader.nrels);
   conv4FromEcoToNative((unsigned char *) &execHeader.odata);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sdata);
   conv4FromEcoToNative((unsigned char *) &execHeader.ostrs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sstrs);
   conv4FromEcoToNative((unsigned char *) &execHeader.entry);
 }
 
@@ -2008,30 +2012,30 @@ static void writeSegmentTable(void) {
   /* write code segment descriptor */
   segment.name = stringSize;
   stringSize += strlen(CODE_NAME) + 1;
-  segment.offs = dataOffset;
+  segment.offs = dataSize;
   segment.addr = 0;
   segment.size = segPtr[SEGMENT_CODE];
   segment.attr = SEG_ATTR_R | SEG_ATTR_P;
   writeSegment(&segment);
-  dataOffset += segment.size;
+  dataSize += segment.size;
   /* write data segment descriptor */
   segment.name = stringSize;
   stringSize += strlen(DATA_NAME) + 1;
-  segment.offs = dataOffset;
+  segment.offs = dataSize;
   segment.addr = 0;
   segment.size = segPtr[SEGMENT_DATA];
   segment.attr = SEG_ATTR_R | SEG_ATTR_W | SEG_ATTR_P;
   writeSegment(&segment);
-  dataOffset += segment.size;
+  dataSize += segment.size;
   /* write bss segment descriptor */
   segment.name = stringSize;
   stringSize += strlen(BSS_NAME) + 1;
-  segment.offs = dataOffset;
+  segment.offs = dataSize;
   segment.addr = 0;
   segment.size = segPtr[SEGMENT_BSS];
   segment.attr = SEG_ATTR_R | SEG_ATTR_W;
   writeSegment(&segment);
-  dataOffset += 0;  /* segment not present */
+  dataSize += 0;  /* segment not present */
   /* update file offset */
   execHeader.nsegs = 3;
   fileOffset += execHeader.nsegs * sizeof(SegmentRecord);
@@ -2134,35 +2138,29 @@ static void writeRelocTable(void) {
 }
 
 
-static int writeBytes(FILE *file) {
-  int count;
+static void writeBytes(FILE *file) {
   int data;
 
   rewind(file);
-  count = 0;
   while (1) {
     data = fgetc(file);
     if (data == EOF) {
       break;
     }
     fputc(data, outFile);
-    count++;
   }
-  return count;
 }
 
 
 static void writeData(void) {
-  int count;
-
   /* record file offset */
   execHeader.odata = fileOffset;
   /* write segment data */
-  count = 0;
-  count += writeBytes(codeFile);
-  count += writeBytes(dataFile);
+  writeBytes(codeFile);
+  writeBytes(dataFile);
   /* update file offset */
-  fileOffset += count;
+  execHeader.sdata = dataSize;
+  fileOffset += execHeader.sdata;
 }
 
 
@@ -2188,12 +2186,15 @@ static void writeStrings(void) {
   fputc('\0', outFile);
   /* write symbol names */
   walkTree(globalTable, writeString);
+  /* update file offsets */
+  execHeader.sstrs = stringSize;
+  fileOffset += execHeader.sstrs;
 }
 
 
 void writeAll(void) {
   fileOffset = 0;
-  dataOffset = 0;
+  dataSize = 0;
   stringSize = 0;
   writeDummyHeader();
   writeSegmentTable();
