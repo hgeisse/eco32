@@ -146,6 +146,7 @@
 int debugToken = 0;
 int debugCode = 0;
 int debugFixup = 0;
+int debugModule = 0;
 
 char codeName[L_tmpnam];
 char dataName[L_tmpnam];
@@ -2267,7 +2268,9 @@ int main(int argc, char *argv[]) {
     if (inFile == NULL) {
       error("cannot open input file '%s'", inName);
     }
-    fprintf(stderr, "Assembling module '%s'...\n", inName);
+    if (debugModule) {
+      fprintf(stderr, "Assembling module '%s'...\n", inName);
+    }
     asmModule();
     if (inFile != NULL) {
       fclose(inFile);
