@@ -245,8 +245,13 @@ void dumpSegmentTable(void) {
     printf("        addr = 0x%08X\n", segmentTable[sn].addr);
     printf("        size = 0x%08X\n", segmentTable[sn].size);
     printf("        attr = ");
-    if (segmentTable[sn].attr & SEG_ATTR_R) {
-      printf("R");
+    if (segmentTable[sn].attr & SEG_ATTR_A) {
+      printf("A");
+    } else {
+      printf("-");
+    }
+    if (segmentTable[sn].attr & SEG_ATTR_P) {
+      printf("P");
     } else {
       printf("-");
     }
@@ -255,8 +260,8 @@ void dumpSegmentTable(void) {
     } else {
       printf("-");
     }
-    if (segmentTable[sn].attr & SEG_ATTR_P) {
-      printf("P");
+    if (segmentTable[sn].attr & SEG_ATTR_X) {
+      printf("X");
     } else {
       printf("-");
     }

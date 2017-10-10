@@ -9,9 +9,10 @@
 
 #define EXEC_MAGIC	0x8F0B45C0
 
-#define SEG_ATTR_R	0x01	/* readable */
+#define SEG_ATTR_X	0x01	/* executable */
 #define SEG_ATTR_W	0x02	/* writable */
-#define SEG_ATTR_P	0x04	/* present */
+#define SEG_ATTR_P	0x04	/* present in object file */
+#define SEG_ATTR_A	0x08	/* allocatable in memory */
 
 #define SYM_ATTR_U	0x01	/* undefined */
 

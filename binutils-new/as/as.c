@@ -2016,7 +2016,7 @@ static void writeSegmentTable(void) {
   segment.offs = dataSize;
   segment.addr = 0;
   segment.size = segPtr[SEGMENT_CODE];
-  segment.attr = SEG_ATTR_R | SEG_ATTR_P;
+  segment.attr = SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X;
   writeSegment(&segment);
   dataSize += segment.size;
   /* write data segment descriptor */
@@ -2025,7 +2025,7 @@ static void writeSegmentTable(void) {
   segment.offs = dataSize;
   segment.addr = 0;
   segment.size = segPtr[SEGMENT_DATA];
-  segment.attr = SEG_ATTR_R | SEG_ATTR_W | SEG_ATTR_P;
+  segment.attr = SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W;
   writeSegment(&segment);
   dataSize += segment.size;
   /* write bss segment descriptor */
@@ -2034,7 +2034,7 @@ static void writeSegmentTable(void) {
   segment.offs = dataSize;
   segment.addr = 0;
   segment.size = segPtr[SEGMENT_BSS];
-  segment.attr = SEG_ATTR_R | SEG_ATTR_W;
+  segment.attr = SEG_ATTR_A | SEG_ATTR_W;
   writeSegment(&segment);
   dataSize += 0;  /* segment not present */
   /* update file offset */
