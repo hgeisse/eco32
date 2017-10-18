@@ -1,5 +1,5 @@
 #
-# std.lnk -- standard linker script
+# standard.lnk -- standard linker script
 #
 
 ENTRY _start;

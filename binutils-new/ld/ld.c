@@ -408,14 +408,26 @@ void doEntryStm(ScriptNode *stm) {
 
 
 void doIsegStm(ScriptNode *stm) {
-  warning("doIsegStm() not implemented yet");
+  Iseg *p;
+
+  p = lookupIsegTbl(stm->u.isegStm.name);
+  if (p == NULL) {
+    /* this should never happen */
+    error("'%s' vanished from iseg table", stm->u.isegStm.name);
+  }
+  dot += p->size;
 }
 
 
 void doOsegStm(ScriptNode *stm) {
-  warning("doOsegStm() not fully implemented yet");
-  newOseg(stm->u.osegStm.name, stm->u.osegStm.attr);
+  Oseg *p;
+  unsigned int start;
+
+  p = newOseg(stm->u.osegStm.name, stm->u.osegStm.attr);
+  start = dot;
   doStm(stm->u.osegStm.stms);
+  p->size = dot - start;
+  p->addr = start;
 }
 
 
@@ -493,7 +505,7 @@ void buildIsegTbl(ScriptNode *script) {
 }
 
 
-void setRelSegAddr(void) {
+void setRelSegAddrs(void) {
   Module *mp;
   int i;
   char *segName;
@@ -520,7 +532,7 @@ void setRelSegAddr(void) {
 }
 
 
-void setAbsSegAddr(ScriptNode *script) {
+void setAbsSegAddrs(ScriptNode *script) {
   dot = 0;
   doStm(script);
 }
@@ -530,9 +542,9 @@ void allocateStorage(ScriptNode *script) {
  /* for each ISEG statement allocate an Iseg record */
   buildIsegTbl(script);
   /* set relative addrs of all input segments, sum up sizes */
-  setRelSegAddr();
+  setRelSegAddrs();
   /* set absolute addrs by working through linker script */
-  setAbsSegAddr(script);
+  setAbsSegAddrs(script);
 }
 
 
