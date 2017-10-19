@@ -13,6 +13,9 @@
 #include "readscript.h"
 
 
+#define DEFAULT_SCRIPT_NAME	"standard.lnk"
+#define DEFAULT_OUT_NAME	"a.out"
+
 #define WORD_ALIGN(x)		(((x) + 0x03) & ~0x03)
 
 
@@ -55,11 +58,11 @@ void conv4FromNativeToEco(unsigned char *p) {
 
 
 typedef struct module {
-  struct module *next;
   char *name;
   char *strs;
   int nsegs;
   SegmentRecord *segtbl;
+  struct module *next;
 } Module;
 
 
@@ -71,11 +74,11 @@ Module *newModule(char *name) {
   Module *mp;
 
   mp = memAlloc(sizeof(Module));
-  mp->next = NULL;
   mp->name = name;
   mp->strs = NULL;
   mp->nsegs = 0;
   mp->segtbl = NULL;
+  mp->next = NULL;
   if (allModules == NULL) {
     allModules = mp;
   } else {
@@ -173,15 +176,22 @@ void readAllIsegs(void) {
 void showAllIsegs(void) {
   Module *mp;
   int i;
+  char attr[10];
 
   mp = allModules;
   while (mp != NULL) {
     printf("%s:\n", mp->name);
     for (i = 0; i < mp->nsegs; i++) {
-      printf("iseg %s, size = 0x%08X, addr = 0x%08X\n",
+      attr[0] = (mp->segtbl[i].attr & SEG_ATTR_A) ? 'A' : '-';
+      attr[1] = (mp->segtbl[i].attr & SEG_ATTR_P) ? 'P' : '-';
+      attr[2] = (mp->segtbl[i].attr & SEG_ATTR_W) ? 'W' : '-';
+      attr[3] = (mp->segtbl[i].attr & SEG_ATTR_X) ? 'X' : '-';
+      attr[4] = '\0';
+      printf("iseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
              mp->strs + mp->segtbl[i].name,
+             mp->segtbl[i].addr,
              mp->segtbl[i].size,
-             mp->segtbl[i].addr);
+             attr);
     }
     mp = mp->next;
   }
@@ -237,9 +247,9 @@ Iseg *insertIsegTbl(char *name) {
 
 typedef struct oseg {
   char *name;
-  unsigned int attr;
-  unsigned int size;
   unsigned int addr;
+  unsigned int size;
+  unsigned int attr;
   struct oseg *next;
 } Oseg;
 
@@ -253,9 +263,9 @@ Oseg *newOseg(char *name, unsigned int attr) {
 
   p = memAlloc(sizeof(Oseg));
   p->name = name;
-  p->attr = attr;
-  p->size = 0;
   p->addr = 0;
+  p->size = 0;
+  p->attr = attr;
   p->next = NULL;
   if (allOsegs == NULL) {
     allOsegs = p;
@@ -278,8 +288,8 @@ void showAllOsegs(void) {
     attr[2] = (p->attr & SEG_ATTR_W) ? 'W' : '-';
     attr[3] = (p->attr & SEG_ATTR_X) ? 'X' : '-';
     attr[4] = '\0';
-    printf("oseg %s, attr = [%s], size = 0x%08X, addr = 0x%08X\n",
-           p->name, attr, p->size, p->addr);
+    printf("oseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+           p->name, p->addr, p->size, attr);
     p = p->next;
   }
 }
@@ -554,6 +564,8 @@ void allocateStorage(ScriptNode *script) {
 void writeOutput(char *outName) {
   FILE *outFile;
 
+  printf("%s:\n", outName);
+  showAllOsegs();
   outFile = fopen(outName, "w");
   if (outFile == NULL) {
     error("cannot open output file '%s'", outName);
@@ -603,8 +615,8 @@ int main(int argc, char *argv[]) {
     printf("arg %d: %s\n", i, argv[i]);
   }
   /* -----------  end discard  ---------- */
-  scrName = "std.lnk";
-  outName = "a.out";
+  scrName = DEFAULT_SCRIPT_NAME;
+  outName = DEFAULT_OUT_NAME;
   mapName = NULL;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
@@ -647,7 +659,6 @@ int main(int argc, char *argv[]) {
   showAllIsegs();
   allocateStorage(script);
   showAllIsegs();
-  showAllOsegs();
   //------------------------
   writeOutput(outName);
   if (mapName != NULL) {
