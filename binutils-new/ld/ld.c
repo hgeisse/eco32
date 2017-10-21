@@ -62,6 +62,8 @@ typedef struct module {
   char *strs;
   int nsegs;
   SegmentRecord *segtbl;
+  int nsyms;
+  SymbolRecord *symtbl;
   struct module *next;
 } Module;
 
@@ -78,6 +80,8 @@ Module *newModule(char *name) {
   mp->strs = NULL;
   mp->nsegs = 0;
   mp->segtbl = NULL;
+  mp->nsyms = 0;
+  mp->symtbl = NULL;
   mp->next = NULL;
   if (allModules == NULL) {
     allModules = mp;
@@ -151,7 +155,26 @@ void readSegments(int nsegs, SegmentRecord *segs,
 }
 
 
-void readAllIsegs(void) {
+void readSymbols(int nsyms, SymbolRecord *syms,
+                 unsigned int off, FILE *inFile, char *inName) {
+  int i;
+
+  if (fseek(inFile, off, SEEK_SET) < 0) {
+    error("cannot seek to symbol table in input file '%s'", inName);
+  }
+  for (i = 0; i < nsyms; i++) {
+    if (fread(syms + i, sizeof(SymbolRecord), 1, inFile) != 1) {
+      error("cannot read symbol record in input file '%s'", inName);
+    }
+    conv4FromEcoToNative((unsigned char *) &syms[i].name);
+    conv4FromEcoToNative((unsigned char *) &syms[i].val);
+    conv4FromEcoToNative((unsigned char *) &syms[i].seg);
+    conv4FromEcoToNative((unsigned char *) &syms[i].attr);
+  }
+}
+
+
+void readModules(void) {
   Module *mp;
   FILE *inFile;
   ExecHeader hdr;
@@ -167,16 +190,20 @@ void readAllIsegs(void) {
     mp->nsegs = hdr.nsegs;
     mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
     readSegments(mp->nsegs, mp->segtbl, hdr.osegs, inFile, mp->name);
+    mp->nsyms = hdr.nsyms;
+    mp->symtbl = memAlloc(hdr.nsyms * sizeof(SymbolRecord));
+    readSymbols(mp->nsyms, mp->symtbl, hdr.osyms, inFile, mp->name);
     fclose(inFile);
     mp = mp->next;
   }
 }
 
 
-void showAllIsegs(void) {
+void showModules(void) {
   Module *mp;
   int i;
   char attr[10];
+  int seg;
 
   mp = allModules;
   while (mp != NULL) {
@@ -193,6 +220,14 @@ void showAllIsegs(void) {
              mp->segtbl[i].size,
              attr);
     }
+    for (i = 0; i < mp->nsyms; i++) {
+      seg = mp->symtbl[i].seg;
+      printf("sym %s, val = 0x%08X, seg = %s, attr = %c\n",
+             mp->strs + mp->symtbl[i].name,
+             mp->symtbl[i].val,
+             seg == -1 ? "*ABS*" : mp->strs + mp->segtbl[seg].name,
+             mp->symtbl[i].attr & SYM_ATTR_U ? 'U' : 'D');
+    }
     mp = mp->next;
   }
 }
@@ -201,20 +236,21 @@ void showAllIsegs(void) {
 /**************************************************************/
 
 
-typedef struct iseg {
+typedef struct isegGrp {
   char *name;
+  unsigned int addr;
   unsigned int size;
-  struct iseg *next;
-} Iseg;
+  struct isegGrp *next;
+} IsegGrp;
 
 
-Iseg *isegTbl = NULL;
+IsegGrp *isegGrpTbl = NULL;
 
 
-Iseg *lookupIsegTbl(char *name) {
-  Iseg *p;
+IsegGrp *lookupIsegGrp(char *name) {
+  IsegGrp *p;
 
-  p = isegTbl;
+  p = isegGrpTbl;
   while (p != NULL) {
     if (strcmp(p->name, name) == 0) {
       return p;
@@ -225,19 +261,20 @@ Iseg *lookupIsegTbl(char *name) {
 }
 
 
-Iseg *insertIsegTbl(char *name) {
-  Iseg *p;
+IsegGrp *addIsegGrp(char *name) {
+  IsegGrp *p;
 
-  p = lookupIsegTbl(name);
+  p = lookupIsegGrp(name);
   if (p != NULL) {
-    error("linker script tries to allocate segment '%s' more than once",
+    error("linker script allocates segment group '%s' more than once",
           name);
   }
-  p = memAlloc(sizeof(Iseg));
+  p = memAlloc(sizeof(IsegGrp));
   p->name = name;
+  p->addr = 0;
   p->size = 0;
-  p->next = isegTbl;
-  isegTbl = p;
+  p->next = isegGrpTbl;
+  isegGrpTbl = p;
   return p;
 }
 
@@ -418,13 +455,15 @@ void doEntryStm(ScriptNode *stm) {
 
 
 void doIsegStm(ScriptNode *stm) {
-  Iseg *p;
+  IsegGrp *p;
 
-  p = lookupIsegTbl(stm->u.isegStm.name);
+  p = lookupIsegGrp(stm->u.isegStm.name);
   if (p == NULL) {
     /* this should never happen */
-    error("'%s' vanished from iseg table", stm->u.isegStm.name);
+    error("'%s' vanished from iseg group table",
+          stm->u.isegStm.name);
   }
+  p->addr = dot;
   dot += p->size;
 }
 
@@ -487,7 +526,7 @@ void doStm(ScriptNode *stm) {
 /**************************************************************/
 
 
-void buildIsegTbl(ScriptNode *script) {
+void buildIsegGrpTbl(ScriptNode *script) {
   ScriptNode *node1;
   ScriptNode *node2;
 
@@ -505,7 +544,7 @@ void buildIsegTbl(ScriptNode *script) {
       node2 = node1->u.stmList.head->u.osegStm.stms;
       while (node2 != NULL) {
         if (node2->u.stmList.head->type == NODE_ISEGSTM) {
-          insertIsegTbl(node2->u.stmList.head->u.isegStm.name);
+          addIsegGrp(node2->u.stmList.head->u.isegStm.name);
         }
         node2 = node2->u.stmList.tail;
       }
@@ -519,22 +558,23 @@ void setRelSegAddrs(void) {
   Module *mp;
   int i;
   char *segName;
-  Iseg *segPtr;
+  IsegGrp *grpPtr;
 
   mp = allModules;
   while (mp != NULL) {
     for (i = 0; i < mp->nsegs; i++) {
       segName = mp->strs + mp->segtbl[i].name;
-      segPtr = lookupIsegTbl(segName);
-      if (segPtr == NULL) {
+      grpPtr = lookupIsegGrp(segName);
+      if (grpPtr == NULL) {
         /* input segment name does not match any ISEG name in script */
         warning("discarding segment '%s' from module '%s'",
                 segName, mp->name);
       } else {
-        /* set segment's relative addr, add segment's size to total */
-        mp->segtbl[i].addr = segPtr->size;
-        segPtr->size += mp->segtbl[i].size;
-        segPtr->size = WORD_ALIGN(segPtr->size);
+        /* set segment's relative address in group */
+        mp->segtbl[i].addr = grpPtr->size;
+        /* add segment's size to group total */
+        grpPtr->size += mp->segtbl[i].size;
+        grpPtr->size = WORD_ALIGN(grpPtr->size);
       }
     }
     mp = mp->next;
@@ -542,19 +582,62 @@ void setRelSegAddrs(void) {
 }
 
 
-void setAbsSegAddrs(ScriptNode *script) {
-  dot = 0;
-  doStm(script);
+void setAbsSegAddrs(void) {
+  Module *mp;
+  int i;
+  char *segName;
+  IsegGrp *grpPtr;
+
+  mp = allModules;
+  while (mp != NULL) {
+    for (i = 0; i < mp->nsegs; i++) {
+      segName = mp->strs + mp->segtbl[i].name;
+      grpPtr = lookupIsegGrp(segName);
+      if (grpPtr != NULL) {
+        /* add group start to segment's relative address */
+        mp->segtbl[i].addr += grpPtr->addr;
+      }
+    }
+    mp = mp->next;
+  }
 }
 
 
 void allocateStorage(ScriptNode *script) {
- /* for each ISEG statement allocate an Iseg record */
-  buildIsegTbl(script);
-  /* set relative addrs of all input segments, sum up sizes */
+  /* for each ISEG statement in the linker script
+     allocate a group record */
+  buildIsegGrpTbl(script);
+  /* set group relative addresses of all input segments,
+     compute total sizes of all groups */
   setRelSegAddrs();
-  /* set absolute addrs by working through linker script */
-  setAbsSegAddrs(script);
+  /* set group start and output segment addresses by
+     working through the linker script */
+  dot = 0;
+  doStm(script);
+  /* set absolute addresses of all input segments */
+  setAbsSegAddrs();
+}
+
+
+/**************************************************************/
+
+
+void enterSymbol(char *name) {
+  printf("enter symbol %s\n", name);
+}
+
+
+void buildSymbolTable(void) {
+  Module *mp;
+  int i;
+
+  mp = allModules;
+  while (mp != NULL) {
+    for (i = 0; i < mp->nsyms; i++) {
+      enterSymbol(mp->strs + mp->symtbl[i].name);
+    }
+    mp = mp->next;
+  }
 }
 
 
@@ -655,11 +738,11 @@ int main(int argc, char *argv[]) {
   }
   script = readScript(scrName);
   showScript(script);
-  readAllIsegs();
-  showAllIsegs();
+  readModules();
   allocateStorage(script);
-  showAllIsegs();
-  //------------------------
+  showModules();
+  buildSymbolTable();
+  //----------------------------
   writeOutput(outName);
   if (mapName != NULL) {
     writeMap(mapName);
