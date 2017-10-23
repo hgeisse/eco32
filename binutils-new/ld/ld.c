@@ -281,6 +281,179 @@ IsegGrp *addIsegGrp(char *name) {
 
 /**************************************************************/
 
+/*
+ * global symbol table
+ */
+
+
+#define INITIAL_NUM_BUCKETS	100
+
+
+typedef struct sym {
+  /* symbol data */
+  char *name;
+  Module *mod;
+  int seg;
+  int val;
+  unsigned int attr;
+  /* internal data */
+  unsigned int hash;
+  struct sym *next;
+} Sym;
+
+
+static Sym **buckets = NULL;
+static int numBuckets;
+static int numEntries;
+
+
+static unsigned int hash(char *s) {
+  unsigned int h, g;
+
+  h = 0;
+  while (*s != '\0') {
+    h = (h << 4) + *s++;
+    g = h & 0xF0000000;
+    if (g != 0) {
+      h ^= g >> 24;
+      h ^= g;
+    }
+  }
+  return h;
+}
+
+
+static int isPrime(int i) {
+  int t;
+
+  if (i < 2) {
+    return 0;
+  }
+  if (i == 2) {
+    return 1;
+  }
+  if (i % 2 == 0) {
+    return 0;
+  }
+  t = 3;
+  while (t * t <= i) {
+    if (i % t == 0) {
+      return 0;
+    }
+    t += 2;
+  }
+  return 1;
+}
+
+
+static void initTable(void) {
+  int i;
+
+  numBuckets = INITIAL_NUM_BUCKETS;
+  while (!isPrime(numBuckets)) {
+    numBuckets++;
+  }
+  buckets = (Sym **) memAlloc(numBuckets * sizeof(Sym *));
+  for (i = 0; i < numBuckets; i++) {
+    buckets[i] = NULL;
+  }
+  numEntries = 0;
+}
+
+
+static void growTable(void) {
+  int newNumBuckets;
+  Sym **newBuckets;
+  int i, n;
+  Sym *p, *q;
+
+  /* compute new hash size */
+  newNumBuckets = 2 * numBuckets + 1;
+  while (!isPrime(newNumBuckets)) {
+    newNumBuckets += 2;
+  }
+  /* init new hash table */
+  newBuckets = (Sym **) memAlloc(newNumBuckets * sizeof(Sym *));
+  for (i = 0; i < newNumBuckets; i++) {
+    newBuckets[i] = NULL;
+  }
+  /* rehash old entries */
+  for (i = 0; i < numBuckets; i++) {
+    p = buckets[i];
+    while (p != NULL) {
+      q = p;
+      p = p->next;
+      n = q->hash % newNumBuckets;
+      q->next = newBuckets[n];
+      newBuckets[n] = q;
+    }
+  }
+  /* swap tables */
+  memFree(buckets);
+  buckets = newBuckets;
+  numBuckets = newNumBuckets;
+}
+
+
+Sym *enterSymbol(char *name) {
+  unsigned int h;
+  int n;
+  Sym *p;
+
+  /* initialize hash table if necessary */
+  if (buckets == NULL) {
+    initTable();
+  }
+  /* compute hash value and bucket number */
+  h = hash(name);
+  n = h % numBuckets;
+  /* search in bucket list */
+  p = buckets[n];
+  while (p != NULL) {
+    if (p->hash == h) {
+      if (strcmp(p->name, name) == 0) {
+        /* found: return symbol */
+        return p;
+      }
+    }
+    p = p->next;
+  }
+  /* not found: add new symbol to bucket list */
+  /* grow hash table if necessary */
+  if (numEntries == numBuckets) {
+    growTable();
+  }
+  /* allocate new sym and link to bucket list */
+  p = (Sym *) memAlloc(sizeof(Sym));
+  p->name = name;
+  p->mod = NULL;
+  p->seg = -1;
+  p->val = 0;
+  p->attr = SYM_ATTR_U;
+  p->hash = h;
+  p->next = buckets[n];
+  buckets[n] = p;
+  numEntries++;
+  return p;
+}
+
+
+void mapOverSymbols(void (*fp)(Sym *sym, void *arg), void *arg) {
+  int i;
+  Sym *sym;
+
+  for (i = 0; i < numBuckets; i++) {
+    sym = buckets[i];
+    while (sym != NULL) {
+      (*fp)(sym, arg);
+      sym = sym->next;
+    }
+  }
+}
+
+
+/**************************************************************/
+
 
 typedef struct oseg {
   char *name;
@@ -622,22 +795,101 @@ void allocateStorage(ScriptNode *script) {
 /**************************************************************/
 
 
-void enterSymbol(char *name) {
-  printf("enter symbol %s\n", name);
+static void countUndefSymbol(Sym *sym, void *arg) {
+  if (sym->attr & SYM_ATTR_U) {
+    (*(int *)arg)++;
+  }
+}
+
+
+int countUndefSymbols(void) {
+  int numUndefSymbols;
+
+  numUndefSymbols = 0;
+  mapOverSymbols(countUndefSymbol, (void *) &numUndefSymbols);
+  return numUndefSymbols;
+}
+
+
+static void showUndefSymbol(Sym *sym, void *arg) {
+  if (sym->attr & SYM_ATTR_U) {
+    printf("    %s\n", sym->name);
+  }
+}
+
+
+void showUndefSymbols(void) {
+  mapOverSymbols(showUndefSymbol, NULL);
+}
+
+
+static void showSymbol(Sym *sym, void *arg) {
+  Module *mp;
+
+  mp = sym->mod;
+  printf("    %s: mod = %s, seg = %s, val = 0x%08X\n",
+         sym->name,
+         mp->name,
+         sym->seg == -1 ? "*ABS*" : mp->strs + mp->segtbl[sym->seg].name,
+         sym->val);
+}
+
+
+void showAllSymbols(void) {
+  printf("Global Symbol Table\n");
+  mapOverSymbols(showSymbol, NULL);
 }
 
 
 void buildSymbolTable(void) {
   Module *mp;
   int i;
+  int n;
+  Sym *sym;
 
   mp = allModules;
   while (mp != NULL) {
     for (i = 0; i < mp->nsyms; i++) {
-      enterSymbol(mp->strs + mp->symtbl[i].name);
+      sym = enterSymbol(mp->strs + mp->symtbl[i].name);
+      if ((mp->symtbl[i].attr & SYM_ATTR_U) == 0) {
+        if ((sym->attr & SYM_ATTR_U) == 0) {
+          error("symbol '%s' defined more than once", sym->name);
+        }
+        /* define the symbol */
+        sym->mod = mp;
+        sym->seg = mp->symtbl[i].seg;
+        sym->val = mp->symtbl[i].val;
+        sym->attr = mp->symtbl[i].attr;
+      }
     }
     mp = mp->next;
   }
+  n = countUndefSymbols();
+  if (n > 0) {
+    printf("The following symbols are undefined:\n");
+    showUndefSymbols();
+    error("%d undefined symbols", n);
+  }
+}
+
+
+void resolveSymbol(Sym *sym, void *arg) {
+  Module *modPtr;
+  SegmentRecord *segPtr;
+
+  if (sym->seg == -1) {
+    /* absolute symbol: keep value */
+    return;
+  }
+  /* add segment address to symbol value */
+  modPtr = sym->mod;
+  segPtr = modPtr->segtbl + sym->seg;
+  sym->val += segPtr->addr;
+}
+
+
+void resolveSymbols(void) {
+  mapOverSymbols(resolveSymbol, NULL);
 }
 
 
@@ -742,6 +994,9 @@ int main(int argc, char *argv[]) {
   allocateStorage(script);
   showModules();
   buildSymbolTable();
+  showAllSymbols();
+  resolveSymbols();
+  showAllSymbols();
   //----------------------------
   writeOutput(outName);
   if (mapName != NULL) {
