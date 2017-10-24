@@ -63,7 +63,7 @@ typedef struct module {
   int nsegs;
   SegmentRecord *segtbl;
   int nsyms;
-  SymbolRecord *symtbl;
+  struct sym **syms;
   struct module *next;
 } Module;
 
@@ -81,7 +81,7 @@ Module *newModule(char *name) {
   mp->nsegs = 0;
   mp->segtbl = NULL;
   mp->nsyms = 0;
-  mp->symtbl = NULL;
+  mp->syms = NULL;
   mp->next = NULL;
   if (allModules == NULL) {
     allModules = mp;
@@ -90,146 +90,6 @@ Module *newModule(char *name) {
   }
   lastModule = mp;
   return mp;
-}
-
-
-/**************************************************************/
-
-
-void readHeader(ExecHeader *hp, FILE *inFile, char *inName) {
-  if (fseek(inFile, 0, SEEK_SET) < 0) {
-    error("cannot seek to header in input file '%s'", inName);
-  }
-  if (fread(hp, sizeof(ExecHeader), 1, inFile) != 1) {
-    error("cannot read header in input file '%s'", inName);
-  }
-  conv4FromEcoToNative((unsigned char *) &hp->magic);
-  conv4FromEcoToNative((unsigned char *) &hp->osegs);
-  conv4FromEcoToNative((unsigned char *) &hp->nsegs);
-  conv4FromEcoToNative((unsigned char *) &hp->osyms);
-  conv4FromEcoToNative((unsigned char *) &hp->nsyms);
-  conv4FromEcoToNative((unsigned char *) &hp->orels);
-  conv4FromEcoToNative((unsigned char *) &hp->nrels);
-  conv4FromEcoToNative((unsigned char *) &hp->odata);
-  conv4FromEcoToNative((unsigned char *) &hp->sdata);
-  conv4FromEcoToNative((unsigned char *) &hp->ostrs);
-  conv4FromEcoToNative((unsigned char *) &hp->sstrs);
-  conv4FromEcoToNative((unsigned char *) &hp->entry);
-  if (hp->magic != EXEC_MAGIC) {
-    error("wrong magic number in input file '%s'", inName);
-  }
-}
-
-
-char *readStrings(ExecHeader *hp, FILE *inFile, char *inName) {
-  char *strs;
-
-  strs = memAlloc(hp->sstrs);
-  if (fseek(inFile, hp->ostrs, SEEK_SET) < 0) {
-    error("cannot seek to strings in input file '%s'", inName);
-  }
-  if (fread(strs, 1, hp->sstrs, inFile) != hp->sstrs) {
-    error("cannot read strings in input file '%s'", inName);
-  }
-  return strs;
-}
-
-
-void readSegments(int nsegs, SegmentRecord *segs,
-                  unsigned int off, FILE *inFile, char *inName) {
-  int i;
-
-  if (fseek(inFile, off, SEEK_SET) < 0) {
-    error("cannot seek to segment table in input file '%s'", inName);
-  }
-  for (i = 0; i < nsegs; i++) {
-    if (fread(segs + i, sizeof(SegmentRecord), 1, inFile) != 1) {
-      error("cannot read segment record in input file '%s'", inName);
-    }
-    conv4FromEcoToNative((unsigned char *) &segs[i].name);
-    conv4FromEcoToNative((unsigned char *) &segs[i].offs);
-    conv4FromEcoToNative((unsigned char *) &segs[i].addr);
-    conv4FromEcoToNative((unsigned char *) &segs[i].size);
-    conv4FromEcoToNative((unsigned char *) &segs[i].attr);
-  }
-}
-
-
-void readSymbols(int nsyms, SymbolRecord *syms,
-                 unsigned int off, FILE *inFile, char *inName) {
-  int i;
-
-  if (fseek(inFile, off, SEEK_SET) < 0) {
-    error("cannot seek to symbol table in input file '%s'", inName);
-  }
-  for (i = 0; i < nsyms; i++) {
-    if (fread(syms + i, sizeof(SymbolRecord), 1, inFile) != 1) {
-      error("cannot read symbol record in input file '%s'", inName);
-    }
-    conv4FromEcoToNative((unsigned char *) &syms[i].name);
-    conv4FromEcoToNative((unsigned char *) &syms[i].val);
-    conv4FromEcoToNative((unsigned char *) &syms[i].seg);
-    conv4FromEcoToNative((unsigned char *) &syms[i].attr);
-  }
-}
-
-
-void readModules(void) {
-  Module *mp;
-  FILE *inFile;
-  ExecHeader hdr;
-
-  mp = allModules;
-  while (mp != NULL) {
-    inFile = fopen(mp->name, "r");
-    if (inFile == NULL) {
-      error("cannot open input file '%s'", mp->name);
-    }
-    readHeader(&hdr, inFile, mp->name);
-    mp->strs = readStrings(&hdr, inFile, mp->name);
-    mp->nsegs = hdr.nsegs;
-    mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
-    readSegments(mp->nsegs, mp->segtbl, hdr.osegs, inFile, mp->name);
-    mp->nsyms = hdr.nsyms;
-    mp->symtbl = memAlloc(hdr.nsyms * sizeof(SymbolRecord));
-    readSymbols(mp->nsyms, mp->symtbl, hdr.osyms, inFile, mp->name);
-    fclose(inFile);
-    mp = mp->next;
-  }
-}
-
-
-void showModules(void) {
-  Module *mp;
-  int i;
-  char attr[10];
-  int seg;
-
-  mp = allModules;
-  while (mp != NULL) {
-    printf("%s:\n", mp->name);
-    for (i = 0; i < mp->nsegs; i++) {
-      attr[0] = (mp->segtbl[i].attr & SEG_ATTR_A) ? 'A' : '-';
-      attr[1] = (mp->segtbl[i].attr & SEG_ATTR_P) ? 'P' : '-';
-      attr[2] = (mp->segtbl[i].attr & SEG_ATTR_W) ? 'W' : '-';
-      attr[3] = (mp->segtbl[i].attr & SEG_ATTR_X) ? 'X' : '-';
-      attr[4] = '\0';
-      printf("iseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-             mp->strs + mp->segtbl[i].name,
-             mp->segtbl[i].addr,
-             mp->segtbl[i].size,
-             attr);
-    }
-    for (i = 0; i < mp->nsyms; i++) {
-      seg = mp->symtbl[i].seg;
-      printf("sym %s, val = 0x%08X, seg = %s, attr = %c\n",
-             mp->strs + mp->symtbl[i].name,
-             mp->symtbl[i].val,
-             seg == -1 ? "*ABS*" : mp->strs + mp->segtbl[seg].name,
-             mp->symtbl[i].attr & SYM_ATTR_U ? 'U' : 'D');
-    }
-    mp = mp->next;
-  }
 }
 
 
@@ -508,6 +368,154 @@ void showAllOsegs(void) {
 /**************************************************************/
 
 
+void readHeader(ExecHeader *hp, FILE *inFile, char *inName) {
+  if (fseek(inFile, 0, SEEK_SET) < 0) {
+    error("cannot seek to header in input file '%s'", inName);
+  }
+  if (fread(hp, sizeof(ExecHeader), 1, inFile) != 1) {
+    error("cannot read header in input file '%s'", inName);
+  }
+  conv4FromEcoToNative((unsigned char *) &hp->magic);
+  conv4FromEcoToNative((unsigned char *) &hp->osegs);
+  conv4FromEcoToNative((unsigned char *) &hp->nsegs);
+  conv4FromEcoToNative((unsigned char *) &hp->osyms);
+  conv4FromEcoToNative((unsigned char *) &hp->nsyms);
+  conv4FromEcoToNative((unsigned char *) &hp->orels);
+  conv4FromEcoToNative((unsigned char *) &hp->nrels);
+  conv4FromEcoToNative((unsigned char *) &hp->odata);
+  conv4FromEcoToNative((unsigned char *) &hp->sdata);
+  conv4FromEcoToNative((unsigned char *) &hp->ostrs);
+  conv4FromEcoToNative((unsigned char *) &hp->sstrs);
+  conv4FromEcoToNative((unsigned char *) &hp->entry);
+  if (hp->magic != EXEC_MAGIC) {
+    error("wrong magic number in input file '%s'", inName);
+  }
+}
+
+
+char *readStrings(ExecHeader *hp, FILE *inFile, char *inName) {
+  char *strs;
+
+  strs = memAlloc(hp->sstrs);
+  if (fseek(inFile, hp->ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings in input file '%s'", inName);
+  }
+  if (fread(strs, 1, hp->sstrs, inFile) != hp->sstrs) {
+    error("cannot read strings in input file '%s'", inName);
+  }
+  return strs;
+}
+
+
+void readSegments(int nsegs, SegmentRecord *segs,
+                  unsigned int off, FILE *inFile, char *inName) {
+  int i;
+
+  if (fseek(inFile, off, SEEK_SET) < 0) {
+    error("cannot seek to segment table in input file '%s'", inName);
+  }
+  for (i = 0; i < nsegs; i++) {
+    if (fread(segs + i, sizeof(SegmentRecord), 1, inFile) != 1) {
+      error("cannot read segment record in input file '%s'", inName);
+    }
+    conv4FromEcoToNative((unsigned char *) &segs[i].name);
+    conv4FromEcoToNative((unsigned char *) &segs[i].offs);
+    conv4FromEcoToNative((unsigned char *) &segs[i].addr);
+    conv4FromEcoToNative((unsigned char *) &segs[i].size);
+    conv4FromEcoToNative((unsigned char *) &segs[i].attr);
+  }
+}
+
+
+void readSymbols(Module *mp, unsigned int off, FILE *inFile) {
+  int i;
+  SymbolRecord symbol;
+  Sym *sym;
+
+  if (fseek(inFile, off, SEEK_SET) < 0) {
+    error("cannot seek to symbol table in input file '%s'", mp->name);
+  }
+  for (i = 0; i < mp->nsyms; i++) {
+    if (fread(&symbol, sizeof(SymbolRecord), 1, inFile) != 1) {
+      error("cannot read symbol record in input file '%s'", mp->name);
+    }
+    conv4FromEcoToNative((unsigned char *) &symbol.name);
+    conv4FromEcoToNative((unsigned char *) &symbol.val);
+    conv4FromEcoToNative((unsigned char *) &symbol.seg);
+    conv4FromEcoToNative((unsigned char *) &symbol.attr);
+    sym = enterSymbol(mp->strs + symbol.name);
+    if ((symbol.attr & SYM_ATTR_U) == 0) {
+      /* symbol gets defined here */
+      if ((sym->attr & SYM_ATTR_U) == 0) {
+        /* but is already defined in table */
+        error("symbol '%s' in module '%s' defined more than once\n"
+              "       (previous definition is in module '%s')",
+              sym->name, mp->name, sym->mod->name);
+      }
+      /* copy symbol information to table */
+      sym->mod = mp;
+      sym->seg = symbol.seg;
+      sym->val = symbol.val;
+      sym->attr = symbol.attr;
+    }
+    mp->syms[i] = sym;
+  }
+}
+
+
+void readModules(void) {
+  Module *mp;
+  FILE *inFile;
+  ExecHeader hdr;
+
+  mp = allModules;
+  while (mp != NULL) {
+    inFile = fopen(mp->name, "r");
+    if (inFile == NULL) {
+      error("cannot open input file '%s'", mp->name);
+    }
+    readHeader(&hdr, inFile, mp->name);
+    mp->strs = readStrings(&hdr, inFile, mp->name);
+    mp->nsegs = hdr.nsegs;
+    mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
+    readSegments(mp->nsegs, mp->segtbl, hdr.osegs, inFile, mp->name);
+    mp->nsyms = hdr.nsyms;
+    mp->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
+    readSymbols(mp, hdr.osyms, inFile);
+    fclose(inFile);
+    mp = mp->next;
+  }
+}
+
+
+void showModules(void) {
+  Module *mp;
+  int i;
+  char attr[10];
+
+  mp = allModules;
+  while (mp != NULL) {
+    printf("%s:\n", mp->name);
+    for (i = 0; i < mp->nsegs; i++) {
+      attr[0] = (mp->segtbl[i].attr & SEG_ATTR_A) ? 'A' : '-';
+      attr[1] = (mp->segtbl[i].attr & SEG_ATTR_P) ? 'P' : '-';
+      attr[2] = (mp->segtbl[i].attr & SEG_ATTR_W) ? 'W' : '-';
+      attr[3] = (mp->segtbl[i].attr & SEG_ATTR_X) ? 'X' : '-';
+      attr[4] = '\0';
+      printf("iseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+             mp->strs + mp->segtbl[i].name,
+             mp->segtbl[i].addr,
+             mp->segtbl[i].size,
+             attr);
+    }
+    mp = mp->next;
+  }
+}
+
+
+/**************************************************************/
+
+
 unsigned int dot;
 
 
@@ -623,7 +631,7 @@ void doStmList(ScriptNode *stm) {
 
 
 void doEntryStm(ScriptNode *stm) {
-  warning("doEntryStm() not implemented yet");
+  warning("doEntryStm() not implemented yet [linker script]");
 }
 
 
@@ -633,7 +641,7 @@ void doIsegStm(ScriptNode *stm) {
   p = lookupIsegGrp(stm->u.isegStm.name);
   if (p == NULL) {
     /* this should never happen */
-    error("'%s' vanished from iseg group table",
+    error("iseg group '%s' vanished from iseg group table",
           stm->u.isegStm.name);
   }
   p->addr = dot;
@@ -648,8 +656,8 @@ void doOsegStm(ScriptNode *stm) {
   p = newOseg(stm->u.osegStm.name, stm->u.osegStm.attr);
   start = dot;
   doStm(stm->u.osegStm.stms);
-  p->size = dot - start;
   p->addr = start;
+  p->size = dot - start;
 }
 
 
@@ -662,7 +670,7 @@ void doAssignStm(ScriptNode *stm) {
     dot = val;
   } else {
     /* LHS is not dot */
-    warning("assignment to symbol '%s' not implemented yet",
+    warning("assignment to symbol '%s' not implemented yet [linker script]",
             stm->u.assignStm.name);
   }
 }
@@ -841,38 +849,6 @@ void showAllSymbols(void) {
 }
 
 
-void buildSymbolTable(void) {
-  Module *mp;
-  int i;
-  int n;
-  Sym *sym;
-
-  mp = allModules;
-  while (mp != NULL) {
-    for (i = 0; i < mp->nsyms; i++) {
-      sym = enterSymbol(mp->strs + mp->symtbl[i].name);
-      if ((mp->symtbl[i].attr & SYM_ATTR_U) == 0) {
-        if ((sym->attr & SYM_ATTR_U) == 0) {
-          error("symbol '%s' defined more than once", sym->name);
-        }
-        /* define the symbol */
-        sym->mod = mp;
-        sym->seg = mp->symtbl[i].seg;
-        sym->val = mp->symtbl[i].val;
-        sym->attr = mp->symtbl[i].attr;
-      }
-    }
-    mp = mp->next;
-  }
-  n = countUndefSymbols();
-  if (n > 0) {
-    printf("The following symbols are undefined:\n");
-    showUndefSymbols();
-    error("%d undefined symbols", n);
-  }
-}
-
-
 void resolveSymbol(Sym *sym, void *arg) {
   Module *modPtr;
   SegmentRecord *segPtr;
@@ -889,6 +865,14 @@ void resolveSymbol(Sym *sym, void *arg) {
 
 
 void resolveSymbols(void) {
+  int n;
+
+  n = countUndefSymbols();
+  if (n > 0) {
+    printf("The following symbols are undefined:\n");
+    showUndefSymbols();
+    error("%d undefined symbols", n);
+  }
   mapOverSymbols(resolveSymbol, NULL);
 }
 
@@ -993,8 +977,6 @@ int main(int argc, char *argv[]) {
   readModules();
   allocateStorage(script);
   showModules();
-  buildSymbolTable();
-  showAllSymbols();
   resolveSymbols();
   showAllSymbols();
   //----------------------------
