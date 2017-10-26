@@ -9,6 +9,7 @@
 #include <stdarg.h>
 
 #include "../include/a.out.h"
+#include "../include/ar.h"
 #include "utils.h"
 #include "readscript.h"
 
@@ -51,6 +52,35 @@ void conv4FromNativeToEco(unsigned char *p) {
 
   data = * (unsigned int *) p;
   write4ToEco(p, data);
+}
+
+
+/**************************************************************/
+
+
+typedef struct file {
+  char *path;
+  struct file *next;
+} File;
+
+
+File *allFiles = NULL;
+File *lastFile;
+
+
+File *newFile(char *path) {
+  File *fp;
+
+  fp = memAlloc(sizeof(File));
+  fp->path = path;
+  fp->next = NULL;
+  if (allFiles == NULL) {
+    allFiles = fp;
+  } else {
+    lastFile->next = fp;
+  }
+  lastFile = fp;
+  return fp;
 }
 
 
@@ -463,27 +493,61 @@ void readSymbols(Module *mp, unsigned int off, FILE *inFile) {
 }
 
 
-void readModules(void) {
+void readModule(char *name, FILE *inFile) {
   Module *mp;
-  FILE *inFile;
   ExecHeader hdr;
 
-  mp = allModules;
-  while (mp != NULL) {
-    inFile = fopen(mp->name, "r");
+  mp = newModule(name);
+  readHeader(&hdr, inFile, mp->name);
+  mp->strs = readStrings(&hdr, inFile, mp->name);
+  mp->nsegs = hdr.nsegs;
+  mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
+  readSegments(mp->nsegs, mp->segtbl, hdr.osegs, inFile, mp->name);
+  mp->nsyms = hdr.nsyms;
+  mp->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
+  readSymbols(mp, hdr.osyms, inFile);
+}
+
+
+void readArchive(FILE *inFile) {
+  error("archives not yet!");
+}
+
+
+void readFiles(void) {
+  File *fp;
+  FILE *inFile;
+  unsigned int magic;
+  char *baseName;
+
+  fp = allFiles;
+  while (fp != NULL) {
+    inFile = fopen(fp->path, "r");
     if (inFile == NULL) {
-      error("cannot open input file '%s'", mp->name);
+      error("cannot open input file '%s'", fp->path);
     }
-    readHeader(&hdr, inFile, mp->name);
-    mp->strs = readStrings(&hdr, inFile, mp->name);
-    mp->nsegs = hdr.nsegs;
-    mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
-    readSegments(mp->nsegs, mp->segtbl, hdr.osegs, inFile, mp->name);
-    mp->nsyms = hdr.nsyms;
-    mp->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
-    readSymbols(mp, hdr.osyms, inFile);
+    if (fread(&magic, sizeof(unsigned int), 1, inFile) != 1) {
+      error("cannot read magic number in input file '%s'", fp->path);
+    }
+    conv4FromEcoToNative((unsigned char *) &magic);
+    if (magic == EXEC_MAGIC) {
+      baseName = fp->path + strlen(fp->path);
+      while (baseName != fp->path && *baseName != '/') {
+        baseName--;
+      }
+      if (*baseName == '/') {
+        baseName++;
+      }
+      readModule(baseName, inFile);
+    } else
+    if (magic == ARCH_MAGIC) {
+      readArchive(inFile);
+    } else {
+      error("input file '%s' is neither an object file nor a library",
+            fp->path);
+    }
     fclose(inFile);
-    mp = mp->next;
+    fp = fp->next;
   }
 }
 
@@ -871,7 +935,7 @@ void resolveSymbols(void) {
   if (n > 0) {
     printf("The following symbols are undefined:\n");
     showUndefSymbols();
-    error("%d undefined symbols", n);
+    error("%d undefined symbol(s)", n);
   }
   mapOverSymbols(resolveSymbol, NULL);
 }
@@ -916,7 +980,11 @@ void usage(char *myself) {
   fprintf(stderr, "         [-o objfile]     set output file name\n");
   fprintf(stderr, "         [-m mapfile]     set map file name\n");
   fprintf(stderr, "         file             object file name\n");
-  fprintf(stderr, "         [files...]       additional obj/lib files\n");
+  fprintf(stderr, "         [file]           additional obj/lib file\n");
+  fprintf(stderr, "         [-Ldir]          additional lib directory\n");
+  fprintf(stderr, "         [-lfile]         additional obj/lib file\n");
+  fprintf(stderr, "                          file name is 'lib<file>.a'\n");
+  fprintf(stderr, "                          searched in any dir from -L\n");
   exit(1);
 }
 
@@ -928,6 +996,7 @@ int main(int argc, char *argv[]) {
   char *outName;
   char *mapName;
   ScriptNode *script;
+  char *libName;
 
   /* ----------- start discard ---------- */
   for (i = 0; i < argc; i++) {
@@ -961,20 +1030,37 @@ int main(int argc, char *argv[]) {
           }
           mapName = argv[++i];
           break;
+        case 'L':
+          argp++;
+          if (*argp == '\0') {
+            usage(argv[0]);
+          }
+          break;
+        case 'l':
+          argp++;
+          if (*argp == '\0') {
+            usage(argv[0]);
+          }
+          libName = memAlloc(3 + strlen(argp) + 3);
+          strcpy(libName, "lib");
+          strcat(libName, argp);
+          strcat(libName, ".a");
+          newFile(libName);
+          break;
         default:
           usage(argv[0]);
       }
     } else {
       /* file */
-      newModule(argp);
+      newFile(argp);
     }
   }
-  if (allModules == NULL) {
+  if (allFiles == NULL) {
     error("no input files");
   }
   script = readScript(scrName);
   showScript(script);
-  readModules();
+  readFiles();
   allocateStorage(script);
   showModules();
   resolveSymbols();
