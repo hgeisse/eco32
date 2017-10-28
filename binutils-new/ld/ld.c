@@ -181,14 +181,14 @@ IsegGrp *addIsegGrp(char *name) {
 
 typedef struct sym {
   /* symbol data */
-  char *name;
-  Module *mod;
-  int seg;
-  int val;
-  unsigned int attr;
+  char *name;		/* the symbol's name */
+  Module *mod;		/* symbol is defined there */
+  int seg;		/* within this segment (-1 for absolute) */
+  int val;		/* the symbol's value */
+  unsigned int attr;	/* the symbol's attributes */
   /* internal data */
-  unsigned int hash;
-  struct sym *next;
+  unsigned int hash;	/* full hash over symbol's name */
+  struct sym *next;	/* hash bucket chain */
 } Sym;
 
 
@@ -282,6 +282,34 @@ static void growTable(void) {
   memFree(buckets);
   buckets = newBuckets;
   numBuckets = newNumBuckets;
+}
+
+
+Sym *lookupSymbol(char *name) {
+  unsigned int h;
+  int n;
+  Sym *p;
+
+  /* initialize hash table if necessary */
+  if (buckets == NULL) {
+    initTable();
+  }
+  /* compute hash value and bucket number */
+  h = hash(name);
+  n = h % numBuckets;
+  /* search in bucket list */
+  p = buckets[n];
+  while (p != NULL) {
+    if (p->hash == h) {
+      if (strcmp(p->name, name) == 0) {
+        /* found: return symbol */
+        return p;
+      }
+    }
+    p = p->next;
+  }
+  /* not found: return NULL */
+  return NULL;
 }
 
 
@@ -398,8 +426,9 @@ void showAllOsegs(void) {
 /**************************************************************/
 
 
-void readHeader(ExecHeader *hp, FILE *inFile, char *inName) {
-  if (fseek(inFile, 0, SEEK_SET) < 0) {
+void readObjHeader(ExecHeader *hp, unsigned int inOff,
+                   FILE *inFile, char *inName) {
+  if (fseek(inFile, inOff, SEEK_SET) < 0) {
     error("cannot seek to header in input file '%s'", inName);
   }
   if (fread(hp, sizeof(ExecHeader), 1, inFile) != 1) {
@@ -423,11 +452,12 @@ void readHeader(ExecHeader *hp, FILE *inFile, char *inName) {
 }
 
 
-char *readStrings(ExecHeader *hp, FILE *inFile, char *inName) {
+char *readObjStrings(ExecHeader *hp, unsigned int inOff,
+                     FILE *inFile, char *inName) {
   char *strs;
 
   strs = memAlloc(hp->sstrs);
-  if (fseek(inFile, hp->ostrs, SEEK_SET) < 0) {
+  if (fseek(inFile, inOff + hp->ostrs, SEEK_SET) < 0) {
     error("cannot seek to strings in input file '%s'", inName);
   }
   if (fread(strs, 1, hp->sstrs, inFile) != hp->sstrs) {
@@ -437,11 +467,11 @@ char *readStrings(ExecHeader *hp, FILE *inFile, char *inName) {
 }
 
 
-void readSegments(int nsegs, SegmentRecord *segs,
-                  unsigned int off, FILE *inFile, char *inName) {
+void readObjSegments(int nsegs, SegmentRecord *segs,
+                     unsigned int inOff, FILE *inFile, char *inName) {
   int i;
 
-  if (fseek(inFile, off, SEEK_SET) < 0) {
+  if (fseek(inFile, inOff, SEEK_SET) < 0) {
     error("cannot seek to segment table in input file '%s'", inName);
   }
   for (i = 0; i < nsegs; i++) {
@@ -457,12 +487,12 @@ void readSegments(int nsegs, SegmentRecord *segs,
 }
 
 
-void readSymbols(Module *mp, unsigned int off, FILE *inFile) {
+void readObjSymbols(Module *mp, unsigned int inOff, FILE *inFile) {
   int i;
   SymbolRecord symbol;
   Sym *sym;
 
-  if (fseek(inFile, off, SEEK_SET) < 0) {
+  if (fseek(inFile, inOff, SEEK_SET) < 0) {
     error("cannot seek to symbol table in input file '%s'", mp->name);
   }
   for (i = 0; i < mp->nsyms; i++) {
@@ -493,25 +523,141 @@ void readSymbols(Module *mp, unsigned int off, FILE *inFile) {
 }
 
 
-void readModule(char *name, FILE *inFile) {
+void readObjModule(char *name, unsigned int inOff,
+                   FILE *inFile, char *inName) {
   Module *mp;
   ExecHeader hdr;
 
+  printf("read module '%s' from file '%s' @ offset 0x%08X\n",
+         name, inName, inOff);
   mp = newModule(name);
-  readHeader(&hdr, inFile, mp->name);
-  mp->strs = readStrings(&hdr, inFile, mp->name);
+  readObjHeader(&hdr, inOff, inFile, mp->name);
+  mp->strs = readObjStrings(&hdr, inOff, inFile, mp->name);
   mp->nsegs = hdr.nsegs;
   mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
-  readSegments(mp->nsegs, mp->segtbl, hdr.osegs, inFile, mp->name);
+  readObjSegments(mp->nsegs, mp->segtbl,
+                  inOff + hdr.osegs, inFile, mp->name);
   mp->nsyms = hdr.nsyms;
   mp->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
-  readSymbols(mp, hdr.osyms, inFile);
+  readObjSymbols(mp, inOff + hdr.osyms, inFile);
 }
 
 
-void readArchive(FILE *inFile) {
-  error("archives not yet!");
+/**************************************************************/
+
+
+void readArchHeader(ArchHeader *hp, FILE *inFile, char *inName) {
+  if (fseek(inFile, 0, SEEK_SET) < 0) {
+    error("cannot seek to header in input file '%s'", inName);
+  }
+  if (fread(hp, sizeof(ArchHeader), 1, inFile) != 1) {
+    error("cannot read header in input file '%s'", inName);
+  }
+  conv4FromEcoToNative((unsigned char *) &hp->magic);
+  conv4FromEcoToNative((unsigned char *) &hp->omods);
+  conv4FromEcoToNative((unsigned char *) &hp->nmods);
+  conv4FromEcoToNative((unsigned char *) &hp->odata);
+  conv4FromEcoToNative((unsigned char *) &hp->sdata);
+  conv4FromEcoToNative((unsigned char *) &hp->ostrs);
+  conv4FromEcoToNative((unsigned char *) &hp->sstrs);
+  if (hp->magic != ARCH_MAGIC) {
+    error("wrong magic number in input file '%s'", inName);
+  }
 }
+
+
+char *readArchStrings(ArchHeader *hp, FILE *inFile, char *inName) {
+  char *strs;
+
+  strs = memAlloc(hp->sstrs);
+  if (fseek(inFile, hp->ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings in input file '%s'", inName);
+  }
+  if (fread(strs, 1, hp->sstrs, inFile) != hp->sstrs) {
+    error("cannot read strings in input file '%s'", inName);
+  }
+  return strs;
+}
+
+
+void readArchModules(int nmods, ModuleRecord *mods,
+                     unsigned int inOff, FILE *inFile, char *inName) {
+  int i;
+
+  if (fseek(inFile, inOff, SEEK_SET) < 0) {
+    error("cannot seek to module table in input file '%s'", inName);
+  }
+  for (i = 0; i < nmods; i++) {
+    if (fread(mods + i, sizeof(ModuleRecord), 1, inFile) != 1) {
+      error("cannot read module record in input file '%s'", inName);
+    }
+    conv4FromEcoToNative((unsigned char *) &mods[i].name);
+    conv4FromEcoToNative((unsigned char *) &mods[i].offs);
+    conv4FromEcoToNative((unsigned char *) &mods[i].size);
+    conv4FromEcoToNative((unsigned char *) &mods[i].fsym);
+    conv4FromEcoToNative((unsigned char *) &mods[i].nsym);
+  }
+}
+
+
+int needArchModule(char *fsym, unsigned int nsym) {
+  int i;
+  Sym *sym;
+
+  for (i = 0; i < nsym; i++) {
+    sym = lookupSymbol(fsym);
+    if (sym != NULL && (sym->attr & SYM_ATTR_U) != 0) {
+      /*
+       * This symbol is undefined in the global symbol table,
+       * so this module needs to be extracted.
+       */
+      return 1;
+    }
+    /* skip symbol name */
+    while (*fsym++ != '\0') ;
+  }
+  /*
+   * None of the modules's symbols were found undefined in
+   * the global symbol table, so don't extract the module.
+   */
+  return 0;
+}
+
+
+void readArchive(FILE *inFile, char *inName) {
+  ArchHeader hdr;
+  char *strs;
+  ModuleRecord *mods;
+  int anyModuleExtracted;
+  int i;
+  char *moduleName;
+
+  readArchHeader(&hdr, inFile, inName);
+  strs = readArchStrings(&hdr, inFile, inName);
+  mods = memAlloc(hdr.nmods * sizeof(ModuleRecord));
+  readArchModules(hdr.nmods, mods, hdr.omods, inFile, inName);
+  do {
+    anyModuleExtracted = 0;
+    for (i = 0; i < hdr.nmods; i++) {
+      if (needArchModule(strs + mods[i].fsym, mods[i].nsym)) {
+        /* store module name permanently and read module */
+        moduleName = memAlloc(strlen(strs + mods[i].name) + 1);
+        strcpy(moduleName, strs + mods[i].name);
+        readObjModule(moduleName, hdr.odata + mods[i].offs,
+                      inFile, inName);
+        /* there is no reason to scan this module ever again */
+        mods[i].nsym = 0;
+        /* remember that we extracted a module: must repeat loop */
+        anyModuleExtracted = 1;
+      }
+    }
+  } while (anyModuleExtracted);
+  memFree(mods);
+  memFree(strs);
+}
+
+
+/**************************************************************/
 
 
 void readFiles(void) {
@@ -538,10 +684,10 @@ void readFiles(void) {
       if (*baseName == '/') {
         baseName++;
       }
-      readModule(baseName, inFile);
+      readObjModule(baseName, 0, inFile, fp->path);
     } else
     if (magic == ARCH_MAGIC) {
-      readArchive(inFile);
+      readArchive(inFile, fp->path);
     } else {
       error("input file '%s' is neither an object file nor a library",
             fp->path);
@@ -581,6 +727,7 @@ void showModules(void) {
 
 
 unsigned int dot;
+Sym *entry;
 
 
 unsigned int evalExp(ScriptNode *exp);
@@ -695,7 +842,7 @@ void doStmList(ScriptNode *stm) {
 
 
 void doEntryStm(ScriptNode *stm) {
-  warning("doEntryStm() not implemented yet [linker script]");
+  entry = enterSymbol(stm->u.entryStm.name);
 }
 
 
@@ -725,17 +872,38 @@ void doOsegStm(ScriptNode *stm) {
 }
 
 
+/*
+ * This is a dummy module record in order to have a home
+ * for variables which get defined in the linker script.
+ */
+static Module scriptModule = {
+  "linker script",
+  NULL, 0, NULL, 0, NULL, NULL
+};
+
+
 void doAssignStm(ScriptNode *stm) {
   unsigned int val;
+  Sym *sym;
 
+  val = evalExp(stm->u.assignStm.exp);
   if (strcmp(stm->u.assignStm.name, ".") == 0) {
     /* LHS is dot */
-    val = evalExp(stm->u.assignStm.exp);
     dot = val;
   } else {
     /* LHS is not dot */
-    warning("assignment to symbol '%s' not implemented yet [linker script]",
-            stm->u.assignStm.name);
+    sym = enterSymbol(stm->u.assignStm.name);
+    if ((sym->attr & SYM_ATTR_U) == 0) {
+      /* symbol is already defined in table */
+      error("symbol '%s' in linker script defined more than once\n"
+            "       (previous definition is in module '%s')",
+            sym->name, sym->mod->name);
+    }
+    /* copy symbol information to table */
+    sym->mod = &scriptModule;
+    sym->seg = -1;
+    sym->val = val;
+    sym->attr = 0;
   }
 }
 
@@ -858,6 +1026,7 @@ void allocateStorage(ScriptNode *script) {
   /* set group start and output segment addresses by
      working through the linker script */
   dot = 0;
+  entry = NULL;
   doStm(script);
   /* set absolute addresses of all input segments */
   setAbsSegAddrs();
