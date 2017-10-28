@@ -1,0 +1,17 @@
+#
+# example.lnk -- example linker script
+#
+
+. = 0x1000;
+OSEG .code [APX] {
+  ISEG .code;
+}
+
+. = (. + 0xFFF) & ~0xFFF;
+OSEG .data [APW] {
+  ISEG .data;
+}
+
+OSEG .bss [AW] {
+  ISEG .bss;
+}

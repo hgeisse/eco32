@@ -1,0 +1,48 @@
+Header
+    magic number              : 0x8F0B45C0
+    offset of segment table   : 0x00000030
+    number of segment entries :          3
+    offset of symbol table    : 0x0000006C
+    number of symbol entries  :          0
+    offset of reloc table     : 0x0000006C
+    number of reloc entries   :          0
+    offset of segment data    : 0x0000006C
+    size of segment data      : 0x00000018
+    offset of string space    : 0x00000084
+    size of string space      : 0x00000011
+    entry point               : 0x00000000
+
+Segment Table
+    0:
+        name = .code
+        offs = 0x00000000
+        addr = 0x00000000
+        size = 0x00000010
+        attr = R-P
+    1:
+        name = .data
+        offs = 0x00000010
+        addr = 0x00000000
+        size = 0x00000008
+        attr = RWP
+    2:
+        name = .bss
+        offs = 0x00000018
+        addr = 0x00000000
+        size = 0x00000300
+        attr = RW-
+
+Symbol Table
+<empty>
+
+Relocation Table
+<empty>
+
+Data of Segment 0
+00000000:  00 43 20 00 00 43 28 00 00 43 30 00 00 43 38 00   .C ..C(..C0..C8.
+
+Data of Segment 1
+00000000:  00 00 12 34 00 00 56 78                           ...4..Vx        
+
+Data of Segment 2
+<not present>
