@@ -69,18 +69,18 @@ File *lastFile;
 
 
 File *newFile(char *path) {
-  File *fp;
+  File *file;
 
-  fp = memAlloc(sizeof(File));
-  fp->path = path;
-  fp->next = NULL;
+  file = memAlloc(sizeof(File));
+  file->path = path;
+  file->next = NULL;
   if (allFiles == NULL) {
-    allFiles = fp;
+    allFiles = file;
   } else {
-    lastFile->next = fp;
+    lastFile->next = file;
   }
-  lastFile = fp;
-  return fp;
+  lastFile = file;
+  return file;
 }
 
 
@@ -103,23 +103,23 @@ Module *lastModule;
 
 
 Module *newModule(char *name) {
-  Module *mp;
+  Module *mod;
 
-  mp = memAlloc(sizeof(Module));
-  mp->name = name;
-  mp->strs = NULL;
-  mp->nsegs = 0;
-  mp->segtbl = NULL;
-  mp->nsyms = 0;
-  mp->syms = NULL;
-  mp->next = NULL;
+  mod = memAlloc(sizeof(Module));
+  mod->name = name;
+  mod->strs = NULL;
+  mod->nsegs = 0;
+  mod->segtbl = NULL;
+  mod->nsyms = 0;
+  mod->syms = NULL;
+  mod->next = NULL;
   if (allModules == NULL) {
-    allModules = mp;
+    allModules = mod;
   } else {
-    lastModule->next = mp;
+    lastModule->next = mod;
   }
-  lastModule = mp;
-  return mp;
+  lastModule = mod;
+  return mod;
 }
 
 
@@ -138,34 +138,34 @@ IsegGrp *isegGrpTbl = NULL;
 
 
 IsegGrp *lookupIsegGrp(char *name) {
-  IsegGrp *p;
+  IsegGrp *grp;
 
-  p = isegGrpTbl;
-  while (p != NULL) {
-    if (strcmp(p->name, name) == 0) {
-      return p;
+  grp = isegGrpTbl;
+  while (grp != NULL) {
+    if (strcmp(grp->name, name) == 0) {
+      return grp;
     }
-    p = p->next;
+    grp = grp->next;
   }
   return NULL;
 }
 
 
 IsegGrp *addIsegGrp(char *name) {
-  IsegGrp *p;
+  IsegGrp *grp;
 
-  p = lookupIsegGrp(name);
-  if (p != NULL) {
+  grp = lookupIsegGrp(name);
+  if (grp != NULL) {
     error("linker script allocates segment group '%s' more than once",
           name);
   }
-  p = memAlloc(sizeof(IsegGrp));
-  p->name = name;
-  p->addr = 0;
-  p->size = 0;
-  p->next = isegGrpTbl;
-  isegGrpTbl = p;
-  return p;
+  grp = memAlloc(sizeof(IsegGrp));
+  grp->name = name;
+  grp->addr = 0;
+  grp->size = 0;
+  grp->next = isegGrpTbl;
+  isegGrpTbl = grp;
+  return grp;
 }
 
 
@@ -387,38 +387,38 @@ Oseg *lastOseg;
 
 
 Oseg *newOseg(char *name, unsigned int attr) {
-  Oseg *p;
+  Oseg *oseg;
 
-  p = memAlloc(sizeof(Oseg));
-  p->name = name;
-  p->addr = 0;
-  p->size = 0;
-  p->attr = attr;
-  p->next = NULL;
+  oseg = memAlloc(sizeof(Oseg));
+  oseg->name = name;
+  oseg->addr = 0;
+  oseg->size = 0;
+  oseg->attr = attr;
+  oseg->next = NULL;
   if (allOsegs == NULL) {
-    allOsegs = p;
+    allOsegs = oseg;
   } else {
-    lastOseg->next = p;
+    lastOseg->next = oseg;
   }
-  lastOseg = p;
-  return p;
+  lastOseg = oseg;
+  return oseg;
 }
 
 
 void showAllOsegs(void) {
-  Oseg *p;
+  Oseg *oseg;
   char attr[10];
 
-  p = allOsegs;
-  while (p != NULL) {
-    attr[0] = (p->attr & SEG_ATTR_A) ? 'A' : '-';
-    attr[1] = (p->attr & SEG_ATTR_P) ? 'P' : '-';
-    attr[2] = (p->attr & SEG_ATTR_W) ? 'W' : '-';
-    attr[3] = (p->attr & SEG_ATTR_X) ? 'X' : '-';
+  oseg = allOsegs;
+  while (oseg != NULL) {
+    attr[0] = (oseg->attr & SEG_ATTR_A) ? 'A' : '-';
+    attr[1] = (oseg->attr & SEG_ATTR_P) ? 'P' : '-';
+    attr[2] = (oseg->attr & SEG_ATTR_W) ? 'W' : '-';
+    attr[3] = (oseg->attr & SEG_ATTR_X) ? 'X' : '-';
     attr[4] = '\0';
     printf("oseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-           p->name, p->addr, p->size, attr);
-    p = p->next;
+           oseg->name, oseg->addr, oseg->size, attr);
+    oseg = oseg->next;
   }
 }
 
@@ -487,59 +487,59 @@ void readObjSegments(int nsegs, SegmentRecord *segs,
 }
 
 
-void readObjSymbols(Module *mp, unsigned int inOff, FILE *inFile) {
+void readObjSymbols(Module *mod, unsigned int inOff, FILE *inFile) {
   int i;
   SymbolRecord symbol;
   Sym *sym;
 
   if (fseek(inFile, inOff, SEEK_SET) < 0) {
-    error("cannot seek to symbol table in input file '%s'", mp->name);
+    error("cannot seek to symbol table in input file '%s'", mod->name);
   }
-  for (i = 0; i < mp->nsyms; i++) {
+  for (i = 0; i < mod->nsyms; i++) {
     if (fread(&symbol, sizeof(SymbolRecord), 1, inFile) != 1) {
-      error("cannot read symbol record in input file '%s'", mp->name);
+      error("cannot read symbol record in input file '%s'", mod->name);
     }
     conv4FromEcoToNative((unsigned char *) &symbol.name);
     conv4FromEcoToNative((unsigned char *) &symbol.val);
     conv4FromEcoToNative((unsigned char *) &symbol.seg);
     conv4FromEcoToNative((unsigned char *) &symbol.attr);
-    sym = enterSymbol(mp->strs + symbol.name);
+    sym = enterSymbol(mod->strs + symbol.name);
     if ((symbol.attr & SYM_ATTR_U) == 0) {
       /* symbol gets defined here */
       if ((sym->attr & SYM_ATTR_U) == 0) {
         /* but is already defined in table */
         error("symbol '%s' in module '%s' defined more than once\n"
               "       (previous definition is in module '%s')",
-              sym->name, mp->name, sym->mod->name);
+              sym->name, mod->name, sym->mod->name);
       }
       /* copy symbol information to table */
-      sym->mod = mp;
+      sym->mod = mod;
       sym->seg = symbol.seg;
       sym->val = symbol.val;
       sym->attr = symbol.attr;
     }
-    mp->syms[i] = sym;
+    mod->syms[i] = sym;
   }
 }
 
 
 void readObjModule(char *name, unsigned int inOff,
                    FILE *inFile, char *inName) {
-  Module *mp;
+  Module *mod;
   ExecHeader hdr;
 
   printf("read module '%s' from file '%s' @ offset 0x%08X\n",
          name, inName, inOff);
-  mp = newModule(name);
-  readObjHeader(&hdr, inOff, inFile, mp->name);
-  mp->strs = readObjStrings(&hdr, inOff, inFile, mp->name);
-  mp->nsegs = hdr.nsegs;
-  mp->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
-  readObjSegments(mp->nsegs, mp->segtbl,
-                  inOff + hdr.osegs, inFile, mp->name);
-  mp->nsyms = hdr.nsyms;
-  mp->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
-  readObjSymbols(mp, inOff + hdr.osyms, inFile);
+  mod = newModule(name);
+  readObjHeader(&hdr, inOff, inFile, mod->name);
+  mod->strs = readObjStrings(&hdr, inOff, inFile, mod->name);
+  mod->nsegs = hdr.nsegs;
+  mod->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
+  readObjSegments(mod->nsegs, mod->segtbl,
+                  inOff + hdr.osegs, inFile, mod->name);
+  mod->nsyms = hdr.nsyms;
+  mod->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
+  readObjSymbols(mod, inOff + hdr.osyms, inFile);
 }
 
 
@@ -661,64 +661,64 @@ void readArchive(FILE *inFile, char *inName) {
 
 
 void readFiles(void) {
-  File *fp;
+  File *file;
   FILE *inFile;
   unsigned int magic;
   char *baseName;
 
-  fp = allFiles;
-  while (fp != NULL) {
-    inFile = fopen(fp->path, "r");
+  file = allFiles;
+  while (file != NULL) {
+    inFile = fopen(file->path, "r");
     if (inFile == NULL) {
-      error("cannot open input file '%s'", fp->path);
+      error("cannot open input file '%s'", file->path);
     }
     if (fread(&magic, sizeof(unsigned int), 1, inFile) != 1) {
-      error("cannot read magic number in input file '%s'", fp->path);
+      error("cannot read magic number in input file '%s'", file->path);
     }
     conv4FromEcoToNative((unsigned char *) &magic);
     if (magic == EXEC_MAGIC) {
-      baseName = fp->path + strlen(fp->path);
-      while (baseName != fp->path && *baseName != '/') {
+      baseName = file->path + strlen(file->path);
+      while (baseName != file->path && *baseName != '/') {
         baseName--;
       }
       if (*baseName == '/') {
         baseName++;
       }
-      readObjModule(baseName, 0, inFile, fp->path);
+      readObjModule(baseName, 0, inFile, file->path);
     } else
     if (magic == ARCH_MAGIC) {
-      readArchive(inFile, fp->path);
+      readArchive(inFile, file->path);
     } else {
       error("input file '%s' is neither an object file nor a library",
-            fp->path);
+            file->path);
     }
     fclose(inFile);
-    fp = fp->next;
+    file = file->next;
   }
 }
 
 
 void showModules(void) {
-  Module *mp;
+  Module *mod;
   int i;
   char attr[10];
 
-  mp = allModules;
-  while (mp != NULL) {
-    printf("%s:\n", mp->name);
-    for (i = 0; i < mp->nsegs; i++) {
-      attr[0] = (mp->segtbl[i].attr & SEG_ATTR_A) ? 'A' : '-';
-      attr[1] = (mp->segtbl[i].attr & SEG_ATTR_P) ? 'P' : '-';
-      attr[2] = (mp->segtbl[i].attr & SEG_ATTR_W) ? 'W' : '-';
-      attr[3] = (mp->segtbl[i].attr & SEG_ATTR_X) ? 'X' : '-';
+  mod = allModules;
+  while (mod != NULL) {
+    printf("%s:\n", mod->name);
+    for (i = 0; i < mod->nsegs; i++) {
+      attr[0] = (mod->segtbl[i].attr & SEG_ATTR_A) ? 'A' : '-';
+      attr[1] = (mod->segtbl[i].attr & SEG_ATTR_P) ? 'P' : '-';
+      attr[2] = (mod->segtbl[i].attr & SEG_ATTR_W) ? 'W' : '-';
+      attr[3] = (mod->segtbl[i].attr & SEG_ATTR_X) ? 'X' : '-';
       attr[4] = '\0';
       printf("iseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-             mp->strs + mp->segtbl[i].name,
-             mp->segtbl[i].addr,
-             mp->segtbl[i].size,
+             mod->strs + mod->segtbl[i].name,
+             mod->segtbl[i].addr,
+             mod->segtbl[i].size,
              attr);
     }
-    mp = mp->next;
+    mod = mod->next;
   }
 }
 
@@ -847,28 +847,28 @@ void doEntryStm(ScriptNode *stm) {
 
 
 void doIsegStm(ScriptNode *stm) {
-  IsegGrp *p;
+  IsegGrp *grp;
 
-  p = lookupIsegGrp(stm->u.isegStm.name);
-  if (p == NULL) {
+  grp = lookupIsegGrp(stm->u.isegStm.name);
+  if (grp == NULL) {
     /* this should never happen */
     error("iseg group '%s' vanished from iseg group table",
           stm->u.isegStm.name);
   }
-  p->addr = dot;
-  dot += p->size;
+  grp->addr = dot;
+  dot += grp->size;
 }
 
 
 void doOsegStm(ScriptNode *stm) {
-  Oseg *p;
+  Oseg *oseg;
   unsigned int start;
 
-  p = newOseg(stm->u.osegStm.name, stm->u.osegStm.attr);
+  oseg = newOseg(stm->u.osegStm.name, stm->u.osegStm.attr);
   start = dot;
   doStm(stm->u.osegStm.stms);
-  p->addr = start;
-  p->size = dot - start;
+  oseg->addr = start;
+  oseg->size = dot - start;
 }
 
 
@@ -968,50 +968,50 @@ void buildIsegGrpTbl(ScriptNode *script) {
 
 
 void setRelSegAddrs(void) {
-  Module *mp;
+  Module *mod;
   int i;
   char *segName;
-  IsegGrp *grpPtr;
+  IsegGrp *grp;
 
-  mp = allModules;
-  while (mp != NULL) {
-    for (i = 0; i < mp->nsegs; i++) {
-      segName = mp->strs + mp->segtbl[i].name;
-      grpPtr = lookupIsegGrp(segName);
-      if (grpPtr == NULL) {
+  mod = allModules;
+  while (mod != NULL) {
+    for (i = 0; i < mod->nsegs; i++) {
+      segName = mod->strs + mod->segtbl[i].name;
+      grp = lookupIsegGrp(segName);
+      if (grp == NULL) {
         /* input segment name does not match any ISEG name in script */
         warning("discarding segment '%s' from module '%s'",
-                segName, mp->name);
+                segName, mod->name);
       } else {
         /* set segment's relative address in group */
-        mp->segtbl[i].addr = grpPtr->size;
+        mod->segtbl[i].addr = grp->size;
         /* add segment's size to group total */
-        grpPtr->size += mp->segtbl[i].size;
-        grpPtr->size = WORD_ALIGN(grpPtr->size);
+        grp->size += mod->segtbl[i].size;
+        grp->size = WORD_ALIGN(grp->size);
       }
     }
-    mp = mp->next;
+    mod = mod->next;
   }
 }
 
 
 void setAbsSegAddrs(void) {
-  Module *mp;
+  Module *mod;
   int i;
   char *segName;
-  IsegGrp *grpPtr;
+  IsegGrp *grp;
 
-  mp = allModules;
-  while (mp != NULL) {
-    for (i = 0; i < mp->nsegs; i++) {
-      segName = mp->strs + mp->segtbl[i].name;
-      grpPtr = lookupIsegGrp(segName);
-      if (grpPtr != NULL) {
+  mod = allModules;
+  while (mod != NULL) {
+    for (i = 0; i < mod->nsegs; i++) {
+      segName = mod->strs + mod->segtbl[i].name;
+      grp = lookupIsegGrp(segName);
+      if (grp != NULL) {
         /* add group start to segment's relative address */
-        mp->segtbl[i].addr += grpPtr->addr;
+        mod->segtbl[i].addr += grp->addr;
       }
     }
-    mp = mp->next;
+    mod = mod->next;
   }
 }
 
@@ -1065,13 +1065,13 @@ void showUndefSymbols(void) {
 
 
 static void showSymbol(Sym *sym, void *arg) {
-  Module *mp;
+  Module *mod;
 
-  mp = sym->mod;
+  mod = sym->mod;
   printf("    %s: mod = %s, seg = %s, val = 0x%08X\n",
          sym->name,
-         mp->name,
-         sym->seg == -1 ? "*ABS*" : mp->strs + mp->segtbl[sym->seg].name,
+         mod->name,
+         sym->seg == -1 ? "*ABS*" : mod->strs + mod->segtbl[sym->seg].name,
          sym->val);
 }
 
