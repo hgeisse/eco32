@@ -23,41 +23,6 @@
 /**************************************************************/
 
 
-unsigned int read4FromEco(unsigned char *p) {
-  return (unsigned int) p[0] << 24 |
-         (unsigned int) p[1] << 16 |
-         (unsigned int) p[2] <<  8 |
-         (unsigned int) p[3] <<  0;
-}
-
-
-void write4ToEco(unsigned char *p, unsigned int data) {
-  p[0] = data >> 24;
-  p[1] = data >> 16;
-  p[2] = data >>  8;
-  p[3] = data >>  0;
-}
-
-
-void conv4FromEcoToNative(unsigned char *p) {
-  unsigned int data;
-
-  data = read4FromEco(p);
-  * (unsigned int *) p = data;
-}
-
-
-void conv4FromNativeToEco(unsigned char *p) {
-  unsigned int data;
-
-  data = * (unsigned int *) p;
-  write4ToEco(p, data);
-}
-
-
-/**************************************************************/
-
-
 typedef struct file {
   char *path;
   struct file *next;
@@ -91,7 +56,7 @@ typedef struct module {
   char *name;
   char *strs;
   int nsegs;
-  SegmentRecord *segtbl;
+  struct seg *segs;
   int nsyms;
   struct sym **syms;
   struct module *next;
@@ -109,7 +74,7 @@ Module *newModule(char *name) {
   mod->name = name;
   mod->strs = NULL;
   mod->nsegs = 0;
-  mod->segtbl = NULL;
+  mod->segs = NULL;
   mod->nsyms = 0;
   mod->syms = NULL;
   mod->next = NULL;
@@ -121,6 +86,17 @@ Module *newModule(char *name) {
   lastModule = mod;
   return mod;
 }
+
+
+/**************************************************************/
+
+
+typedef struct seg {
+  char *name;
+  unsigned int addr;
+  unsigned int size;
+  unsigned int attr;
+} Seg;
 
 
 /**************************************************************/
@@ -426,78 +402,84 @@ void showAllOsegs(void) {
 /**************************************************************/
 
 
-void readObjHeader(ExecHeader *hp, unsigned int inOff,
-                   FILE *inFile, char *inName) {
+void readObjHeader(ExecHeader *hdr, unsigned int inOff,
+                   FILE *inFile, char *inPath) {
   if (fseek(inFile, inOff, SEEK_SET) < 0) {
-    error("cannot seek to header in input file '%s'", inName);
+    error("cannot seek to header in input file '%s'", inPath);
   }
-  if (fread(hp, sizeof(ExecHeader), 1, inFile) != 1) {
-    error("cannot read header in input file '%s'", inName);
+  if (fread(hdr, sizeof(ExecHeader), 1, inFile) != 1) {
+    error("cannot read header in input file '%s'", inPath);
   }
-  conv4FromEcoToNative((unsigned char *) &hp->magic);
-  conv4FromEcoToNative((unsigned char *) &hp->osegs);
-  conv4FromEcoToNative((unsigned char *) &hp->nsegs);
-  conv4FromEcoToNative((unsigned char *) &hp->osyms);
-  conv4FromEcoToNative((unsigned char *) &hp->nsyms);
-  conv4FromEcoToNative((unsigned char *) &hp->orels);
-  conv4FromEcoToNative((unsigned char *) &hp->nrels);
-  conv4FromEcoToNative((unsigned char *) &hp->odata);
-  conv4FromEcoToNative((unsigned char *) &hp->sdata);
-  conv4FromEcoToNative((unsigned char *) &hp->ostrs);
-  conv4FromEcoToNative((unsigned char *) &hp->sstrs);
-  conv4FromEcoToNative((unsigned char *) &hp->entry);
-  if (hp->magic != EXEC_MAGIC) {
-    error("wrong magic number in input file '%s'", inName);
+  conv4FromEcoToNative((unsigned char *) &hdr->magic);
+  conv4FromEcoToNative((unsigned char *) &hdr->osegs);
+  conv4FromEcoToNative((unsigned char *) &hdr->nsegs);
+  conv4FromEcoToNative((unsigned char *) &hdr->osyms);
+  conv4FromEcoToNative((unsigned char *) &hdr->nsyms);
+  conv4FromEcoToNative((unsigned char *) &hdr->orels);
+  conv4FromEcoToNative((unsigned char *) &hdr->nrels);
+  conv4FromEcoToNative((unsigned char *) &hdr->odata);
+  conv4FromEcoToNative((unsigned char *) &hdr->sdata);
+  conv4FromEcoToNative((unsigned char *) &hdr->ostrs);
+  conv4FromEcoToNative((unsigned char *) &hdr->sstrs);
+  conv4FromEcoToNative((unsigned char *) &hdr->entry);
+  if (hdr->magic != EXEC_MAGIC) {
+    error("wrong magic number in input file '%s'", inPath);
   }
 }
 
 
-char *readObjStrings(ExecHeader *hp, unsigned int inOff,
-                     FILE *inFile, char *inName) {
+char *readObjStrings(ExecHeader *hdr, unsigned int inOff,
+                     FILE *inFile, char *inPath) {
   char *strs;
 
-  strs = memAlloc(hp->sstrs);
-  if (fseek(inFile, inOff + hp->ostrs, SEEK_SET) < 0) {
-    error("cannot seek to strings in input file '%s'", inName);
+  strs = memAlloc(hdr->sstrs);
+  if (fseek(inFile, inOff + hdr->ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings in input file '%s'", inPath);
   }
-  if (fread(strs, 1, hp->sstrs, inFile) != hp->sstrs) {
-    error("cannot read strings in input file '%s'", inName);
+  if (fread(strs, 1, hdr->sstrs, inFile) != hdr->sstrs) {
+    error("cannot read strings in input file '%s'", inPath);
   }
   return strs;
 }
 
 
-void readObjSegments(int nsegs, SegmentRecord *segs,
-                     unsigned int inOff, FILE *inFile, char *inName) {
+void readObjSegments(Module *mod, unsigned int inOff,
+                     FILE *inFile, char *inPath) {
   int i;
+  SegmentRecord segment;
 
   if (fseek(inFile, inOff, SEEK_SET) < 0) {
-    error("cannot seek to segment table in input file '%s'", inName);
+    error("cannot seek to segment table in input file '%s'", inPath);
   }
-  for (i = 0; i < nsegs; i++) {
-    if (fread(segs + i, sizeof(SegmentRecord), 1, inFile) != 1) {
-      error("cannot read segment record in input file '%s'", inName);
+  for (i = 0; i < mod->nsegs; i++) {
+    if (fread(&segment, sizeof(SegmentRecord), 1, inFile) != 1) {
+      error("cannot read segment record in input file '%s'", inPath);
     }
-    conv4FromEcoToNative((unsigned char *) &segs[i].name);
-    conv4FromEcoToNative((unsigned char *) &segs[i].offs);
-    conv4FromEcoToNative((unsigned char *) &segs[i].addr);
-    conv4FromEcoToNative((unsigned char *) &segs[i].size);
-    conv4FromEcoToNative((unsigned char *) &segs[i].attr);
+    conv4FromEcoToNative((unsigned char *) &segment.name);
+    conv4FromEcoToNative((unsigned char *) &segment.offs);
+    conv4FromEcoToNative((unsigned char *) &segment.addr);
+    conv4FromEcoToNative((unsigned char *) &segment.size);
+    conv4FromEcoToNative((unsigned char *) &segment.attr);
+    mod->segs[i].name = mod->strs + segment.name;
+    mod->segs[i].addr = segment.addr;
+    mod->segs[i].size = segment.size;
+    mod->segs[i].attr = segment.attr;
   }
 }
 
 
-void readObjSymbols(Module *mod, unsigned int inOff, FILE *inFile) {
+void readObjSymbols(Module *mod, unsigned int inOff,
+                    FILE *inFile, char *inPath) {
   int i;
   SymbolRecord symbol;
   Sym *sym;
 
   if (fseek(inFile, inOff, SEEK_SET) < 0) {
-    error("cannot seek to symbol table in input file '%s'", mod->name);
+    error("cannot seek to symbol table in input file '%s'", inPath);
   }
   for (i = 0; i < mod->nsyms; i++) {
     if (fread(&symbol, sizeof(SymbolRecord), 1, inFile) != 1) {
-      error("cannot read symbol record in input file '%s'", mod->name);
+      error("cannot read symbol record in input file '%s'", inPath);
     }
     conv4FromEcoToNative((unsigned char *) &symbol.name);
     conv4FromEcoToNative((unsigned char *) &symbol.val);
@@ -524,72 +506,71 @@ void readObjSymbols(Module *mod, unsigned int inOff, FILE *inFile) {
 
 
 void readObjModule(char *name, unsigned int inOff,
-                   FILE *inFile, char *inName) {
+                   FILE *inFile, char *inPath) {
   Module *mod;
   ExecHeader hdr;
 
   printf("read module '%s' from file '%s' @ offset 0x%08X\n",
-         name, inName, inOff);
+         name, inPath, inOff);
   mod = newModule(name);
-  readObjHeader(&hdr, inOff, inFile, mod->name);
-  mod->strs = readObjStrings(&hdr, inOff, inFile, mod->name);
+  readObjHeader(&hdr, inOff, inFile, inPath);
+  mod->strs = readObjStrings(&hdr, inOff, inFile, inPath);
   mod->nsegs = hdr.nsegs;
-  mod->segtbl = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
-  readObjSegments(mod->nsegs, mod->segtbl,
-                  inOff + hdr.osegs, inFile, mod->name);
+  mod->segs = memAlloc(hdr.nsegs * sizeof(Seg));
+  readObjSegments(mod, inOff + hdr.osegs, inFile, inPath);
   mod->nsyms = hdr.nsyms;
   mod->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
-  readObjSymbols(mod, inOff + hdr.osyms, inFile);
+  readObjSymbols(mod, inOff + hdr.osyms, inFile, inPath);
 }
 
 
 /**************************************************************/
 
 
-void readArchHeader(ArchHeader *hp, FILE *inFile, char *inName) {
+void readArchHeader(ArchHeader *hdr, FILE *inFile, char *inPath) {
   if (fseek(inFile, 0, SEEK_SET) < 0) {
-    error("cannot seek to header in input file '%s'", inName);
+    error("cannot seek to header in input file '%s'", inPath);
   }
-  if (fread(hp, sizeof(ArchHeader), 1, inFile) != 1) {
-    error("cannot read header in input file '%s'", inName);
+  if (fread(hdr, sizeof(ArchHeader), 1, inFile) != 1) {
+    error("cannot read header in input file '%s'", inPath);
   }
-  conv4FromEcoToNative((unsigned char *) &hp->magic);
-  conv4FromEcoToNative((unsigned char *) &hp->omods);
-  conv4FromEcoToNative((unsigned char *) &hp->nmods);
-  conv4FromEcoToNative((unsigned char *) &hp->odata);
-  conv4FromEcoToNative((unsigned char *) &hp->sdata);
-  conv4FromEcoToNative((unsigned char *) &hp->ostrs);
-  conv4FromEcoToNative((unsigned char *) &hp->sstrs);
-  if (hp->magic != ARCH_MAGIC) {
-    error("wrong magic number in input file '%s'", inName);
+  conv4FromEcoToNative((unsigned char *) &hdr->magic);
+  conv4FromEcoToNative((unsigned char *) &hdr->omods);
+  conv4FromEcoToNative((unsigned char *) &hdr->nmods);
+  conv4FromEcoToNative((unsigned char *) &hdr->odata);
+  conv4FromEcoToNative((unsigned char *) &hdr->sdata);
+  conv4FromEcoToNative((unsigned char *) &hdr->ostrs);
+  conv4FromEcoToNative((unsigned char *) &hdr->sstrs);
+  if (hdr->magic != ARCH_MAGIC) {
+    error("wrong magic number in input file '%s'", inPath);
   }
 }
 
 
-char *readArchStrings(ArchHeader *hp, FILE *inFile, char *inName) {
+char *readArchStrings(ArchHeader *hdr, FILE *inFile, char *inPath) {
   char *strs;
 
-  strs = memAlloc(hp->sstrs);
-  if (fseek(inFile, hp->ostrs, SEEK_SET) < 0) {
-    error("cannot seek to strings in input file '%s'", inName);
+  strs = memAlloc(hdr->sstrs);
+  if (fseek(inFile, hdr->ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings in input file '%s'", inPath);
   }
-  if (fread(strs, 1, hp->sstrs, inFile) != hp->sstrs) {
-    error("cannot read strings in input file '%s'", inName);
+  if (fread(strs, 1, hdr->sstrs, inFile) != hdr->sstrs) {
+    error("cannot read strings in input file '%s'", inPath);
   }
   return strs;
 }
 
 
 void readArchModules(int nmods, ModuleRecord *mods,
-                     unsigned int inOff, FILE *inFile, char *inName) {
+                     unsigned int inOff, FILE *inFile, char *inPath) {
   int i;
 
   if (fseek(inFile, inOff, SEEK_SET) < 0) {
-    error("cannot seek to module table in input file '%s'", inName);
+    error("cannot seek to module table in input file '%s'", inPath);
   }
   for (i = 0; i < nmods; i++) {
     if (fread(mods + i, sizeof(ModuleRecord), 1, inFile) != 1) {
-      error("cannot read module record in input file '%s'", inName);
+      error("cannot read module record in input file '%s'", inPath);
     }
     conv4FromEcoToNative((unsigned char *) &mods[i].name);
     conv4FromEcoToNative((unsigned char *) &mods[i].offs);
@@ -624,7 +605,7 @@ int needArchModule(char *fsym, unsigned int nsym) {
 }
 
 
-void readArchive(FILE *inFile, char *inName) {
+void readArchive(FILE *inFile, char *inPath) {
   ArchHeader hdr;
   char *strs;
   ModuleRecord *mods;
@@ -632,10 +613,10 @@ void readArchive(FILE *inFile, char *inName) {
   int i;
   char *moduleName;
 
-  readArchHeader(&hdr, inFile, inName);
-  strs = readArchStrings(&hdr, inFile, inName);
+  readArchHeader(&hdr, inFile, inPath);
+  strs = readArchStrings(&hdr, inFile, inPath);
   mods = memAlloc(hdr.nmods * sizeof(ModuleRecord));
-  readArchModules(hdr.nmods, mods, hdr.omods, inFile, inName);
+  readArchModules(hdr.nmods, mods, hdr.omods, inFile, inPath);
   do {
     anyModuleExtracted = 0;
     for (i = 0; i < hdr.nmods; i++) {
@@ -644,7 +625,7 @@ void readArchive(FILE *inFile, char *inName) {
         moduleName = memAlloc(strlen(strs + mods[i].name) + 1);
         strcpy(moduleName, strs + mods[i].name);
         readObjModule(moduleName, hdr.odata + mods[i].offs,
-                      inFile, inName);
+                      inFile, inPath);
         /* there is no reason to scan this module ever again */
         mods[i].nsym = 0;
         /* remember that we extracted a module: must repeat loop */
@@ -707,15 +688,15 @@ void showModules(void) {
   while (mod != NULL) {
     printf("%s:\n", mod->name);
     for (i = 0; i < mod->nsegs; i++) {
-      attr[0] = (mod->segtbl[i].attr & SEG_ATTR_A) ? 'A' : '-';
-      attr[1] = (mod->segtbl[i].attr & SEG_ATTR_P) ? 'P' : '-';
-      attr[2] = (mod->segtbl[i].attr & SEG_ATTR_W) ? 'W' : '-';
-      attr[3] = (mod->segtbl[i].attr & SEG_ATTR_X) ? 'X' : '-';
+      attr[0] = (mod->segs[i].attr & SEG_ATTR_A) ? 'A' : '-';
+      attr[1] = (mod->segs[i].attr & SEG_ATTR_P) ? 'P' : '-';
+      attr[2] = (mod->segs[i].attr & SEG_ATTR_W) ? 'W' : '-';
+      attr[3] = (mod->segs[i].attr & SEG_ATTR_X) ? 'X' : '-';
       attr[4] = '\0';
       printf("iseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-             mod->strs + mod->segtbl[i].name,
-             mod->segtbl[i].addr,
-             mod->segtbl[i].size,
+             mod->segs[i].name,
+             mod->segs[i].addr,
+             mod->segs[i].size,
              attr);
     }
     mod = mod->next;
@@ -976,7 +957,7 @@ void setRelSegAddrs(void) {
   mod = allModules;
   while (mod != NULL) {
     for (i = 0; i < mod->nsegs; i++) {
-      segName = mod->strs + mod->segtbl[i].name;
+      segName = mod->segs[i].name;
       grp = lookupIsegGrp(segName);
       if (grp == NULL) {
         /* input segment name does not match any ISEG name in script */
@@ -984,9 +965,9 @@ void setRelSegAddrs(void) {
                 segName, mod->name);
       } else {
         /* set segment's relative address in group */
-        mod->segtbl[i].addr = grp->size;
+        mod->segs[i].addr = grp->size;
         /* add segment's size to group total */
-        grp->size += mod->segtbl[i].size;
+        grp->size += mod->segs[i].size;
         grp->size = WORD_ALIGN(grp->size);
       }
     }
@@ -1004,11 +985,11 @@ void setAbsSegAddrs(void) {
   mod = allModules;
   while (mod != NULL) {
     for (i = 0; i < mod->nsegs; i++) {
-      segName = mod->strs + mod->segtbl[i].name;
+      segName = mod->segs[i].name;
       grp = lookupIsegGrp(segName);
       if (grp != NULL) {
         /* add group start to segment's relative address */
-        mod->segtbl[i].addr += grp->addr;
+        mod->segs[i].addr += grp->addr;
       }
     }
     mod = mod->next;
@@ -1071,7 +1052,7 @@ static void showSymbol(Sym *sym, void *arg) {
   printf("    %s: mod = %s, seg = %s, val = 0x%08X\n",
          sym->name,
          mod->name,
-         sym->seg == -1 ? "*ABS*" : mod->strs + mod->segtbl[sym->seg].name,
+         sym->seg == -1 ? "*ABS*" : mod->segs[sym->seg].name,
          sym->val);
 }
 
@@ -1084,7 +1065,7 @@ void showAllSymbols(void) {
 
 void resolveSymbol(Sym *sym, void *arg) {
   Module *modPtr;
-  SegmentRecord *segPtr;
+  Seg *segPtr;
 
   if (sym->seg == -1) {
     /* absolute symbol: keep value */
@@ -1092,7 +1073,7 @@ void resolveSymbol(Sym *sym, void *arg) {
   }
   /* add segment address to symbol value */
   modPtr = sym->mod;
-  segPtr = modPtr->segtbl + sym->seg;
+  segPtr = modPtr->segs + sym->seg;
   sym->val += segPtr->addr;
 }
 
@@ -1107,6 +1088,13 @@ void resolveSymbols(void) {
     error("%d undefined symbol(s)", n);
   }
   mapOverSymbols(resolveSymbol, NULL);
+}
+
+
+/**************************************************************/
+
+
+void relocateModules(void) {
 }
 
 
@@ -1234,6 +1222,7 @@ int main(int argc, char *argv[]) {
   showModules();
   resolveSymbols();
   showAllSymbols();
+  relocateModules();
   //----------------------------
   writeOutput(outName);
   if (mapName != NULL) {
