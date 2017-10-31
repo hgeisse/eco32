@@ -53,13 +53,16 @@ File *newFile(char *path) {
 
 
 typedef struct module {
-  char *name;
-  char *strs;
-  int nsegs;
-  struct seg *segs;
-  int nsyms;
-  struct sym **syms;
-  struct module *next;
+  char *name;			/* module name */
+  char *strs;			/* string space */
+  unsigned char *data;		/* data space */
+  int nsegs;			/* number of segments */
+  SegmentRecord *segs;		/* array of segments */
+  int nsyms;			/* number of symbols */
+  struct sym **syms;		/* array of pointers to symbols */
+  int nrels;			/* number of relocations */
+  RelocRecord *rels;		/* array of relocations */
+  struct module *next;		/* next module, order is important */
 } Module;
 
 
@@ -73,10 +76,13 @@ Module *newModule(char *name) {
   mod = memAlloc(sizeof(Module));
   mod->name = name;
   mod->strs = NULL;
+  mod->data = NULL;
   mod->nsegs = 0;
   mod->segs = NULL;
   mod->nsyms = 0;
   mod->syms = NULL;
+  mod->nrels = 0;
+  mod->rels = NULL;
   mod->next = NULL;
   if (allModules == NULL) {
     allModules = mod;
@@ -86,17 +92,6 @@ Module *newModule(char *name) {
   lastModule = mod;
   return mod;
 }
-
-
-/**************************************************************/
-
-
-typedef struct seg {
-  char *name;
-  unsigned int addr;
-  unsigned int size;
-  unsigned int attr;
-} Seg;
 
 
 /**************************************************************/
@@ -381,10 +376,11 @@ Oseg *newOseg(char *name, unsigned int attr) {
 }
 
 
-void showAllOsegs(void) {
+void showAllOsegs(char *outName) {
   Oseg *oseg;
   char attr[10];
 
+  printf("segments of output file '%s':\n", outName);
   oseg = allOsegs;
   while (oseg != NULL) {
     attr[0] = (oseg->attr & SEG_ATTR_A) ? 'A' : '-';
@@ -392,7 +388,7 @@ void showAllOsegs(void) {
     attr[2] = (oseg->attr & SEG_ATTR_W) ? 'W' : '-';
     attr[3] = (oseg->attr & SEG_ATTR_X) ? 'X' : '-';
     attr[4] = '\0';
-    printf("oseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+    printf("    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
            oseg->name, oseg->addr, oseg->size, attr);
     oseg = oseg->next;
   }
@@ -443,27 +439,39 @@ char *readObjStrings(ExecHeader *hdr, unsigned int inOff,
 }
 
 
+unsigned char *readObjData(ExecHeader *hdr, unsigned int inOff,
+                           FILE *inFile, char *inPath) {
+  unsigned char *data;
+
+  data = memAlloc(hdr->sdata);
+  if (fseek(inFile, inOff + hdr->odata, SEEK_SET) < 0) {
+    error("cannot seek to segment data in input file '%s'", inPath);
+  }
+  if (fread(data, 1, hdr->sdata, inFile) != hdr->sdata) {
+    error("cannot read segment data in input file '%s'", inPath);
+  }
+  return data;
+}
+
+
 void readObjSegments(Module *mod, unsigned int inOff,
                      FILE *inFile, char *inPath) {
   int i;
-  SegmentRecord segment;
+  SegmentRecord *seg;
 
   if (fseek(inFile, inOff, SEEK_SET) < 0) {
     error("cannot seek to segment table in input file '%s'", inPath);
   }
   for (i = 0; i < mod->nsegs; i++) {
-    if (fread(&segment, sizeof(SegmentRecord), 1, inFile) != 1) {
+    seg = mod->segs + i;
+    if (fread(seg, sizeof(SegmentRecord), 1, inFile) != 1) {
       error("cannot read segment record in input file '%s'", inPath);
     }
-    conv4FromEcoToNative((unsigned char *) &segment.name);
-    conv4FromEcoToNative((unsigned char *) &segment.offs);
-    conv4FromEcoToNative((unsigned char *) &segment.addr);
-    conv4FromEcoToNative((unsigned char *) &segment.size);
-    conv4FromEcoToNative((unsigned char *) &segment.attr);
-    mod->segs[i].name = mod->strs + segment.name;
-    mod->segs[i].addr = segment.addr;
-    mod->segs[i].size = segment.size;
-    mod->segs[i].attr = segment.attr;
+    conv4FromEcoToNative((unsigned char *) &seg->name);
+    conv4FromEcoToNative((unsigned char *) &seg->offs);
+    conv4FromEcoToNative((unsigned char *) &seg->addr);
+    conv4FromEcoToNative((unsigned char *) &seg->size);
+    conv4FromEcoToNative((unsigned char *) &seg->attr);
   }
 }
 
@@ -500,7 +508,31 @@ void readObjSymbols(Module *mod, unsigned int inOff,
       sym->val = symbol.val;
       sym->attr = symbol.attr;
     }
+    /* remember a pointer to the symbol in the module's symbol vector */
+    /* so that relocations can easily access the symbol by its index */
     mod->syms[i] = sym;
+  }
+}
+
+
+void readObjRelocations(Module *mod, unsigned int inOff,
+                        FILE *inFile, char *inPath) {
+  int i;
+  RelocRecord *rel;
+
+  if (fseek(inFile, inOff, SEEK_SET) < 0) {
+    error("cannot seek to relocation table in input file '%s'", inPath);
+  }
+  for (i = 0; i < mod->nrels; i++) {
+    rel = mod->rels + i;
+    if (fread(rel, sizeof(RelocRecord), 1, inFile) != 1) {
+      error("cannot read relocation record in input file '%s'", inPath);
+    }
+    conv4FromEcoToNative((unsigned char *) &rel->loc);
+    conv4FromEcoToNative((unsigned char *) &rel->seg);
+    conv4FromEcoToNative((unsigned char *) &rel->typ);
+    conv4FromEcoToNative((unsigned char *) &rel->ref);
+    conv4FromEcoToNative((unsigned char *) &rel->add);
   }
 }
 
@@ -510,17 +542,21 @@ void readObjModule(char *name, unsigned int inOff,
   Module *mod;
   ExecHeader hdr;
 
-  printf("read module '%s' from file '%s' @ offset 0x%08X\n",
+  printf("reading module '%s' from file '%s', offset 0x%08X\n",
          name, inPath, inOff);
   mod = newModule(name);
   readObjHeader(&hdr, inOff, inFile, inPath);
   mod->strs = readObjStrings(&hdr, inOff, inFile, inPath);
+  mod->data = readObjData(&hdr, inOff, inFile, inPath);
   mod->nsegs = hdr.nsegs;
-  mod->segs = memAlloc(hdr.nsegs * sizeof(Seg));
+  mod->segs = memAlloc(hdr.nsegs * sizeof(SegmentRecord));
   readObjSegments(mod, inOff + hdr.osegs, inFile, inPath);
   mod->nsyms = hdr.nsyms;
   mod->syms = memAlloc(hdr.nsyms * sizeof(Sym *));
   readObjSymbols(mod, inOff + hdr.osyms, inFile, inPath);
+  mod->nrels = hdr.nrels;
+  mod->rels = memAlloc(hdr.nrels * sizeof(RelocRecord));
+  readObjRelocations(mod, inOff + hdr.orels, inFile, inPath);
 }
 
 
@@ -686,15 +722,15 @@ void showModules(void) {
 
   mod = allModules;
   while (mod != NULL) {
-    printf("%s:\n", mod->name);
+    printf("segments of module '%s':\n", mod->name);
     for (i = 0; i < mod->nsegs; i++) {
       attr[0] = (mod->segs[i].attr & SEG_ATTR_A) ? 'A' : '-';
       attr[1] = (mod->segs[i].attr & SEG_ATTR_P) ? 'P' : '-';
       attr[2] = (mod->segs[i].attr & SEG_ATTR_W) ? 'W' : '-';
       attr[3] = (mod->segs[i].attr & SEG_ATTR_X) ? 'X' : '-';
       attr[4] = '\0';
-      printf("iseg %s, addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-             mod->segs[i].name,
+      printf("    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+             mod->strs + mod->segs[i].name,
              mod->segs[i].addr,
              mod->segs[i].size,
              attr);
@@ -859,7 +895,7 @@ void doOsegStm(ScriptNode *stm) {
  */
 static Module scriptModule = {
   "linker script",
-  NULL, 0, NULL, 0, NULL, NULL
+  NULL, NULL, 0, NULL, 0, NULL, 0, NULL, NULL
 };
 
 
@@ -957,7 +993,7 @@ void setRelSegAddrs(void) {
   mod = allModules;
   while (mod != NULL) {
     for (i = 0; i < mod->nsegs; i++) {
-      segName = mod->segs[i].name;
+      segName = mod->strs + mod->segs[i].name;
       grp = lookupIsegGrp(segName);
       if (grp == NULL) {
         /* input segment name does not match any ISEG name in script */
@@ -985,7 +1021,7 @@ void setAbsSegAddrs(void) {
   mod = allModules;
   while (mod != NULL) {
     for (i = 0; i < mod->nsegs; i++) {
-      segName = mod->segs[i].name;
+      segName = mod->strs + mod->segs[i].name;
       grp = lookupIsegGrp(segName);
       if (grp != NULL) {
         /* add group start to segment's relative address */
@@ -1049,32 +1085,38 @@ static void showSymbol(Sym *sym, void *arg) {
   Module *mod;
 
   mod = sym->mod;
-  printf("    %s: mod = %s, seg = %s, val = 0x%08X\n",
+  printf("    %s : mod = %s, seg = %s, val = 0x%08X\n",
          sym->name,
          mod->name,
-         sym->seg == -1 ? "*ABS*" : mod->segs[sym->seg].name,
+         sym->seg == -1 ?
+           "*ABS*" : mod->strs + mod->segs[sym->seg].name,
          sym->val);
 }
 
 
 void showAllSymbols(void) {
-  printf("Global Symbol Table\n");
+  printf("global symbol table:\n");
   mapOverSymbols(showSymbol, NULL);
 }
 
 
 void resolveSymbol(Sym *sym, void *arg) {
-  Module *modPtr;
-  Seg *segPtr;
+  Module *mod;
+  SegmentRecord *seg;
 
+  printf("    %s = 0x%08X", sym->name, sym->val);
+  mod = sym->mod;
   if (sym->seg == -1) {
     /* absolute symbol: keep value */
-    return;
+  } else {
+    /* add segment address to symbol value */
+    seg = mod->segs + sym->seg;
+    sym->val += seg->addr;
   }
-  /* add segment address to symbol value */
-  modPtr = sym->mod;
-  segPtr = modPtr->segs + sym->seg;
-  sym->val += segPtr->addr;
+  printf(" --(%s, %s)--> 0x%08X\n",
+         mod->name,
+         sym->seg == -1 ? "*ABS*" : mod->strs + seg->name,
+         sym->val);
 }
 
 
@@ -1087,6 +1129,7 @@ void resolveSymbols(void) {
     showUndefSymbols();
     error("%d undefined symbol(s)", n);
   }
+  printf("resolving symbols:\n");
   mapOverSymbols(resolveSymbol, NULL);
 }
 
@@ -1095,6 +1138,62 @@ void resolveSymbols(void) {
 
 
 void relocateModules(void) {
+  Module *mod;
+  int i;
+  RelocRecord *rel;
+  SegmentRecord *seg;
+  unsigned char *addr;
+  unsigned int data;
+  char *method;
+
+  mod = allModules;
+  while (mod != NULL) {
+    printf("relocating module '%s':\n", mod->name);
+    for (i = 0; i < mod->nrels; i++) {
+      rel = mod->rels + i;
+      seg = mod->segs + rel->seg;
+      addr = mod->data + seg->offs + rel->loc;
+      data = read4FromEco(addr);
+      printf("    %s @ 0x%08X = 0x%08X\n",
+             mod->strs + seg->name, rel->loc, data);
+      switch (rel->typ & ~RELOC_SYM) {
+        case RELOC_H16:
+          method = "H16";
+          data &= 0xFFFF0000;
+          break;
+        case RELOC_L16:
+          method = "L16";
+          data &= 0xFFFF0000;
+          break;
+        case RELOC_R16:
+          method = "R16";
+          data &= 0xFFFF0000;
+          break;
+        case RELOC_R26:
+          method = "R26";
+          data &= 0xFC000000;
+          break;
+        case RELOC_W32:
+          method = "W32";
+          data = 0;
+          break;
+        default:
+          method = "ILL";
+          error("illegal relocation type %d",
+                rel->typ & ~RELOC_SYM);
+      }
+      write4ToEco(addr, data);
+      printf("        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
+             method,
+             rel->typ & RELOC_SYM ? "SYM" : "SEG",
+             rel->typ & RELOC_SYM ?
+               mod->syms[rel->ref]->name :
+               mod->strs + mod->segs[rel->ref].name,
+             rel->add,
+             data);
+    }
+    mod = mod->next;
+  }
 }
 
 
@@ -1104,8 +1203,7 @@ void relocateModules(void) {
 void writeOutput(char *outName) {
   FILE *outFile;
 
-  printf("%s:\n", outName);
-  showAllOsegs();
+  showAllOsegs(outName);
   outFile = fopen(outName, "w");
   if (outFile == NULL) {
     error("cannot open output file '%s'", outName);
