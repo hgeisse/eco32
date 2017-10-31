@@ -61,6 +61,7 @@ typedef struct {
   unsigned int loc;		/* where to relocate */
   int seg;			/* in which segment */
   int typ;			/* relocation type: one of RELOC_xxx */
+				/* symbol flag RELOC_SYM may be set */
   int ref;			/* what is referenced */
 				/* if symbol flag = 0: segment number */
 				/* if symbol flag = 1: symbol number */
