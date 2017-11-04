@@ -1,5 +1,5 @@
 /*
- * ld.c -- ECO32 linking loader
+ * ld.c -- ECO32 link editor
  */
 
 
@@ -22,34 +22,28 @@
 
 /**************************************************************/
 
+/*
+ * data structure definitions
+ */
+
+
+typedef struct oseg {
+  char *name;
+  unsigned int addr;
+  unsigned int size;
+  unsigned int attr;
+  unsigned int nameOffs;
+  unsigned int dataOffs;
+  struct igrp *firstIgrp;
+  struct igrp *lastIgrp;
+  struct oseg *next;
+} Oseg;
+
 
 typedef struct file {
   char *path;
   struct file *next;
 } File;
-
-
-File *allFiles = NULL;
-File *lastFile;
-
-
-File *newFile(char *path) {
-  File *file;
-
-  file = memAlloc(sizeof(File));
-  file->path = path;
-  file->next = NULL;
-  if (allFiles == NULL) {
-    allFiles = file;
-  } else {
-    lastFile->next = file;
-  }
-  lastFile = file;
-  return file;
-}
-
-
-/**************************************************************/
 
 
 typedef struct module {
@@ -66,7 +60,136 @@ typedef struct module {
 } Module;
 
 
-Module *allModules = NULL;
+typedef struct iseg {
+  struct module *mod;
+  int seg;
+  struct iseg *next;
+} Iseg;
+
+
+typedef struct igrp {
+  char *name;
+  unsigned int addr;
+  unsigned int size;
+  struct iseg *firstIseg;	/* group is compoesed of these Isegs */
+  struct iseg *lastIseg;	/* order is important */
+  struct igrp *next;		/* next Igrp */
+} Igrp;
+
+
+typedef struct sym {
+  /* symbol data */
+  char *name;			/* the symbol's name */
+  Module *mod;			/* symbol is defined there */
+  int seg;			/* within this segment (-1 for absolute) */
+  int val;			/* the symbol's value */
+  unsigned int attr;		/* the symbol's attributes */
+  /* internal data */
+  unsigned int hash;		/* full hash over symbol's name */
+  struct sym *next;		/* hash bucket chain */
+} Sym;
+
+
+/**************************************************************/
+
+
+Oseg *firstOseg = NULL;
+Oseg *lastOseg;
+
+
+Oseg *newOseg(char *name) {
+  Oseg *oseg;
+
+  oseg = memAlloc(sizeof(Oseg));
+  oseg->name = name;
+  oseg->addr = 0;
+  oseg->size = 0;
+  oseg->attr = 0;
+  oseg->nameOffs = 0;
+  oseg->dataOffs = 0;
+  oseg->firstIgrp = NULL;
+  oseg->lastIgrp = NULL;
+  oseg->next = NULL;
+  if (firstOseg == NULL) {
+    firstOseg = oseg;
+  } else {
+    lastOseg->next = oseg;
+  }
+  lastOseg = oseg;
+  return oseg;
+}
+
+
+Oseg *findOseg(char *name) {
+  Oseg *oseg;
+
+  oseg = firstOseg;
+  while (oseg != NULL) {
+    if (strcmp(oseg->name, name) == 0) {
+      /* oseg found */
+      return oseg;
+    }
+    oseg = oseg->next;
+  }
+  /* oseg not found */
+  return NULL;
+}
+
+
+void showAllOsegs(char *outName) {
+  Oseg *oseg;
+  char attr[10];
+  Igrp *igrp;
+
+  printf("segments of output file '%s':\n", outName);
+  oseg = firstOseg;
+  while (oseg != NULL) {
+    attr[0] = (oseg->attr & SEG_ATTR_A) ? 'A' : '-';
+    attr[1] = (oseg->attr & SEG_ATTR_P) ? 'P' : '-';
+    attr[2] = (oseg->attr & SEG_ATTR_W) ? 'W' : '-';
+    attr[3] = (oseg->attr & SEG_ATTR_X) ? 'X' : '-';
+    attr[4] = '\0';
+    printf("    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+           oseg->name, oseg->addr, oseg->size, attr);
+    printf("        iseg groups:");
+    igrp = oseg->firstIgrp;
+    while (igrp != NULL) {
+      printf(" %s", igrp->name);
+      igrp = igrp->next;
+    }
+    printf("\n");
+    oseg = oseg->next;
+  }
+}
+
+
+/**************************************************************/
+
+
+File *firstFile = NULL;
+File *lastFile;
+
+
+File *newFile(char *path) {
+  File *file;
+
+  file = memAlloc(sizeof(File));
+  file->path = path;
+  file->next = NULL;
+  if (firstFile == NULL) {
+    firstFile = file;
+  } else {
+    lastFile->next = file;
+  }
+  lastFile = file;
+  return file;
+}
+
+
+/**************************************************************/
+
+
+Module *firstModule = NULL;
 Module *lastModule;
 
 
@@ -84,8 +207,8 @@ Module *newModule(char *name) {
   mod->nrels = 0;
   mod->rels = NULL;
   mod->next = NULL;
-  if (allModules == NULL) {
-    allModules = mod;
+  if (firstModule == NULL) {
+    firstModule = mod;
   } else {
     lastModule->next = mod;
   }
@@ -97,46 +220,66 @@ Module *newModule(char *name) {
 /**************************************************************/
 
 
-typedef struct isegGrp {
-  char *name;
-  unsigned int addr;
-  unsigned int size;
-  struct isegGrp *next;
-} IsegGrp;
+Igrp *lookupIgrp(char *name) {
+  Oseg *oseg;
+  Igrp *igrp;
 
-
-IsegGrp *isegGrpTbl = NULL;
-
-
-IsegGrp *lookupIsegGrp(char *name) {
-  IsegGrp *grp;
-
-  grp = isegGrpTbl;
-  while (grp != NULL) {
-    if (strcmp(grp->name, name) == 0) {
-      return grp;
+  oseg = firstOseg;
+  while (oseg != NULL) {
+    igrp = oseg->firstIgrp;
+    while (igrp != NULL) {
+      if (strcmp(igrp->name, name) == 0) {
+        /* group found */
+        return igrp;
+      }
+      igrp = igrp->next;
     }
-    grp = grp->next;
+    oseg = oseg->next;
   }
+  /* group not found */
   return NULL;
 }
 
 
-IsegGrp *addIsegGrp(char *name) {
-  IsegGrp *grp;
+Igrp *addIgrpToOseg(char *name, Oseg *oseg) {
+  Igrp *igrp;
 
-  grp = lookupIsegGrp(name);
-  if (grp != NULL) {
+  igrp = lookupIgrp(name);
+  if (igrp != NULL) {
     error("linker script allocates segment group '%s' more than once",
           name);
   }
-  grp = memAlloc(sizeof(IsegGrp));
-  grp->name = name;
-  grp->addr = 0;
-  grp->size = 0;
-  grp->next = isegGrpTbl;
-  isegGrpTbl = grp;
-  return grp;
+  igrp = memAlloc(sizeof(Igrp));
+  igrp->name = name;
+  igrp->addr = 0;
+  igrp->size = 0;
+  igrp->firstIseg = NULL;
+  igrp->lastIseg = NULL;
+  igrp->next = NULL;
+  if (oseg->firstIgrp == NULL) {
+    oseg->firstIgrp = igrp;
+  } else {
+    oseg->lastIgrp->next = igrp;
+  }
+  oseg->lastIgrp = igrp;
+  return igrp;
+}
+
+
+Iseg *addIsegToIgrp(Module *mod, int seg, Igrp *igrp) {
+  Iseg *iseg;
+
+  iseg = memAlloc(sizeof(Iseg));
+  iseg->mod = mod;
+  iseg->seg = seg;
+  iseg->next = NULL;
+  if (igrp->firstIseg == NULL) {
+    igrp->firstIseg = iseg;
+  } else {
+    igrp->lastIseg->next = iseg;
+  }
+  igrp->lastIseg = iseg;
+  return iseg;
 }
 
 
@@ -148,19 +291,6 @@ IsegGrp *addIsegGrp(char *name) {
 
 
 #define INITIAL_NUM_BUCKETS	100
-
-
-typedef struct sym {
-  /* symbol data */
-  char *name;		/* the symbol's name */
-  Module *mod;		/* symbol is defined there */
-  int seg;		/* within this segment (-1 for absolute) */
-  int val;		/* the symbol's value */
-  unsigned int attr;	/* the symbol's attributes */
-  /* internal data */
-  unsigned int hash;	/* full hash over symbol's name */
-  struct sym *next;	/* hash bucket chain */
-} Sym;
 
 
 static Sym **buckets = NULL;
@@ -337,60 +467,6 @@ void mapOverSymbols(void (*fp)(Sym *sym, void *arg), void *arg) {
       (*fp)(sym, arg);
       sym = sym->next;
     }
-  }
-}
-
-
-/**************************************************************/
-
-
-typedef struct oseg {
-  char *name;
-  unsigned int addr;
-  unsigned int size;
-  unsigned int attr;
-  struct oseg *next;
-} Oseg;
-
-
-Oseg *allOsegs = NULL;
-Oseg *lastOseg;
-
-
-Oseg *newOseg(char *name, unsigned int attr) {
-  Oseg *oseg;
-
-  oseg = memAlloc(sizeof(Oseg));
-  oseg->name = name;
-  oseg->addr = 0;
-  oseg->size = 0;
-  oseg->attr = attr;
-  oseg->next = NULL;
-  if (allOsegs == NULL) {
-    allOsegs = oseg;
-  } else {
-    lastOseg->next = oseg;
-  }
-  lastOseg = oseg;
-  return oseg;
-}
-
-
-void showAllOsegs(char *outName) {
-  Oseg *oseg;
-  char attr[10];
-
-  printf("segments of output file '%s':\n", outName);
-  oseg = allOsegs;
-  while (oseg != NULL) {
-    attr[0] = (oseg->attr & SEG_ATTR_A) ? 'A' : '-';
-    attr[1] = (oseg->attr & SEG_ATTR_P) ? 'P' : '-';
-    attr[2] = (oseg->attr & SEG_ATTR_W) ? 'W' : '-';
-    attr[3] = (oseg->attr & SEG_ATTR_X) ? 'X' : '-';
-    attr[4] = '\0';
-    printf("    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-           oseg->name, oseg->addr, oseg->size, attr);
-    oseg = oseg->next;
   }
 }
 
@@ -683,7 +759,7 @@ void readFiles(void) {
   unsigned int magic;
   char *baseName;
 
-  file = allFiles;
+  file = firstFile;
   while (file != NULL) {
     inFile = fopen(file->path, "r");
     if (inFile == NULL) {
@@ -720,7 +796,7 @@ void showModules(void) {
   int i;
   char attr[10];
 
-  mod = allModules;
+  mod = firstModule;
   while (mod != NULL) {
     printf("segments of module '%s':\n", mod->name);
     for (i = 0; i < mod->nsegs; i++) {
@@ -812,15 +888,24 @@ unsigned int evalIntExp(ScriptNode *exp) {
 
 
 unsigned int evalVarExp(ScriptNode *exp) {
+  Sym *sym;
+
   if (strcmp(exp->u.varExp.name, ".") == 0) {
     /* variable is dot */
     return dot;
   } else {
     /* variable is not dot */
-    error("symbol '%s' not allowed in expression",
-          exp->u.varExp.name);
-    /* never reached */
-    return 0;
+    sym = lookupSymbol(exp->u.varExp.name);
+    if (sym == NULL) {
+      error("symbol '%s' not found", exp->u.varExp.name);
+    }
+    if (sym->attr & SYM_ATTR_U) {
+      error("symbol '%s' is undefined", exp->u.varExp.name);
+    }
+    if (sym->seg != -1) {
+      error("symbol '%s' is not absolute", exp->u.varExp.name);
+    }
+    return sym->val;
   }
 }
 
@@ -864,16 +949,18 @@ void doEntryStm(ScriptNode *stm) {
 
 
 void doIsegStm(ScriptNode *stm) {
-  IsegGrp *grp;
+  Igrp *igrp;
 
-  grp = lookupIsegGrp(stm->u.isegStm.name);
-  if (grp == NULL) {
+  igrp = lookupIgrp(stm->u.isegStm.name);
+  if (igrp == NULL) {
     /* this should never happen */
-    error("iseg group '%s' vanished from iseg group table",
+    error("iseg group '%s' disappeared",
           stm->u.isegStm.name);
   }
-  grp->addr = dot;
-  dot += grp->size;
+  /* assign start address of group */
+  igrp->addr = dot;
+  /* update current address with group size */
+  dot += igrp->size;
 }
 
 
@@ -881,7 +968,13 @@ void doOsegStm(ScriptNode *stm) {
   Oseg *oseg;
   unsigned int start;
 
-  oseg = newOseg(stm->u.osegStm.name, stm->u.osegStm.attr);
+  oseg = findOseg(stm->u.osegStm.name);
+  if (oseg == NULL) {
+    /* this should never happen */
+    error("output segment '%s' disappeared",
+          stm->u.osegStm.name);
+  }
+  oseg->attr = stm->u.osegStm.attr;
   start = dot;
   doStm(stm->u.osegStm.stms);
   oseg->addr = start;
@@ -956,8 +1049,9 @@ void doStm(ScriptNode *stm) {
 /**************************************************************/
 
 
-void buildIsegGrpTbl(ScriptNode *script) {
+void buildIgrpTbl(ScriptNode *script) {
   ScriptNode *node1;
+  Oseg *oseg;
   ScriptNode *node2;
 
   node1 = script;
@@ -971,10 +1065,12 @@ void buildIsegGrpTbl(ScriptNode *script) {
   }
   while (node1 != NULL) {
     if (node1->u.stmList.head->type == NODE_OSEGSTM) {
+      oseg = newOseg(node1->u.stmList.head->u.osegStm.name);
       node2 = node1->u.stmList.head->u.osegStm.stms;
       while (node2 != NULL) {
         if (node2->u.stmList.head->type == NODE_ISEGSTM) {
-          addIsegGrp(node2->u.stmList.head->u.isegStm.name);
+          addIgrpToOseg(node2->u.stmList.head->u.isegStm.name,
+                        oseg);
         }
         node2 = node2->u.stmList.tail;
       }
@@ -988,23 +1084,25 @@ void setRelSegAddrs(void) {
   Module *mod;
   int i;
   char *segName;
-  IsegGrp *grp;
+  Igrp *igrp;
 
-  mod = allModules;
+  mod = firstModule;
   while (mod != NULL) {
     for (i = 0; i < mod->nsegs; i++) {
       segName = mod->strs + mod->segs[i].name;
-      grp = lookupIsegGrp(segName);
-      if (grp == NULL) {
+      igrp = lookupIgrp(segName);
+      if (igrp == NULL) {
         /* input segment name does not match any ISEG name in script */
         warning("discarding segment '%s' from module '%s'",
                 segName, mod->name);
       } else {
         /* set segment's relative address in group */
-        mod->segs[i].addr = grp->size;
+        mod->segs[i].addr = igrp->size;
         /* add segment's size to group total */
-        grp->size += mod->segs[i].size;
-        grp->size = WORD_ALIGN(grp->size);
+        igrp->size += mod->segs[i].size;
+        igrp->size = WORD_ALIGN(igrp->size);
+        /* remember input segment as part of this segment group */
+        addIsegToIgrp(mod, i, igrp);
       }
     }
     mod = mod->next;
@@ -1016,16 +1114,16 @@ void setAbsSegAddrs(void) {
   Module *mod;
   int i;
   char *segName;
-  IsegGrp *grp;
+  Igrp *igrp;
 
-  mod = allModules;
+  mod = firstModule;
   while (mod != NULL) {
     for (i = 0; i < mod->nsegs; i++) {
       segName = mod->strs + mod->segs[i].name;
-      grp = lookupIsegGrp(segName);
-      if (grp != NULL) {
+      igrp = lookupIgrp(segName);
+      if (igrp != NULL) {
         /* add group start to segment's relative address */
-        mod->segs[i].addr += grp->addr;
+        mod->segs[i].addr += igrp->addr;
       }
     }
     mod = mod->next;
@@ -1036,7 +1134,7 @@ void setAbsSegAddrs(void) {
 void allocateStorage(ScriptNode *script) {
   /* for each ISEG statement in the linker script
      allocate a group record */
-  buildIsegGrpTbl(script);
+  buildIgrpTbl(script);
   /* set group relative addresses of all input segments,
      compute total sizes of all groups */
   setRelSegAddrs();
@@ -1146,7 +1244,7 @@ void relocateModules(void) {
   unsigned int data;
   char *method;
 
-  mod = allModules;
+  mod = firstModule;
   while (mod != NULL) {
     printf("relocating module '%s':\n", mod->name);
     for (i = 0; i < mod->nrels; i++) {
@@ -1200,6 +1298,153 @@ void relocateModules(void) {
 /**************************************************************/
 
 
+static ExecHeader execHeader;
+
+static unsigned int outFileOffset;
+static unsigned int outDataSize;
+static unsigned int outStringSize;
+
+
+static void writeDummyHeader(FILE *outFile) {
+  if (fwrite(&execHeader, sizeof(ExecHeader), 1, outFile) != 1) {
+    error("cannot write output file header");
+  }
+  /* update file offset */
+  outFileOffset += sizeof(ExecHeader);
+}
+
+
+static void writeRealHeader(FILE *outFile) {
+  rewind(outFile);
+  execHeader.magic = EXEC_MAGIC;
+  execHeader.entry = (entry == NULL) ? 0 : entry->val;
+  conv4FromNativeToEco((unsigned char *) &execHeader.magic);
+  conv4FromNativeToEco((unsigned char *) &execHeader.osegs);
+  conv4FromNativeToEco((unsigned char *) &execHeader.nsegs);
+  conv4FromNativeToEco((unsigned char *) &execHeader.osyms);
+  conv4FromNativeToEco((unsigned char *) &execHeader.nsyms);
+  conv4FromNativeToEco((unsigned char *) &execHeader.orels);
+  conv4FromNativeToEco((unsigned char *) &execHeader.nrels);
+  conv4FromNativeToEco((unsigned char *) &execHeader.odata);
+  conv4FromNativeToEco((unsigned char *) &execHeader.sdata);
+  conv4FromNativeToEco((unsigned char *) &execHeader.ostrs);
+  conv4FromNativeToEco((unsigned char *) &execHeader.sstrs);
+  conv4FromNativeToEco((unsigned char *) &execHeader.entry);
+  if (fwrite(&execHeader, sizeof(ExecHeader), 1, outFile) != 1) {
+    error("cannot write output file header");
+  }
+  conv4FromEcoToNative((unsigned char *) &execHeader.magic);
+  conv4FromEcoToNative((unsigned char *) &execHeader.osegs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.nsegs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.osyms);
+  conv4FromEcoToNative((unsigned char *) &execHeader.nsyms);
+  conv4FromEcoToNative((unsigned char *) &execHeader.orels);
+  conv4FromEcoToNative((unsigned char *) &execHeader.nrels);
+  conv4FromEcoToNative((unsigned char *) &execHeader.odata);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sdata);
+  conv4FromEcoToNative((unsigned char *) &execHeader.ostrs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sstrs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.entry);
+}
+
+
+static void writeData(FILE *outFile) {
+  Oseg *oseg;
+  Igrp *igrp;
+  Iseg *iseg;
+  Module *mod;
+  SegmentRecord *seg;
+  unsigned char *data;
+  unsigned int size;
+
+  execHeader.odata = outFileOffset;
+  execHeader.sdata = 0;
+  oseg = firstOseg;
+  while (oseg != NULL) {
+    oseg->dataOffs = execHeader.sdata;
+    if (oseg->attr & SEG_ATTR_P) {
+      igrp = oseg->firstIgrp;
+      while (igrp != NULL) {
+        iseg = igrp->firstIseg;
+        while (iseg != NULL) {
+          mod = iseg->mod;
+          seg = mod->segs + iseg->seg;
+          data = mod->data + seg->offs;
+          size = seg->size;
+          if (size != 0) {
+            if (fwrite(data, 1, size, outFile) != size) {
+              error("cannot write output file segment data");
+            }
+          }
+          execHeader.sdata += size;
+          iseg = iseg->next;
+        }
+        igrp = igrp->next;
+      }
+    }
+    oseg = oseg->next;
+  }
+  /* update file offset */
+  outFileOffset += execHeader.sdata;
+}
+
+
+static void writeStrings(FILE *outFile) {
+  Oseg *oseg;
+  unsigned int n;
+
+  execHeader.ostrs = outFileOffset;
+  execHeader.sstrs = 0;
+  oseg = firstOseg;
+  while (oseg != NULL) {
+    oseg->nameOffs = execHeader.sstrs;
+    n = strlen(oseg->name) + 1;
+    if (fwrite(oseg->name, 1, n, outFile) != n) {
+      error("cannot write output file strings");
+    }
+    execHeader.sstrs += n;
+    oseg = oseg->next;
+  }
+  /* update file offset */
+  outFileOffset += execHeader.sstrs;
+}
+
+
+static void writeSegment(Oseg *oseg, FILE *outFile) {
+  SegmentRecord segment;
+
+  segment.name = oseg->nameOffs;
+  segment.offs = oseg->dataOffs;
+  segment.addr = oseg->addr;
+  segment.size = oseg->size;
+  segment.attr = oseg->attr;
+  conv4FromNativeToEco((unsigned char *) &segment.name);
+  conv4FromNativeToEco((unsigned char *) &segment.offs);
+  conv4FromNativeToEco((unsigned char *) &segment.addr);
+  conv4FromNativeToEco((unsigned char *) &segment.size);
+  conv4FromNativeToEco((unsigned char *) &segment.attr);
+  if (fwrite(&segment, sizeof(SegmentRecord), 1, outFile) != 1) {
+    error("cannot write output file segment");
+  }
+  /* update file offset */
+  outFileOffset += sizeof(SegmentRecord);
+}
+
+
+static void writeSegmentTable(FILE *outFile) {
+  Oseg *oseg;
+
+  execHeader.osegs = outFileOffset;
+  execHeader.nsegs = 0;
+  oseg = firstOseg;
+  while (oseg != NULL) {
+    writeSegment(oseg, outFile);
+    execHeader.nsegs++;
+    oseg = oseg->next;
+  }
+}
+
+
 void writeOutput(char *outName) {
   FILE *outFile;
 
@@ -1208,6 +1453,14 @@ void writeOutput(char *outName) {
   if (outFile == NULL) {
     error("cannot open output file '%s'", outName);
   }
+  outFileOffset = 0;
+  outDataSize = 0;
+  outStringSize = 0;
+  writeDummyHeader(outFile);
+  writeData(outFile);
+  writeStrings(outFile);
+  writeSegmentTable(outFile);
+  writeRealHeader(outFile);
   fclose(outFile);
 }
 
@@ -1310,7 +1563,7 @@ int main(int argc, char *argv[]) {
       newFile(argp);
     }
   }
-  if (allFiles == NULL) {
+  if (firstFile == NULL) {
     error("no input files");
   }
   script = readScript(scrName);
@@ -1321,7 +1574,6 @@ int main(int argc, char *argv[]) {
   resolveSymbols();
   showAllSymbols();
   relocateModules();
-  //----------------------------
   writeOutput(outName);
   if (mapName != NULL) {
     writeMap(mapName);
