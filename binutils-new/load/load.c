@@ -185,7 +185,9 @@ int loadObj(FILE *inFile, FILE *outFile) {
       continue;
     }
     while (vaddr < allSegs[i].vaddr) {
-      fputc(0, outFile);
+      if (fputc(0, outFile) == EOF) {
+        return LDERR_WBF;
+      }
       vaddr++;
     }
     size = allSegs[i].size;
@@ -195,7 +197,9 @@ int loadObj(FILE *inFile, FILE *outFile) {
       }
     } else {
       for (j = 0; j < size; j++) {
-        fputc(0, outFile);
+        if (fputc(0, outFile) == EOF) {
+          return LDERR_WBF;
+        }
       }
     }
     addr += size;
