@@ -1236,13 +1236,17 @@ void resolveSymbols(void) {
 
 
 void relocateModules(void) {
-  Module *mod;
-  int i;
-  RelocRecord *rel;
-  SegmentRecord *seg;
-  unsigned char *addr;
-  unsigned int data;
-  char *method;
+  Module *mod;		/* module which is relocated */
+  int i;		/* relocation number within the module */
+  RelocRecord *rel;	/* pointer to relocation record i */
+  SegmentRecord *seg;	/* pointer to segment in which reloc is applied */
+  unsigned char *loc;	/* pointer to word within segment's data */
+  unsigned int addr;	/* virtual address of word at loc */
+  unsigned int data;	/* word at loc, which gets modified */
+  unsigned int base;	/* base value of either segment or symbol */
+  unsigned int value;	/* base + addend from relocation */
+  char *method;		/* relocation method as printable string */
+  unsigned int mask;	/* which part of the word gets modified */
 
   mod = firstModule;
   while (mod != NULL) {
@@ -1250,37 +1254,76 @@ void relocateModules(void) {
     for (i = 0; i < mod->nrels; i++) {
       rel = mod->rels + i;
       seg = mod->segs + rel->seg;
-      addr = mod->data + seg->offs + rel->loc;
-      data = read4FromEco(addr);
-      printf("    %s @ 0x%08X = 0x%08X\n",
-             mod->strs + seg->name, rel->loc, data);
+      loc = mod->data + seg->offs + rel->loc;
+      addr = seg->addr + rel->loc;
+      data = read4FromEco(loc);
+      printf("    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
+             mod->strs + seg->name, rel->loc, addr, data);
+      if (rel->typ & RELOC_SYM) {
+        base = mod->syms[rel->ref]->val;
+      } else {
+        base = seg->addr;
+      }
+      value = base + rel->add;
       switch (rel->typ & ~RELOC_SYM) {
         case RELOC_H16:
           method = "H16";
-          data &= 0xFFFF0000;
+          mask = 0x0000FFFF;
+          value >>= 16;
           break;
         case RELOC_L16:
           method = "L16";
-          data &= 0xFFFF0000;
+          mask = 0x0000FFFF;
           break;
         case RELOC_R16:
           method = "R16";
-          data &= 0xFFFF0000;
+          mask = 0x0000FFFF;
+          value -= addr + 4;
+          if (value & 3) {
+            warning("module %s, segment %s, offset 0x%08X\n"
+                    "         "
+                    "branch distance is not a multiple of 4",
+                    mod->name, mod->strs + seg->name, rel->loc);
+          }
+          if (((value >> 18) & 0x3FFF) != 0x0000 &&
+              ((value >> 18) & 0x3FFF) != 0x3FFF) {
+            warning("module %s, segment %s, offset 0x%08X\n"
+                    "         "
+                    "branch target address out of reach",
+                    mod->name, mod->strs + seg->name, rel->loc);
+          }
+          value >>= 2;
           break;
         case RELOC_R26:
           method = "R26";
-          data &= 0xFC000000;
+          mask = 0x03FFFFFF;
+          value -= addr + 4;
+          if (value & 3) {
+            warning("module %s, segment %s, offset 0x%08X\n"
+                    "         "
+                    "jump distance is not a multiple of 4",
+                    mod->name, mod->strs + seg->name, rel->loc);
+          }
+          if (((value >> 28) & 0x0F) != 0x00 &&
+              ((value >> 28) & 0x0F) != 0x0F) {
+            warning("module %s, segment %s, offset 0x%08X\n"
+                    "         "
+                    "jump target address out of reach",
+                    mod->name, mod->strs + seg->name, rel->loc);
+          }
+          value >>= 2;
           break;
         case RELOC_W32:
           method = "W32";
-          data = 0;
+          mask = 0xFFFFFFFF;
           break;
         default:
           method = "ILL";
-          error("illegal relocation type %d",
-                rel->typ & ~RELOC_SYM);
+          mask = 0;
+          error("illegal relocation type %d", rel->typ & ~RELOC_SYM);
       }
-      write4ToEco(addr, data);
+      data = (data & ~mask) | (value & mask);
+      write4ToEco(loc, data);
       printf("        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
              method,
              rel->typ & RELOC_SYM ? "SYM" : "SEG",
