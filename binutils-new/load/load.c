@@ -202,7 +202,7 @@ int loadObj(FILE *inFile, FILE *outFile) {
         }
       }
     }
-    addr += size;
+    vaddr += size;
   }
   return LDERR_NONE;
 }
