@@ -4,7 +4,7 @@
 
 VERSION = 0.27
 
-DIRS = binutils tools sim simtest fpga hwtests monitor disk stdalone
+DIRS = binutils lib tools sim simtest fpga hwtests monitor disk stdalone
 BUILD = `pwd`/build
 
 .PHONY:		all doc compiler builddir clean dist
@@ -19,7 +19,7 @@ doc:
 
 compiler:	builddir
 		$(MAKE) -C lcc BUILDDIR=$(BUILD)/bin \
-		  HOSTFILE=etc/eco32-netbsd.c lcc
+		  HOSTFILE=etc/eco32-linux.c lcc
 		$(MAKE) -C lcc BUILDDIR=$(BUILD)/bin all
 		rm -f $(BUILD)/bin/*.c
 		rm -f $(BUILD)/bin/*.o

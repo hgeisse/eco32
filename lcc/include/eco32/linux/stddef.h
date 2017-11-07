@@ -1,8 +1,6 @@
 #ifndef __STDDEF
 #define __STDDEF
 
-/* $Id: stddef.h,v 1.1 2002/08/28 23:59:59 drh Exp $ */
-
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
