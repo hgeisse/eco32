@@ -8,7 +8,7 @@ all:
 
 install:
 		mkdir -p $(BUILD)/include
-		cp ../lcc/include/eco32/linux/* $(BUILD)/include
+		cp ./include/* $(BUILD)/include
 		mkdir -p $(BUILD)/lib
 		cp ./scripts/* $(BUILD)/lib
 
