@@ -5,25 +5,19 @@
 BUILD = ../../build
 
 CC = gcc
-CFLAGS = -g -Wall -Iscript
-LDFLAGS = -g -L$(LIBDIR)
-LDLIBS = -lreadscript -lm
+CFLAGS = -g -Wall
+LDFLAGS = -g
+LDLIBS = -lm
 
 SRCS = ld.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = ld
 
-LIBDIR = script
-LIB = libreadscript.a
-
 .PHONY:		all install clean
 
-all:		$(LIBDIR)/$(LIB) $(BIN)
+all:		$(BIN)
 
-$(LIBDIR)/$(LIB):
-		$(MAKE) -C $(LIBDIR) all
-
-install:	all
+install:	$(BIN)
 		mkdir -p $(BUILD)/bin
 		cp $(BIN) $(BUILD)/bin
 
@@ -39,5 +33,4 @@ depend.mak:
 -include depend.mak
 
 clean:
-		$(MAKE) -C $(LIBDIR) clean
 		rm -f *~ $(OBJS) $(BIN) depend.mak

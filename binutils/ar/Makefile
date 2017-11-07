@@ -9,7 +9,7 @@ CFLAGS = -g -Wall
 LDFLAGS = -g
 LDLIBS = -lm
 
-SRCS = ar.c ranlib.c endian.c
+SRCS = ar.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = ar
 

@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = ar as dof ld
+DIRS = ar as dof ld load
 
 .PHONY:		all install clean
 

@@ -1,865 +1,565 @@
 /*
- * ar.c -- archiver
+ * ar.c -- ECO32 archiver
  */
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
+#include <stdarg.h>
 
-#include "endian.h"
-#include "ranlib.h"
 #include "../include/ar.h"
+#include "../include/a.out.h"
 
 
 /**************************************************************/
 
 
-#define BUFSIZE	512
-
-#define SKIP	0x01
-#define IODD	0x02
-#define OODD	0x04
-#define HEAD	0x08
-
-
-char *com = "drqtpmx";
-char *opt = "vuabcls";
-
-int signums[] = { SIGHUP, SIGINT, SIGQUIT, 0 };
-
-void (*comfun)(void);
-int flg[26];
-
-char *arnam;
-int af;
-
-char **namv;
-int namc;
-
-int baState;
-char *posName;
-
-char tmp0nam[20];
-char tmp1nam[20];
-char tmp2nam[20];
-char *tf0nam;
-char *tf1nam;
-char *tf2nam;
-int tf0;
-int tf1;
-int tf2;
-int qf;
-
-char *file;
-char name[MAX_NAME];
-
-struct stat stbuf;
-ArHeader arbuf;
-unsigned char buf[BUFSIZE];
+FILE *archFile;
+ArchHeader archHeader;
+ModuleRecord *moduleTable;
 
 
 /**************************************************************/
 
 
-#define IFMT	070000
-#define SUID	004000
-#define SGID	002000
-#define STXT	001000
-#define ROWN	000400
-#define WOWN	000200
-#define XOWN	000100
-#define RGRP	000040
-#define WGRP	000020
-#define XGRP	000010
-#define ROTH	000004
-#define WOTH	000002
-#define XOTH	000001
+void error(char *fmt, ...) {
+  va_list ap;
 
-
-int m1[] = { 1, ROWN, 'r', '-' };
-int m2[] = { 1, WOWN, 'w', '-' };
-int m3[] = { 2, SUID, 's', XOWN, 'x', '-' };
-int m4[] = { 1, RGRP, 'r', '-' };
-int m5[] = { 1, WGRP, 'w', '-' };
-int m6[] = { 2, SGID, 's', XGRP, 'x', '-' };
-int m7[] = { 1, ROTH, 'r', '-' };
-int m8[] = { 1, WOTH, 'w', '-' };
-int m9[] = { 2, STXT, 't', XOTH, 'x', '-' };
-
-int *m[] = { m1, m2, m3, m4, m5, m6, m7, m8, m9 };
-
-
-void selectChar(int *pairp) {
-  int *ap;
-  int n;
-
-  ap = pairp;
-  n = *ap++;
-  while (--n >= 0 && (arbuf.mode & *ap++) == 0) {
-    ap++;
-  }
-  putchar(*ap);
+  va_start(ap, fmt);
+  printf("Error: ");
+  vprintf(fmt, ap);
+  printf("\n");
+  va_end(ap);
+  exit(1);
 }
 
 
-void printMode(void) {
-  int **mp;
+void *memAlloc(unsigned int size) {
+  void *p;
 
-  for (mp = &m[0]; mp < &m[9]; mp++) {
-    selectChar(*mp);
+  p = malloc(size);
+  if (p == NULL) {
+    error("out of memory");
   }
+  return p;
 }
 
 
-void showAttributes(void) {
-  char *cp;
-
-  printMode();
-  printf("%4d/%4d", arbuf.uid, arbuf.gid);
-  printf("%8d", arbuf.size);
-  cp = ctime(&arbuf.date);
-  printf(" %-12.12s %-4.4s ", cp + 4, cp + 20);
+void memFree(void *p) {
+  if (p == NULL) {
+    error("memFree() got NULL pointer");
+  }
+  free(p);
 }
 
 
 /**************************************************************/
 
 
-void mesg(int c) {
-  if (flg['v' - 'a']) {
-    printf("%c - %s\n", c, file);
-  }
+unsigned int read4FromEco(unsigned char *p) {
+  return (unsigned int) p[0] << 24 |
+         (unsigned int) p[1] << 16 |
+         (unsigned int) p[2] <<  8 |
+         (unsigned int) p[3] <<  0;
 }
 
 
-char *trim(char *s) {
-  char *p1;
-  char *p2;
+void write4ToEco(unsigned char *p, unsigned int data) {
+  p[0] = data >> 24;
+  p[1] = data >> 16;
+  p[2] = data >>  8;
+  p[3] = data >>  0;
+}
 
-  for (p1 = s; *p1 != '\0'; p1++) ;
-  while (p1 > s) {
-    if (*--p1 != '/') {
+
+void conv4FromEcoToNative(unsigned char *p) {
+  unsigned int data;
+
+  data = read4FromEco(p);
+  * (unsigned int *) p = data;
+}
+
+
+void conv4FromNativeToEco(unsigned char *p) {
+  unsigned int data;
+
+  data = * (unsigned int *) p;
+  write4ToEco(p, data);
+}
+
+
+/**************************************************************/
+
+
+void dumpString(unsigned int offset) {
+  long pos;
+  int c;
+
+  pos = ftell(archFile);
+  if (fseek(archFile, archHeader.ostrs + offset, SEEK_SET) < 0) {
+    error("cannot seek to string");
+  }
+  while (1) {
+    c = fgetc(archFile);
+    if (c == EOF) {
+      error("unexpected end of file");
+    }
+    if (c == 0) {
       break;
     }
-    *p1 = '\0';
+    fputc(c, stdout);
   }
-  p2 = s;
-  for (p1 = s; *p1 != '\0'; p1++) {
-    if (*p1 == '/') {
-      p2 = p1 + 1;
-    }
-  }
-  return p2;
+  fseek(archFile, pos, SEEK_SET);
 }
 
 
-int notFound(void) {
-  int n;
+void dumpStrings(unsigned int offset, int n) {
+  long pos;
   int i;
+  int c;
 
-  n = 0;
-  for (i = 0; i < namc; i++) {
-    if (namv[i] != NULL) {
-      fprintf(stderr, "ar: %s not found\n", namv[i]);
-      n++;
+  pos = ftell(archFile);
+  if (fseek(archFile, archHeader.ostrs + offset, SEEK_SET) < 0) {
+    error("cannot seek to strings");
+  }
+  for (i = 0; i < n; i++) {
+    printf("                 ");
+    while (1) {
+      c = fgetc(archFile);
+      if (c == EOF) {
+        error("unexpected end of file");
+      }
+      if (c == 0) {
+        break;
+      }
+      fputc(c, stdout);
+    }
+    printf("\n");
+  }
+  fseek(archFile, pos, SEEK_SET);
+}
+
+
+/**************************************************************/
+
+/* create archive from files */
+
+
+int fileOffset;
+int dataSize;
+int stringSize;
+
+
+void writeDummyHeader(void) {
+  fwrite(&archHeader, sizeof(ArchHeader), 1, archFile);
+  /* update file offset */
+  fileOffset += sizeof(ArchHeader);
+}
+
+
+void writeRealHeader(void) {
+  conv4FromNativeToEco((unsigned char *) &archHeader.magic);
+  conv4FromNativeToEco((unsigned char *) &archHeader.omods);
+  conv4FromNativeToEco((unsigned char *) &archHeader.nmods);
+  conv4FromNativeToEco((unsigned char *) &archHeader.odata);
+  conv4FromNativeToEco((unsigned char *) &archHeader.sdata);
+  conv4FromNativeToEco((unsigned char *) &archHeader.ostrs);
+  conv4FromNativeToEco((unsigned char *) &archHeader.sstrs);
+  fwrite(&archHeader, sizeof(ArchHeader), 1, archFile);
+  conv4FromEcoToNative((unsigned char *) &archHeader.magic);
+  conv4FromEcoToNative((unsigned char *) &archHeader.omods);
+  conv4FromEcoToNative((unsigned char *) &archHeader.nmods);
+  conv4FromEcoToNative((unsigned char *) &archHeader.odata);
+  conv4FromEcoToNative((unsigned char *) &archHeader.sdata);
+  conv4FromEcoToNative((unsigned char *) &archHeader.ostrs);
+  conv4FromEcoToNative((unsigned char *) &archHeader.sstrs);
+}
+
+
+void writeDummyModuleTable(int nmods) {
+  fwrite(moduleTable, sizeof(ModuleRecord), nmods, archFile);
+  /* update file offset */
+  fileOffset += nmods * sizeof(ModuleRecord);
+}
+
+
+void writeRealModuleTable(void) {
+  int mn;
+
+  for (mn = 0; mn < archHeader.nmods; mn++) {
+    conv4FromNativeToEco((unsigned char *) &moduleTable[mn].name);
+    conv4FromNativeToEco((unsigned char *) &moduleTable[mn].offs);
+    conv4FromNativeToEco((unsigned char *) &moduleTable[mn].size);
+    conv4FromNativeToEco((unsigned char *) &moduleTable[mn].fsym);
+    conv4FromNativeToEco((unsigned char *) &moduleTable[mn].nsym);
+    fwrite(&moduleTable[mn], sizeof(ModuleRecord), 1, archFile);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].name);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].offs);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].size);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].fsym);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].nsym);
+  }
+}
+
+
+unsigned int writeFile(char *fileName) {
+  FILE *inFile;
+  int c;
+  long size;
+
+  inFile = fopen(fileName, "r");
+  if (inFile == NULL) {
+    error("cannot open file '%s' for read", fileName);
+  }
+  while (1) {
+    c = getc(inFile);
+    if (c == EOF) {
+      break;
+    }
+    fputc(c, archFile);
+  }
+  size = ftell(inFile);
+  fclose(inFile);
+  return size;
+}
+
+
+void writeFiles(int n, char *fileNames[]) {
+  int mn;
+  int size;
+
+  for (mn = 0; mn < n; mn++) {
+    moduleTable[mn].offs = dataSize;
+    size = writeFile(fileNames[mn]);
+    moduleTable[mn].size = size;
+    dataSize += size;
+    fileOffset += size;
+  }
+}
+
+
+void readObjHeader(ExecHeader *objHeader,
+                   FILE *objFile, char *objName) {
+  if (fseek(objFile, 0, SEEK_SET) < 0) {
+    error("cannot seek to header in object file '%s'", objName);
+  }
+  if (fread(objHeader, sizeof(ExecHeader), 1, objFile) != 1) {
+    error("cannot read header from object file '%s'", objName);
+  }
+  conv4FromEcoToNative((unsigned char *) &objHeader->magic);
+  conv4FromEcoToNative((unsigned char *) &objHeader->osegs);
+  conv4FromEcoToNative((unsigned char *) &objHeader->nsegs);
+  conv4FromEcoToNative((unsigned char *) &objHeader->osyms);
+  conv4FromEcoToNative((unsigned char *) &objHeader->nsyms);
+  conv4FromEcoToNative((unsigned char *) &objHeader->orels);
+  conv4FromEcoToNative((unsigned char *) &objHeader->nrels);
+  conv4FromEcoToNative((unsigned char *) &objHeader->odata);
+  conv4FromEcoToNative((unsigned char *) &objHeader->sdata);
+  conv4FromEcoToNative((unsigned char *) &objHeader->ostrs);
+  conv4FromEcoToNative((unsigned char *) &objHeader->sstrs);
+  conv4FromEcoToNative((unsigned char *) &objHeader->entry);
+  if (objHeader->magic != EXEC_MAGIC) {
+    error("wrong magic number in object file '%s'", objName);
+  }
+}
+
+
+void readObjSymtbl(SymbolRecord *symbols, unsigned int osyms, int nsyms,
+                   FILE *objFile, char *objName) {
+  int sn;
+  SymbolRecord *sp;
+
+  if (fseek(objFile, osyms, SEEK_SET) < 0) {
+    error("cannot seek to symbols in object file '%s'", objName);
+  }
+  for (sn = 0; sn < nsyms; sn++) {
+    sp = &symbols[sn];
+    if (fread(sp, sizeof(SymbolRecord), 1, objFile) != 1) {
+      error("cannot read symbol from object file '%s'", objName);
+    }
+    conv4FromEcoToNative((unsigned char *) &sp->name);
+    conv4FromEcoToNative((unsigned char *) &sp->val);
+    conv4FromEcoToNative((unsigned char *) &sp->seg);
+    conv4FromEcoToNative((unsigned char *) &sp->attr);
+  }
+}
+
+
+void readObjStrings(char *strings, unsigned int ostrs, unsigned int sstrs,
+                    FILE *objFile, char *objName) {
+  if (fseek(objFile, ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings in object file '%s'", objName);
+  }
+  if (fread(strings, 1, sstrs, objFile) != sstrs) {
+    error("cannot read strings from object file '%s'", objName);
+  }
+}
+
+
+void writeStrings(int n, char *fileNames[], int verbose) {
+  int mn;
+  int size;
+  char *baseName;
+  FILE *objFile;
+  ExecHeader objHeader;
+  SymbolRecord *symbols;
+  char *strings;
+  int sn;
+  int nDefSyms;
+
+  for (mn = 0; mn < n; mn++) {
+    /* write base (!) name of module */
+    moduleTable[mn].name = stringSize;
+    size = strlen(fileNames[mn]) + 1;
+    baseName = fileNames[mn] + size - 1;
+    while (baseName != fileNames[mn] && *baseName != '/') {
+      baseName--;
+    }
+    if (*baseName == '/') {
+      baseName++;
+    }
+    size -= baseName - fileNames[mn];
+    if (verbose) {
+      printf("archiving module '%s'\n", baseName);
+    }
+    fwrite(baseName, 1, size, archFile);
+    stringSize += size;
+    fileOffset += size;
+    /* write names of exported symbols */
+    objFile = fopen(fileNames[mn], "r");
+    if (objFile == NULL) {
+      error("cannot open object file '%s' for read", fileNames[mn]);
+    }
+    readObjHeader(&objHeader, objFile, fileNames[mn]);
+    symbols = memAlloc(objHeader.nsyms * sizeof(SymbolRecord));
+    readObjSymtbl(symbols, objHeader.osyms, objHeader.nsyms,
+                  objFile, fileNames[mn]);
+    strings = memAlloc(objHeader.sstrs);
+    readObjStrings(strings, objHeader.ostrs, objHeader.sstrs,
+                   objFile, fileNames[mn]);
+    moduleTable[mn].fsym = stringSize;
+    nDefSyms = 0;
+    for (sn = 0; sn < objHeader.nsyms; sn++) {
+      if (!(symbols[sn].attr & SYM_ATTR_U)) {
+        nDefSyms++;
+        size = strlen(strings + symbols[sn].name) + 1;
+        fwrite(strings + symbols[sn].name, 1, size, archFile);
+        stringSize += size;
+        fileOffset += size;
+      }
+    }
+    moduleTable[mn].nsym = nDefSyms;
+    fclose(objFile);
+    memFree(symbols);
+    memFree(strings);
+  }
+}
+
+
+void createArchive(char *archName, int n, char *fileNames[], int verbose) {
+  archFile = fopen(archName, "w");
+  if (archFile == NULL) {
+    error("cannot open archive '%s' for write", archName);
+  }
+  fileOffset = 0;
+  dataSize = 0;
+  stringSize = 0;
+  writeDummyHeader();
+  archHeader.magic = ARCH_MAGIC;
+  archHeader.omods = fileOffset;
+  archHeader.nmods = n;
+  moduleTable = memAlloc(n * sizeof(ModuleRecord));
+  writeDummyModuleTable(n);
+  archHeader.odata = fileOffset;
+  writeFiles(n, fileNames);
+  archHeader.sdata = dataSize;
+  archHeader.ostrs = fileOffset;
+  writeStrings(n, fileNames, verbose);
+  archHeader.sstrs = stringSize;
+  rewind(archFile);
+  writeRealHeader();
+  writeRealModuleTable();
+  fclose(archFile);
+}
+
+
+/**************************************************************/
+
+/* show table of archive contents */
+
+
+void readHeader(void) {
+  if (fseek(archFile, 0, SEEK_SET) < 0) {
+    error("cannot seek to archive header");
+  }
+  if (fread(&archHeader, sizeof(ArchHeader), 1, archFile) != 1) {
+    error("cannot read archive header");
+  }
+  conv4FromEcoToNative((unsigned char *) &archHeader.magic);
+  conv4FromEcoToNative((unsigned char *) &archHeader.omods);
+  conv4FromEcoToNative((unsigned char *) &archHeader.nmods);
+  conv4FromEcoToNative((unsigned char *) &archHeader.odata);
+  conv4FromEcoToNative((unsigned char *) &archHeader.sdata);
+  conv4FromEcoToNative((unsigned char *) &archHeader.ostrs);
+  conv4FromEcoToNative((unsigned char *) &archHeader.sstrs);
+  if (archHeader.magic != ARCH_MAGIC) {
+    error("wrong magic number in archive header");
+  }
+}
+
+
+void readModuleTable(void) {
+  int mn;
+
+  moduleTable = memAlloc(archHeader.nmods * sizeof(ModuleRecord));
+  if (fseek(archFile, archHeader.omods, SEEK_SET) < 0) {
+    error("cannot seek to module table");
+  }
+  for (mn = 0; mn < archHeader.nmods; mn++) {
+    if (fread(&moduleTable[mn], sizeof(ModuleRecord), 1, archFile) != 1) {
+      error("cannot read module record %d", mn);
+    }
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].name);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].offs);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].size);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].fsym);
+    conv4FromEcoToNative((unsigned char *) &moduleTable[mn].nsym);
+  }
+}
+
+
+void showTable(char *archName, int verbose) {
+  int mn;
+
+  archFile = fopen(archName, "r");
+  if (archFile == NULL) {
+    error("cannot open archive '%s' for read", archName);
+  }
+  readHeader();
+  printf("Archive members:\n");
+  if (archHeader.nmods == 0) {
+    printf("<empty>\n");
+    fclose(archFile);
+    return;
+  }
+  readModuleTable();
+  for (mn = 0; mn < archHeader.nmods; mn++) {
+    printf("    %d:\n", mn);
+    printf("        name   = ");
+    dumpString(moduleTable[mn].name);
+    printf("\n");
+    printf("        offset = 0x%08X\n", moduleTable[mn].offs);
+    printf("        size   = 0x%08X\n", moduleTable[mn].size);
+    if (verbose) {
+      printf("        nsyms  = %d\n", moduleTable[mn].nsym);
+      dumpStrings(moduleTable[mn].fsym, moduleTable[mn].nsym);
     }
   }
-  return n;
+  fclose(archFile);
 }
 
 
-int moreFiles(void) {
-  int n;
-  int i;
+/**************************************************************/
 
-  n = 0;
-  for (i = 0; i < namc; i++) {
-    if (namv[i] != NULL) {
-      n++;
+/* extract files from archive */
+
+
+void extractFiles(char *archName, int verbose) {
+  int mn;
+  char *strings;
+  char *outName;
+  unsigned int modStart;
+  FILE *outFile;
+  int cnt;
+  int c;
+
+  archFile = fopen(archName, "r");
+  if (archFile == NULL) {
+    error("cannot open archive '%s' for read", archName);
+  }
+  readHeader();
+  readModuleTable();
+  strings = memAlloc(archHeader.sstrs);
+  if (fseek(archFile, archHeader.ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings");
+  }
+  if (fread(strings, 1, archHeader.sstrs, archFile) != archHeader.sstrs) {
+    error("cannot read strings");
+  }
+  for (mn = 0; mn < archHeader.nmods; mn++) {
+    outName = strings + moduleTable[mn].name;
+    modStart = archHeader.odata + moduleTable[mn].offs;
+    if (fseek(archFile, modStart, SEEK_SET) < 0) {
+      error("cannot seek to module '%s'", outName);
     }
-  }
-  return n;
-}
-
-
-void unlinkTempFiles(void) {
-  if (tf0nam != NULL) {
-    unlink(tf0nam);
-  }
-  if (tf1nam != NULL) {
-    unlink(tf1nam);
-  }
-  if (tf2nam != NULL) {
-    unlink(tf2nam);
-  }
-}
-
-
-void done(int c) {
-  unlinkTempFiles();
-  exit(c);
-}
-
-
-void sigDone(int signum) {
-  done(100);
-}
-
-
-void noArchive(void) {
-  fprintf(stderr, "ar: %s does not exist\n", arnam);
-  done(1);
-}
-
-
-void writeError(void) {
-  perror("ar write error");
-  done(1);
-}
-
-
-void phaseError(void) {
-  fprintf(stderr, "ar: phase error on %s\n", file);
-}
-
-
-int stats(void) {
-  int f;
-
-  f = open(file, O_RDONLY);
-  if (f < 0) {
-    return f;
-  }
-  if (fstat(f, &stbuf) < 0) {
-    close(f);
-    return -1;
-  }
-  return f;
-}
-
-
-int match(void) {
-  int i;
-
-  for (i = 0; i < namc; i++) {
-    if (namv[i] == NULL) {
-      continue;
+    outFile = fopen(outName, "w");
+    if (outFile == NULL) {
+      error("cannot open output file '%s'", outName);
     }
-    if (strcmp(trim(namv[i]), file) == 0) {
-      file = namv[i];
-      namv[i] = NULL;
-      return 1;
+    if (verbose) {
+      printf("extracting module '%s'\n", outName);
     }
+    for (cnt = 0; cnt < moduleTable[mn].size; cnt++) {
+      c = fgetc(archFile);
+      if (c == EOF) {
+        error("cannot read module '%s'", outName);
+      }
+      c = fputc(c, outFile);
+      if (c == EOF) {
+        error("cannot write module '%s'", outName);
+      }
+    }
+    fclose(outFile);
   }
-  return 0;
-}
-
-
-void baMatch(void) {
-  int f;
-
-  if (baState == 1) {
-    if (strcmp(file, posName) != 0) {
-      return;
-    }
-    baState = 2;
-    if (flg['a' - 'a']) {
-      return;
-    }
-  }
-  if (baState == 2) {
-    baState = 0;
-    tf1nam = mktemp(tmp1nam);
-    close(creat(tf1nam, 0600));
-    f = open(tf1nam, O_RDWR);
-    if (f < 0) {
-      fprintf(stderr, "ar: cannot create second temp file\n");
-      return;
-    }
-    tf1 = tf0;
-    tf0 = f;
-  }
+  fclose(archFile);
 }
 
 
 /**************************************************************/
 
 
-void init(void) {
-  unsigned int mbuf;
-
-  write4ToEco((unsigned char *) &mbuf, AR_MAGIC);
-  tf0nam = mktemp(tmp0nam);
-  close(creat(tf0nam, 0600));
-  tf0 = open(tf0nam, O_RDWR);
-  if (tf0 < 0) {
-    fprintf(stderr, "ar: cannot create temp file\n");
-    done(1);
-  }
-  if (write(tf0, &mbuf, sizeof(mbuf)) != sizeof(mbuf)) {
-    writeError();
-  }
-}
-
-
-int getArchive(void) {
-  unsigned int mbuf;
-
-  af = open(arnam, O_RDONLY);
-  if (af < 0) {
-    return 1;
-  }
-  if (read(af, &mbuf, sizeof(mbuf)) != sizeof(mbuf) ||
-      read4FromEco((unsigned char *) &mbuf) != AR_MAGIC) {
-    fprintf(stderr, "ar: %s not in archive format\n", arnam);
-    done(1);
-  }
-  return 0;
-}
-
-
-void getQuick(void) {
-  unsigned int mbuf;
-
-  qf = open(arnam, O_RDWR);
-  if (qf < 0) {
-    if (!flg['c' - 'a']) {
-      fprintf(stderr, "ar: creating %s\n", arnam);
-    }
-    close(creat(arnam, 0666));
-    qf = open(arnam, O_RDWR);
-    if (qf < 0) {
-      fprintf(stderr, "ar: cannot create %s\n", arnam);
-      done(1);
-    }
-    write4ToEco((unsigned char *) &mbuf, AR_MAGIC);
-    if (write(qf, &mbuf, sizeof(mbuf)) != sizeof(mbuf)) {
-      writeError();
-    }
-  } else
-  if (read(qf, &mbuf, sizeof(mbuf)) != sizeof(mbuf) ||
-      read4FromEco((unsigned char *) &mbuf) != AR_MAGIC) {
-    fprintf(stderr, "ar: %s not in archive format\n", arnam);
-    done(1);
-  }
-}
-
-
-int getMember(void) {
-  int i;
-
-  i = read(af, &arbuf, sizeof(arbuf));
-  if (i != sizeof(arbuf)) {
-    if (tf1nam != NULL) {
-      i = tf0;
-      tf0 = tf1;
-      tf1 = i;
-    }
-    return 1;
-  }
-  conv4FromEcoToNative((unsigned char *) &arbuf.date);
-  conv4FromEcoToNative((unsigned char *) &arbuf.uid);
-  conv4FromEcoToNative((unsigned char *) &arbuf.gid);
-  conv4FromEcoToNative((unsigned char *) &arbuf.mode);
-  conv4FromEcoToNative((unsigned char *) &arbuf.size);
-  for (i = 0; i < MAX_NAME; i++) {
-    name[i] = arbuf.name[i];
-  }
-  file = name;
-  return 0;
-}
-
-
-void copyFile(int fi, int fo, int flags) {
-  int pe;
-  int icount, ocount;
-  int pad;
-
-  if (flags & HEAD) {
-    conv4FromNativeToEco((unsigned char *) &arbuf.date);
-    conv4FromNativeToEco((unsigned char *) &arbuf.uid);
-    conv4FromNativeToEco((unsigned char *) &arbuf.gid);
-    conv4FromNativeToEco((unsigned char *) &arbuf.mode);
-    conv4FromNativeToEco((unsigned char *) &arbuf.size);
-    if (write(fo, &arbuf, sizeof(arbuf)) != sizeof(arbuf)) {
-      writeError();
-    }
-    conv4FromEcoToNative((unsigned char *) &arbuf.date);
-    conv4FromEcoToNative((unsigned char *) &arbuf.uid);
-    conv4FromEcoToNative((unsigned char *) &arbuf.gid);
-    conv4FromEcoToNative((unsigned char *) &arbuf.mode);
-    conv4FromEcoToNative((unsigned char *) &arbuf.size);
-  }
-  pe = 0;
-  while (arbuf.size > 0) {
-    icount = ocount = BUFSIZE;
-    if (arbuf.size < icount) {
-      icount = ocount = arbuf.size;
-      pad = -icount & 0x03;
-      if (flags & IODD) {
-        icount += pad;
-      }
-      if (flags & OODD) {
-        ocount += pad;
-      }
-    }
-    if (read(fi, buf, icount) != icount) {
-      pe++;
-    }
-    if ((flags & SKIP) == 0) {
-      if (write(fo, buf, ocount) != ocount) {
-        writeError();
-      }
-    }
-    arbuf.size -= BUFSIZE;
-  }
-  if (pe != 0) {
-    phaseError();
-  }
-}
-
-
-void moveFile(int f) {
-  char *cp;
-  int i;
-
-  cp = trim(file);
-  for (i = 0; i < MAX_NAME; i++) {
-    if ((arbuf.name[i] = *cp) != '\0') {
-      cp++;
-    }
-  }
-  arbuf.size = stbuf.st_size;
-  arbuf.date = stbuf.st_mtime;
-  arbuf.uid = stbuf.st_uid;
-  arbuf.gid = stbuf.st_gid;
-  arbuf.mode = stbuf.st_mode;
-  copyFile(f, tf0, OODD | HEAD);
-  close(f);
-}
-
-
-void install(void) {
-  int i;
-
-  for (i = 0; signums[i] != 0; i++) {
-    signal(signums[i], SIG_IGN);
-  }
-  if (af < 0) {
-    if (!flg['c' - 'a']) {
-      fprintf(stderr, "ar: creating %s\n", arnam);
-    }
-  }
-  close(af);
-  af = creat(arnam, 0666);
-  if (af < 0) {
-    fprintf(stderr, "ar: cannot create %s\n", arnam);
-    done(1);
-  }
-  if (tf0nam != NULL) {
-    lseek(tf0, 0, SEEK_SET);
-    while ((i = read(tf0, buf, BUFSIZE)) > 0) {
-      if (write(af, buf, i) != i) {
-        writeError();
-      }
-    }
-  }
-  if (tf2nam != NULL) {
-    lseek(tf2, 0, SEEK_SET);
-    while ((i = read(tf2, buf, BUFSIZE)) > 0) {
-      if (write(af, buf, i) != i) {
-        writeError();
-      }
-    }
-  }
-  if (tf1nam != NULL) {
-    lseek(tf1, 0, SEEK_SET);
-    while ((i = read(tf1, buf, BUFSIZE)) > 0) {
-      if (write(af, buf, i) != i) {
-        writeError();
-      }
-    }
-  }
-}
-
-
-void cleanup(void) {
-  int i;
-  int f;
-
-  for (i = 0; i < namc; i++) {
-    file = namv[i];
-    if (file == NULL) {
-      continue;
-    }
-    namv[i] = NULL;
-    mesg('a');
-    f = stats();
-    if (f < 0) {
-      fprintf(stderr, "ar: cannot open %s\n", file);
-      continue;
-    }
-    moveFile(f);
-  }
-}
-
-
-/**************************************************************/
-
-
-void dCmd(void) {
-  init();
-  if (getArchive()) {
-    noArchive();
-  }
-  while (!getMember()) {
-    if (match()) {
-      mesg('d');
-      copyFile(af, -1, IODD | SKIP);
-      continue;
-    }
-    mesg('c');
-    copyFile(af, tf0, IODD | OODD | HEAD);
-  }
-  install();
-}
-
-
-void rCmd(void) {
-  int f;
-
-  init();
-  getArchive();
-  while (!getMember()) {
-    baMatch();
-    if (namc == 0 || match()) {
-      f = stats();
-      if (f < 0) {
-        if (namc != 0) {
-          fprintf(stderr, "ar: cannot open %s\n", file);
-        }
-        goto cp;
-      }
-      if (flg['u' - 'a']) {
-        if (stbuf.st_mtime <= arbuf.date) {
-          close(f);
-          goto cp;
-        }
-      }
-      mesg('r');
-      copyFile(af, -1, IODD | SKIP);
-      moveFile(f);
-      continue;
-    }
-cp:
-    mesg('c');
-    copyFile(af, tf0, IODD | OODD | HEAD);
-  }
-  cleanup();
-  install();
-}
-
-
-void qCmd(void) {
-  int i;
-  int f;
-
-  if (flg['a' - 'a'] || flg['b' - 'a']) {
-    fprintf(stderr, "ar: [ab] not allowed with -q\n");
-    done(1);
-  }
-  getQuick();
-  for (i = 0; signums[i] != 0; i++) {
-    signal(signums[i], SIG_IGN);
-  }
-  lseek(qf, 0, SEEK_END);
-  for (i = 0; i < namc; i++) {
-    file = namv[i];
-    if (file == NULL) {
-      continue;
-    }
-    namv[i] = NULL;
-    mesg('q');
-    f = stats();
-    if (f < 0) {
-      fprintf(stderr, "ar: cannot open %s\n", file);
-      continue;
-    }
-    tf0 = qf;
-    moveFile(f);
-    qf = tf0;
-  }
-}
-
-
-void tCmd(void) {
-  if (getArchive()) {
-    noArchive();
-  }
-  while (!getMember()) {
-    if (namc == 0 || match()) {
-      if (flg['v' - 'a']) {
-        showAttributes();
-      }
-      printf("%s\n", trim(file));
-    }
-    copyFile(af, -1, IODD | SKIP);
-  }
-}
-
-
-void pCmd(void) {
-  if (getArchive()) {
-    noArchive();
-  }
-  while (!getMember()) {
-    if (namc == 0 || match()) {
-      if (flg['v' - 'a']) {
-        printf("\n<%s>\n\n", file);
-        fflush(stdout);
-      }
-      copyFile(af, 1, IODD);
-      continue;
-    }
-    copyFile(af, -1, IODD | SKIP);
-  }
-}
-
-
-void mCmd(void) {
-  init();
-  if (getArchive()) {
-    noArchive();
-  }
-  tf2nam = mktemp(tmp2nam);
-  close(creat(tf2nam, 0600));
-  tf2 = open(tf2nam, O_RDWR);
-  if (tf2 < 0) {
-    fprintf(stderr, "ar: cannot create third temp file\n");
-    done(1);
-  }
-  while (!getMember()) {
-    baMatch();
-    if (match()) {
-      mesg('m');
-      copyFile(af, tf2, IODD | OODD | HEAD);
-      continue;
-    }
-    mesg('c');
-    copyFile(af, tf0, IODD | OODD | HEAD);
-  }
-  install();
-}
-
-
-void xCmd(void) {
-  int f;
-
-  if (getArchive()) {
-    noArchive();
-  }
-  while (!getMember()) {
-    if (namc == 0 || match()) {
-      f = creat(file, arbuf.mode & 0777);
-      if (f < 0) {
-        fprintf(stderr, "ar: cannot create %s\n", file);
-        goto sk;
-      }
-      mesg('x');
-      copyFile(af, f, IODD);
-      close(f);
-      continue;
-    }
-sk:
-    mesg('c');
-    copyFile(af, -1, IODD | SKIP);
-    if (namc > 0 && !moreFiles()) {
-      done(0);
-    }
-  }
-}
-
-
-/**************************************************************/
-
-/* specialized r command for updating symbols */
-
-
-int exec_rCmd(int create, char *args[]) {
-  int i;
-  int res;
-
-  /* reset all global variables */
-  comfun = NULL;
-  for (i = 0; i < 26; i++) {
-    flg[i] = 0;
-  }
-  arnam = NULL;
-  af = 0;
-  namv = NULL;
-  namc = 0;
-  baState = 0;
-  posName = NULL;
-  for (i = 0; i < 20; i++) {
-    tmp0nam[i] = '\0';
-    tmp1nam[i] = '\0';
-    tmp2nam[i] = '\0';
-  }
-  tf0nam = NULL;
-  tf1nam = NULL;
-  tf2nam = NULL;
-  tf0 = 0;
-  tf1 = 0;
-  tf2 = 0;
-  qf = 0;
-  file = NULL;
-  for (i = 0; i < MAX_NAME; i++) {
-    name[i] = '\0';
-  }
-  /* prepare arguments, call r command, cleanup */
-  comfun = rCmd;
-  flg['l' - 'a'] = 1;
-  strcpy(tmp0nam, "v0XXXXXX");
-  strcpy(tmp1nam, "v1XXXXXX");
-  strcpy(tmp2nam, "v2XXXXXX");
-  if (create) {
-    /* ar -rlb firstName archive TEMP_NAME */
-    flg['b' - 'a'] = 1;
-    baState = 1;
-    posName = trim(args[0]);
-    arnam = args[1];
-    namv = &args[2];
-    namc = 1;
-  } else {
-    /* ar -rl archive TEMP_NAME */
-    arnam = args[0];
-    namv = &args[1];
-    namc = 1;
-  }
-  (*comfun)();
-  res = notFound();
-  unlinkTempFiles();
-  return res;
-}
-
-
-/**************************************************************/
-
-
-void usage(void) {
-  printf("usage: ar -[%s][%s] archive files ...\n", com, opt);
-  done(1);
-}
-
-
-void setcom(void (*fun)(void)) {
-  if (comfun != NULL) {
-    fprintf(stderr, "ar: only one of [%s] allowed\n", com);
-    done(1);
-  }
-  comfun = fun;
-}
-
-
-int cmdCanChangeSymbols(void) {
-  return comfun == dCmd ||
-         comfun == rCmd ||
-         comfun == mCmd;
+void usage(char *myself) {
+  printf("Usage: %s\n", myself);
+  printf("         -c  <archive> <file>...   create archive from files\n");
+  printf("         -cv <archive> <file>...   ditto, and list modules\n");
+  printf("         -t  <archive>             show table of contents\n");
+  printf("         -tv <archive>             ditto, include symbols\n");
+  printf("         -x  <archive>             extract files from archive\n");
+  printf("         -xv <archive>             ditto, and list modules\n");
+  exit(1);
 }
 
 
 int main(int argc, char *argv[]) {
-  int i;
-  char *cp;
-  int res;
-
-  for (i = 0; signums[i] != 0; i++) {
-    if (signal(signums[i], SIG_IGN) != SIG_IGN) {
-      signal(signums[i], sigDone);
-    }
+  if (argc < 3) {
+    usage(argv[0]);
   }
-  strcpy(tmp0nam, "/tmp/v0XXXXXX");
-  strcpy(tmp1nam, "/tmp/v1XXXXXX");
-  strcpy(tmp2nam, "/tmp/v2XXXXXX");
-  if (argc < 3 || *argv[1] != '-') {
-    usage();
+  if (strcmp(argv[1], "-c") == 0) {
+    /* create archive from files */
+    createArchive(argv[2], argc - 3, &argv[3], 0);
+  } else
+  if (strcmp(argv[1], "-cv") == 0) {
+    /* create archive from files, list module names */
+    createArchive(argv[2], argc - 3, &argv[3], 1);
+  } else
+  if (strcmp(argv[1], "-t") == 0) {
+    /* show table of archive contents */
+    showTable(argv[2], 0);
+  } else
+  if (strcmp(argv[1], "-tv") == 0) {
+    /* show table of archive contents with symbols */
+    showTable(argv[2], 1);
+  } else
+  if (strcmp(argv[1], "-x") == 0) {
+    /* extract files from archive */
+    extractFiles(argv[2], 0);
+  } else
+  if (strcmp(argv[1], "-xv") == 0) {
+    /* extract files from archive, list module names */
+    extractFiles(argv[2], 1);
+  } else {
+    usage(argv[0]);
   }
-  for (cp = argv[1] + 1; *cp != '\0'; cp++) {
-    switch (*cp) {
-      case 'd':
-        setcom(dCmd);
-        break;
-      case 'r':
-        setcom(rCmd);
-        break;
-      case 'q':
-        setcom(qCmd);
-        break;
-      case 't':
-        setcom(tCmd);
-        break;
-      case 'p':
-        setcom(pCmd);
-        break;
-      case 'm':
-        setcom(mCmd);
-        break;
-      case 'x':
-        setcom(xCmd);
-        break;
-      case 'v':
-      case 'u':
-      case 'a':
-      case 'b':
-      case 'c':
-      case 'l':
-      case 's':
-        flg[*cp - 'a'] = 1;
-        break;
-      default:
-        fprintf(stderr, "ar: bad option '%c'\n", *cp);
-        done(1);
-    }
-  }
-  if (flg['l' - 'a']) {
-    strcpy(tmp0nam, "v0XXXXXX");
-    strcpy(tmp1nam, "v1XXXXXX");
-    strcpy(tmp2nam, "v2XXXXXX");
-  }
-  if (flg['a' - 'a'] || flg['b' - 'a']) {
-    baState = 1;
-    posName = trim(argv[2]);
-    argv++;
-    argc--;
-    if (argc < 3) {
-      usage();
-    }
-  }
-  arnam = argv[2];
-  namv = argv + 3;
-  namc = argc - 3;
-  if (comfun == NULL && !flg['s' - 'a']) {
-    fprintf(stderr, "ar: one of [%ss] must be specified\n", com);
-    done(1);
-  }
-  res = 0;
-  if (comfun != NULL) {
-    (*comfun)();
-    res = notFound();
-    unlinkTempFiles();
-    if (res != 0) {
-      return res;
-    }
-  }
-  if (flg['s' - 'a'] ||
-      (cmdCanChangeSymbols() && hasSymbols(arnam))) {
-    res = updateSymbols(arnam, flg['v' - 'a']);
-  }
-  return res;
+  return 0;
 }

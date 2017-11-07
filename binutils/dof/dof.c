@@ -11,16 +11,14 @@
 #include "../include/a.out.h"
 
 
-#define MSB	((unsigned int) 1 << (sizeof(unsigned int) * 8 - 1))
-
-
 /**************************************************************/
 
 
 FILE *inFile;
 ExecHeader execHeader;
-char *segmentName[4] = { "ABS", "CODE", "DATA", "BSS" };
-char *methodName[5] = { "H16", "L16", "R16", "R26", "W32" };
+SegmentRecord *segmentTable;
+SymbolRecord *symbolTable;
+RelocRecord *relocTable;
 
 
 /**************************************************************/
@@ -35,6 +33,25 @@ void error(char *fmt, ...) {
   printf("\n");
   va_end(ap);
   exit(1);
+}
+
+
+void *memAlloc(unsigned int size) {
+  void *p;
+
+  p = malloc(size);
+  if (p == NULL) {
+    error("out of memory");
+  }
+  return p;
+}
+
+
+void memFree(void *p) {
+  if (p == NULL) {
+    error("memFree() got NULL pointer");
+  }
+  free(p);
 }
 
 
@@ -74,43 +91,6 @@ void conv4FromNativeToEco(unsigned char *p) {
 
 
 /**************************************************************/
-
-
-#define CODE_START	(sizeof(ExecHeader))
-#define DATA_START	(CODE_START + execHeader.csize)
-#define CRELOC_START	(DATA_START + execHeader.dsize)
-#define DRELOC_START	(CRELOC_START + execHeader.crsize)
-#define SYMTBL_START	(DRELOC_START + execHeader.drsize)
-#define STRING_START	(SYMTBL_START + execHeader.symsize)
-
-
-void dumpHeader(void) {
-  if (fseek(inFile, 0, SEEK_SET) < 0) {
-    error("cannot seek to exec header");
-  }
-  if (fread(&execHeader, sizeof(ExecHeader), 1, inFile) != 1) {
-    error("cannot read exec header");
-  }
-  conv4FromEcoToNative((unsigned char *) &execHeader.magic);
-  conv4FromEcoToNative((unsigned char *) &execHeader.csize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.dsize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.bsize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.crsize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.drsize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.symsize);
-  conv4FromEcoToNative((unsigned char *) &execHeader.entry);
-  if (execHeader.magic != EXEC_MAGIC) {
-    error("wrong magic number in exec header");
-  }
-  printf("Header\n");
-  printf("    size of code         : %10u bytes\n", execHeader.csize);
-  printf("    size of data         : %10u bytes\n", execHeader.dsize);
-  printf("    size of bss          : %10u bytes\n", execHeader.bsize);
-  printf("    size of code relocs  : %10u bytes\n", execHeader.crsize);
-  printf("    size of data relocs  : %10u bytes\n", execHeader.drsize);
-  printf("    size of symbol table : %10u bytes\n", execHeader.symsize);
-  printf("    entry point          : 0x%08X\n", execHeader.entry);
-}
 
 
 void dumpBytes(unsigned int totalSize) {
@@ -158,84 +138,12 @@ void dumpBytes(unsigned int totalSize) {
 }
 
 
-void dumpCode(void) {
-  if (fseek(inFile, CODE_START, SEEK_SET) < 0) {
-    error("cannot seek to code section");
-  }
-  printf("\nCode Segment\n");
-  dumpBytes(execHeader.csize);
-}
-
-
-void dumpData(void) {
-  if (fseek(inFile, DATA_START, SEEK_SET) < 0) {
-    error("cannot seek to data section");
-  }
-  printf("\nData Segment\n");
-  dumpBytes(execHeader.dsize);
-}
-
-
-void dumpRelocs(unsigned int totalSize) {
-  unsigned int currSize;
-  int n;
-  RelocRecord relRec;
-
-  currSize = 0;
-  n = 0;
-  while (currSize < totalSize) {
-    if (fread(&relRec, sizeof(RelocRecord), 1, inFile) != 1) {
-      error("cannot read relocation record");
-    }
-    conv4FromEcoToNative((unsigned char *) &relRec.offset);
-    conv4FromEcoToNative((unsigned char *) &relRec.method);
-    conv4FromEcoToNative((unsigned char *) &relRec.value);
-    conv4FromEcoToNative((unsigned char *) &relRec.base);
-    printf("    %d:\n", n);
-    printf("        offset  = 0x%08X\n", relRec.offset);
-    if (relRec.method < 0 || relRec.method > 4) {
-      error("illegal relocation method");
-    }
-    printf("        method  = %s\n", methodName[relRec.method]);
-    printf("        value   = 0x%08X\n", relRec.value);
-    if (relRec.base & MSB) {
-      printf("        base    = symbol # %d\n", relRec.base & ~MSB);
-    } else {
-      if (relRec.base < 0 || relRec.base > 3) {
-        error("base contains an illegal segment number");
-      }
-      printf("        base    = %s\n", segmentName[relRec.base]);
-    }
-    currSize += sizeof(RelocRecord);
-    n++;
-  }
-}
-
-
-void dumpCodeRelocs(void) {
-  if (fseek(inFile, CRELOC_START, SEEK_SET) < 0) {
-    error("cannot seek to code relocation section");
-  }
-  printf("\nCode Relocation Records\n");
-  dumpRelocs(execHeader.crsize);
-}
-
-
-void dumpDataRelocs(void) {
-  if (fseek(inFile, DRELOC_START, SEEK_SET) < 0) {
-    error("cannot seek to data relocation section");
-  }
-  printf("\nData Relocation Records\n");
-  dumpRelocs(execHeader.drsize);
-}
-
-
 void dumpString(unsigned int offset) {
   long pos;
   int c;
 
   pos = ftell(inFile);
-  if (fseek(inFile, STRING_START + offset, SEEK_SET) < 0) {
+  if (fseek(inFile, execHeader.ostrs + offset, SEEK_SET) < 0) {
     error("cannot seek to string");
   }
   while (1) {
@@ -252,40 +160,246 @@ void dumpString(unsigned int offset) {
 }
 
 
-void dumpSymbolTable(void) {
-  unsigned int currSize;
-  int n;
-  SymbolRecord symRec;
+/**************************************************************/
 
-  if (fseek(inFile, SYMTBL_START, SEEK_SET) < 0) {
-    error("cannot seek to symbol table section");
+
+void readHeader(void) {
+  if (fseek(inFile, 0, SEEK_SET) < 0) {
+    error("cannot seek to exec header");
   }
-  printf("\nSymbol Table Records\n");
-  currSize = 0;
-  n = 0;
-  while (currSize < execHeader.symsize) {
-    if (fread(&symRec, sizeof(SymbolRecord), 1, inFile) != 1) {
-      error("cannot read symbol record");
+  if (fread(&execHeader, sizeof(ExecHeader), 1, inFile) != 1) {
+    error("cannot read exec header");
+  }
+  conv4FromEcoToNative((unsigned char *) &execHeader.magic);
+  conv4FromEcoToNative((unsigned char *) &execHeader.osegs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.nsegs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.osyms);
+  conv4FromEcoToNative((unsigned char *) &execHeader.nsyms);
+  conv4FromEcoToNative((unsigned char *) &execHeader.orels);
+  conv4FromEcoToNative((unsigned char *) &execHeader.nrels);
+  conv4FromEcoToNative((unsigned char *) &execHeader.odata);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sdata);
+  conv4FromEcoToNative((unsigned char *) &execHeader.ostrs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.sstrs);
+  conv4FromEcoToNative((unsigned char *) &execHeader.entry);
+}
+
+
+void dumpHeader(void) {
+  if (execHeader.magic != EXEC_MAGIC) {
+    error("wrong magic number in exec header");
+  }
+  printf("Header\n");
+  printf("    magic number              : 0x%08X\n", execHeader.magic);
+  printf("    offset of segment table   : 0x%08X\n", execHeader.osegs);
+  printf("    number of segment entries : %10u\n", execHeader.nsegs);
+  printf("    offset of symbol table    : 0x%08X\n", execHeader.osyms);
+  printf("    number of symbol entries  : %10u\n", execHeader.nsyms);
+  printf("    offset of reloc table     : 0x%08X\n", execHeader.orels);
+  printf("    number of reloc entries   : %10u\n", execHeader.nrels);
+  printf("    offset of segment data    : 0x%08X\n", execHeader.odata);
+  printf("    size of segment data      : 0x%08X\n", execHeader.sdata);
+  printf("    offset of string space    : 0x%08X\n", execHeader.ostrs);
+  printf("    size of string space      : 0x%08X\n", execHeader.sstrs);
+  printf("    entry point               : 0x%08X\n", execHeader.entry);
+}
+
+
+/**************************************************************/
+
+
+void readSegmentTable(void) {
+  int sn;
+
+  segmentTable = memAlloc(execHeader.nsegs * sizeof(SegmentRecord));
+  if (fseek(inFile, execHeader.osegs, SEEK_SET) < 0) {
+    error("cannot seek to segment table");
+  }
+  for (sn = 0; sn < execHeader.nsegs; sn++) {
+    if (fread(&segmentTable[sn], sizeof(SegmentRecord), 1, inFile) != 1) {
+      error("cannot read segment record %d", sn);
     }
-    conv4FromEcoToNative((unsigned char *) &symRec.name);
-    conv4FromEcoToNative((unsigned char *) &symRec.type);
-    conv4FromEcoToNative((unsigned char *) &symRec.value);
-    printf("    %d:\n", n);
-    printf("        name    = ");
-    dumpString(symRec.name);
+    conv4FromEcoToNative((unsigned char *) &segmentTable[sn].name);
+    conv4FromEcoToNative((unsigned char *) &segmentTable[sn].offs);
+    conv4FromEcoToNative((unsigned char *) &segmentTable[sn].addr);
+    conv4FromEcoToNative((unsigned char *) &segmentTable[sn].size);
+    conv4FromEcoToNative((unsigned char *) &segmentTable[sn].attr);
+  }
+}
+
+
+void dumpSegmentTable(void) {
+  int sn;
+
+  printf("\nSegment Table\n");
+  if (execHeader.nsegs == 0) {
+    printf("<empty>\n");
+    return;
+  }
+  for (sn = 0; sn < execHeader.nsegs; sn++) {
+    printf("    %d:\n", sn);
+    printf("        name = ");
+    dumpString(segmentTable[sn].name);
     printf("\n");
-    if (symRec.type & MSB) {
-      printf("        --- undefined ---\n");
+    printf("        offs = 0x%08X\n", segmentTable[sn].offs);
+    printf("        addr = 0x%08X\n", segmentTable[sn].addr);
+    printf("        size = 0x%08X\n", segmentTable[sn].size);
+    printf("        attr = ");
+    if (segmentTable[sn].attr & SEG_ATTR_A) {
+      printf("A");
     } else {
-      if (symRec.type < 0 || symRec.type > 3) {
-        error("type contains an illegal segment number");
-      }
-      printf("        segment = %s\n", segmentName[symRec.type]);
-      printf("        value   = 0x%08X\n", symRec.value);
+      printf("-");
     }
-    currSize += sizeof(SymbolRecord);
-    n++;
+    if (segmentTable[sn].attr & SEG_ATTR_P) {
+      printf("P");
+    } else {
+      printf("-");
+    }
+    if (segmentTable[sn].attr & SEG_ATTR_W) {
+      printf("W");
+    } else {
+      printf("-");
+    }
+    if (segmentTable[sn].attr & SEG_ATTR_X) {
+      printf("X");
+    } else {
+      printf("-");
+    }
+    printf("\n");
   }
+}
+
+
+/**************************************************************/
+
+
+void readSymbolTable(void) {
+  int sn;
+
+  symbolTable = memAlloc(execHeader.nsyms * sizeof(SymbolRecord));
+  if (fseek(inFile, execHeader.osyms, SEEK_SET) < 0) {
+    error("cannot seek to symbol table");
+  }
+  for (sn = 0; sn < execHeader.nsyms; sn++) {
+    if (fread(&symbolTable[sn], sizeof(SymbolRecord), 1, inFile) != 1) {
+      error("cannot read symbol record %d", sn);
+    }
+    conv4FromEcoToNative((unsigned char *) &symbolTable[sn].name);
+    conv4FromEcoToNative((unsigned char *) &symbolTable[sn].val);
+    conv4FromEcoToNative((unsigned char *) &symbolTable[sn].seg);
+    conv4FromEcoToNative((unsigned char *) &symbolTable[sn].attr);
+  }
+}
+
+
+void dumpSymbolTable(void) {
+  int sn;
+
+  printf("\nSymbol Table\n");
+  if (execHeader.nsyms == 0) {
+    printf("<empty>\n");
+    return;
+  }
+  for (sn = 0; sn < execHeader.nsyms; sn++) {
+    printf("    %d:\n", sn);
+    printf("        name = ");
+    dumpString(symbolTable[sn].name);
+    printf("\n");
+    printf("        val  = 0x%08X\n", symbolTable[sn].val);
+    printf("        seg  = %d\n", symbolTable[sn].seg);
+    printf("        attr = ");
+    if (symbolTable[sn].attr & SYM_ATTR_U) {
+      printf("U");
+    } else {
+      printf("D");
+    }
+    printf("\n");
+  }
+}
+
+
+/**************************************************************/
+
+
+void readRelocTable(void) {
+  int rn;
+
+  relocTable = memAlloc(execHeader.nrels * sizeof(RelocRecord));
+  if (fseek(inFile, execHeader.orels, SEEK_SET) < 0) {
+    error("cannot seek to relocation table");
+  }
+  for (rn = 0; rn < execHeader.nrels; rn++) {
+    if (fread(&relocTable[rn], sizeof(RelocRecord), 1, inFile) != 1) {
+      error("cannot read relocation record %d", rn);
+    }
+    conv4FromEcoToNative((unsigned char *) &relocTable[rn].loc);
+    conv4FromEcoToNative((unsigned char *) &relocTable[rn].seg);
+    conv4FromEcoToNative((unsigned char *) &relocTable[rn].typ);
+    conv4FromEcoToNative((unsigned char *) &relocTable[rn].ref);
+    conv4FromEcoToNative((unsigned char *) &relocTable[rn].add);
+  }
+}
+
+
+void dumpRelocTable(void) {
+  int rn;
+
+  printf("\nRelocation Table\n");
+  if (execHeader.nrels == 0) {
+    printf("<empty>\n");
+    return;
+  }
+  for (rn = 0; rn < execHeader.nrels; rn++) {
+    printf("    %d:\n", rn);
+    printf("        loc  = 0x%08X\n", relocTable[rn].loc);
+    printf("        seg  = %d\n", relocTable[rn].seg);
+    printf("        typ  = ");
+    switch (relocTable[rn].typ & ~RELOC_SYM) {
+      case RELOC_H16:
+        printf("H16");
+        break;
+      case RELOC_L16:
+        printf("L16");
+        break;
+      case RELOC_R16:
+        printf("R16");
+        break;
+      case RELOC_R26:
+        printf("R26");
+        break;
+      case RELOC_W32:
+        printf("W32");
+        break;
+      default:
+        printf("\n");
+        error("unknown relocation type 0x%08X", relocTable[rn].typ);
+    }
+    printf("\n");
+    printf("        ref  = %s # %d\n",
+           relocTable[rn].typ & RELOC_SYM ? "symbol" : "segment",
+           relocTable[rn].ref);
+    printf("        add  = 0x%08X\n", relocTable[rn].add);
+  }
+}
+
+
+/**************************************************************/
+
+
+void dumpData(int sn) {
+  printf("\nData of Segment %d\n", sn);
+  if (!(segmentTable[sn].attr & SEG_ATTR_P)) {
+    printf("<not present>\n");
+    return;
+  }
+  if (segmentTable[sn].size == 0) {
+    printf("<empty>\n");
+    return;
+  }
+  if (fseek(inFile, execHeader.odata + segmentTable[sn].offs, SEEK_SET) < 0) {
+    error("cannot seek to segment data");
+  }
+  dumpBytes(segmentTable[sn].size);
 }
 
 
@@ -294,11 +408,9 @@ void dumpSymbolTable(void) {
 
 void usage(char *myself) {
   printf("Usage: %s\n", myself);
-  printf("         [-c]             dump code\n");
-  printf("         [-d]             dump data\n");
-  printf("         [-x]             dump code relocations\n");
-  printf("         [-y]             dump data relocations\n");
   printf("         [-s]             dump symbol table\n");
+  printf("         [-r]             dump relocations\n");
+  printf("         [-d <n>]         dump data in segment <n>\n");
   printf("         [-a]             dump all\n");
   printf("         file             object file to be dumped\n");
   exit(1);
@@ -308,45 +420,42 @@ void usage(char *myself) {
 int main(int argc, char *argv[]) {
   int i;
   char *argp;
-  int optionCode;
-  int optionData;
-  int optionCodeRelocs;
-  int optionDataRelocs;
-  int optionSymbolTable;
   char *inName;
+  int optionSymbols;
+  int optionRelocs;
+  int optionData;
+  int sn;
+  char *endptr;
 
-  optionCode = 0;
-  optionData = 0;
-  optionCodeRelocs = 0;
-  optionDataRelocs = 0;
-  optionSymbolTable = 0;
   inName = NULL;
+  optionSymbols = 0;
+  optionRelocs = 0;
+  optionData = 0;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (*argp == '-') {
       argp++;
       switch (*argp) {
-        case 'c':
-          optionCode = 1;
+        case 's':
+          optionSymbols = 1;
+          break;
+        case 'r':
+          optionRelocs = 1;
           break;
         case 'd':
           optionData = 1;
-          break;
-        case 'x':
-          optionCodeRelocs = 1;
-          break;
-        case 'y':
-          optionDataRelocs = 1;
-          break;
-        case 's':
-          optionSymbolTable = 1;
+          if (i == argc - 1) {
+            error("option -d is missing a segment number");
+          }
+          sn = strtol(argv[++i], &endptr, 0);
+          if (*endptr != '\0') {
+            error("cannot read segment number in option -d");
+          }
           break;
         case 'a':
-          optionCode = 1;
-          optionData = 1;
-          optionCodeRelocs = 1;
-          optionDataRelocs = 1;
-          optionSymbolTable = 1;
+          optionSymbols = 1;
+          optionRelocs = 1;
+          optionData = 2;
           break;
         default:
           usage(argv[0]);
@@ -365,21 +474,29 @@ int main(int argc, char *argv[]) {
   if (inFile == NULL) {
     error("cannot open input file '%s'", inName);
   }
+  readHeader();
   dumpHeader();
-  if (optionCode) {
-    dumpCode();
+  readSegmentTable();
+  dumpSegmentTable();
+  if (optionSymbols) {
+    readSymbolTable();
+    dumpSymbolTable();
+  }
+  if (optionRelocs) {
+    readRelocTable();
+    dumpRelocTable();
   }
   if (optionData) {
-    dumpData();
-  }
-  if (optionCodeRelocs) {
-    dumpCodeRelocs();
-  }
-  if (optionDataRelocs) {
-    dumpDataRelocs();
-  }
-  if (optionSymbolTable) {
-    dumpSymbolTable();
+    if (optionData == 1) {
+      if (sn < 0 || sn >= execHeader.nsegs) {
+        error("option -d has illegal segment number %d", sn);
+      }
+      dumpData(sn);
+    } else {
+      for (sn = 0; sn < execHeader.nsegs; sn++) {
+        dumpData(sn);
+      }
+    }
   }
   fclose(inFile);
   return 0;
