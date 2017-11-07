@@ -18,7 +18,9 @@ install:	$(BINFILES)
 		cp $(BINFILES) $(BUILD)/simtest
 
 %.bin:		%.o
-		$(BUILD)/bin/ld -h -rc 0xC0000000 -o $@ $<
+		$(BUILD)/bin/ld -s ram.lnk -o tmp $<
+		$(BUILD)/bin/load tmp $@
+		rm tmp
 
 %.o:		%.s
 		$(BUILD)/bin/as -o $@ $<

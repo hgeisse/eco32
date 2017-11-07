@@ -1,0 +1,11 @@
+#
+# ram.lnk -- linker script for programs starting at 0xC0000000
+#
+
+. = 0xC0000000;
+
+OSEG .code [APWX] {
+  ISEG .code;
+  ISEG .data;
+  ISEG .bss;
+}
