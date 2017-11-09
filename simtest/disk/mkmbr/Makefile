@@ -20,7 +20,7 @@ install:	$(BINFILES)
 %.bin:		%.o
 		$(BUILD)/bin/ld -s ram.lnk -o tmp $<
 		$(BUILD)/bin/load tmp $@
-		rm tmp
+		rm -f tmp
 
 %.o:		%.s
 		$(BUILD)/bin/as -o $@ $<
