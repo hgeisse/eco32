@@ -1,10 +1,26 @@
 #
-#
+# Makefile for C library
 #
 
-all:
+BUILD = ../../build
 
-install:
+SRCS = ctype.c string.c
+OBJS = $(patsubst %.c,%.o,$(SRCS))
+LIB = libc.a
+
+.PHONY:		all install clean
+
+all:		$(LIB)
+
+install:	$(LIB)
+		mkdir -p $(BUILD)/lib
+		cp $(LIB) $(BUILD)/lib
+
+$(LIB):		$(OBJS)
+		$(BUILD)/bin/ar -cv $(LIB) $(OBJS)
+
+%.o:		%.c
+		$(BUILD)/bin/lcc -A -o $@ -c $<
 
 clean:
-		rm -f *~
+		rm -f *~ $(OBJS) $(LIB)

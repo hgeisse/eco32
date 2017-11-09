@@ -4,13 +4,22 @@
 
 BUILD = ../build
 
+DIRS = include scripts src startup
+
+.PHONY:		all install clean
+
 all:
+		for i in $(DIRS) ; do \
+		  $(MAKE) -C $$i all ; \
+		done
 
 install:
-		mkdir -p $(BUILD)/include
-		cp ./include/* $(BUILD)/include
-		mkdir -p $(BUILD)/lib
-		cp ./scripts/* $(BUILD)/lib
+		for i in $(DIRS) ; do \
+		  $(MAKE) -C $$i install ; \
+		done
 
 clean:
+		for i in $(DIRS) ; do \
+		  $(MAKE) -C $$i clean ; \
+		done
 		rm -f *~
