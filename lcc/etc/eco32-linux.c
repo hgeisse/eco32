@@ -3,6 +3,8 @@
  * University of Applied Sciences Giessen
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 char *suffixes[] = {
@@ -10,7 +12,7 @@ char *suffixes[] = {
   /* 1 */  ".i",	/* preprocessed source files */
   /* 2 */  ".s",	/* assembly language files */
   /* 3 */  ".o",	/* object files */
-  /* 4 */  ".out",	/* ??? */
+  /* 4 */  ".out",	/* executable files */
   0
 };
 
@@ -57,11 +59,34 @@ char *ld[] = {
   LCCDIR "../lib/crt0.o",
   "$2",			/* linker input files (object) */
   "-lc",
+  "", "",		/* reserved for "-s <ldscript>" */
   0
 };
 
 extern char *concat(char *, char *);
 
+/*
+ * We recognize the following additional options:
+ *
+ *   -Wo-nostdinc	do not search the standard dirs for header files
+ *   -Wo-nostdlib	do not use the standard libs and startup files
+ *   -Wo-ldscript=...	specify linker script name
+ */
 int option(char *arg) {
+  if (strcmp(arg, "-nostdinc") == 0) {
+    include[0] = NULL;
+    return 1;
+  }
+  if (strcmp(arg, "-nostdlib") == 0) {
+    ld[1] = "";
+    ld[5] = "";
+    ld[7] = "";
+    return 1;
+  }
+  if (strncmp(arg, "-ldscript=", 10) == 0) {
+    ld[8] = "-s";
+    ld[9] = arg + 10;
+    return 1;
+  }
   return 0;
 }
