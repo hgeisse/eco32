@@ -19,7 +19,9 @@ $(DAT):		$(BIN)
 		$(BUILD)/bin/bin2dat $(BIN) $(DAT) $(ROM_SIZE_KB)
 
 $(BIN):		$(OBJ)
-		$(BUILD)/bin/ld -h -rc 0xE0000000 -o $(BIN) $(OBJ)
+		$(BUILD)/bin/ld -s rom.lnk -o tmp $(OBJ)
+		$(BUILD)/bin/load tmp $(BIN)
+		rm -f tmp
 
 $(OBJ):		$(SRC)
 		$(BUILD)/bin/as -o $(OBJ) $(SRC)

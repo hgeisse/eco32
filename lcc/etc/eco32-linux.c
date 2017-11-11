@@ -60,6 +60,7 @@ char *ld[] = {
   "$2",			/* linker input files (object) */
   "-lc",
   "", "",		/* reserved for "-s <ldscript>" */
+  "", "",		/* reserved for "-m <ldmap>" */
   0
 };
 
@@ -70,7 +71,8 @@ extern char *concat(char *, char *);
  *
  *   -Wo-nostdinc	do not search the standard dirs for header files
  *   -Wo-nostdlib	do not use the standard libs and startup files
- *   -Wo-ldscript=...	specify linker script name
+ *   -Wo-ldscript=...	specify linker script file name
+ *   -Wo-ldmap=...	specify linker map file name
  */
 int option(char *arg) {
   if (strcmp(arg, "-nostdinc") == 0) {
@@ -86,6 +88,11 @@ int option(char *arg) {
   if (strncmp(arg, "-ldscript=", 10) == 0) {
     ld[8] = "-s";
     ld[9] = arg + 10;
+    return 1;
+  }
+  if (strncmp(arg, "-ldmap=", 7) == 0) {
+    ld[10] = "-m";
+    ld[11] = arg + 7;
     return 1;
   }
   return 0;

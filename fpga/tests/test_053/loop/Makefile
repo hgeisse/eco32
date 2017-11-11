@@ -16,7 +16,9 @@ run:		$(BIN)
 		$(BUILD)/bin/sim -i -l $(BIN)
 
 $(BIN):		$(OBJ)
-		$(BUILD)/bin/ld -h -rc 0xC0000000 -o $(BIN) $(OBJ)
+		$(BUILD)/bin/ld -s ram.lnk -o tmp $(OBJ)
+		$(BUILD)/bin/load tmp $(BIN)
+		rm -f tmp
 
 $(OBJ):		$(SRC)
 		$(BUILD)/bin/as -o $(OBJ) $(SRC)
