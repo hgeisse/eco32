@@ -4,7 +4,8 @@
 
 BUILD = ../../../../build
 
-SRC = start.s main.c end.s
+SRC = start.s main.c
+EXE = hello
 BIN = hello.bin
 MAP = hello.map
 
@@ -12,10 +13,14 @@ all:		$(BIN)
 
 install:	$(BIN)
 
-$(BIN):		$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-kernel \
-		  -Wl-rc -Wl0xC0000000 -Wl-rd -Wl0xC000C000 \
-		  -Wl-m -Wl$(MAP) -o $(BIN) $(SRC)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load $(EXE) $(BIN)
+
+$(EXE):		$(SRC)
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=standalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) $(SRC)
 
 clean:
-		rm -f *~ $(BIN) $(MAP)
+		rm -f *~ $(EXE) $(BIN) $(MAP)

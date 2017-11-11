@@ -5,7 +5,8 @@
 BUILD = ../../../../build
 
 SRC = port/start.s dhry_1.c dhry_2.c port/dhry_utils.c \
-      port/iolib.c port/biolib.c port/end.s
+      port/iolib.c port/biolib.c
+EXE = dhry
 BIN = dhry.bin
 MAP = dhry.map
 
@@ -13,11 +14,16 @@ all:		$(BIN)
 
 install:	$(BIN)
 
-$(BIN):		$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-kernel -Wl-m -Wl$(MAP) \
-		  -Wl-rc -Wl0xC0000000 -Wl-rd -Wl0xC000C000 \
-		  -o $(BIN) -DNOFLOAT -DSTANDALONE -DRUNS=1000 \
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load $(EXE) $(BIN)
+
+$(EXE):		$(SRC)
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=port/standalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) \
+		  -DNOFLOAT -DSTANDALONE -DRUNS=1000 \
 		  -I. -Iport $(SRC)
 
 clean:
-		rm -f port/*~ *~ $(BIN) $(MAP)
+		rm -f port/*~ *~ $(EXE) $(BIN) $(MAP)
