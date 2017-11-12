@@ -16,11 +16,17 @@ echo0.o:	echo0.s
 echo1.o:	echo1.s
 		$(BUILD)/bin/as -o echo1.o echo1.s
 
-echo0.bin:	echo0.o
-		$(BUILD)/bin/ld -h -rc 0xE0000000 -o echo0.bin echo0.o
+echo0:		echo0.o
+		$(BUILD)/bin/ld -s rom.lnk -o echo0 echo0.o
 
-echo1.bin:	echo1.o
-		$(BUILD)/bin/ld -h -rc 0xE0000000 -o echo1.bin echo1.o
+echo1:		echo1.o
+		$(BUILD)/bin/ld -s rom.lnk -o echo1 echo1.o
+
+echo0.bin:	echo0
+		$(BUILD)/bin/load echo0 echo0.bin
+
+echo1.bin:	echo1
+		$(BUILD)/bin/load echo1 echo1.bin
 
 echo0.exo:	echo0.bin
 		$(BUILD)/bin/bin2exo -S2 0 echo0.bin echo0.exo
@@ -33,6 +39,6 @@ sertest:	sertest.c
 
 clean:
 		rm -f *~
-		rm -f echo0.o echo0.bin echo0.exo
-		rm -f echo1.o echo1.bin echo1.exo
+		rm -f echo0.o echo0 echo0.bin echo0.exo
+		rm -f echo1.o echo1 echo1.bin echo1.exo
 		rm -f sertest

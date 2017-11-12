@@ -13,14 +13,17 @@ install:	divtest.exo
 divtest.exo:	divtest.bin
 		$(BUILD)/bin/bin2exo -S2 0 divtest.bin divtest.exo
 
-divtest.bin:	divtest.o
-		$(BUILD)/bin/ld -h -rc 0xE0000000 -o divtest.bin divtest.o
+divtest.bin:	divtest
+		$(BUILD)/bin/load divtest divtest.bin
+
+divtest:	divtest.o
+		$(BUILD)/bin/ld -s rom.lnk -o divtest divtest.o
 
 divtest.o:	divtest.s
 		$(BUILD)/bin/as -o divtest.o divtest.s
 
 divtest.s:	mkdivtest
-		./mkdivtest > divtest.s
+		./mkdivtest >divtest.s
 
 mkdivtest:	mkdivtest.c
 		gcc -g -Wall -o mkdivtest mkdivtest.c
@@ -30,4 +33,4 @@ run:		divtest.bin
 
 clean:
 		rm -f *~ mkdivtest divtest.s divtest.o
-		rm -f divtest.bin divtest.exo
+		rm -f divtest divtest.bin divtest.exo
