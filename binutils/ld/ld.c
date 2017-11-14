@@ -1262,7 +1262,7 @@ void relocateModules(void) {
       if (rel->typ & RELOC_SYM) {
         base = mod->syms[rel->ref]->val;
       } else {
-        base = seg->addr;
+        base = mod->segs[rel->ref].addr;
       }
       value = base + rel->add;
       switch (rel->typ & ~RELOC_SYM) {
