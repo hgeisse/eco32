@@ -51,6 +51,7 @@ unsigned int read4(unsigned char *p) {
 #define LDERR_SSD	8	/* cannot seek to segment data */
 #define LDERR_RSD	9	/* cannot read segment data */
 #define LDERR_WBF	10	/* cannot write binary file */
+#define LDERR_SNO	11	/* segments not ordered, cannot fill gap */
 
 
 typedef struct {
@@ -184,6 +185,10 @@ int loadObj(FILE *inFile, FILE *outFile,
     }
     if (fill) {
       /* fill inter-segment gap */
+      if (vaddr > allSegs[i].vaddr) {
+        /* segments not ordered, cannot fill gap */
+        return LDERR_SNO;
+      }
       while (vaddr < allSegs[i].vaddr) {
         if (fputc(0, outFile) == EOF) {
           return LDERR_WBF;
@@ -230,6 +235,7 @@ char *loadResult[] = {
   /*  8 */  "cannot seek to segment data",
   /*  9 */  "cannot read segment data",
   /* 10 */  "cannot write binary file",
+  /* 11 */  "segments not ordered, cannot fill gap",
 };
 
 int maxResults = sizeof(loadResult) / sizeof(loadResult[0]);
