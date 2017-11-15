@@ -14,7 +14,7 @@ all:		$(BIN)
 install:	$(BIN)
 
 $(BIN):		$(EXE)
-		$(BUILD)/bin/load $(EXE) $(BIN)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
 
 $(EXE):		$(SRC)
 		$(BUILD)/bin/lcc -A \

@@ -13,6 +13,9 @@ all:		$(DAT)
 
 install:	$(DAT)
 
+run:		$(BIN)
+		$(BUILD)/bin/sim -i -s 1 -t 0 -r $(BIN)
+
 $(DAT):		$(BIN)
 		$(BUILD)/bin/bin2dat $(BIN) $(DAT) $(ROM_SIZE_KB)
 
