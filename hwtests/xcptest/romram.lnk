@@ -1,0 +1,27 @@
+#
+# romram.lnk -- linker script for "code in ROM, data in RAM" programs
+#
+
+ENTRY _bcode;
+
+. = 0xE0000000;
+
+OSEG .code [APX] {
+  _bcode = .;
+  ISEG .code;
+  _ecode = .;
+}
+
+. = 0xC03F0000;
+
+OSEG .data [APW] {
+  _bdata = .;
+  ISEG .data;
+  _edata = .;
+}
+
+OSEG .bss [AW] {
+  _bbss = .;
+  ISEG .bss;
+  _ebss = .;
+}

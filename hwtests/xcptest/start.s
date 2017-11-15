@@ -14,8 +14,11 @@
 
 ;***************************************************************
 
+	.import	_bcode
 	.import	_ecode
+	.import	_bdata
 	.import	_edata
+	.import	_bbss
 	.import	_ebss
 
 	.import	serinit
@@ -24,10 +27,6 @@
 
 	.import	main
 	.import	userMissTaken
-
-	.export	_bcode
-	.export	_bdata
-	.export	_bbss
 
 	.export	cin
 	.export	cout
@@ -110,17 +109,6 @@
 	.export	getTLB_HI
 	.export	getTLB_LO
 	.export	setTLB
-
-;***************************************************************
-
-	.code
-_bcode:
-
-	.data
-_bdata:
-
-	.bss
-_bbss:
 
 ;***************************************************************
 

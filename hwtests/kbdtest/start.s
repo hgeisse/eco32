@@ -30,8 +30,11 @@
 
 ;***************************************************************
 
+	.import	_bcode
 	.import	_ecode
+	.import	_bdata
 	.import	_edata
+	.import	_bbss
 	.import	_ebss
 
 	.import	serinit
@@ -39,10 +42,6 @@
 	.import	ser0out
 
 	.import	main
-
-	.export	_bcode
-	.export	_bdata
-	.export	_bbss
 
 	.export	cin
 	.export	cout
@@ -60,17 +59,6 @@
 	.export	setMask
 	.export	getISR
 	.export	setISR
-
-;***************************************************************
-
-	.code
-_bcode:
-
-	.data
-_bdata:
-
-	.bss
-_bbss:
 
 ;***************************************************************
 

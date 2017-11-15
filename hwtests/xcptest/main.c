@@ -187,8 +187,10 @@ static struct {
 } tests[] = {
   { "Trap instr test:\t\t\t",
     xtest1,  &xtest1x,  20, false, false, false, false, 0 },
+/* (there are no longer any illegal instructions!)
   { "Illegal instr test:\t\t\t",
     xtest2,  &xtest2x,  17, false, false, false, false, 0 },
+*/
   { "Divide instr test 1 (div):\t\t",
     xtest3,  &xtest3x,  19, false, false, false, false, 0 },
   { "Divide instr test 2 (divi):\t\t",

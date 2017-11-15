@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-KBDTEST_SRC = start.s main.c lib.c serial.s end.s
+SRC = start.s main.c lib.c serial.s
 
 .PHONY:		all install run clean
 
@@ -15,13 +15,18 @@ install:	kbdtest.exo
 kbdtest.exo:	kbdtest.bin
 		$(BUILD)/bin/bin2exo -S2 0 kbdtest.bin kbdtest.exo
 
-kbdtest.bin:	$(KBDTEST_SRC)
-		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \
-		  -Wl-m -Wlkbdtest.map -o kbdtest.bin $(KBDTEST_SRC)
+kbdtest.bin:	kbdtest
+		$(BUILD)/bin/load -p kbdtest kbdtest.bin
+
+kbdtest:	$(SRC)
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=romram.lnk \
+		  -Wo-ldmap=kbdtest.map -o kbdtest $(SRC)
 
 run:		kbdtest.bin
 		$(BUILD)/bin/sim -i -c -s 1 -t 0 -r kbdtest.bin
 
 clean:
 		rm -f *~
-		rm -f kbdtest.map kbdtest.bin kbdtest.exo
+		rm -f kbdtest kbdtest.map kbdtest.bin kbdtest.exo

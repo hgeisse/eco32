@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DSPTEST_SRC = start.s main.c lib.c serial.s end.s
+SRC = start.s main.c lib.c serial.s
 
 .PHONY:		all install run clean
 
@@ -15,13 +15,18 @@ install:	dsptest.exo
 dsptest.exo:	dsptest.bin
 		$(BUILD)/bin/bin2exo -S2 0 dsptest.bin dsptest.exo
 
-dsptest.bin:	$(DSPTEST_SRC)
-		$(BUILD)/bin/lcc -A -Wo-rom -Wl-rd -Wl0xC03F0000 \
-		  -Wl-m -Wldsptest.map -o dsptest.bin $(DSPTEST_SRC)
+dsptest.bin:	dsptest
+		$(BUILD)/bin/load -p dsptest dsptest.bin
+
+dsptest:	$(SRC)
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=romram.lnk \
+		  -Wo-ldmap=dsptest.map -o dsptest $(SRC)
 
 run:		dsptest.bin
 		$(BUILD)/bin/sim -i -c -r dsptest.bin
 
 clean:
 		rm -f *~
-		rm -f dsptest.map dsptest.bin dsptest.exo
+		rm -f dsptest dsptest.map dsptest.bin dsptest.exo
