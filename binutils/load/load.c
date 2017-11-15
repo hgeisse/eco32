@@ -14,12 +14,6 @@
 /**************************************************************/
 
 
-int verbose;
-
-
-/**************************************************************/
-
-
 void error(char *fmt, ...) {
   va_list ap;
 
@@ -83,7 +77,8 @@ int segCmp(const void *entry1, const void *entry2) {
 }
 
 
-int loadObj(FILE *inFile, FILE *outFile) {
+int loadObj(FILE *inFile, FILE *outFile,
+            int sort, int fill, int clear, int verbose) {
   ExecHeader fileHeader;
   unsigned int osegs;
   unsigned int nsegs;
@@ -174,8 +169,11 @@ int loadObj(FILE *inFile, FILE *outFile) {
     allSegs[i].data = data;
     numSegs++;
   }
-  /* sort and write segments */
-  qsort(allSegs, numSegs, sizeof(SegmentInfo), segCmp);
+  /* possibly sort segments */
+  if (sort) {
+    qsort(allSegs, numSegs, sizeof(SegmentInfo), segCmp);
+  }
+  /* write segments */
   vaddr = allSegs[0].vaddr;
   for (i = 0; i < numSegs; i++) {
     if (!(allSegs[i].attr & SEG_ATTR_A)) {
@@ -184,11 +182,17 @@ int loadObj(FILE *inFile, FILE *outFile) {
     if (allSegs[i].size == 0) {
       continue;
     }
-    while (vaddr < allSegs[i].vaddr) {
-      if (fputc(0, outFile) == EOF) {
-        return LDERR_WBF;
+    if (fill) {
+      /* fill inter-segment gap */
+      while (vaddr < allSegs[i].vaddr) {
+        if (fputc(0, outFile) == EOF) {
+          return LDERR_WBF;
+        }
+        vaddr++;
       }
-      vaddr++;
+    } else {
+      /* do not fill inter-segment gap */
+      vaddr = allSegs[i].vaddr;
     }
     size = allSegs[i].size;
     if (allSegs[i].attr & SEG_ATTR_P) {
@@ -196,9 +200,12 @@ int loadObj(FILE *inFile, FILE *outFile) {
         return LDERR_WBF;
       }
     } else {
-      for (j = 0; j < size; j++) {
-        if (fputc(0, outFile) == EOF) {
-          return LDERR_WBF;
+      if (clear) {
+        /* clear non-present segment */
+        for (j = 0; j < size; j++) {
+          if (fputc(0, outFile) == EOF) {
+            return LDERR_WBF;
+          }
         }
       }
     }
@@ -229,12 +236,14 @@ int maxResults = sizeof(loadResult) / sizeof(loadResult[0]);
 
 
 void usage(char *myself) {
-  printf("usage: %s [-v] <object file> <binary file>\n", myself);
+  printf("usage: %s [-p] [-v] <object file> <binary file>\n", myself);
   exit(1);
 }
 
 
 int main(int argc, char *argv[]) {
+  int pack;
+  int verbose;
   char *inName;
   char *outName;
   int i;
@@ -242,12 +251,16 @@ int main(int argc, char *argv[]) {
   FILE *outFile;
   int result;
 
+  pack = 0;
   verbose = 0;
   inName = NULL;
   outName = NULL;
   for (i = 1; i < argc; i++) {
     if (*argv[i] == '-') {
       /* option */
+      if (strcmp(argv[i], "-p") == 0) {
+        pack = 1;
+      } else
       if (strcmp(argv[i], "-v") == 0) {
         verbose = 1;
       } else {
@@ -279,7 +292,7 @@ int main(int argc, char *argv[]) {
   if (outFile == NULL) {
     error("cannot open binary file '%s'", outName);
   }
-  result = loadObj(inFile, outFile);
+  result = loadObj(inFile, outFile, 0, !pack, !pack, verbose);
   if (verbose || result != 0) {
     printf("%s: %s\n",
            result == 0 ? "result" : "error",
