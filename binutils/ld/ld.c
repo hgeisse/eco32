@@ -442,6 +442,8 @@ Sym *enterSymbol(char *name) {
   /* grow hash table if necessary */
   if (numEntries == numBuckets) {
     growTable();
+    /* this changed numBuckets, thus n is now invalid */
+    n = h % numBuckets;
   }
   /* allocate new sym and link to bucket list */
   p = (Sym *) memAlloc(sizeof(Sym));
