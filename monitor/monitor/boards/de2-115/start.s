@@ -27,8 +27,11 @@
 
 ;***************************************************************
 
+	.import	_bcode
 	.import	_ecode
+	.import	_bdata
 	.import	_edata
+	.import	_bbss
 	.import	_ebss
 
 	.import	kbdinit
@@ -65,10 +68,6 @@
 
 	.import	main
 
-	.export	_bcode
-	.export	_bdata
-	.export	_bbss
-
 	.export	setcon
 	.export	cinchk
 	.export	cin
@@ -86,17 +85,6 @@
 
 	.import	userContext
 	.export	resume
-
-;***************************************************************
-
-	.code
-_bcode:
-
-	.data
-_bdata:
-
-	.bss
-_bbss:
 
 ;***************************************************************
 
