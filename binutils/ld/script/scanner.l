@@ -202,86 +202,86 @@ int yywrap(void) {
 
 
 void showToken(int token) {
-  printf("TOKEN = ");
+  fprintf(stderr, "TOKEN = ");
   switch (token) {
     case 0:
-      printf("-- EOF --");
+      fprintf(stderr, "-- EOF --");
       break;
     case OR:
-      printf("OR in line %d", yylval.noVal.line);
+      fprintf(stderr, "OR in line %d", yylval.noVal.line);
       break;
     case XOR:
-      printf("XOR in line %d", yylval.noVal.line);
+      fprintf(stderr, "XOR in line %d", yylval.noVal.line);
       break;
     case AND:
-      printf("AND in line %d", yylval.noVal.line);
+      fprintf(stderr, "AND in line %d", yylval.noVal.line);
       break;
     case LSHIFT:
-      printf("LSHIFT in line %d", yylval.noVal.line);
+      fprintf(stderr, "LSHIFT in line %d", yylval.noVal.line);
       break;
     case RSHIFT:
-      printf("RSHIFT in line %d", yylval.noVal.line);
+      fprintf(stderr, "RSHIFT in line %d", yylval.noVal.line);
       break;
     case TILDE:
-      printf("TILDE in line %d", yylval.noVal.line);
+      fprintf(stderr, "TILDE in line %d", yylval.noVal.line);
       break;
     case PLUS:
-      printf("PLUS in line %d", yylval.noVal.line);
+      fprintf(stderr, "PLUS in line %d", yylval.noVal.line);
       break;
     case MINUS:
-      printf("MINUS in line %d", yylval.noVal.line);
+      fprintf(stderr, "MINUS in line %d", yylval.noVal.line);
       break;
     case STAR:
-      printf("STAR in line %d", yylval.noVal.line);
+      fprintf(stderr, "STAR in line %d", yylval.noVal.line);
       break;
     case SLASH:
-      printf("SLASH in line %d", yylval.noVal.line);
+      fprintf(stderr, "SLASH in line %d", yylval.noVal.line);
       break;
     case PERCENT:
-      printf("PERCENT in line %d", yylval.noVal.line);
+      fprintf(stderr, "PERCENT in line %d", yylval.noVal.line);
       break;
     case EQU:
-      printf("EQU in line %d", yylval.noVal.line);
+      fprintf(stderr, "EQU in line %d", yylval.noVal.line);
       break;
     case SEMIC:
-      printf("SEMIC in line %d", yylval.noVal.line);
+      fprintf(stderr, "SEMIC in line %d", yylval.noVal.line);
       break;
     case LPAREN:
-      printf("LPAREN in line %d", yylval.noVal.line);
+      fprintf(stderr, "LPAREN in line %d", yylval.noVal.line);
       break;
     case RPAREN:
-      printf("RPAREN in line %d", yylval.noVal.line);
+      fprintf(stderr, "RPAREN in line %d", yylval.noVal.line);
       break;
     case LCURL:
-      printf("LCURL in line %d", yylval.noVal.line);
+      fprintf(stderr, "LCURL in line %d", yylval.noVal.line);
       break;
     case RCURL:
-      printf("RCURL in line %d", yylval.noVal.line);
+      fprintf(stderr, "RCURL in line %d", yylval.noVal.line);
       break;
     case ENTRY:
-      printf("ENTRY in line %d", yylval.noVal.line);
+      fprintf(stderr, "ENTRY in line %d", yylval.noVal.line);
       break;
     case ISEG:
-      printf("ISEG in line %d", yylval.noVal.line);
+      fprintf(stderr, "ISEG in line %d", yylval.noVal.line);
       break;
     case OSEG:
-      printf("OSEG in line %d", yylval.noVal.line);
+      fprintf(stderr, "OSEG in line %d", yylval.noVal.line);
       break;
     case IDENT:
-      printf("IDENT in line %d, value = \"%s\"",
-             yylval.stringVal.line, yylval.stringVal.val);
+      fprintf(stderr, "IDENT in line %d, value = \"%s\"",
+              yylval.stringVal.line, yylval.stringVal.val);
       break;
     case NUMBER:
-      printf("NUMBER in line %d, value = 0x%08X",
-             yylval.intVal.line, yylval.intVal.val);
+      fprintf(stderr, "NUMBER in line %d, value = 0x%08X",
+              yylval.intVal.line, yylval.intVal.val);
       break;
     case ATTR:
-      printf("ATTR in line %d, value = 0x%08X",
-             yylval.intVal.line, yylval.intVal.val);
+      fprintf(stderr, "ATTR in line %d, value = 0x%08X",
+              yylval.intVal.line, yylval.intVal.val);
       break;
     default:
       /* this should never happen */
       error("unknown token %d in showToken", token);
   }
-  printf("\n");
+  fprintf(stderr, "\n");
 }

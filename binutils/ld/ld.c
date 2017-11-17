@@ -141,7 +141,7 @@ void showAllOsegs(char *outName) {
   char attr[10];
   Igrp *igrp;
 
-  printf("segments of output file '%s':\n", outName);
+  fprintf(stderr, "segments of output file '%s':\n", outName);
   oseg = firstOseg;
   while (oseg != NULL) {
     attr[0] = (oseg->attr & SEG_ATTR_A) ? 'A' : '-';
@@ -149,15 +149,16 @@ void showAllOsegs(char *outName) {
     attr[2] = (oseg->attr & SEG_ATTR_W) ? 'W' : '-';
     attr[3] = (oseg->attr & SEG_ATTR_X) ? 'X' : '-';
     attr[4] = '\0';
-    printf("    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-           oseg->name, oseg->addr, oseg->size, attr);
-    printf("        iseg groups:");
+    fprintf(stderr,
+            "    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+            oseg->name, oseg->addr, oseg->size, attr);
+    fprintf(stderr, "        iseg groups:");
     igrp = oseg->firstIgrp;
     while (igrp != NULL) {
-      printf(" %s", igrp->name);
+      fprintf(stderr, " %s", igrp->name);
       igrp = igrp->next;
     }
-    printf("\n");
+    fprintf(stderr, "\n");
     oseg = oseg->next;
   }
 }
@@ -618,8 +619,9 @@ void readObjModule(char *name, unsigned int inOff,
   Module *mod;
   ExecHeader hdr;
 
-  printf("reading module '%s' from file '%s', offset 0x%08X\n",
-         name, inPath, inOff);
+  fprintf(stderr,
+          "reading module '%s' from file '%s', offset 0x%08X\n",
+          name, inPath, inOff);
   mod = newModule(name);
   readObjHeader(&hdr, inOff, inFile, inPath);
   mod->strs = readObjStrings(&hdr, inOff, inFile, inPath);
@@ -798,18 +800,19 @@ void showModules(void) {
 
   mod = firstModule;
   while (mod != NULL) {
-    printf("segments of module '%s':\n", mod->name);
+    fprintf(stderr, "segments of module '%s':\n", mod->name);
     for (i = 0; i < mod->nsegs; i++) {
       attr[0] = (mod->segs[i].attr & SEG_ATTR_A) ? 'A' : '-';
       attr[1] = (mod->segs[i].attr & SEG_ATTR_P) ? 'P' : '-';
       attr[2] = (mod->segs[i].attr & SEG_ATTR_W) ? 'W' : '-';
       attr[3] = (mod->segs[i].attr & SEG_ATTR_X) ? 'X' : '-';
       attr[4] = '\0';
-      printf("    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
-             mod->strs + mod->segs[i].name,
-             mod->segs[i].addr,
-             mod->segs[i].size,
-             attr);
+      fprintf(stderr,
+              "    %s : addr = 0x%08X, size = 0x%08X, attr = [%s]\n",
+              mod->strs + mod->segs[i].name,
+              mod->segs[i].addr,
+              mod->segs[i].size,
+              attr);
     }
     mod = mod->next;
   }
@@ -1169,7 +1172,7 @@ int countUndefSymbols(void) {
 
 static void showUndefSymbol(Sym *sym, void *arg) {
   if (sym->attr & SYM_ATTR_U) {
-    printf("    %s\n", sym->name);
+    fprintf(stderr, "    %s\n", sym->name);
   }
 }
 
@@ -1183,17 +1186,18 @@ static void showSymbol(Sym *sym, void *arg) {
   Module *mod;
 
   mod = sym->mod;
-  printf("    %s : mod = %s, seg = %s, val = 0x%08X\n",
-         sym->name,
-         mod->name,
-         sym->seg == -1 ?
-           "*ABS*" : mod->strs + mod->segs[sym->seg].name,
-         sym->val);
+  fprintf(stderr,
+          "    %s : mod = %s, seg = %s, val = 0x%08X\n",
+          sym->name,
+          mod->name,
+          sym->seg == -1 ?
+            "*ABS*" : mod->strs + mod->segs[sym->seg].name,
+          sym->val);
 }
 
 
 void showAllSymbols(void) {
-  printf("global symbol table:\n");
+  fprintf(stderr, "global symbol table:\n");
   mapOverSymbols(showSymbol, NULL);
 }
 
@@ -1202,7 +1206,7 @@ void resolveSymbol(Sym *sym, void *arg) {
   Module *mod;
   SegmentRecord *seg;
 
-  printf("    %s = 0x%08X", sym->name, sym->val);
+  fprintf(stderr, "    %s = 0x%08X", sym->name, sym->val);
   mod = sym->mod;
   if (sym->seg == -1) {
     /* absolute symbol: keep value */
@@ -1211,10 +1215,11 @@ void resolveSymbol(Sym *sym, void *arg) {
     seg = mod->segs + sym->seg;
     sym->val += seg->addr;
   }
-  printf(" --(%s, %s)--> 0x%08X\n",
-         mod->name,
-         sym->seg == -1 ? "*ABS*" : mod->strs + seg->name,
-         sym->val);
+  fprintf(stderr,
+          " --(%s, %s)--> 0x%08X\n",
+          mod->name,
+          sym->seg == -1 ? "*ABS*" : mod->strs + seg->name,
+          sym->val);
 }
 
 
@@ -1223,11 +1228,11 @@ void resolveSymbols(void) {
 
   n = countUndefSymbols();
   if (n > 0) {
-    printf("The following symbols are undefined:\n");
+    fprintf(stderr, "The following symbols are undefined:\n");
     showUndefSymbols();
     error("%d undefined symbol(s)", n);
   }
-  printf("resolving symbols:\n");
+  fprintf(stderr, "resolving symbols:\n");
   mapOverSymbols(resolveSymbol, NULL);
 }
 
@@ -1250,15 +1255,16 @@ void relocateModules(void) {
 
   mod = firstModule;
   while (mod != NULL) {
-    printf("relocating module '%s':\n", mod->name);
+    fprintf(stderr, "relocating module '%s':\n", mod->name);
     for (i = 0; i < mod->nrels; i++) {
       rel = mod->rels + i;
       seg = mod->segs + rel->seg;
       loc = mod->data + seg->offs + rel->loc;
       addr = seg->addr + rel->loc;
       data = read4FromEco(loc);
-      printf("    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
-             mod->strs + seg->name, rel->loc, addr, data);
+      fprintf(stderr,
+              "    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
+              mod->strs + seg->name, rel->loc, addr, data);
       if (rel->typ & RELOC_SYM) {
         base = mod->syms[rel->ref]->val;
       } else {
@@ -1324,14 +1330,15 @@ void relocateModules(void) {
       }
       data = (data & ~mask) | (value & mask);
       write4ToEco(loc, data);
-      printf("        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
-             method,
-             rel->typ & RELOC_SYM ? "SYM" : "SEG",
-             rel->typ & RELOC_SYM ?
-               mod->syms[rel->ref]->name :
-               mod->strs + mod->segs[rel->ref].name,
-             rel->add,
-             data);
+      fprintf(stderr,
+              "        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
+              method,
+              rel->typ & RELOC_SYM ? "SYM" : "SEG",
+              rel->typ & RELOC_SYM ?
+                mod->syms[rel->ref]->name :
+                mod->strs + mod->segs[rel->ref].name,
+              rel->add,
+              data);
     }
     mod = mod->next;
   }
@@ -1551,7 +1558,7 @@ int main(int argc, char *argv[]) {
 
   /* ----------- start discard ---------- */
   for (i = 0; i < argc; i++) {
-    printf("arg %d: %s\n", i, argv[i]);
+    fprintf(stderr, "arg %d: %s\n", i, argv[i]);
   }
   /* -----------  end discard  ---------- */
   scrName = DEFAULT_SCRIPT_NAME;

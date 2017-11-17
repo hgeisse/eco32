@@ -39,11 +39,11 @@ ScriptNode *readScript(char *fileName) {
 
 
 void showScript(ScriptNode *script) {
-  printf("linker script:\n");
+  fprintf(stderr, "linker script:\n");
   if (script == NULL) {
-    printf("<empty>\n");
+    fprintf(stderr, "<empty>\n");
   } else {
     showNode(script, 0);
-    printf("\n");
+    fprintf(stderr, "\n");
   }
 }

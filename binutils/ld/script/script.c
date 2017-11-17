@@ -129,18 +129,18 @@ static void indent(int n) {
   int i;
 
   for (i = 0; i < n; i++) {
-    printf("  ");
+    fprintf(stderr, "  ");
   }
 }
 
 
 static void say(char *s) {
-  printf("%s", s);
+  fprintf(stderr, "%s", s);
 }
 
 
 static void sayInt(unsigned int i) {
-  printf("0x%08X", i);
+  fprintf(stderr, "0x%08X", i);
 }
 
 
