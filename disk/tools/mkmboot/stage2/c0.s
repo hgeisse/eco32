@@ -1,16 +1,15 @@
 ;
-; c0.s -- startup code and begin-of-segment labels
+; c0.s -- startup code
 ;
 
-	.import	main
-
+	.import	_bcode
 	.import	_ecode
+	.import	_bdata
 	.import	_edata
+	.import	_bbss
 	.import	_ebss
 
-	.export	_bcode
-	.export	_bdata
-	.export	_bbss
+	.import	main
 
 	.import	bootDisk
 	.import	startSector
@@ -18,7 +17,6 @@
 	.import	entryPoint
 
 	.code
-_bcode:
 
 start:
 	add	$10,$0,_bdata		; copy data segment
@@ -51,9 +49,3 @@ clrtest:
 	ldw	$18,$0,numSectors
 	ldw	$31,$0,entryPoint	; jump to loaded program
 	jr	$31
-
-	.data
-_bdata:
-
-	.bss
-_bbss:
