@@ -14,7 +14,7 @@
 #include "readscript.h"
 
 
-#define DEFAULT_SCRIPT_NAME	"standard.lnk"
+#define DEFAULT_SCRIPT_NAME	"default.lnk"
 #define DEFAULT_OUT_NAME	"a.out"
 
 #define WORD_ALIGN(x)		(((x) + 0x03) & ~0x03)
