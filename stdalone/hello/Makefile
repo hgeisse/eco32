@@ -6,6 +6,7 @@ BUILD = ../../build
 
 SRC = hello.s
 OBJ = hello.o
+EXE = hello
 BIN = hello.bin
 MAP = hello.map
 EXO = hello.exo
@@ -26,12 +27,15 @@ run:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(OBJ)
-		$(BUILD)/bin/ld -h -rc 0xC0010000 \
-		  -m $(MAP) -o $(BIN) $(OBJ)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(OBJ)
+		$(BUILD)/bin/ld -s stdalone.lnk \
+		  -m $(MAP) -o $(EXE) $(OBJ)
 
 $(OBJ):		$(SRC)
 		$(BUILD)/bin/as -o $(OBJ) $(SRC)
 
 clean:
-		rm -f *~ $(OBJ) $(BIN) $(MAP) $(EXO)
+		rm -f *~ $(OBJ) $(EXE) $(BIN) $(MAP) $(EXO)

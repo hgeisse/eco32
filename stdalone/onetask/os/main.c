@@ -156,7 +156,7 @@ void initInterrupts(void) {
 /**************************************************************/
 
 
-void loadTask(unsigned char *code,
+void loadTask(unsigned char *code, unsigned char *data,
               int csize, unsigned int physCodeAddr,
               int dsize, unsigned int physDataAddr,
               int bsize) {
@@ -169,7 +169,7 @@ void loadTask(unsigned char *code,
   }
   virtLoadAddr = (unsigned char *) (0xC0000000 | physDataAddr);
   for (i = 0; i < dsize; i++) {
-    *virtLoadAddr++ = *code++;
+    *virtLoadAddr++ = *data++;
   }
   for (i = 0; i < bsize; i++) {
     *virtLoadAddr++ = '\0';
@@ -215,36 +215,66 @@ unsigned int getNumber(unsigned char *p) {
 
 
 void main(void) {
+  unsigned int cframe;
+  unsigned int dframe;
+  unsigned int sframe;
   unsigned int magic;
+  unsigned int nsegs;
+  unsigned int osegs;
+  unsigned int odata;
+  unsigned int coffs;
+  unsigned int caddr;
   unsigned int csize;
+  unsigned int doffs;
+  unsigned int daddr;
   unsigned int dsize;
+  unsigned int boffs;
+  unsigned int baddr;
   unsigned int bsize;
 
   printf("\n");
   printf("OS: initializing interrupts\n");
   initInterrupts();
   setISR(20, trapISR);
-  /* load code at 256 k, data at (256 + 16) k */
+  /* load code at 256 k, data at (256 + 16) k, stack at (256 + 64) k */
+  cframe = 256 / 4;
+  dframe = (256 + 16) / 4;
+  sframe = (256 + 64) / 4;
   printf("OS: loading task\n");
-  magic = getNumber(taskCode + 0);
-  csize = getNumber(taskCode + 4);
-  dsize = getNumber(taskCode + 8);
-  bsize = getNumber(taskCode + 12);
-  if (magic != 0x1AA09232) {
+  magic = getNumber(taskCode + 0 * 4);
+  nsegs = getNumber(taskCode + 2 * 4);
+  if (magic != 0x8F0B45C0 || nsegs != 3) {
     printf("Error: Load module is not executable!\n");
     while (1) ;
   }
-  printf("(csize = 0x%x, dsize = 0x%x, bsize = 0x%x)\n",
-         csize, dsize, bsize);
-  loadTask(taskCode + 8 * sizeof(unsigned int),
-           csize, 64 << 12,
-           dsize, 68 << 12,
+  osegs = getNumber(taskCode + 1 * 4);
+  odata = getNumber(taskCode + 7 * 4);
+  printf("osegs = 0x%x, odata = 0x%x\n", osegs, odata);
+  coffs = getNumber(taskCode + osegs + 0 * (5 * 4) + 1 * 4);
+  caddr = getNumber(taskCode + osegs + 0 * (5 * 4) + 2 * 4);
+  csize = getNumber(taskCode + osegs + 0 * (5 * 4) + 3 * 4);
+  printf("coffs = 0x%x, caddr = 0x%x, csize = 0x%x\n",
+         coffs, caddr, csize);
+  doffs = getNumber(taskCode + osegs + 1 * (5 * 4) + 1 * 4);
+  daddr = getNumber(taskCode + osegs + 1 * (5 * 4) + 2 * 4);
+  dsize = getNumber(taskCode + osegs + 1 * (5 * 4) + 3 * 4);
+  printf("doffs = 0x%x, daddr = 0x%x, dsize = 0x%x\n",
+         doffs, daddr, dsize);
+  boffs = getNumber(taskCode + osegs + 2 * (5 * 4) + 1 * 4);
+  baddr = getNumber(taskCode + osegs + 2 * (5 * 4) + 2 * 4);
+  bsize = getNumber(taskCode + osegs + 2 * (5 * 4) + 3 * 4);
+  printf("boffs = 0x%x, baddr = 0x%x, bsize = 0x%x\n",
+         boffs, baddr, bsize);
+  loadTask(taskCode + odata + coffs,
+           taskCode + odata + doffs,
+           csize, cframe << 12,
+           dsize, dframe << 12,
            bsize);
   printf("OS: presetting TLB\n");
   flushTLB();
-  setTLB(5, 0x00000000, 64 << 12 | 0x01);
-  setTLB(27, (csize + 0x00000FFF) & 0xFFFFF000, 68 << 12 | 0x03);
-  setTLB(22, 0x7FFFF000, 80 << 12 | 0x03);
+  setTLB(5, caddr, cframe << 12 | 0x01);
+  setTLB(27, daddr, dframe << 12 | 0x03);
+  setTLB(22, 0x7FFFF000, sframe << 12 | 0x03);
   printf("OS: starting task\n");
-  startTask(80 << 12);  /* stack at (256 + 64) k */
+  startTask(sframe << 12);
 }

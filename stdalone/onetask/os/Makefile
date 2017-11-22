@@ -1,6 +1,7 @@
 BUILD = ../../../build
 
-SRC = start.s main.c end.s
+SRC = start.s main.c
+EXE = onetask
 BIN = onetask.bin
 MAP = onetask.map
 EXO = onetask.exo
@@ -13,12 +14,17 @@ run:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(SRC) task.dump
-		$(BUILD)/bin/lcc -A -Wo-kernel \
-		  -Wl-m -Wl$(MAP) -o $(BIN) $(SRC)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(SRC) task.dump
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=stdalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) $(SRC)
 
 task.dump:
 		../dump/dump ../task/task task.dump
 
 clean:
-		rm -f *~ task.dump $(BIN) $(MAP) $(EXO)
+		rm -f *~ task.dump $(EXE) $(BIN) $(MAP) $(EXO)

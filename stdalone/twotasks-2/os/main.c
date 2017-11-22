@@ -210,40 +210,62 @@ unsigned int getNumber(unsigned char *p) {
 }
 
 
-unsigned int **loadTask(unsigned char *code,
+unsigned int **loadTask(unsigned char *exec,
                         unsigned int physCodeAddr,
                         unsigned int physDataAddr,
                         unsigned int physStackAddr) {
   unsigned int magic;
+  unsigned int nsegs;
+  unsigned int osegs;
+  unsigned int odata;
+  unsigned int coffs;
+  unsigned int caddr;
   unsigned int csize;
+  unsigned int doffs;
+  unsigned int daddr;
   unsigned int dsize;
+  unsigned int boffs;
+  unsigned int baddr;
   unsigned int bsize;
+  unsigned char *code;
+  unsigned char *data;
   unsigned char *virtLoadAddr;
   int i;
   unsigned int **pageDir;
 
-  magic = getNumber(code);
-  code += sizeof(unsigned int);
-  csize = getNumber(code);
-  code += sizeof(unsigned int);
-  dsize = getNumber(code);
-  code += sizeof(unsigned int);
-  bsize = getNumber(code);
-  code += sizeof(unsigned int);
-  if (magic != 0x1AA09232) {
+  magic = getNumber(exec + 0 * 4);
+  nsegs = getNumber(exec + 2 * 4);
+  if (magic != 0x8F0B45C0 || nsegs != 3) {
     printf("Error: Load module is not executable!\n");
     while (1) ;
   }
-  code += 4 * sizeof(unsigned int);
-  printf("(csize = 0x%x, dsize = 0x%x, bsize = 0x%x)\n",
-         csize, dsize, bsize);
+  osegs = getNumber(exec + 1 * 4);
+  odata = getNumber(exec + 7 * 4);
+  printf("osegs = 0x%x, odata = 0x%x\n", osegs, odata);
+  coffs = getNumber(exec + osegs + 0 * (5 * 4) + 1 * 4);
+  caddr = getNumber(exec + osegs + 0 * (5 * 4) + 2 * 4);
+  csize = getNumber(exec + osegs + 0 * (5 * 4) + 3 * 4);
+  printf("coffs = 0x%x, caddr = 0x%x, csize = 0x%x\n",
+         coffs, caddr, csize);
+  doffs = getNumber(exec + osegs + 1 * (5 * 4) + 1 * 4);
+  daddr = getNumber(exec + osegs + 1 * (5 * 4) + 2 * 4);
+  dsize = getNumber(exec + osegs + 1 * (5 * 4) + 3 * 4);
+  printf("doffs = 0x%x, daddr = 0x%x, dsize = 0x%x\n",
+         doffs, daddr, dsize);
+  boffs = getNumber(exec + osegs + 2 * (5 * 4) + 1 * 4);
+  baddr = getNumber(exec + osegs + 2 * (5 * 4) + 2 * 4);
+  bsize = getNumber(exec + osegs + 2 * (5 * 4) + 3 * 4);
+  printf("boffs = 0x%x, baddr = 0x%x, bsize = 0x%x\n",
+         boffs, baddr, bsize);
+  code = exec + odata + coffs;
+  data = exec + odata + doffs;
   virtLoadAddr = (unsigned char *) (0xC0000000 | physCodeAddr);
   for (i = 0; i < csize; i++) {
     *virtLoadAddr++ = *code++;
   }
   virtLoadAddr = (unsigned char *) (0xC0000000 | physDataAddr);
   for (i = 0; i < dsize; i++) {
-    *virtLoadAddr++ = *code++;
+    *virtLoadAddr++ = *data++;
   }
   for (i = 0; i < bsize; i++) {
     *virtLoadAddr++ = '\0';

@@ -186,38 +186,60 @@ unsigned int getNumber(unsigned char *p) {
 }
 
 
-void loadTask(unsigned char *code,
+void loadTask(unsigned char *exec,
               unsigned int physCodeAddr,
               unsigned int physDataAddr) {
   unsigned int magic;
+  unsigned int nsegs;
+  unsigned int osegs;
+  unsigned int odata;
+  unsigned int coffs;
+  unsigned int caddr;
   unsigned int csize;
+  unsigned int doffs;
+  unsigned int daddr;
   unsigned int dsize;
+  unsigned int boffs;
+  unsigned int baddr;
   unsigned int bsize;
+  unsigned char *code;
+  unsigned char *data;
   unsigned char *virtLoadAddr;
   int i;
 
-  magic = getNumber(code);
-  code += sizeof(unsigned int);
-  csize = getNumber(code);
-  code += sizeof(unsigned int);
-  dsize = getNumber(code);
-  code += sizeof(unsigned int);
-  bsize = getNumber(code);
-  code += sizeof(unsigned int);
-  if (magic != 0x1AA09232) {
+  magic = getNumber(exec + 0 * 4);
+  nsegs = getNumber(exec + 2 * 4);
+  if (magic != 0x8F0B45C0 || nsegs != 3) {
     printf("Error: Load module is not executable!\n");
     while (1) ;
   }
-  code += 4 * sizeof(unsigned int);
-  printf("(csize = 0x%x, dsize = 0x%x, bsize = 0x%x)\n",
-         csize, dsize, bsize);
+  osegs = getNumber(exec + 1 * 4);
+  odata = getNumber(exec + 7 * 4);
+  printf("osegs = 0x%x, odata = 0x%x\n", osegs, odata);
+  coffs = getNumber(exec + osegs + 0 * (5 * 4) + 1 * 4);
+  caddr = getNumber(exec + osegs + 0 * (5 * 4) + 2 * 4);
+  csize = getNumber(exec + osegs + 0 * (5 * 4) + 3 * 4);
+  printf("coffs = 0x%x, caddr = 0x%x, csize = 0x%x\n",
+         coffs, caddr, csize);
+  doffs = getNumber(exec + osegs + 1 * (5 * 4) + 1 * 4);
+  daddr = getNumber(exec + osegs + 1 * (5 * 4) + 2 * 4);
+  dsize = getNumber(exec + osegs + 1 * (5 * 4) + 3 * 4);
+  printf("doffs = 0x%x, daddr = 0x%x, dsize = 0x%x\n",
+         doffs, daddr, dsize);
+  boffs = getNumber(exec + osegs + 2 * (5 * 4) + 1 * 4);
+  baddr = getNumber(exec + osegs + 2 * (5 * 4) + 2 * 4);
+  bsize = getNumber(exec + osegs + 2 * (5 * 4) + 3 * 4);
+  printf("boffs = 0x%x, baddr = 0x%x, bsize = 0x%x\n",
+         boffs, baddr, bsize);
+  code = exec + odata + coffs;
+  data = exec + odata + doffs;
   virtLoadAddr = (unsigned char *) (0xC0000000 | physCodeAddr);
   for (i = 0; i < csize; i++) {
     *virtLoadAddr++ = *code++;
   }
   virtLoadAddr = (unsigned char *) (0xC0000000 | physDataAddr);
   for (i = 0; i < dsize; i++) {
-    *virtLoadAddr++ = *code++;
+    *virtLoadAddr++ = *data++;
   }
   for (i = 0; i < bsize; i++) {
     *virtLoadAddr++ = '\0';
@@ -239,15 +261,24 @@ void trapISR(int irq, unsigned int *registers) {
 /**************************************************************/
 
 
+#define T1C_FRM		64		/* code at 256 k */
+#define T1D_FRM		68		/* data at 272 k */
+#define T1S_FRM		80		/* user-mode stack at 320 k */
+
+#define T2C_FRM		96		/* code at 256 k */
+#define T2D_FRM		100		/* data at 272 k */
+#define T2S_FRM		112		/* user-mode stack at 320 k */
+
+
 void missISR(int irq, unsigned int *registers) {
   if (currentTask == 1) {
-    setTLB(5, 0x00000000, 64 << 12 | 0x01);	/* code at 256 k */
-    setTLB(27, 0x00001000, 68 << 12 | 0x03);	/* data at 272 k */
-    setTLB(22, 0x7FFFF000, 80 << 12 | 0x03);	/* user-mode stack at 320 k */
+    setTLB(5, 0x00000000, T1C_FRM << 12 | 0x01);	/* code */
+    setTLB(27, 0x00001000, T1D_FRM << 12 | 0x03);	/* data */
+    setTLB(22, 0x7FFFF000, T1S_FRM << 12 | 0x03);	/* stack */
   } else if (currentTask == 2) {
-    setTLB(5, 0x00000000, 96 << 12 | 0x01);	/* code at 384 k */
-    setTLB(27, 0x00001000, 100 << 12 | 0x03);	/* data at 400 k */
-    setTLB(22, 0x7FFFF000, 112 << 12 | 0x03);	/* user-mode stack at 448 k */
+    setTLB(5, 0x00000000, T2C_FRM << 12 | 0x01);	/* code */
+    setTLB(27, 0x00001000, T2D_FRM << 12 | 0x03);	/* data */
+    setTLB(22, 0x7FFFF000, T2S_FRM << 12 | 0x03);	/* stack */
   }
 }
 
@@ -291,7 +322,7 @@ void timerISR(int irq, unsigned int *registers) {
     if (!task1Started) {
       /* load & start task1 */
       printf("\nOS: loading task1\n");
-      loadTask(task1Code, 64 << 12, 68 << 12);
+      loadTask(task1Code, T1C_FRM << 12, T1D_FRM << 12);
       printf("OS: starting task1\n");
       task1Started = 1;
       currentTask = 1;
@@ -303,7 +334,7 @@ void timerISR(int irq, unsigned int *registers) {
     if (!task2Started) {
       /* load & start task2 */
       printf("\nOS: loading task2\n");
-      loadTask(task2Code, 96 << 12, 100 << 12);
+      loadTask(task2Code, T2C_FRM << 12, T2D_FRM << 12);
       printf("OS: starting task2\n");
       task2Started = 1;
       currentTask = 2;

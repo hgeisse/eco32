@@ -2,16 +2,15 @@
 ; start.s -- startup code
 ;
 
+	.import	_bcode
+	.import	_ecode
+	.import	_bdata
+	.import	_edata
+	.import	_bbss
+	.import	_ebss
 	.import	main
 	.import	task0StkTop
 	.import	currentStkTop
-	.import	_ecode
-	.import	_edata
-	.import	_ebss
-
-	.export	_bcode
-	.export	_bdata
-	.export	_bbss
 
 	.export	enable
 	.export	disable
@@ -21,15 +20,6 @@
 	.export	setISR
 	.export	startTask
 	.export	setTLB
-
-	.code
-_bcode:
-
-	.data
-_bdata:
-
-	.bss
-_bbss:
 
 	.code
 

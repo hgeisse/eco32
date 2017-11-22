@@ -1,0 +1,27 @@
+#
+# default.lnk -- default linker script
+#
+
+ENTRY _start;
+
+. = 0x00000000;
+
+OSEG .code [APX] {
+  _bcode = .;
+  ISEG .code;
+  _ecode = .;
+}
+
+. = (. + 0xFFF) & ~0xFFF;
+
+OSEG .data [APW] {
+  _bdata = .;
+  ISEG .data;
+  _edata = .;
+}
+
+OSEG .bss [AW] {
+  _bbss = .;
+  ISEG .bss;
+  _ebss = .;
+}
