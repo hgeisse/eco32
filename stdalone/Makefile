@@ -1,13 +1,13 @@
 #
 # Makefile for building standalone test programs
-# (which are to be loaded from disk by a boot-loader)
+# (see README for different ways to run them)
 #
 
 BUILD = ../build
 
 DIRS = hello hello2 bottles memsize memtest onetask twotasks-1 \
-       twotasks-2 dskchk dskchk2 wrtmbr dmpmbr mkpart shpart dactest \
-       dhrystone sdctest atomics
+       twotasks-2 dskchk dskchk2 wrtmbr dmpmbr mkpart shpart \
+       dactest dhrystone sdctest atomics
 
 .PHONY:		all install clean
 
