@@ -5,7 +5,8 @@
 
 BUILD = ../../build
 
-SRC = start.s main.c iolib.c biolib.c end.s
+SRC = start.s main.c iolib.c biolib.c
+EXE = mkpart
 BIN = mkpart.bin
 MAP = mkpart.map
 EXO = mkpart.exo
@@ -27,9 +28,14 @@ run:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(SRC) mboot.dump
-		$(BUILD)/bin/lcc -A -Wo-kernel \
-		  -Wl-m -Wl$(MAP) -o $(BIN) $(SRC)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(SRC) mboot.dump
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=stdalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) $(SRC)
 
 mboot.dump:	dump/dump mboot
 		./dump/dump mboot mboot.dump
@@ -52,4 +58,5 @@ clean:
 		$(MAKE) -C dump clean
 		$(MAKE) -C mkptbl clean
 		$(MAKE) -C mkmboot clean
-		rm -f *~ mboot mboot.dump $(BIN) $(MAP) $(EXO)
+		rm -f *~ mboot mboot.dump
+		rm -f $(EXE) $(BIN) $(MAP) $(EXO)

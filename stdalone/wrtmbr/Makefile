@@ -4,7 +4,8 @@
 
 BUILD = ../../build
 
-SRC = start.s main.c end.s
+SRC = start.s main.c
+EXE = wrtmbr
 BIN = wrtmbr.bin
 MAP = wrtmbr.map
 EXO = wrtmbr.exo
@@ -26,13 +27,18 @@ run:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(SRC) mbr/mbr.dump
-		$(BUILD)/bin/lcc -A -Wo-kernel \
-		  -Wl-m -Wl$(MAP) -o $(BIN) $(SRC)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(SRC) mbr/mbr.dump
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=stdalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) $(SRC)
 
 mbr/mbr.dump:
 		$(MAKE) -C mbr
 
 clean:
 		$(MAKE) -C mbr clean
-		rm -f *~ $(BIN) $(MAP) $(EXO)
+		rm -f *~ $(EXE) $(BIN) $(MAP) $(EXO)

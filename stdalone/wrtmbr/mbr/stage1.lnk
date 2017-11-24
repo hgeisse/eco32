@@ -1,0 +1,14 @@
+#
+# stage1.lnk -- linker script for bootstrap stage1
+#
+
+ENTRY _start;
+
+. = 0xC0010000;
+
+OSEG .code [APWX] {
+  _start = .;
+  ISEG .code;
+  ISEG .data;
+  ISEG .bss;
+}

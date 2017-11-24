@@ -2,14 +2,13 @@
 ; start.s -- startup code
 ;
 
-	.import	main
-	.import	_ecode
-	.import	_edata
-	.import	_ebss
-
 	.export	_bcode
+	.import	_ecode
 	.export	_bdata
+	.import	_edata
 	.export	_bbss
+	.import	_ebss
+	.import	main
 
 	.export	enable
 	.export	disable
@@ -17,15 +16,6 @@
 	.export	setMask
 	.export	getISR
 	.export	setISR
-
-	.code
-_bcode:
-
-	.data
-_bdata:
-
-	.bss
-_bbss:
 
 	.code
 

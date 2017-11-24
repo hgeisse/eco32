@@ -1,0 +1,27 @@
+#
+# stage2.lnk -- linker script for bootstrap stage2
+#
+
+ENTRY _bcode;
+
+. = 0xC0011000;
+
+OSEG .code [APX] {
+  _bcode = .;
+  ISEG .code;
+  _ecode = .;
+}
+
+. = (. + 0xFFF) & ~0xFFF;
+
+OSEG .data [APW] {
+  _bdata = .;
+  ISEG .data;
+  _edata = .;
+}
+
+OSEG .bss [AW] {
+  _bbss = .;
+  ISEG .bss;
+  _ebss = .;
+}
