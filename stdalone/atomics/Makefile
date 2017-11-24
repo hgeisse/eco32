@@ -4,7 +4,8 @@
 
 BUILD = ../../build
 
-SRC = start.s main.c end.s
+SRC = start.s main.c
+EXE = atomic
 BIN = atomics.bin
 MAP = atomics.map
 EXO = atomics.exo
@@ -29,9 +30,14 @@ run2:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-kernel \
-		  -Wl-m -Wl$(MAP) -o $(BIN) $(SRC)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(SRC)
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=stdalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) $(SRC)
 
 clean:
-		rm -f *~ $(BIN) $(MAP) $(EXO)
+		rm -f *~ $(EXE) $(BIN) $(MAP) $(EXO)

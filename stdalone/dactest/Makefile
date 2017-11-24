@@ -8,6 +8,7 @@ SRC1 = dactest.s
 OBJ1 = dactest.o
 SRC2 = bell.s
 OBJ2 = bell.o
+EXE = dactest
 BIN = dactest.bin
 MAP = dactest.map
 EXO = dactest.exo
@@ -28,9 +29,12 @@ run:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(OBJ1) $(OBJ2)
-		$(BUILD)/bin/ld -h -rc 0xC0010000 \
-		  -m $(MAP) -o $(BIN) $(OBJ1) $(OBJ2)
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(OBJ1) $(OBJ2)
+		$(BUILD)/bin/ld -s stdalone.lnk \
+		  -m $(MAP) -o $(EXE) $(OBJ1) $(OBJ2)
 
 $(OBJ1):	$(SRC1)
 		$(BUILD)/bin/as -o $(OBJ1) $(SRC1)
@@ -46,5 +50,5 @@ genbell:	genbell.c
 
 clean:
 		rm -f genbell $(SRC2) $(OBJ2)
-		rm -f $(OBJ1) $(BIN) $(MAP) $(EXO)
+		rm -f $(OBJ1) $(EXE) $(BIN) $(MAP) $(EXO)
 		rm -f *~

@@ -5,7 +5,8 @@
 BUILD = ../../build
 
 SRC = port/start.s dhry_1.c dhry_2.c port/dhry_utils.c \
-      port/iolib.c port/biolib.c port/end.s
+      port/iolib.c port/biolib.c
+EXE = dhrystone
 BIN = dhrystone.bin
 MAP = dhrystone.map
 EXO = dhrystone.exo
@@ -26,10 +27,16 @@ run:		$(BIN)
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)
 
-$(BIN):		$(SRC)
-		$(BUILD)/bin/lcc -A -Wo-kernel -Wl-m -Wl$(MAP) \
-		  -o $(BIN) -DNOFLOAT -DSTANDALONE -DRUNS=100000 \
+$(BIN):		$(EXE)
+		$(BUILD)/bin/load -p $(EXE) $(BIN)
+
+$(EXE):		$(SRC)
+		$(BUILD)/bin/lcc -A \
+		  -Wo-nostdinc -Wo-nostdlib \
+		  -Wo-ldscript=port/stdalone.lnk \
+		  -Wo-ldmap=$(MAP) -o $(EXE) \
+		  -DNOFLOAT -DSTANDALONE -DRUNS=100000 \
 		  -I. -Iport $(SRC)
 
 clean:
-		rm -f port/*~ *~ $(BIN) $(MAP) $(EXO)
+		rm -f port/*~ *~ $(EXE) $(BIN) $(MAP) $(EXO)
