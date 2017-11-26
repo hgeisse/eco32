@@ -1,5 +1,6 @@
-1. Write ECO32 and one of 'echo0' or 'echo1' to the on-board Flash ROM.
-2. Press and release the ECO32 reset button.
-3. Start 'sertest' on the PC. Choose the serial port according to the
+1. Write one of 'echo0' or 'echo1' to the on-board Flash ROM.
+2. Load ECO32 into the FPGA.
+3. Press and release the ECO32 reset button.
+4. Start 'sertest' on the PC. Choose the serial port according to the
    serial line the board is responding on. Every 10000 bytes 'sertest'
    shows a report.
