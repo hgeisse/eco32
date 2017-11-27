@@ -42,5 +42,5 @@ dist:		clean
 		(cd .. ; \
 		 tar --exclude-vcs -cvf \
 		   eco32-$(VERSION).tar \
-		   eco32-$(VERSION)/* ; \
+		   eco32/* ; \
 		 gzip -f eco32-$(VERSION).tar)
