@@ -1,0 +1,14 @@
+#
+# rom.lnk -- linker script for ROMs
+#
+
+ENTRY _start;
+
+. = 0xE0000000;
+
+OSEG .code [APWX] {
+  _start = .;
+  ISEG .code;
+  ISEG .data;
+  ISEG .bss;
+}
