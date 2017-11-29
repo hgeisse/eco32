@@ -17,23 +17,22 @@
 static int debugTokens = 0;
 
 
-ScriptNode *readScript(char *fileName) {
+ScriptNode *readScript(FILE *scrFile) {
+  FILE *yyinOld;
   int token;
 
-  yyin = fopen(fileName, "r");
-  if (yyin == NULL) {
-    error("cannot open linker script file '%s'", fileName);
-  }
+  yyinOld = yyin;
+  yyin = scrFile;
   if (debugTokens) {
     do {
       token = yylex();
       showToken(token);
     } while (token != 0);
-    fclose(yyin);
+    yyin = yyinOld;
     return NULL;
   }
   yyparse();
-  fclose(yyin);
+  yyin = yyinOld;
   return parserScriptTree;
 }
 

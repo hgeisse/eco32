@@ -10,7 +10,7 @@
 #include "script.h"
 
 
-ScriptNode *readScript(char *fileName);
+ScriptNode *readScript(FILE *scrFile);
 void showScript(ScriptNode *script);
 
 
