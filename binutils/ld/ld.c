@@ -40,8 +40,15 @@ typedef struct oseg {
 } Oseg;
 
 
+typedef struct dir {
+  char *path;
+  struct dir *next;
+} Dir;
+
+
 typedef struct file {
   char *path;
+  int searchDirs;
   struct file *next;
 } File;
 
@@ -167,15 +174,39 @@ void showAllOsegs(char *outName) {
 /**************************************************************/
 
 
+Dir *firstDir = NULL;
+Dir *lastDir;
+
+
+Dir *newDir(char *path) {
+  Dir *dir;
+
+  dir = memAlloc(sizeof(Dir));
+  dir->path = path;
+  dir->next = NULL;
+  if (firstDir == NULL) {
+    firstDir = dir;
+  } else {
+    lastDir->next = dir;
+  }
+  lastDir = dir;
+  return dir;
+}
+
+
+/**************************************************************/
+
+
 File *firstFile = NULL;
 File *lastFile;
 
 
-File *newFile(char *path) {
+File *newFile(char *path, int searchDirs) {
   File *file;
 
   file = memAlloc(sizeof(File));
   file->path = path;
+  file->searchDirs = searchDirs;
   file->next = NULL;
   if (firstFile == NULL) {
     firstFile = file;
@@ -757,6 +788,46 @@ void readArchive(FILE *inFile, char *inPath) {
 /**************************************************************/
 
 
+FILE *openFile(char *name, int searchDirs) {
+  FILE *file;
+  int n1, n2;
+  Dir *dir;
+  char *path;
+
+  if (!searchDirs) {
+    fprintf(stderr,
+            "trying to open file '%s' in current directory\n",
+            name);
+    file = fopen(name, "r");
+    return file;
+  }
+  n2 = strlen(name);
+  dir = firstDir;
+  while (dir != NULL) {
+    n1 = strlen(dir->path);
+    path = memAlloc(n1 + 1 + n2 + 1);
+    strcpy(path, dir->path);
+    if (path[n1 - 1] != '/') {
+      strcat(path, "/");
+    }
+    strcat(path, name);
+    fprintf(stderr,
+            "trying to open file '%s' in directory '%s'\n",
+            name, dir->path);
+    file = fopen(path, "r");
+    memFree(path);
+    if (file != NULL) {
+      return file;
+    }
+    dir = dir->next;
+  }
+  return NULL;
+}
+
+
+/**************************************************************/
+
+
 void readFiles(void) {
   File *file;
   FILE *inFile;
@@ -765,7 +836,7 @@ void readFiles(void) {
 
   file = firstFile;
   while (file != NULL) {
-    inFile = fopen(file->path, "r");
+    inFile = openFile(file->path, file->searchDirs);
     if (inFile == NULL) {
       error("cannot open input file '%s'", file->path);
     }
@@ -1557,6 +1628,7 @@ int main(int argc, char *argv[]) {
   char *mapName;
   ScriptNode *script;
   char *libName;
+  FILE *scrFile;
 
   /* ----------- start discard ---------- */
   for (i = 0; i < argc; i++) {
@@ -1595,6 +1667,7 @@ int main(int argc, char *argv[]) {
           if (*argp == '\0') {
             usage(argv[0]);
           }
+          newDir(argp);
           break;
         case 'l':
           argp++;
@@ -1605,20 +1678,28 @@ int main(int argc, char *argv[]) {
           strcpy(libName, "lib");
           strcat(libName, argp);
           strcat(libName, ".a");
-          newFile(libName);
+          newFile(libName, 1);
           break;
         default:
           usage(argv[0]);
       }
     } else {
       /* file */
-      newFile(argp);
+      newFile(argp, 0);
     }
   }
   if (firstFile == NULL) {
     error("no input files");
   }
-  script = readScript(scrName);
+  scrFile = openFile(scrName, 0);
+  if (scrFile == NULL) {
+    scrFile = openFile(scrName, 1);
+    if (scrFile == NULL) {
+      error("cannot open linker script file '%s'", scrName);
+    }
+  }
+  script = readScript(scrFile);
+  fclose(scrFile);
   showScript(script);
   readFiles();
   allocateStorage(script);
