@@ -1,10 +1,11 @@
 #
-# standard.lnk -- standard linker script
+# default.lnk -- default linker script for standalone programs
 #
 
 ENTRY _start;
 
-. = 0;
+. = 0xC0000000;
+
 OSEG .code [APX] {
   _bcode = .;
   ISEG .code;
@@ -12,6 +13,7 @@ OSEG .code [APX] {
 }
 
 . = (. + 0xFFF) & ~0xFFF;
+
 OSEG .data [APW] {
   _bdata = .;
   ISEG .data;

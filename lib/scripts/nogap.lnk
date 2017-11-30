@@ -1,0 +1,25 @@
+#
+# nogap.lnk -- linker script for standalone programs, without code/data gap
+#
+
+ENTRY _start;
+
+. = 0xC0000000;
+
+OSEG .code [APX] {
+  _bcode = .;
+  ISEG .code;
+  _ecode = .;
+}
+
+OSEG .data [APW] {
+  _bdata = .;
+  ISEG .data;
+  _edata = .;
+}
+
+OSEG .bss [AW] {
+  _bbss = .;
+  ISEG .bss;
+  _ebss = .;
+}

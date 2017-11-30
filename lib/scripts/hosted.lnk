@@ -1,15 +1,18 @@
 #
-# standalone.lnk -- standalone linker script
+# hosted.lnk -- linker script for hosted applications
 #
 
 ENTRY _start;
 
-. = 0xC0000000;
+. = 0;
+
 OSEG .code [APX] {
   _bcode = .;
   ISEG .code;
   _ecode = .;
 }
+
+. = (. + 0xFFF) & ~0xFFF;
 
 OSEG .data [APW] {
   _bdata = .;
