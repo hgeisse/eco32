@@ -1,5 +1,7 @@
 #
 # default.lnk -- default linker script for standalone programs
+#                load at 0xC0000000, start at _start
+#                no gap between code and data
 #
 
 ENTRY _start;
@@ -11,8 +13,6 @@ OSEG .code [APX] {
   ISEG .code;
   _ecode = .;
 }
-
-. = (. + 0xFFF) & ~0xFFF;
 
 OSEG .data [APW] {
   _bdata = .;

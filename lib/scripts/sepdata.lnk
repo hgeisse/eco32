@@ -1,5 +1,7 @@
 #
-# nogap.lnk -- linker script for standalone programs, without code/data gap
+# sepdata.lnk -- linker script for standalone programs
+#                load at 0xC0000000, start at _start
+#                data is aligned on the next page boundary
 #
 
 ENTRY _start;
@@ -11,6 +13,8 @@ OSEG .code [APX] {
   ISEG .code;
   _ecode = .;
 }
+
+. = (. + 0xFFF) & ~0xFFF;
 
 OSEG .data [APW] {
   _bdata = .;

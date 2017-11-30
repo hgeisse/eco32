@@ -1,5 +1,7 @@
 #
 # hosted.lnk -- linker script for hosted applications
+#               load at 0x00000000, start at _start
+#               data is aligned on the next page boundary
 #
 
 ENTRY _start;
