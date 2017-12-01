@@ -23,6 +23,23 @@
 /**************************************************************/
 
 /*
+ * debugging
+ */
+
+
+int debugArgs = 0;
+int debugOutput = 0;
+int debugRelocs = 0;
+int debugScript = 0;
+int debugSearch = 0;
+int debugModules = 0;
+int debugSegments = 0;
+int debugResolve = 0;
+
+
+/**************************************************************/
+
+/*
  * data structure definitions
  */
 
@@ -505,6 +522,11 @@ void mapOverSymbols(void (*fp)(Sym *sym, void *arg), void *arg) {
 }
 
 
+int numberOfSymbols(void) {
+  return numEntries;
+}
+
+
 /**************************************************************/
 
 
@@ -652,9 +674,11 @@ void readObjModule(char *name, unsigned int inOff,
   Module *mod;
   ExecHeader hdr;
 
-  fprintf(stderr,
-          "reading module '%s' from file '%s', offset 0x%08X\n",
-          name, inPath, inOff);
+  if (debugModules) {
+    fprintf(stderr,
+            "reading module '%s' from file '%s', offset 0x%08X\n",
+            name, inPath, inOff);
+  }
   mod = newModule(name);
   readObjHeader(&hdr, inOff, inFile, inPath);
   mod->strs = readObjStrings(&hdr, inOff, inFile, inPath);
@@ -795,9 +819,11 @@ FILE *openFile(char *name, int searchDirs) {
   char *path;
 
   if (!searchDirs) {
-    fprintf(stderr,
-            "trying to open file '%s' in current directory\n",
-            name);
+    if (debugSearch) {
+      fprintf(stderr,
+              "trying to open file '%s' in current directory\n",
+              name);
+    }
     file = fopen(name, "r");
     return file;
   }
@@ -811,9 +837,11 @@ FILE *openFile(char *name, int searchDirs) {
       strcat(path, "/");
     }
     strcat(path, name);
-    fprintf(stderr,
-            "trying to open file '%s' in directory '%s'\n",
-            name, dir->path);
+    if (debugSearch) {
+      fprintf(stderr,
+              "trying to open file '%s' in directory '%s'\n",
+              name, dir->path);
+    }
     file = fopen(path, "r");
     memFree(path);
     if (file != NULL) {
@@ -866,7 +894,7 @@ void readFiles(void) {
 }
 
 
-void showModules(void) {
+void showSegments(void) {
   Module *mod;
   int i;
   char attr[10];
@@ -1255,23 +1283,60 @@ void showUndefSymbols(void) {
 }
 
 
-static void showSymbol(Sym *sym, void *arg) {
-  Module *mod;
+typedef struct {
+  Sym **symbolTable;
+  int currentIndex;
+} SymtableIterator;
 
-  mod = sym->mod;
-  fprintf(stderr,
-          "    %s : mod = %s, seg = %s, val = 0x%08X\n",
-          sym->name,
-          mod->name,
-          sym->seg == -1 ?
-            "*ABS*" : mod->strs + mod->segs[sym->seg].name,
-          sym->val);
+
+void getSymbol(Sym *sym, void *arg) {
+  SymtableIterator *iter;
+
+  iter = (SymtableIterator *) arg;
+  iter->symbolTable[iter->currentIndex++] = sym;
 }
 
 
-void showAllSymbols(void) {
-  fprintf(stderr, "global symbol table:\n");
-  mapOverSymbols(showSymbol, NULL);
+int compareSymbols(const void *p1, const void *p2) {
+  Sym **sym1;
+  Sym **sym2;
+
+  sym1 = (Sym **) p1;
+  sym2 = (Sym **) p2;
+  if ((*sym1)->val < (*sym2)->val) {
+    return -1;
+  }
+  if ((*sym1)->val > (*sym2)->val) {
+    return 1;
+  }
+  return strcmp((*sym1)->name, (*sym2)->name);
+}
+
+
+void writeSymbolTable(FILE *mapFile) {
+  int numSymbols;
+  SymtableIterator iter;
+  int i;
+  Sym *sym;
+  Module *mod;
+
+  numSymbols = numberOfSymbols();
+  iter.symbolTable = memAlloc(numSymbols * sizeof(Sym *));
+  iter.currentIndex = 0;
+  mapOverSymbols(getSymbol, &iter);
+  qsort(iter.symbolTable, numSymbols, sizeof(Sym *), compareSymbols);
+  for (i = 0; i < numSymbols; i++) {
+    sym = iter.symbolTable[i];
+    mod = sym->mod;
+    fprintf(mapFile,
+            "%-24s  0x%08X  %-12s  %s\n",
+            sym->name,
+            sym->val,
+            sym->seg == -1 ?
+              "*ABS*" : mod->strs + mod->segs[sym->seg].name,
+            mod->name);
+  }
+  memFree(iter.symbolTable);
 }
 
 
@@ -1279,7 +1344,9 @@ void resolveSymbol(Sym *sym, void *arg) {
   Module *mod;
   SegmentRecord *seg;
 
-  fprintf(stderr, "    %s = 0x%08X", sym->name, sym->val);
+  if (debugResolve) {
+    fprintf(stderr, "    %s = 0x%08X", sym->name, sym->val);
+  }
   mod = sym->mod;
   if (sym->seg == -1) {
     /* absolute symbol: keep value */
@@ -1288,11 +1355,13 @@ void resolveSymbol(Sym *sym, void *arg) {
     seg = mod->segs + sym->seg;
     sym->val += seg->addr;
   }
-  fprintf(stderr,
-          " --(%s, %s)--> 0x%08X\n",
-          mod->name,
-          sym->seg == -1 ? "*ABS*" : mod->strs + seg->name,
-          sym->val);
+  if (debugResolve) {
+    fprintf(stderr,
+            " --(%s, %s)--> 0x%08X\n",
+            mod->name,
+            sym->seg == -1 ? "*ABS*" : mod->strs + seg->name,
+            sym->val);
+  }
 }
 
 
@@ -1305,7 +1374,9 @@ void resolveSymbols(void) {
     showUndefSymbols();
     error("%d undefined symbol(s)", n);
   }
-  fprintf(stderr, "resolving symbols:\n");
+  if (debugResolve) {
+    fprintf(stderr, "resolving symbols:\n");
+  }
   mapOverSymbols(resolveSymbol, NULL);
 }
 
@@ -1328,16 +1399,20 @@ void relocateModules(void) {
 
   mod = firstModule;
   while (mod != NULL) {
-    fprintf(stderr, "relocating module '%s':\n", mod->name);
+    if (debugRelocs) {
+      fprintf(stderr, "relocating module '%s':\n", mod->name);
+    }
     for (i = 0; i < mod->nrels; i++) {
       rel = mod->rels + i;
       seg = mod->segs + rel->seg;
       loc = mod->data + seg->offs + rel->loc;
       addr = seg->addr + rel->loc;
       data = read4FromEco(loc);
-      fprintf(stderr,
-              "    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
-              mod->strs + seg->name, rel->loc, addr, data);
+      if (debugRelocs) {
+        fprintf(stderr,
+                "    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
+                mod->strs + seg->name, rel->loc, addr, data);
+      }
       if (rel->typ & RELOC_SYM) {
         base = mod->syms[rel->ref]->val;
       } else {
@@ -1403,15 +1478,17 @@ void relocateModules(void) {
       }
       data = (data & ~mask) | (value & mask);
       write4ToEco(loc, data);
-      fprintf(stderr,
-              "        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
-              method,
-              rel->typ & RELOC_SYM ? "SYM" : "SEG",
-              rel->typ & RELOC_SYM ?
-                mod->syms[rel->ref]->name :
-                mod->strs + mod->segs[rel->ref].name,
-              rel->add,
-              data);
+      if (debugRelocs) {
+        fprintf(stderr,
+                "        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
+                method,
+                rel->typ & RELOC_SYM ? "SYM" : "SEG",
+                rel->typ & RELOC_SYM ?
+                  mod->syms[rel->ref]->name :
+                  mod->strs + mod->segs[rel->ref].name,
+                rel->add,
+                data);
+      }
     }
     mod = mod->next;
   }
@@ -1571,7 +1648,6 @@ static void writeSegmentTable(FILE *outFile) {
 void writeOutput(char *outName) {
   FILE *outFile;
 
-  showAllOsegs(outName);
   outFile = fopen(outName, "w");
   if (outFile == NULL) {
     error("cannot open output file '%s'", outName);
@@ -1598,6 +1674,7 @@ void writeMap(char *mapName) {
   if (mapFile == NULL) {
     error("cannot open map file '%s'", mapName);
   }
+  writeSymbolTable(mapFile);
   fclose(mapFile);
 }
 
@@ -1630,11 +1707,11 @@ int main(int argc, char *argv[]) {
   char *libName;
   FILE *scrFile;
 
-  /* ----------- start discard ---------- */
-  for (i = 0; i < argc; i++) {
-    fprintf(stderr, "arg %d: %s\n", i, argv[i]);
+  if (debugArgs) {
+    for (i = 0; i < argc; i++) {
+      fprintf(stderr, "arg %d: %s\n", i, argv[i]);
+    }
   }
-  /* -----------  end discard  ---------- */
   scrName = DEFAULT_SCRIPT_NAME;
   outName = DEFAULT_OUT_NAME;
   mapName = NULL;
@@ -1700,13 +1777,19 @@ int main(int argc, char *argv[]) {
   }
   script = readScript(scrFile);
   fclose(scrFile);
-  showScript(script);
+  if (debugScript) {
+    showScript(script);
+  }
   readFiles();
   allocateStorage(script);
-  showModules();
+  if (debugSegments) {
+    showSegments();
+  }
   resolveSymbols();
-  showAllSymbols();
   relocateModules();
+  if (debugOutput) {
+    showAllOsegs(outName);
+  }
   writeOutput(outName);
   if (mapName != NULL) {
     writeMap(mapName);
