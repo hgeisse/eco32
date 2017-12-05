@@ -638,6 +638,8 @@ Symbol *lookupEnter(char *name, int whichTable) {
       return r;
     }
   }
+  /* never reached */
+  return NULL;
 }
 
 
