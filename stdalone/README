@@ -1,4 +1,4 @@
-There are five different ways to run a standalone program.
+There are seven different ways to run a standalone program.
 
 1. Simulator, instant loading:
    Load the program with the '-l' command-line option into the
@@ -8,38 +8,66 @@ There are five different ways to run a standalone program.
 2. Simulator, monitor, load server:
    Start the simulator with the monitor in ROM and a dangling
    serial line (this will happen automatically if you use the
-   Makefile target 'run-sim-ser' in the subdirectory build/run).
+   Makefile target 'run-sim-ser' in the directory build/run).
    Note the serial line's device name, e.g., '/dev/pts/20'. Run
    the load server in another terminal. Specify the serial line's
    device name as serial port, and choose a standalone program
    to be loaded. Here is an example command line, typed from
-   within the directory 'build/run':
-      ../bin/loadserv /dev/pts/20 ../stdalone/hello2.exo
+   within the directory build/run:
+      ../bin/loadserv /dev/pts/20 ../stdalone/dhrystone.exo
    Now start the monitor. In the monitor's terminal window type
    'load 1'. This will load and execute the standalone program.
    Use 'load 1 *' for loading but not starting the program.
 
-3. Simulator, monitor, disk (or SD card):
+3. Simulator, monitor, disk server:
    NOTE: You must have installed the project 'eos32-on-eco32'.
          It can be downloaded from here:
          https://github.com/hgeisse/eos32-on-eco32
-   Pack the program onto a simulated disk (this will happen
-   automatically if you use the Makefile target 'run-sim-dsk' or
-   'run-sim-sdc' in the subdirectory build/run). Boot the disk.
-   Choose the partition with the bootable EOS32 file system, and
-   enter '/boot/<progname.bin>' as the 'path to kernel'.
+         Build it by running 'make' in its top directory.
+   NOTE: Remember to re-build the disk image by running
+         'make clean ; make' in the directory build/run.
+   Start the simulator with the monitor in ROM and a dangling
+   serial line (this will happen automatically if you use the
+   Makefile target 'run-sim-ser' in the directory build/run).
+   Note the serial line's device name, e.g., '/dev/pts/20'. Run
+   the disk server in another terminal. Specify the serial line's
+   device name as serial port, and 'disk.img' as disk image file.
+   Here is an example command line, typed from within the directory
+   build/run:
+      ../bin/diskserv /dev/pts/20 disk.img
+   Now start the monitor. In the monitor's terminal window type
+   'boot 1'. Choose the partition with the bootable EOS32 file
+   system, and enter '/boot/<progname.bin>' as the 'path to kernel'.
 
-4. FPGA, monitor, load server:
+4. Simulator, monitor, disk (or SD card):
+   NOTE: You must have installed the project 'eos32-on-eco32'.
+         It can be downloaded from here:
+         https://github.com/hgeisse/eos32-on-eco32
+         Build it by running 'make' in its top directory.
+   NOTE: Remember to re-build the disk image by running
+         'make clean ; make' in the directory build/run.
+   Start the simulator with the monitor in ROM and 'disk.img' as
+   the disk image (this will happen automatically if you use the
+   Makefile target 'run-sim-dsk' or 'run-sim-sdc' in the directory
+   build/run). Start the monitor and boot the disk with 'boot 0'
+   (or 'boot 2' for the SD card). Choose the partition with the
+   bootable EOS32 file system, and enter '/boot/<progname.bin>'
+   as the 'path to kernel'.
+
+5. FPGA, monitor, load server:
    Load the program with the help of the load server. Type
    'loadserv <serial_device> <progname.exo>' on the PC side, and
    'load 1' on the FPGA side (which runs the machine monitor).
 
-5. FPGA, monitor, disk (or SD card):
+6. FPGA, monitor, disk server:
    NOTE: You must have installed the project 'eos32-on-eco32'.
          It can be downloaded from here:
          https://github.com/hgeisse/eos32-on-eco32
+         Build it by running 'make' in its top directory.
    Pack the program onto a simulated disk and make the disk
    available for use with the help of the disk server (this will
    happen automatically if you use the Makefile target 'run-server'
-   in the subdirectory build/run). Type 'boot 1' on the FPGA side
+   in the directory build/run). Type 'boot 1' on the FPGA side
    (which runs the machine monitor), and proceed as in 3.
+
+7. FPGA, monitor, disk (or SD card):
