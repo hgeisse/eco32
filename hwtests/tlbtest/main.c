@@ -254,6 +254,57 @@ void searchTest(void) {
 }
 
 
+void smallMapTest(void) {
+  int i;
+  Word page, offset;
+  Word virt;
+  int index;
+  Word frame;
+  Word phys;
+  Word cont;
+  Bool fail;
+
+  printf("Small map test\t\t\t");
+  /* preset words with offset 0x248 in each page
+     below 1M with their physical addresses */
+  offset = 0x248;
+  for (i = 0; i < 256; i++) {
+    *(Word *)(0xC0000000 | (i << 12) | offset) = (i << 12) | offset;
+  }
+  /* preset TLB */
+  for (i = 0; i < NUM_ENTRIES; i++) {
+    setTLB(i, mappingEntries[i].hi, mappingEntries[i].lo);
+  }
+  /* now access memory and check if addresses are mapped correctly */
+  fail = false;
+  page = 7;
+  for (i = 0; i < 256; i++) {
+    /* compute pseudo-random virtual word address (page number 0..31) */
+    page = (page * 13 + 1) & 0x1F;
+    virt = (page << 12) | offset;
+    /* lookup frame number in TLB and construct physical word address */
+    index = probeTLB(virt);
+    if (index & 0x80000000) {
+      fail = true;
+      break;
+    }
+    frame = getTLB_LO(index) & 0xFFFFF000;
+    phys = frame | (offset & 0xFFFFFFFC);
+    /* access memory by dereferencing the virtual address */
+    cont = *(Word *)virt;
+    /* word read should equal physical address */
+    if (cont != phys) {
+      fail = true;
+    }
+  }
+  if (fail) {
+    printf("failed\n");
+  } else {
+    printf("ok\n");
+  }
+}
+
+
 void mapTest(void) {
   int i;
   Word page, offset;
@@ -313,6 +364,7 @@ int main(void) {
   indexedReadWriteTest();
   writeRandomTest();
   searchTest();
+  smallMapTest();
   mapTest();
   printf("\nEnd of TLB tests.\n");
   while (1) ;
