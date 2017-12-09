@@ -90,3 +90,18 @@ There are seven different ways to run a standalone program.
          Build it by running 'make' in its top directory.
    NOTE: Remember to re-build the disk image by running
          'make clean ; make' in the directory build/run.
+   Write the disk image onto a hard disk or an SD card. I use an SD
+   card reader/writer for USB. Insert the card reader and note the
+   the device under which it is accessible, e.g., /dev/sdb. If any
+   partition of the device gets auto-mounted, you should unmount it
+   before continuing. Copy the image onto the whole device (do NOT
+   copy it into a partition like /dev/sdb1). Here is an example
+   command line, typed from within the directory build/run:
+      sudo dd if=disk.img of=/dev/sdb
+   Remove the SD card from the card reader and insert it into the
+   SD card slot of the FPGA board. Power up the board and reset
+   the ECO32. You should see the monitor's prompt in the terminal
+   window which is connected to the board's first serial line. Boot
+   the disk with 'boot 2' for the SD card (use 'boot 0' in case of
+   an IDE disk). Choose the partition with the bootable EOS32 file
+   system, and enter '/boot/<progname.bin>' as the 'path to kernel'.
