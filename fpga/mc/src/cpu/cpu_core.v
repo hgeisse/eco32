@@ -365,12 +365,12 @@ module ctrl(clk, rst,
                         (opcode == 6'h16) ||
                         (opcode == 6'h18) ||
                         (opcode == 6'h1A) ||
-                        (opcode == 6'h1C)) ? 1 : 0;
+                        (opcode == 6'h1C)) ? 1'b1 : 1'b0;
   assign type_rrs    = ((opcode == 6'h01) ||
                         (opcode == 6'h03) ||
                         (opcode == 6'h05) ||
                         (opcode == 6'h09) ||
-                        (opcode == 6'h0D)) ? 1 : 0;
+                        (opcode == 6'h0D)) ? 1'b1 : 1'b0;
   assign type_rrh    = ((opcode == 6'h07) ||
                         (opcode == 6'h0B) ||
                         (opcode == 6'h0F) ||
@@ -380,8 +380,8 @@ module ctrl(clk, rst,
                         (opcode == 6'h17) ||
                         (opcode == 6'h19) ||
                         (opcode == 6'h1B) ||
-                        (opcode == 6'h1D)) ? 1 : 0;
-  assign type_rhh    = (opcode == 6'h1F) ? 1 : 0;
+                        (opcode == 6'h1D)) ? 1'b1 : 1'b0;
+  assign type_rhh    = (opcode == 6'h1F) ? 1'b1 : 1'b0;
   assign type_rrb    = ((opcode == 6'h20) ||
                         (opcode == 6'h21) ||
                         (opcode == 6'h22) ||
@@ -391,21 +391,21 @@ module ctrl(clk, rst,
                         (opcode == 6'h26) ||
                         (opcode == 6'h27) ||
                         (opcode == 6'h28) ||
-                        (opcode == 6'h29)) ? 1 : 0;
+                        (opcode == 6'h29)) ? 1'b1 : 1'b0;
   assign type_j      = ((opcode == 6'h2A) ||
-                        (opcode == 6'h2C)) ? 1 : 0;
+                        (opcode == 6'h2C)) ? 1'b1 : 1'b0;
   assign type_jr     = ((opcode == 6'h2B) ||
-                        (opcode == 6'h2D)) ? 1 : 0;
+                        (opcode == 6'h2D)) ? 1'b1 : 1'b0;
   assign type_link   = ((opcode == 6'h2C) ||
-                        (opcode == 6'h2D)) ? 1 : 0;
+                        (opcode == 6'h2D)) ? 1'b1 : 1'b0;
   assign type_ld     = ((opcode == 6'h30) ||
                         (opcode == 6'h31) ||
                         (opcode == 6'h32) ||
                         (opcode == 6'h33) ||
-                        (opcode == 6'h34)) ? 1 : 0;
+                        (opcode == 6'h34)) ? 1'b1 : 1'b0;
   assign type_st     = ((opcode == 6'h35) ||
                         (opcode == 6'h36) ||
-                        (opcode == 6'h37)) ? 1 : 0;
+                        (opcode == 6'h37)) ? 1'b1 : 1'b0;
   assign type_ldst   = type_ld | type_st;
   assign ldst_size   = ((opcode == 6'h30) ||
                         (opcode == 6'h35)) ? 2'b10 :
@@ -421,7 +421,7 @@ module ctrl(clk, rst,
                         (opcode == 6'h1A) ||
                         (opcode == 6'h1B) ||
                         (opcode == 6'h1C) ||
-                        (opcode == 6'h1D)) ? 1 : 0;
+                        (opcode == 6'h1D)) ? 1'b1 : 1'b0;
   assign type_muldiv = ((opcode == 6'h04) ||
                         (opcode == 6'h05) ||
                         (opcode == 6'h06) ||
@@ -433,16 +433,16 @@ module ctrl(clk, rst,
                         (opcode == 6'h0C) ||
                         (opcode == 6'h0D) ||
                         (opcode == 6'h0E) ||
-                        (opcode == 6'h0F)) ? 1 : 0;
+                        (opcode == 6'h0F)) ? 1'b1 : 1'b0;
   assign type_fast   = ~(type_shift | type_muldiv);
-  assign type_mvfs   = (opcode == 6'h38) ? 1 : 0;
-  assign type_mvts   = (opcode == 6'h39) ? 1 : 0;
-  assign type_rfx    = (opcode == 6'h2F) ? 1 : 0;
-  assign type_trap   = (opcode == 6'h2E) ? 1 : 0;
+  assign type_mvfs   = (opcode == 6'h38) ? 1'b1 : 1'b0;
+  assign type_mvts   = (opcode == 6'h39) ? 1'b1 : 1'b0;
+  assign type_rfx    = (opcode == 6'h2F) ? 1'b1 : 1'b0;
+  assign type_trap   = (opcode == 6'h2E) ? 1'b1 : 1'b0;
   assign type_tb     = ((opcode == 6'h3A) ||
                         (opcode == 6'h3B) ||
                         (opcode == 6'h3C) ||
-                        (opcode == 6'h3D)) ? 1 : 0;
+                        (opcode == 6'h3D)) ? 1'b1 : 1'b0;
 
   // state machine
   always @(posedge clk) begin
@@ -860,11 +860,11 @@ module ctrl(clk, rst,
   end
 
   // bus timeout detector
-  assign bus_timeout = (bus_count == 8'h00) ? 1 : 0;
+  assign bus_timeout = (bus_count == 8'h00) ? 1'b1 : 1'b0;
   always @(posedge clk) begin
     if (bus_stb == 1 && bus_ack == 0) begin
       // bus is waiting
-      bus_count <= bus_count - 1;
+      bus_count <= bus_count - 8'h1;
     end else begin
       // bus is not waiting
       bus_count <= 8'hFF;
@@ -1773,9 +1773,9 @@ module ctrl(clk, rst,
           sreg_we = 1'b0;
           psw_we = 1'b0;
           psw_new = 32'hxxxxxxxx;
-          tlb_index_we = (opcode[2:0] == 3'b010) ? 1 : 0;
-          tlb_entry_hi_we = (opcode[2:0] == 3'b100) ? 1 : 0;
-          tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1 : 0;
+          tlb_index_we = (opcode[2:0] == 3'b010) ? 1'b1 : 1'b0;
+          tlb_entry_hi_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
+          tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
       5'd28:  // fetch instr (bus cycle)
@@ -1909,39 +1909,43 @@ module ctrl(clk, rst,
   always @(*) begin
     casex ( { opcode[3:0], alu_equ, alu_ult, alu_slt } )
       // eq
-      7'b00000xx:  branch = 0;
-      7'b00001xx:  branch = 1;
+      7'b00000xx:  branch = 1'b0;
+      7'b00001xx:  branch = 1'b1;
       // ne
-      7'b00010xx:  branch = 1;
-      7'b00011xx:  branch = 0;
+      7'b00010xx:  branch = 1'b1;
+      7'b00011xx:  branch = 1'b0;
       // le
-      7'b00100x0:  branch = 0;
-      7'b00101xx:  branch = 1;
-      7'b0010xx1:  branch = 1;
+      7'b00100x0:  branch = 1'b0;
+      7'b00101x0:  branch = 1'b1;
+      7'b00100x1:  branch = 1'b1;
+      7'b00101x1:  branch = 1'b1;
       // leu
-      7'b001100x:  branch = 0;
-      7'b00111xx:  branch = 1;
-      7'b0011x1x:  branch = 1;
+      7'b001100x:  branch = 1'b0;
+      7'b001110x:  branch = 1'b1;
+      7'b001101x:  branch = 1'b1;
+      7'b001111x:  branch = 1'b1;
       // lt
-      7'b0100xx0:  branch = 0;
-      7'b0100xx1:  branch = 1;
+      7'b0100xx0:  branch = 1'b0;
+      7'b0100xx1:  branch = 1'b1;
       // ltu
-      7'b0101x0x:  branch = 0;
-      7'b0101x1x:  branch = 1;
+      7'b0101x0x:  branch = 1'b0;
+      7'b0101x1x:  branch = 1'b1;
       // ge
-      7'b0110xx0:  branch = 1;
-      7'b0110xx1:  branch = 0;
+      7'b0110xx0:  branch = 1'b1;
+      7'b0110xx1:  branch = 1'b0;
       // geu
-      7'b0111x0x:  branch = 1;
-      7'b0111x1x:  branch = 0;
+      7'b0111x0x:  branch = 1'b1;
+      7'b0111x1x:  branch = 1'b0;
       // gt
-      7'b10000x0:  branch = 1;
-      7'b10001xx:  branch = 0;
-      7'b1000xx1:  branch = 0;
+      7'b10000x0:  branch = 1'b1;
+      7'b10001x0:  branch = 1'b0;
+      7'b10000x1:  branch = 1'b0;
+      7'b10001x1:  branch = 1'b0;
       // gtu
-      7'b100100x:  branch = 1;
-      7'b10011xx:  branch = 0;
-      7'b1001x1x:  branch = 0;
+      7'b100100x:  branch = 1'b1;
+      7'b100110x:  branch = 1'b0;
+      7'b100101x:  branch = 1'b0;
+      7'b100111x:  branch = 1'b0;
       // other
       default:     branch = 1'bx;
     endcase
@@ -2252,7 +2256,7 @@ module alu(a, b, fnc,
       3'b101:  res1 = a1 | b1;
       3'b110:  res1 = a1 ^ b1;
       3'b111:  res1 = a1 ~^ b1;
-      default: res1 = 33'hxxxxxxxx;
+      default: res1 = 33'hxxxxxxxxx;
     endcase
   end
 
@@ -2407,7 +2411,7 @@ module muldiv(clk, a, b, fnc, start, done, error, res);
             end
           end else begin
             // all other steps
-            count <= count + 1;
+            count <= count + 6'd1;
             if (q[0] == 1) begin
               q <= { 1'b0, s[64:1] };
             end else begin
@@ -2438,7 +2442,7 @@ module muldiv(clk, a, b, fnc, start, done, error, res);
             end
           end else begin
             // all other steps
-            count <= count + 1;
+            count <= count + 6'd1;
             if (d[64] == 0) begin
               q <= { d[63:0], 1'b1 };
             end else begin
@@ -2604,11 +2608,11 @@ module mmu(clk, rst, fnc, virt, phys,
   reg tlb_miss_delayed;
 
   // decode function
-  assign map = (fnc == 3'b001) ? 1 : 0;
-  assign tbs = (fnc == 3'b010) ? 1 : 0;
-  assign tbwr = (fnc == 3'b011) ? 1 : 0;
-  assign tbri = (fnc == 3'b100) ? 1 : 0;
-  assign tbwi = (fnc == 3'b101) ? 1 : 0;
+  assign map = (fnc == 3'b001) ? 1'b1 : 1'b0;
+  assign tbs = (fnc == 3'b010) ? 1'b1 : 1'b0;
+  assign tbwr = (fnc == 3'b011) ? 1'b1 : 1'b0;
+  assign tbri = (fnc == 3'b100) ? 1'b1 : 1'b0;
+  assign tbwi = (fnc == 3'b101) ? 1'b1 : 1'b0;
 
   // latch virtual address
   always @(posedge clk) begin
@@ -2638,7 +2642,7 @@ module mmu(clk, rst, fnc, virt, phys,
             w_enable, w_page, w_frame);
 
   // construct physical address
-  assign direct = (page[19:18] == 2'b11) ? 1 : 0;
+  assign direct = (page[19:18] == 2'b11) ? 1'b1 : 1'b0;
   assign frame = (direct == 1) ? page[17:0] : tlb_frame[19:2];
   assign phys = { 2'b00, frame, offset };
 
@@ -2656,7 +2660,7 @@ module mmu(clk, rst, fnc, virt, phys,
         if (random_index == 5'd4) begin
           random_index <= 5'd31;
         end else begin
-          random_index <= random_index - 1;
+          random_index <= random_index - 5'd1;
         end
       end
     end
@@ -2744,38 +2748,38 @@ module tlb(page_in, miss, found,
   assign p30 = page[30];
   assign p31 = page[31];
 
-  assign match[ 0] = (page_in == p00) ? 1 : 0;
-  assign match[ 1] = (page_in == p01) ? 1 : 0;
-  assign match[ 2] = (page_in == p02) ? 1 : 0;
-  assign match[ 3] = (page_in == p03) ? 1 : 0;
-  assign match[ 4] = (page_in == p04) ? 1 : 0;
-  assign match[ 5] = (page_in == p05) ? 1 : 0;
-  assign match[ 6] = (page_in == p06) ? 1 : 0;
-  assign match[ 7] = (page_in == p07) ? 1 : 0;
-  assign match[ 8] = (page_in == p08) ? 1 : 0;
-  assign match[ 9] = (page_in == p09) ? 1 : 0;
-  assign match[10] = (page_in == p10) ? 1 : 0;
-  assign match[11] = (page_in == p11) ? 1 : 0;
-  assign match[12] = (page_in == p12) ? 1 : 0;
-  assign match[13] = (page_in == p13) ? 1 : 0;
-  assign match[14] = (page_in == p14) ? 1 : 0;
-  assign match[15] = (page_in == p15) ? 1 : 0;
-  assign match[16] = (page_in == p16) ? 1 : 0;
-  assign match[17] = (page_in == p17) ? 1 : 0;
-  assign match[18] = (page_in == p18) ? 1 : 0;
-  assign match[19] = (page_in == p19) ? 1 : 0;
-  assign match[20] = (page_in == p20) ? 1 : 0;
-  assign match[21] = (page_in == p21) ? 1 : 0;
-  assign match[22] = (page_in == p22) ? 1 : 0;
-  assign match[23] = (page_in == p23) ? 1 : 0;
-  assign match[24] = (page_in == p24) ? 1 : 0;
-  assign match[25] = (page_in == p25) ? 1 : 0;
-  assign match[26] = (page_in == p26) ? 1 : 0;
-  assign match[27] = (page_in == p27) ? 1 : 0;
-  assign match[28] = (page_in == p28) ? 1 : 0;
-  assign match[29] = (page_in == p29) ? 1 : 0;
-  assign match[30] = (page_in == p30) ? 1 : 0;
-  assign match[31] = (page_in == p31) ? 1 : 0;
+  assign match[ 0] = (page_in == p00) ? 1'b1 : 1'b0;
+  assign match[ 1] = (page_in == p01) ? 1'b1 : 1'b0;
+  assign match[ 2] = (page_in == p02) ? 1'b1 : 1'b0;
+  assign match[ 3] = (page_in == p03) ? 1'b1 : 1'b0;
+  assign match[ 4] = (page_in == p04) ? 1'b1 : 1'b0;
+  assign match[ 5] = (page_in == p05) ? 1'b1 : 1'b0;
+  assign match[ 6] = (page_in == p06) ? 1'b1 : 1'b0;
+  assign match[ 7] = (page_in == p07) ? 1'b1 : 1'b0;
+  assign match[ 8] = (page_in == p08) ? 1'b1 : 1'b0;
+  assign match[ 9] = (page_in == p09) ? 1'b1 : 1'b0;
+  assign match[10] = (page_in == p10) ? 1'b1 : 1'b0;
+  assign match[11] = (page_in == p11) ? 1'b1 : 1'b0;
+  assign match[12] = (page_in == p12) ? 1'b1 : 1'b0;
+  assign match[13] = (page_in == p13) ? 1'b1 : 1'b0;
+  assign match[14] = (page_in == p14) ? 1'b1 : 1'b0;
+  assign match[15] = (page_in == p15) ? 1'b1 : 1'b0;
+  assign match[16] = (page_in == p16) ? 1'b1 : 1'b0;
+  assign match[17] = (page_in == p17) ? 1'b1 : 1'b0;
+  assign match[18] = (page_in == p18) ? 1'b1 : 1'b0;
+  assign match[19] = (page_in == p19) ? 1'b1 : 1'b0;
+  assign match[20] = (page_in == p20) ? 1'b1 : 1'b0;
+  assign match[21] = (page_in == p21) ? 1'b1 : 1'b0;
+  assign match[22] = (page_in == p22) ? 1'b1 : 1'b0;
+  assign match[23] = (page_in == p23) ? 1'b1 : 1'b0;
+  assign match[24] = (page_in == p24) ? 1'b1 : 1'b0;
+  assign match[25] = (page_in == p25) ? 1'b1 : 1'b0;
+  assign match[26] = (page_in == p26) ? 1'b1 : 1'b0;
+  assign match[27] = (page_in == p27) ? 1'b1 : 1'b0;
+  assign match[28] = (page_in == p28) ? 1'b1 : 1'b0;
+  assign match[29] = (page_in == p29) ? 1'b1 : 1'b0;
+  assign match[30] = (page_in == p30) ? 1'b1 : 1'b0;
+  assign match[31] = (page_in == p31) ? 1'b1 : 1'b0;
 
   assign miss = ~(| match[31:0]);
 

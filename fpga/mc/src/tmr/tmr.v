@@ -31,14 +31,14 @@ module tmr(clk, rst,
   always @(posedge clk) begin
     if (divisor_loaded) begin
       counter <= divisor;
-      expired <= 0;
+      expired <= 1'b0;
     end else begin
       if (counter == 32'h00000001) begin
         counter <= divisor;
-        expired <= 1;
+        expired <= 1'b1;
       end else begin
-        counter <= counter - 1;
-        expired <= 0;
+        counter <= counter - 32'h00000001;
+        expired <= 1'b0;
       end
     end
   end
@@ -46,24 +46,24 @@ module tmr(clk, rst,
   always @(posedge clk) begin
     if (rst) begin
       divisor <= 32'hFFFFFFFF;
-      divisor_loaded <= 1;
-      alarm <= 0;
-      ien <= 0;
+      divisor_loaded <= 1'b1;
+      alarm <= 1'b0;
+      ien <= 1'b0;
     end else begin
       if (expired) begin
-        alarm <= 1;
+        alarm <= 1'b1;
       end else begin
-        if (stb == 1 && we == 1 && addr[3:2] == 2'b00) begin
+        if (stb == 1'b1 && we == 1'b1 && addr[3:2] == 2'b00) begin
           // ctrl
           alarm <= data_in[0];
           ien <= data_in[1];
         end
-        if (stb == 1 && we == 1 && addr[3:2] == 2'b01) begin
+        if (stb == 1'b1 && we == 1'b1 && addr[3:2] == 2'b01) begin
           // divisor
           divisor <= data_in;
-          divisor_loaded <= 1;
+          divisor_loaded <= 1'b1;
         end else begin
-          divisor_loaded <= 0;
+          divisor_loaded <= 1'b0;
         end
       end
     end

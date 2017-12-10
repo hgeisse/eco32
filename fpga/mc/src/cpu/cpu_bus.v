@@ -55,13 +55,13 @@ module cpu_bus(clk, rst,
           // no bus activity from cpu
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_addr[31:2] = 30'bx;
-          bus_dout[31:0] = 32'bx;
-          cpu_din[31:0] = 32'bx;
+          bus_addr[31:2] = 30'hxxxxxxxx;
+          bus_dout[31:0] = 32'hxxxxxxxx;
+          cpu_din[31:0] = 32'hxxxxxxxx;
           cpu_ack = 1'b0;
           next_state = 1'b0;
           wbuf_we = 1'b0;
-          wbuf_in[31:0] = 32'bx;
+          wbuf_in[31:0] = 32'hxxxxxxxx;
         end else begin
           // bus activated by cpu
           if (~cpu_we) begin
@@ -72,7 +72,7 @@ module cpu_bus(clk, rst,
                 bus_stb = 1'b1;
                 bus_we = 1'b0;
                 bus_addr[31:2] = cpu_addr[31:2];
-                bus_dout[31:0] = 32'bx;
+                bus_dout[31:0] = 32'hxxxxxxxx;
                 if (~cpu_addr[1]) begin
                   if (~cpu_addr[0]) begin
                     cpu_din[31:0] = { 24'h0, bus_din[31:24] };
@@ -89,13 +89,13 @@ module cpu_bus(clk, rst,
                 cpu_ack = bus_ack;
                 next_state = 1'b0;
                 wbuf_we = 1'b0;
-                wbuf_in[31:0] = 32'bx;
+                wbuf_in[31:0] = 32'hxxxxxxxx;
               end else begin
                 // cpu read halfword
                 bus_stb = 1'b1;
                 bus_we = 1'b0;
                 bus_addr[31:2] = cpu_addr[31:2];
-                bus_dout[31:0] = 32'bx;
+                bus_dout[31:0] = 32'hxxxxxxxx;
                 if (~cpu_addr[1]) begin
                   cpu_din[31:0] = { 16'h0, bus_din[31:16] };
                 end else begin
@@ -104,19 +104,19 @@ module cpu_bus(clk, rst,
                 cpu_ack = bus_ack;
                 next_state = 1'b0;
                 wbuf_we = 1'b0;
-                wbuf_in[31:0] = 32'bx;
+                wbuf_in[31:0] = 32'hxxxxxxxx;
               end
             end else begin
               // cpu read word
               bus_stb = 1'b1;
               bus_we = 1'b0;
               bus_addr[31:2] = cpu_addr[31:2];
-              bus_dout[31:0] = 32'bx;
+              bus_dout[31:0] = 32'hxxxxxxxx;
               cpu_din[31:0] = bus_din[31:0];
               cpu_ack = bus_ack;
               next_state = 1'b0;
               wbuf_we = 1'b0;
-              wbuf_in[31:0] = 32'bx;
+              wbuf_in[31:0] = 32'hxxxxxxxx;
             end
           end else begin
             // cpu write cycle
@@ -127,8 +127,8 @@ module cpu_bus(clk, rst,
                 bus_stb = 1'b1;
                 bus_we = 1'b0;
                 bus_addr[31:2] = cpu_addr[31:2];
-                bus_dout[31:0] = 32'bx;
-                cpu_din[31:0] = 32'bx;
+                bus_dout[31:0] = 32'hxxxxxxxx;
+                cpu_din[31:0] = 32'hxxxxxxxx;
                 cpu_ack = 1'b0;
                 if (~bus_ack) begin
                   next_state = 1'b0;
@@ -159,8 +159,8 @@ module cpu_bus(clk, rst,
                 bus_stb = 1'b1;
                 bus_we = 1'b0;
                 bus_addr[31:2] = cpu_addr[31:2];
-                bus_dout[31:0] = 32'bx;
-                cpu_din[31:0] = 32'bx;
+                bus_dout[31:0] = 32'hxxxxxxxx;
+                cpu_din[31:0] = 32'hxxxxxxxx;
                 cpu_ack = 1'b0;
                 if (~bus_ack) begin
                   next_state = 1'b0;
@@ -180,11 +180,11 @@ module cpu_bus(clk, rst,
               bus_we = 1'b1;
               bus_addr[31:2] = cpu_addr[31:2];
               bus_dout[31:0] = cpu_dout[31:0];
-              cpu_din[31:0] = 32'bx;
+              cpu_din[31:0] = 32'hxxxxxxxx;
               cpu_ack = bus_ack;
               next_state = 1'b0;
               wbuf_we = 1'b0;
-              wbuf_in[31:0] = 32'bx;
+              wbuf_in[31:0] = 32'hxxxxxxxx;
             end
           end
         end
@@ -196,7 +196,7 @@ module cpu_bus(clk, rst,
           bus_we = 1'b1;
           bus_addr[31:2] = cpu_addr[31:2];
           bus_dout[31:0] = wbuf[31:0];
-          cpu_din[31:0] = 32'bx;
+          cpu_din[31:0] = 32'hxxxxxxxx;
           cpu_ack = bus_ack;
           if (~bus_ack) begin
             next_state = 1'b1;
@@ -204,7 +204,7 @@ module cpu_bus(clk, rst,
             next_state = 1'b0;
           end
           wbuf_we = 1'b0;
-          wbuf_in[31:0] = 32'bx;
+          wbuf_in[31:0] = 32'hxxxxxxxx;
         end
     endcase
   end

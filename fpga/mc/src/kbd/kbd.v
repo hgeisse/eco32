@@ -45,27 +45,26 @@ module kbd(clk, rst,
   always @(posedge clk) begin
     if (rst) begin
       data <= 8'h00;
-      rdy <= 0;
-      ien <= 0;
+      rdy <= 1'b0;
+      ien <= 1'b0;
       other_bits <= 6'b000000;
     end else begin
-      if (keyboard_rdy == 1) begin
-        data <= keyboard_data;
+      if (keyboard_rdy) begin
+        data[7:0] <= keyboard_data[7:0];
       end
-      if (keyboard_rdy == 1 ||
-          (stb == 1 && we == 0 && addr == 1)) begin
+      if (keyboard_rdy | (stb & ~we & addr)) begin
         rdy <= keyboard_rdy;
       end
-      if (stb == 1 && we == 1 && addr == 0) begin
+      if (stb & we & ~addr) begin
         rdy <= data_in[0];
         ien <= data_in[1];
-        other_bits <= data_in[7:2];
+        other_bits[7:2] <= data_in[7:2];
       end
     end
   end
 
   assign data_out =
-    (addr == 0) ? { other_bits[7:2], ien, rdy } : data[7:0];
+    ~addr ? { other_bits[7:2], ien, rdy } : data[7:0];
   assign ack = stb;
   assign irq = ien & rdy;
 

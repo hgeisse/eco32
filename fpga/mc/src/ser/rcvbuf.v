@@ -21,13 +21,13 @@ module rcvbuf(clk, reset, read, ready, data_out, serial_in);
   rcv rcv_1(clk, reset, full, parallel_out, serial_in);
 
   always @(posedge clk) begin
-    if (reset == 1) begin
-      ready <= 0;
+    if (reset) begin
+      ready <= 1'b0;
     end else begin
-      if (full == 1) begin
+      if (full) begin
         data_out <= parallel_out;
       end
-      if (full == 1 || read == 1) begin
+      if (full | read) begin
         ready <= full;
       end
     end

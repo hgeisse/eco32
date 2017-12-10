@@ -7,15 +7,15 @@ Hardware:
 
 toplevel	preliminary
 clk_rst		finished
-cpu		finished
+cpu		finished, backported
 ram		finished
 rom		finished
-tmr		finished
+tmr		finished, backported
 dsp		finished
-kbd		finished
-ser		finished
+kbd		finished, backported
+ser		finished, backported
 dsk		empty
-sdc		finished
+sdc		finished, backported
 fms		empty
 dac		empty
 bio		finished

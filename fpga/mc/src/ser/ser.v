@@ -38,10 +38,14 @@ module ser(clk, rst,
   wire xmt_rdy;
   reg xmt_ien;
 
-  assign wr_rcv_ctrl = (stb == 1 && we == 1 && addr == 2'b00) ? 1 : 0;
-  assign rd_rcv_data = (stb == 1 && we == 0 && addr == 2'b01) ? 1 : 0;
-  assign wr_xmt_ctrl = (stb == 1 && we == 1 && addr == 2'b10) ? 1 : 0;
-  assign wr_xmt_data = (stb == 1 && we == 1 && addr == 2'b11) ? 1 : 0;
+  assign wr_rcv_ctrl =
+    (stb == 1'b1 && we == 1'b1 && addr == 2'b00) ? 1'b1 : 1'b0;
+  assign rd_rcv_data =
+    (stb == 1'b1 && we == 1'b0 && addr == 2'b01) ? 1'b1 : 1'b0;
+  assign wr_xmt_ctrl =
+    (stb == 1'b1 && we == 1'b1 && addr == 2'b10) ? 1'b1 : 1'b0;
+  assign wr_xmt_data =
+    (stb == 1'b1 && we == 1'b1 && addr == 2'b11) ? 1'b1 : 1'b0;
 
   rcvbuf rcvbuf_1(clk, rst, rd_rcv_data, rcv_rdy, rcv_data, rxd);
   xmtbuf xmtbuf_1(clk, rst, wr_xmt_data, xmt_rdy, data_in, txd);
