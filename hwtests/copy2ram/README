@@ -1,0 +1,2 @@
+This test copies a tiny program to RAM and executes the program there.
+A single dot ('.') is sent on serial line 0 to indicate success.

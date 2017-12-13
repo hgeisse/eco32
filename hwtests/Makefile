@@ -6,7 +6,7 @@ BUILD = ../build
 
 DIRS = serial looptest ldtest memtest1 memtest2 shtest brtest \
        tmrtest multest divtest remtest sregtest tlbtest irqtest \
-       xcptest dsptest kbdtest jalrtest
+       xcptest dsptest kbdtest jalrtest copy2ram
 
 .PHONY:		all install clean
 
