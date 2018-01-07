@@ -15,6 +15,8 @@
 #include "cpu.h"
 #include "trace.h"
 #include "mmu.h"
+#include "icache.h"
+#include "dcache.h"
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
@@ -214,6 +216,8 @@ int main(int argc, char *argv[]) {
     graphInit();
   }
   memoryInit(memSize * M, progName, loadAddr, romName);
+  icacheInit();
+  dcacheInit();
   mmuInit();
   traceInit();
   if (progName != NULL) {

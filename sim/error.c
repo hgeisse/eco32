@@ -14,6 +14,8 @@
 #include "cpu.h"
 #include "trace.h"
 #include "mmu.h"
+#include "icache.h"
+#include "dcache.h"
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
@@ -31,6 +33,8 @@ void error(char *fmt, ...) {
   cpuExit();
   traceExit();
   mmuExit();
+  icacheExit();
+  dcacheExit();
   memoryExit();
   timerExit();
   displayExit();

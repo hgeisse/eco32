@@ -10,8 +10,9 @@ LDFLAGS = -g -L./getline -L/usr/X11R7/lib -Wl,-rpath -Wl,/usr/X11R7/lib
 LDLIBS = -lgetline -lX11 -lpthread -lm
 
 SRCS = main.c console.c error.c except.c command.c \
-       instr.c asm.c disasm.c cpu.c trace.c mmu.c \
-       memory.c timer.c dspkbd.c serial.c disk.c \
+       instr.c asm.c disasm.c cpu.c trace.c \
+       mmu.c icache.c dcache.c memory.c \
+       timer.c dspkbd.c serial.c disk.c \
        sdcard.c output.c shutdown.c graph.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = sim

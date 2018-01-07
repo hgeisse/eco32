@@ -13,6 +13,8 @@
 #include "cpu.h"
 #include "trace.h"
 #include "mmu.h"
+#include "icache.h"
+#include "dcache.h"
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
@@ -35,6 +37,8 @@ void shutdownWrite(Word addr, Word data) {
   cpuExit();
   traceExit();
   mmuExit();
+  icacheExit();
+  dcacheExit();
   memoryExit();
   timerExit();
   displayExit();
