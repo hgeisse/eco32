@@ -109,6 +109,17 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing, int accsWidth) {
 }
 
 
+Word mmuFetchInstr(Word vAddr, Bool userMode) {
+  if ((vAddr & 3) != 0) {
+    /* throw illegal address exception */
+    mmuBadAccs = MMU_ACCS_READ | MMU_ACCS_WORD;
+    mmuBadAddr = vAddr;
+    throwException(EXC_ILL_ADDRESS);
+  }
+  return memoryReadWord(v2p(vAddr, userMode, false, MMU_ACCS_WORD));
+}
+
+
 Word mmuReadWord(Word vAddr, Bool userMode) {
   if ((vAddr & 3) != 0) {
     /* throw illegal address exception */

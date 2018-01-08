@@ -31,6 +31,7 @@ typedef struct {
 } TLB_Entry;
 
 
+Word mmuFetchInstr(Word vAddr, Bool userMode);
 Word mmuReadWord(Word vAddr, Bool userMode);
 Half mmuReadHalf(Word vAddr, Bool userMode);
 Byte mmuReadByte(Word vAddr, Bool userMode);

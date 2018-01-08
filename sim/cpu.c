@@ -164,7 +164,7 @@ static void execNextInstruction(void) {
   total++;
   /* fetch the instruction */
   traceFetch(pc);
-  instr = mmuReadWord(pc, UM);
+  instr = mmuFetchInstr(pc, UM);
   traceExec(instr, pc);
   /* decode the instruction */
   op = (instr >> 26) & 0x3F;
