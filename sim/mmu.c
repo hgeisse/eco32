@@ -14,6 +14,8 @@
 #include "except.h"
 #include "cpu.h"
 #include "mmu.h"
+#include "icache.h"
+#include "dcache.h"
 #include "memory.h"
 
 
@@ -110,67 +112,94 @@ static Word v2p(Word vAddr, Bool userMode, Bool writing, int accsWidth) {
 
 
 Word mmuFetchInstr(Word vAddr, Bool userMode) {
+  Word pAddr;
+
   if ((vAddr & 3) != 0) {
     /* throw illegal address exception */
     mmuBadAccs = MMU_ACCS_READ | MMU_ACCS_WORD;
     mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
-  return memoryReadWord(v2p(vAddr, userMode, false, MMU_ACCS_WORD));
+  pAddr = v2p(vAddr, userMode, false, MMU_ACCS_WORD);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    /* throw illegal address exception */
+    mmuBadAccs = MMU_ACCS_READ | MMU_ACCS_WORD;
+    mmuBadAddr = vAddr;
+    throwException(EXC_ILL_ADDRESS);
+  }
+  return icacheReadWord(pAddr);
 }
 
 
 Word mmuReadWord(Word vAddr, Bool userMode) {
+  Word pAddr;
+
   if ((vAddr & 3) != 0) {
     /* throw illegal address exception */
     mmuBadAccs = MMU_ACCS_READ | MMU_ACCS_WORD;
     mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
-  return memoryReadWord(v2p(vAddr, userMode, false, MMU_ACCS_WORD));
+  pAddr = v2p(vAddr, userMode, false, MMU_ACCS_WORD);
+  return memoryReadWord(pAddr);
 }
 
 
 Half mmuReadHalf(Word vAddr, Bool userMode) {
+  Word pAddr;
+
   if ((vAddr & 1) != 0) {
     /* throw illegal address exception */
     mmuBadAccs = MMU_ACCS_READ | MMU_ACCS_HALF;
     mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
-  return memoryReadHalf(v2p(vAddr, userMode, false, MMU_ACCS_HALF));
+  pAddr = v2p(vAddr, userMode, false, MMU_ACCS_HALF);
+  return memoryReadHalf(pAddr);
 }
 
 
 Byte mmuReadByte(Word vAddr, Bool userMode) {
-  return memoryReadByte(v2p(vAddr, userMode, false, MMU_ACCS_BYTE));
+  Word pAddr;
+
+  pAddr = v2p(vAddr, userMode, false, MMU_ACCS_BYTE);
+  return memoryReadByte(pAddr);
 }
 
 
 void mmuWriteWord(Word vAddr, Word data, Bool userMode) {
+  Word pAddr;
+
   if ((vAddr & 3) != 0) {
     /* throw illegal address exception */
     mmuBadAccs = MMU_ACCS_WRITE | MMU_ACCS_WORD;
     mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
-  memoryWriteWord(v2p(vAddr, userMode, true, MMU_ACCS_WORD), data);
+  pAddr = v2p(vAddr, userMode, true, MMU_ACCS_WORD);
+  memoryWriteWord(pAddr, data);
 }
 
 
 void mmuWriteHalf(Word vAddr, Half data, Bool userMode) {
+  Word pAddr;
+
   if ((vAddr & 1) != 0) {
     /* throw illegal address exception */
     mmuBadAccs = MMU_ACCS_WRITE | MMU_ACCS_HALF;
     mmuBadAddr = vAddr;
     throwException(EXC_ILL_ADDRESS);
   }
-  memoryWriteHalf(v2p(vAddr, userMode, true, MMU_ACCS_HALF), data);
+  pAddr = v2p(vAddr, userMode, true, MMU_ACCS_HALF);
+  memoryWriteHalf(pAddr, data);
 }
 
 
 void mmuWriteByte(Word vAddr, Byte data, Bool userMode) {
-  memoryWriteByte(v2p(vAddr, userMode, true, MMU_ACCS_BYTE), data);
+  Word pAddr;
+
+  pAddr = v2p(vAddr, userMode, true, MMU_ACCS_BYTE);
+  memoryWriteByte(pAddr, data);
 }
 
 

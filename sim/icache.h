@@ -7,6 +7,8 @@
 #define _ICACHE_H_
 
 
+Word icacheReadWord(Word pAddr);
+
 void icacheReset(void);
 void icacheInit(void);
 void icacheExit(void);

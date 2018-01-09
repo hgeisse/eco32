@@ -17,6 +17,8 @@
 #include "mmu.h"
 #include "icache.h"
 #include "dcache.h"
+#include "ram.h"
+#include "rom.h"
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
@@ -215,6 +217,8 @@ int main(int argc, char *argv[]) {
   if (graphics) {
     graphInit();
   }
+  ramInit();
+  romInit();
   memoryInit(memSize * M, progName, loadAddr, romName);
   icacheInit();
   dcacheInit();
@@ -245,6 +249,10 @@ int main(int argc, char *argv[]) {
   cpuExit();
   traceExit();
   mmuExit();
+  icacheExit();
+  dcacheExit();
+  ramExit();
+  romExit();
   memoryExit();
   timerExit();
   displayExit();

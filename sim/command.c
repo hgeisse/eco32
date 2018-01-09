@@ -18,11 +18,16 @@
 #include "cpu.h"
 #include "trace.h"
 #include "mmu.h"
+#include "icache.h"
+#include "dcache.h"
+#include "ram.h"
+#include "rom.h"
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
 #include "serial.h"
 #include "disk.h"
+#include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph.h"
@@ -862,11 +867,17 @@ static void doInit(char *tokens[], int n) {
     keyboardReset();
     serialReset();
     diskReset();
+    sdcardReset();
     outputReset();
     shutdownReset();
     graphReset();
+    ramReset();
+    romReset();
     memoryReset();
+    icacheReset();
+    dcacheReset();
     mmuReset();
+    traceReset();
     cpuReset();
   } else {
     help16();

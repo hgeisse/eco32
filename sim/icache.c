@@ -11,6 +11,20 @@
 #include "console.h"
 #include "error.h"
 #include "icache.h"
+#include "ram.h"
+#include "rom.h"
+
+
+Word icacheReadWord(Word pAddr) {
+  Word data;
+
+  if ((pAddr & 0x30000000) == ROM_BASE) {
+    romRead(pAddr, &data, 1);
+  } else {
+    ramRead(pAddr, &data, 1);
+  }
+  return data;
+}
 
 
 void icacheReset(void) {

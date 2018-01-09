@@ -16,6 +16,8 @@
 #include "mmu.h"
 #include "icache.h"
 #include "dcache.h"
+#include "ram.h"
+#include "rom.h"
 #include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
@@ -35,6 +37,8 @@ void error(char *fmt, ...) {
   mmuExit();
   icacheExit();
   dcacheExit();
+  ramExit();
+  romExit();
   memoryExit();
   timerExit();
   displayExit();

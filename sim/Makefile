@@ -11,7 +11,7 @@ LDLIBS = -lgetline -lX11 -lpthread -lm
 
 SRCS = main.c console.c error.c except.c command.c \
        instr.c asm.c disasm.c cpu.c trace.c \
-       mmu.c icache.c dcache.c memory.c \
+       mmu.c icache.c dcache.c memory.c ram.c rom.c io.c \
        timer.c dspkbd.c serial.c disk.c \
        sdcard.c output.c shutdown.c graph.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
