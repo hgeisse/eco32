@@ -7,11 +7,10 @@
 #define _ROM_H_
 
 
-void romRead(Word pAddr, Word *data, int nWords);
-void romWrite(Word pAddr, Word *data, int nWords);
+void romRead(Word pAddr, Word *dst, int nWords);
 
 void romReset(void);
-void romInit(void);
+void romInit(char *romImageName);
 void romExit(void);
 
 

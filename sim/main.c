@@ -217,8 +217,8 @@ int main(int argc, char *argv[]) {
   if (graphics) {
     graphInit();
   }
-  ramInit();
-  romInit();
+  ramInit(memSize * M, progName, loadAddr);
+  romInit(romName);
   memoryInit(memSize * M, progName, loadAddr, romName);
   icacheInit();
   dcacheInit();
