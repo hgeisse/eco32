@@ -16,7 +16,7 @@
 #include "mmu.h"
 #include "icache.h"
 #include "dcache.h"
-#include "memory.h"
+#include "io.h"
 
 
 static Bool debugUse = false;
@@ -141,7 +141,11 @@ Word mmuReadWord(Word vAddr, Bool userMode) {
     throwException(EXC_ILL_ADDRESS);
   }
   pAddr = v2p(vAddr, userMode, false, MMU_ACCS_WORD);
-  return memoryReadWord(pAddr);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    return ioReadWord(pAddr & ~3);
+  } else {
+    return dcacheReadWord(pAddr);
+  }
 }
 
 
@@ -155,7 +159,11 @@ Half mmuReadHalf(Word vAddr, Bool userMode) {
     throwException(EXC_ILL_ADDRESS);
   }
   pAddr = v2p(vAddr, userMode, false, MMU_ACCS_HALF);
-  return memoryReadHalf(pAddr);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    return ioReadWord(pAddr & ~3);
+  } else {
+    return dcacheReadHalf(pAddr);
+  }
 }
 
 
@@ -163,7 +171,11 @@ Byte mmuReadByte(Word vAddr, Bool userMode) {
   Word pAddr;
 
   pAddr = v2p(vAddr, userMode, false, MMU_ACCS_BYTE);
-  return memoryReadByte(pAddr);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    return ioReadWord(pAddr & ~3);
+  } else {
+    return dcacheReadByte(pAddr);
+  }
 }
 
 
@@ -177,7 +189,11 @@ void mmuWriteWord(Word vAddr, Word data, Bool userMode) {
     throwException(EXC_ILL_ADDRESS);
   }
   pAddr = v2p(vAddr, userMode, true, MMU_ACCS_WORD);
-  memoryWriteWord(pAddr, data);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    ioWriteWord(pAddr & ~3, data);
+  } else {
+    dcacheWriteWord(pAddr, data);
+  }
 }
 
 
@@ -191,7 +207,11 @@ void mmuWriteHalf(Word vAddr, Half data, Bool userMode) {
     throwException(EXC_ILL_ADDRESS);
   }
   pAddr = v2p(vAddr, userMode, true, MMU_ACCS_HALF);
-  memoryWriteHalf(pAddr, data);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    ioWriteWord(pAddr & ~3, data);
+  } else {
+    dcacheWriteHalf(pAddr, data);
+  }
 }
 
 
@@ -199,7 +219,11 @@ void mmuWriteByte(Word vAddr, Byte data, Bool userMode) {
   Word pAddr;
 
   pAddr = v2p(vAddr, userMode, true, MMU_ACCS_BYTE);
-  memoryWriteByte(pAddr, data);
+  if ((pAddr & 0x30000000) == IO_BASE) {
+    ioWriteWord(pAddr & ~3, data);
+  } else {
+    dcacheWriteByte(pAddr, data);
+  }
 }
 
 

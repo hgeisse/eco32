@@ -8,6 +8,7 @@
 
 
 void romRead(Word pAddr, Word *dst, int nWords);
+void romWrite(Word pAddr, Word *src, int nWords);
 
 void romReset(void);
 void romInit(char *romImageName);

@@ -16,13 +16,15 @@
 
 
 Word icacheReadWord(Word pAddr) {
+  Word temp;
   Word data;
 
   if ((pAddr & 0x30000000) == ROM_BASE) {
-    romRead(pAddr, &data, 1);
+    romRead(pAddr & ~3, &temp, 1);
   } else {
-    ramRead(pAddr, &data, 1);
+    ramRead(pAddr & ~3, &temp, 1);
   }
+  data = temp;
   return data;
 }
 
