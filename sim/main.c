@@ -19,7 +19,6 @@
 #include "dcache.h"
 #include "ram.h"
 #include "rom.h"
-#include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
 #include "serial.h"
@@ -219,7 +218,6 @@ int main(int argc, char *argv[]) {
   }
   ramInit(memSize * M, progName, loadAddr);
   romInit(romName);
-  memoryInit(memSize * M, progName, loadAddr, romName);
   icacheInit();
   dcacheInit();
   mmuInit();
@@ -253,7 +251,6 @@ int main(int argc, char *argv[]) {
   dcacheExit();
   ramExit();
   romExit();
-  memoryExit();
   timerExit();
   displayExit();
   keyboardExit();

@@ -17,7 +17,6 @@
 #include "dcache.h"
 #include "ram.h"
 #include "rom.h"
-#include "memory.h"
 #include "timer.h"
 #include "dspkbd.h"
 #include "serial.h"
@@ -43,7 +42,6 @@ void shutdownWrite(Word addr, Word data) {
   dcacheExit();
   ramExit();
   romExit();
-  memoryExit();
   timerExit();
   displayExit();
   keyboardExit();
