@@ -9,6 +9,8 @@
 
 Word icacheReadWord(Word pAddr);
 
+void icacheInvalidate(void);
+
 void icacheReset(void);
 void icacheInit(void);
 void icacheExit(void);
