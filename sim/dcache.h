@@ -14,6 +14,9 @@ void dcacheWriteWord(Word pAddr, Word data);
 void dcacheWriteHalf(Word pAddr, Half data);
 void dcacheWriteByte(Word pAddr, Byte data);
 
+void dcacheInvalidate(void);
+void dcacheFlush(void);
+
 void dcacheReset(void);
 void dcacheInit(void);
 void dcacheExit(void);

@@ -154,6 +154,14 @@ void dcacheWriteByte(Word pAddr, Byte data) {
 }
 
 
+void dcacheInvalidate(void) {
+}
+
+
+void dcacheFlush(void) {
+}
+
+
 void dcacheReset(void) {
   cPrintf("Resetting Data Cache...\n");
 }
