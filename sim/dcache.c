@@ -1,5 +1,6 @@
 /*
  * dcache.c -- data cache simulation
+ *             method: fake, does not cache anything
  */
 
 

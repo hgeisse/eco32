@@ -1,5 +1,6 @@
 /*
  * icache.c -- instruction cache simulation
+ *             method: fake, does not cache anything
  */
 
 
@@ -26,6 +27,10 @@ Word icacheReadWord(Word pAddr) {
   }
   data = temp;
   return data;
+}
+
+
+void icacheInvalidate(void) {
 }
 
 
