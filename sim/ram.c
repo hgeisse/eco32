@@ -49,10 +49,11 @@ void ramWrite(Word pAddr, Word *src, int nWords) {
       throwException(EXC_BUS_TIMEOUT);
     }
     data = *src++;
-    *(ram + pAddr + 0) = (Byte) (data >> 24);
-    *(ram + pAddr + 1) = (Byte) (data >> 16);
-    *(ram + pAddr + 2) = (Byte) (data >>  8);
-    *(ram + pAddr + 3) = (Byte) (data >>  0);
+    *(ram + (pAddr - RAM_BASE) + 0) = (Byte) (data >> 24);
+    *(ram + (pAddr - RAM_BASE) + 1) = (Byte) (data >> 16);
+    *(ram + (pAddr - RAM_BASE) + 2) = (Byte) (data >>  8);
+    *(ram + (pAddr - RAM_BASE) + 3) = (Byte) (data >>  0);
+    pAddr += 4;
   }
 }
 
@@ -76,11 +77,11 @@ void ramReset(void) {
 }
 
 
-void ramInit(unsigned int memorySize,
+void ramInit(unsigned int mainMemorySize,
              char *progImageName,
-             unsigned int loadAddr) {
+             unsigned int progLoadAddr) {
   /* allocate RAM */
-  ramSize = memorySize;
+  ramSize = mainMemorySize;
   ram = malloc(ramSize);
   if (ram == NULL) {
     error("cannot allocate RAM");
@@ -97,7 +98,7 @@ void ramInit(unsigned int memorySize,
     }
     fseek(progImage, 0, SEEK_END);
     progSize = ftell(progImage);
-    progAddr = loadAddr;
+    progAddr = progLoadAddr;
     if (progAddr + progSize > ramSize) {
       error("program file or load address too big");
     }

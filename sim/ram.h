@@ -11,9 +11,9 @@ void ramRead(Word pAddr, Word *dst, int nWords);
 void ramWrite(Word pAddr, Word *src, int nWords);
 
 void ramReset(void);
-void ramInit(unsigned int memorySize,
+void ramInit(unsigned int mainMemorySize,
              char *progImageName,
-             unsigned int loadAddr);
+             unsigned int progLoadAddr);
 void ramExit(void);
 
 
