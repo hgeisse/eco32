@@ -16,8 +16,8 @@
 
 
 static Byte *rom;
-static unsigned int romSize;
-static FILE *romImage;
+static FILE *progImage;
+static unsigned int progSize;
 
 
 void romRead(Word pAddr, Word *dst, int nWords) {
@@ -51,36 +51,36 @@ void romReset(void) {
   for (i = 0; i < ROM_SIZE; i++) {
     rom[i] = 0xFF;
   }
-  if (romImage != NULL) {
-    fseek(romImage, 0, SEEK_SET);
-    if (fread(rom, romSize, 1, romImage) != 1) {
+  if (progImage != NULL) {
+    fseek(progImage, 0, SEEK_SET);
+    if (fread(rom, progSize, 1, progImage) != 1) {
       error("cannot read ROM image file");
     }
     cPrintf("%6d KB ROM installed, %d bytes programmed.\n",
-            ROM_SIZE / K, romSize);
+            ROM_SIZE / K, progSize);
   }
 }
 
 
-void romInit(char *romImageName) {
+void romInit(char *progImageName) {
   /* allocate ROM */
   rom = malloc(ROM_SIZE);
   if (rom == NULL) {
     error("cannot allocate ROM");
   }
   /* possibly load ROM image */
-  if (romImageName == NULL) {
+  if (progImageName == NULL) {
     /* no ROM to plug in */
-    romImage = NULL;
+    progImage = NULL;
   } else {
     /* plug in ROM */
-    romImage = fopen(romImageName, "rb");
-    if (romImage == NULL) {
-      error("cannot open ROM image '%s'", romImageName);
+    progImage = fopen(progImageName, "rb");
+    if (progImage == NULL) {
+      error("cannot open ROM image '%s'", progImageName);
     }
-    fseek(romImage, 0, SEEK_END);
-    romSize = ftell(romImage);
-    if (romSize > ROM_SIZE) {
+    fseek(progImage, 0, SEEK_END);
+    progSize = ftell(progImage);
+    if (progSize > ROM_SIZE) {
       error("ROM image too big");
     }
     /* do actual loading of image in romReset() */
