@@ -880,8 +880,8 @@ xtest11:
 	ldw	$28,$28,32*4		; psw
 	mvts	$28,PSW
 ;xtest11x:
-	.set	xtest11x,0xFFFFFF10
-	jr	$15
+	.set	xtest11x,0xEEEEEE50
+	jr	$14
 	j	halt
 	.syn
 
