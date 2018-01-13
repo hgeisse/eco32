@@ -16,6 +16,8 @@
 #include "cpu.h"
 #include "trace.h"
 #include "mmu.h"
+#include "icache.h"
+#include "dcache.h"
 #include "timer.h"
 
 
@@ -299,9 +301,23 @@ static void execNextInstruction(void) {
       WR(reg2, smsk | (RR(reg1) >> scnt));
       break;
     case OP_CCTL:
-      /*
-       * Nothing to do here: no simulation of caches.
-       */
+      switch (immed & 3) {
+        case 0:
+          /* do nothing */
+          break;
+        case 1:
+          /* invalidate icache */
+          icacheInvalidate();
+          break;
+        case 2:
+          /* invalidate dcache */
+          dcacheInvalidate();
+          break;
+        case 3:
+          /* flush dcache */
+          dcacheFlush();
+          break;
+      }
       break;
     case OP_LDHI:
       WR(reg2, ZEXT16(immed) << 16);
