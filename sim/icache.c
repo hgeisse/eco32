@@ -58,12 +58,31 @@ static unsigned int tagMask;	/* mask for tag bits (shifted to 0) */
 static CacheSet *cache;		/* the cache is an array of cache sets */
 
 
-Word icacheReadWord(Word pAddr) {
+/**************************************************************/
+
+
+static void readLineFromMemory(Word pAddr, unsigned int index) {
+  if (debug) {
+    cPrintf("**** icache read from mem: index 0x%04X @ pAddr 0x%08X ****\n",
+            index, pAddr);
+  }
+  if ((pAddr & 0x30000000) == ROM_BASE) {
+    romRead(pAddr & ~offsetMask,
+            cache[index].line_0.data,
+            lineSize >> 2);
+  } else {
+    ramRead(pAddr & ~offsetMask,
+            cache[index].line_0.data,
+            lineSize >> 2);
+  }
+}
+
+
+static Word *getWordPtr(Word pAddr) {
   unsigned int tag;
   unsigned int index;
   unsigned int offset;
   Bool hit;
-  Word data;
 
   /* compute tag, index, and offset */
   tag = (pAddr >> tagShift) & tagMask;
@@ -76,34 +95,41 @@ Word icacheReadWord(Word pAddr) {
             tag, index, offset);
     cPrintf(" : %s ****\n", hit ? "hit" : "miss");
   }
-  /* handle cache miss */
   if (!hit) {
-    if ((pAddr & 0x30000000) == ROM_BASE) {
-      romRead(pAddr & ~offsetMask,
-              cache[index].line_0.data,
-              lineSize >> 2);
-    } else {
-      ramRead(pAddr & ~offsetMask,
-              cache[index].line_0.data,
-              lineSize >> 2);
-    }
+    /* handle cache miss */
+    readLineFromMemory(pAddr, index);
     cache[index].line_0.valid = true;
     cache[index].line_0.tag = tag;
   }
   /* cached data is (now) present */
-  data = cache[index].line_0.data[offset >> 2];
+  return cache[index].line_0.data + (offset >> 2);
+}
+
+
+/**************************************************************/
+
+
+Word icacheReadWord(Word pAddr) {
+  Word *p;
+  Word data;
+
+  p = getWordPtr(pAddr);
+  data = *p;
   return data;
 }
 
 
+/**************************************************************/
+
+
 void icacheInvalidate(void) {
-  int i;
+  unsigned int index;
 
   if (debug) {
     cPrintf("**** icache invalidate ****\n");
   }
-  for (i = 0; i < sets; i++) {
-    cache[i].line_0.valid = false;
+  for (index = 0; index < sets; index++) {
+    cache[index].line_0.valid = false;
   }
 }
 
@@ -117,7 +143,7 @@ void icacheReset(void) {
 
 
 void icacheInit(void) {
-  int i;
+  unsigned int index;
 
   ldTotalSize = IC_LD_TOTAL_SIZE;
   ldLineSize = IC_LD_LINE_SIZE;
@@ -147,9 +173,9 @@ void icacheInit(void) {
   if (cache == NULL) {
     error("cannot allocate icache");
   }
-  for (i = 0; i < sets; i++) {
-    cache[i].line_0.data = malloc(lineSize);
-    if (cache[i].line_0.data == NULL) {
+  for (index = 0; index < sets; index++) {
+    cache[index].line_0.data = malloc(lineSize);
+    if (cache[index].line_0.data == NULL) {
       error("cannot allocate icache data");
     }
   }
@@ -158,10 +184,10 @@ void icacheInit(void) {
 
 
 void icacheExit(void) {
-  int i;
+  unsigned int index;
 
-  for (i = 0; i < sets; i++) {
-    free(cache[i].line_0.data);
+  for (index = 0; index < sets; index++) {
+    free(cache[index].line_0.data);
   }
   free(cache);
 }
