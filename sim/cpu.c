@@ -301,22 +301,17 @@ static void execNextInstruction(void) {
       WR(reg2, smsk | (RR(reg1) >> scnt));
       break;
     case OP_CCTL:
-      switch (immed & 3) {
-        case 0:
-          /* do nothing */
-          break;
-        case 1:
-          /* invalidate icache */
-          icacheInvalidate();
-          break;
-        case 2:
-          /* invalidate dcache */
-          dcacheInvalidate();
-          break;
-        case 3:
-          /* flush dcache */
+      if (immed & 0x04) {
+        /* icache ctrl */
+        icacheInvalidate();
+      }
+      if (immed & 0x02) {
+        /* dcache ctrl */
+        if (immed & 0x01) {
           dcacheFlush();
-          break;
+        } else {
+          dcacheInvalidate();
+        }
       }
       break;
     case OP_LDHI:
