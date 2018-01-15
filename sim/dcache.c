@@ -277,6 +277,7 @@ void dcacheFlush(void) {
       memAddr = (cache[index].line_0.tag << tagShift) |
                 (index << indexShift);
       writeLineToMemory(memAddr, index);
+      cache[index].line_0.dirty = false;
     }
   }
 }
