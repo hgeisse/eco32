@@ -24,7 +24,7 @@ loop:
 	add	$4,$4,4
 	add	$6,$6,4
 	bne	$4,$5,loop
-	cctl	3			; flush data cache
+	cctl	7			; invalidate icache, flush dcache
 	add	$7,$0,ram_base		; jump to program
 	jr	$7
 
