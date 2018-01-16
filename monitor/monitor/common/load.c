@@ -10,6 +10,7 @@
 #include "serial.h"
 #include "cpu.h"
 #include "mmu.h"
+#include "start.h"
 
 
 #define NUM_TRIES	10
@@ -220,6 +221,7 @@ void load(int serno, Bool start) {
   }
   serialOut(serno, 'q');
   printf("Connection to load server closed.\n");
+  syncCaches();
   if (start) {
     cpuRun();
   }

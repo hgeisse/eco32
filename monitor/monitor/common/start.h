@@ -44,6 +44,8 @@ Word getTLB_HI(int index);
 Word getTLB_LO(int index);
 void setTLB(int index, Word entryHi, Word entryLo);
 
+void syncCaches(void);
+
 Bool saveState(MonitorState *msp);
 
 extern MonitorState *monitorReturn;

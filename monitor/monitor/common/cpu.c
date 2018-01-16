@@ -259,6 +259,7 @@ void cpuStep(void) {
   }
   nextInstr = mmuReadWord(nextAddr);
   mmuWriteWord(nextAddr, BREAK);
+  syncCaches();
   for (i = 0; i < 32; i++) {
     userContext.reg[i] = RR(i);
   }
@@ -286,6 +287,7 @@ void cpuStep(void) {
   mmuSetBadAddr(userContext.badAddr);
   mmuSetBadAccs(userContext.badAccs);
   mmuWriteWord(nextAddr, nextInstr);
+  syncCaches();
   if (nextAddr == pc) {
     return;
   }
@@ -317,6 +319,7 @@ void cpuRun(void) {
     if (breakSet) {
       instr = mmuReadWord(breakAddr);
       mmuWriteWord(breakAddr, BREAK);
+      syncCaches();
     }
     for (i = 0; i < 32; i++) {
       userContext.reg[i] = RR(i);
@@ -346,6 +349,7 @@ void cpuRun(void) {
     mmuSetBadAccs(userContext.badAccs);
     if (breakSet) {
       mmuWriteWord(breakAddr, instr);
+      syncCaches();
     }
     if (breakSet && breakAddr == pc) {
       return;

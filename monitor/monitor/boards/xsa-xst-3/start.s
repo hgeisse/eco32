@@ -77,6 +77,8 @@
 	.export	getTLB_LO
 	.export	setTLB
 
+	.export	syncCaches
+
 	.export	saveState
 	.export	monitorReturn
 
@@ -242,6 +244,16 @@ setTLB:
 	mvts	$5,TLB_ENTRY_HI
 	mvts	$6,TLB_ENTRY_LO
 	tbwi
+	jr	$31
+
+;***************************************************************
+
+	.code
+	.align	4
+
+	; void syncCaches(void)
+syncCaches:
+	cctl	7
 	jr	$31
 
 ;***************************************************************

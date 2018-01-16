@@ -294,6 +294,7 @@ static void doAssemble(char *tokens[], int n) {
       printf("%s\n", msg);
     } else {
       mmuWriteWord(addr, instr);
+      syncCaches();
       addr += 4;
     }
   }
@@ -631,6 +632,7 @@ static void doMemoryWord(char *tokens[], int n) {
     }
     data = tmpData;
     mmuWriteWord(addr, data);
+    syncCaches();
   } else {
     help11();
   }
@@ -666,6 +668,7 @@ static void doMemoryHalf(char *tokens[], int n) {
     }
     data = (Half) tmpData;
     mmuWriteHalf(addr, data);
+    syncCaches();
   } else {
     help12();
   }
@@ -701,6 +704,7 @@ static void doMemoryByte(char *tokens[], int n) {
     }
     data = (Byte) tmpData;
     mmuWriteByte(addr, data);
+    syncCaches();
   } else {
     help13();
   }

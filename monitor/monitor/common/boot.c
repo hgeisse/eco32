@@ -42,6 +42,7 @@ void boot(int dskno, Bool start) {
   cpuSetReg(17, 0);
   cpuSetReg(18, capacity);
   cpuSetPC(VIRT_BOOT);
+  syncCaches();
   if (start) {
     cpuRun();
   }
