@@ -189,7 +189,7 @@ void printf(char *fmt, ...) {
 
 
 void halt(void) {
-  printf("bootstrap halted\n");
+  printf("Bootstrap halted\n");
   while (1) ;
 }
 

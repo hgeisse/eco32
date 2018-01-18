@@ -76,7 +76,7 @@ strtmsg:
 	.byte	"GitHub, under the name 'netbsd-on-eco32'."
 	.byte	0x0D, 0x0A, 0x0D, 0x0A, 0
 hltmsg:
-	.byte	"bootstrap halted", 0x0D, 0x0A, 0
+	.byte	"Bootstrap halted", 0x0D, 0x0A, 0
 
 	; boot record signature
 	.locate	512-2
