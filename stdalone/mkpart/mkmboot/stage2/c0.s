@@ -47,5 +47,6 @@ clrtest:
 	ldw	$16,$0,bootDisk		; setup arguments for next stage
 	ldw	$17,$0,startSector
 	ldw	$18,$0,numSectors
+	cctl	7			; sync caches
 	ldw	$31,$0,entryPoint	; jump to loaded program
 	jr	$31

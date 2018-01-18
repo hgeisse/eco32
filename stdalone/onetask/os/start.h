@@ -16,6 +16,7 @@ ISR getISR(int irq);
 void setISR(int irq, ISR isr);
 void startTask(unsigned int physStackTop);
 void setTLB(int index, unsigned int entryHi, unsigned int entryLo);
+void syncCaches(void);
 
 
 #endif /* _START_H_ */

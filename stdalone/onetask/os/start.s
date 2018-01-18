@@ -16,6 +16,7 @@
 	.export	setISR
 	.export	startTask
 	.export	setTLB
+	.export	syncCaches
 
 	.code
 
@@ -209,6 +210,10 @@ setTLB:
 	mvts	$5,2		; set entryHi
 	mvts	$6,3		; set entryLo
 	tbwi			; write TLB entry at index
+	jr	$31
+
+syncCaches:
+	cctl	7		; invalidate icache, flush dcache
 	jr	$31
 
 	.data

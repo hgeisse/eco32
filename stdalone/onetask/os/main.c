@@ -174,6 +174,7 @@ void loadTask(unsigned char *code, unsigned char *data,
   for (i = 0; i < bsize; i++) {
     *virtLoadAddr++ = '\0';
   }
+  syncCaches();
 }
 
 

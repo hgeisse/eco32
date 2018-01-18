@@ -270,6 +270,7 @@ unsigned int **loadTask(unsigned char *exec,
   for (i = 0; i < bsize; i++) {
     *virtLoadAddr++ = '\0';
   }
+  syncCaches();
   /* allocate a page directory and two page tables */
   pageDir = (unsigned int **) allocPageTable();
   pageDir[0] = allocPageTable();

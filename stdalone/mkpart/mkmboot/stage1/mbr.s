@@ -33,6 +33,7 @@ start:
 	and	$5,$5,0x3FFFFFFF	; convert to physical address
 	add	$6,$0,30		; 30 sectors to load
 	jal	rdsct
+	cctl	7			; sync caches
 	add	$8,$0,loadaddr		; start executing the boot manager
 	jr	$8
 
