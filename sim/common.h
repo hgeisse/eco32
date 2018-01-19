@@ -10,6 +10,8 @@
 #define K		1024		/* Kilo */
 #define M		(K * K)		/* Mega */
 
+#define NPAB		30		/* number of physical address bits */
+
 #define RAM_BASE	0x00000000	/* physical RAM base address */
 #define RAM_SIZE_MAX	(512 * M)	/* maximum RAM size */
 #define RAM_SIZE_DFL	(4 * M)		/* default RAM size */

@@ -17,14 +17,6 @@
 #include "rom.h"
 
 
-#define DC_LD_TOTAL_SIZE	12	/* ld(total size in bytes) */
-#define DC_LD_LINE_SIZE		4	/* ld(line size in bytes) */
-#define DC_TWO_WAY_ASSOC	false	/* false: direct mapped */
-					/* true: two way associative */
-
-#define PAB			30	/* physical address bits */
-
-
 typedef struct {
   Bool valid;			/* is the line valid? */
   Bool dirty;			/* is the line dirty? */
@@ -309,10 +301,10 @@ void dcacheInit(void) {
   indexShift = ldLineSize;
   indexMask = sets - 1;
   tagShift = ldSets + ldLineSize;
-  tagMask = (1 << (PAB - tagShift)) - 1;
+  tagMask = (1 << (NPAB - tagShift)) - 1;
   if (debug) {
     cPrintf("**** dcache tag    : shift = %2d, ", tagShift);
-    cPrintf("bits = %2d, mask = 0x%08X ****\n", PAB - tagShift, tagMask);
+    cPrintf("bits = %2d, mask = 0x%08X ****\n", NPAB - tagShift, tagMask);
     cPrintf("**** dcache index  : shift = %2d, ", indexShift);
     cPrintf("bits = %2d, mask = 0x%08X ****\n", ldSets, indexMask);
     cPrintf("**** dcache offset : shift = %2d, ", 0);
