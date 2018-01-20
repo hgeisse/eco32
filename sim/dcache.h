@@ -9,8 +9,8 @@
 
 #define DC_LD_TOTAL_SIZE	12	/* ld(total size in bytes) */
 #define DC_LD_LINE_SIZE		4	/* ld(line size in bytes) */
-#define DC_TWO_WAY_ASSOC	false	/* false: direct mapped */
-					/* true: two way associative */
+#define DC_LD_ASSOC		0	/* 0: direct mapped */
+					/* 1: two way associative */
 
 
 Word dcacheReadWord(Word pAddr);
@@ -24,7 +24,7 @@ void dcacheInvalidate(void);
 void dcacheFlush(void);
 
 void dcacheReset(void);
-void dcacheInit(void);
+void dcacheInit(int ldTotal, int ldLine, int ldAss);
 void dcacheExit(void);
 
 

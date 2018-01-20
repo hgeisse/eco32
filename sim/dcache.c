@@ -283,12 +283,12 @@ void dcacheReset(void) {
 }
 
 
-void dcacheInit(void) {
+void dcacheInit(int ldTotal, int ldLine, int ldAss) {
   unsigned int index;
 
-  ldTotalSize = DC_LD_TOTAL_SIZE;
-  ldLineSize = DC_LD_LINE_SIZE;
-  ldAssoc = DC_TWO_WAY_ASSOC ? 1 : 0;
+  ldTotalSize = ldTotal;
+  ldLineSize = ldLine;
+  ldAssoc = ldAss;
   ldSets = ldTotalSize - ldLineSize - ldAssoc;
   if (ldSets < 0) {
     error("impossible dcache geometry");

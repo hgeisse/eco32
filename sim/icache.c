@@ -134,12 +134,12 @@ void icacheReset(void) {
 }
 
 
-void icacheInit(void) {
+void icacheInit(int ldTotal, int ldLine, int ldAss) {
   unsigned int index;
 
-  ldTotalSize = IC_LD_TOTAL_SIZE;
-  ldLineSize = IC_LD_LINE_SIZE;
-  ldAssoc = IC_TWO_WAY_ASSOC ? 1 : 0;
+  ldTotalSize = ldTotal;
+  ldLineSize = ldLine;
+  ldAssoc = ldAss;
   ldSets = ldTotalSize - ldLineSize - ldAssoc;
   if (ldSets < 0) {
     error("impossible icache geometry");

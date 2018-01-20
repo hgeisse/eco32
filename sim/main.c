@@ -218,8 +218,8 @@ int main(int argc, char *argv[]) {
   }
   ramInit(memSize * M, progName, loadAddr);
   romInit(romName);
-  icacheInit();
-  dcacheInit();
+  icacheInit(IC_LD_TOTAL_SIZE, IC_LD_LINE_SIZE, IC_LD_ASSOC);
+  dcacheInit(DC_LD_TOTAL_SIZE, DC_LD_LINE_SIZE, DC_LD_ASSOC);
   mmuInit();
   traceInit();
   if (progName != NULL) {
