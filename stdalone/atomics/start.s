@@ -107,10 +107,10 @@ isr:
 start:
 	add	$8,$0,0xA8003FFF
 	add	$9,$0,0xC0000000
-	stw	$8,$9,0		; 0xC0000000: j 0xC0010000
-	stw	$8,$9,4		; 0xC0000004: j 0xC0010004
-	stw	$8,$9,8		; 0xC0000008: j 0xC0010008
-	cctl	7		; sync caches
+	stw	$8,$9,0			; 0xC0000000: j 0xC0010000
+	stw	$8,$9,4			; 0xC0000004: j 0xC0010004
+	stw	$8,$9,8			; 0xC0000008: j 0xC0010008
+	cctl	7			; sync caches
 	mvfs	$8,0
 	or	$8,$8,1 << 27		; let vector point to RAM
 	mvts	$8,0
