@@ -1,0 +1,19 @@
+The simulator now contains a first version of separate instruction
+and data caches. Their total sizes and line sizes are configurable
+from the simulator's command line, but they are only direct-mapped
+for now.
+
+The CPU got an instruction which deals with cache management,
+"cctl <m>". The immediate value m is a bit mask, where the three
+least significant bits have the following meaning:
+
+    2    if set: the icache is invalidated
+    1    if set: the dcache performs the action specified by bit 0
+    0    if cleared: invalidate cache, if set: flush cache
+         this bit is ignored if bit 1 is cleared
+
+Note 1: Synchronizing instruction and data caches can thus be
+accomplished by "cctl 7".
+
+Note 2: A good test on software for being cache compliant is
+to choose huge cache sizes, in the order of the main memory size.
