@@ -49,6 +49,9 @@ static unsigned int tagMask;	/* mask for tag bits (shifted to 0) */
 
 static CacheSet *cache;		/* the cache is an array of cache sets */
 
+static long readAccesses;	/* number of read accesses */
+static long readMisses;		/* number of read misses */
+
 
 /**************************************************************/
 
@@ -92,7 +95,9 @@ static Word *getWordPtr(Word pAddr) {
     readLineFromMemory(pAddr, index);
     cache[index].line_0.valid = true;
     cache[index].line_0.tag = tag;
+    readMisses++;
   }
+  readAccesses++;
   /* cached data is (now) present */
   return cache[index].line_0.data + (offset >> 2);
 }
@@ -126,11 +131,29 @@ void icacheInvalidate(void) {
 }
 
 
+/**************************************************************/
+
+
+long icacheGetReadAccesses(void) {
+  return readAccesses;
+}
+
+
+long icacheGetReadMisses(void) {
+  return readMisses;
+}
+
+
+/**************************************************************/
+
+
 void icacheReset(void) {
   cPrintf("Resetting Instruction Cache...\n");
   cPrintf("%6d sets * %d lines/set * %d bytes/line = %d bytes installed.\n",
           sets, assoc, lineSize, totalSize);
   icacheInvalidate();
+  readAccesses = 0;
+  readMisses = 0;
 }
 
 

@@ -17,6 +17,9 @@ Word icacheReadWord(Word pAddr);
 
 void icacheInvalidate(void);
 
+long icacheGetReadAccesses(void);
+long icacheGetReadMisses(void);
+
 void icacheReset(void);
 void icacheInit(int ldTotal, int ldLine, int ldAss);
 void icacheExit(void);

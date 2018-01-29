@@ -50,6 +50,12 @@ static unsigned int tagMask;	/* mask for tag bits (shifted to 0) */
 
 static CacheSet *cache;		/* the cache is an array of cache sets */
 
+static long readAccesses;	/* number of read accesses */
+static long readMisses;		/* number of read misses */
+static long writeAccesses;	/* number of write accesses */
+static long writeMisses;	/* number of write misses */
+static long memoryWrites;	/* number of lines written back */
+
 
 /**************************************************************/
 
@@ -110,19 +116,29 @@ static Word *getWordPtr(Word pAddr, Bool write) {
   if (!hit) {
     /* handle cache miss */
     if (cache[index].line_0.valid & cache[index].line_0.dirty) {
-      /* handle write back */
+      /* handle write-back */
       memAddr = (cache[index].line_0.tag << tagShift) |
                 (index << indexShift);
       writeLineToMemory(memAddr, index);
+      memoryWrites++;
     }
     readLineFromMemory(pAddr, index);
     cache[index].line_0.valid = true;
     cache[index].line_0.dirty = false;
     cache[index].line_0.tag = tag;
+    if (write) {
+      writeMisses++;
+    } else {
+      readMisses++;
+    }
   }
   if (write) {
     /* handle cache write */
     cache[index].line_0.dirty = true;
+    writeAccesses++;
+  } else {
+    /* handle cache read */
+    readAccesses++;
   }
   /* cached data is (now) present */
   return cache[index].line_0.data + (offset >> 2);
@@ -266,13 +282,46 @@ void dcacheFlush(void) {
   }
   for (index = 0; index < sets; index++) {
     if (cache[index].line_0.valid & cache[index].line_0.dirty) {
+      /* handle write-back */
       memAddr = (cache[index].line_0.tag << tagShift) |
                 (index << indexShift);
       writeLineToMemory(memAddr, index);
       cache[index].line_0.dirty = false;
+      memoryWrites++;
     }
   }
 }
+
+
+/**************************************************************/
+
+
+long dcacheGetReadAccesses(void) {
+  return readAccesses;
+}
+
+
+long dcacheGetReadMisses(void) {
+  return readMisses;
+}
+
+
+long dcacheGetWriteAccesses(void) {
+  return writeAccesses;
+}
+
+
+long dcacheGetWriteMisses(void) {
+  return writeMisses;
+}
+
+
+long dcacheGetMemoryWrites(void) {
+  return memoryWrites;
+}
+
+
+/**************************************************************/
 
 
 void dcacheReset(void) {
@@ -280,6 +329,11 @@ void dcacheReset(void) {
   cPrintf("%6d sets * %d lines/set * %d bytes/line = %d bytes installed.\n",
           sets, assoc, lineSize, totalSize);
   dcacheInvalidate();
+  readAccesses = 0;
+  readMisses = 0;
+  writeAccesses = 0;
+  writeMisses = 0;
+  memoryWrites = 0;
 }
 
 

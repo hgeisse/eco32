@@ -67,6 +67,8 @@ static void help(void) {
   cPrintf("  t       show/set TLB contents\n");
   cPrintf("  l       list trace buffer\n");
   cPrintf("  i       initialize hardware\n");
+  cPrintf("  ic      show/reset instr cache\n");
+  cPrintf("  dc      show/reset data cache\n");
   cPrintf("  q       quit simulator\n");
   cPrintf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -182,6 +184,18 @@ static void help16(void) {
 
 
 static void help17(void) {
+  cPrintf("  ic s              show instr cache statistics\n");
+  cPrintf("  ic r              reset instr cache\n");
+}
+
+
+static void help18(void) {
+  cPrintf("  dc s              show data cache statistics\n");
+  cPrintf("  dc r              reset data cache\n");
+}
+
+
+static void help19(void) {
   cPrintf("  q                 quit simulator\n");
 }
 
@@ -883,11 +897,50 @@ static void doInit(char *tokens[], int n) {
 }
 
 
+static void doIcache(char *tokens[], int n) {
+  if (n == 2) {
+    if (strcmp(tokens[1], "s") == 0) {
+      cPrintf("instruction cache\n");
+      cPrintf("    read accesses  : %ld\n", icacheGetReadAccesses());
+      cPrintf("    read misses    : %ld\n", icacheGetReadMisses());
+    } else
+    if (strcmp(tokens[1], "r") == 0) {
+      icacheReset();
+    } else {
+      help17();
+    }
+  } else {
+    help17();
+  }
+}
+
+
+static void doDcache(char *tokens[], int n) {
+  if (n == 2) {
+    if (strcmp(tokens[1], "s") == 0) {
+      cPrintf("data cache\n");
+      cPrintf("    read accesses  : %ld\n", dcacheGetReadAccesses());
+      cPrintf("    read misses    : %ld\n", dcacheGetReadMisses());
+      cPrintf("    write accesses : %ld\n", dcacheGetWriteAccesses());
+      cPrintf("    write misses   : %ld\n", dcacheGetWriteMisses());
+      cPrintf("    memory writes  : %ld\n", dcacheGetMemoryWrites());
+    } else
+    if (strcmp(tokens[1], "r") == 0) {
+      dcacheReset();
+    } else {
+      help18();
+    }
+  } else {
+    help18();
+  }
+}
+
+
 static void doQuit(char *tokens[], int n) {
   if (n == 1) {
     quit = true;
   } else {
-    help17();
+    help19();
   }
 }
 
@@ -910,7 +963,9 @@ Command commands[] = {
   { "t",    help14, doTLB        },
   { "l",    help15, doList       },
   { "i",    help16, doInit       },
-  { "q",    help17, doQuit       },
+  { "ic",   help17, doIcache     },
+  { "dc",   help18, doDcache     },
+  { "q",    help19, doQuit       },
 };
 
 int numCommands = sizeof(commands) / sizeof(commands[0]);

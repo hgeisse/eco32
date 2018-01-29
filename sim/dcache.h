@@ -23,6 +23,12 @@ void dcacheWriteByte(Word pAddr, Byte data);
 void dcacheInvalidate(void);
 void dcacheFlush(void);
 
+long dcacheGetReadAccesses(void);
+long dcacheGetReadMisses(void);
+long dcacheGetWriteAccesses(void);
+long dcacheGetWriteMisses(void);
+long dcacheGetMemoryWrites(void);
+
 void dcacheReset(void);
 void dcacheInit(int ldTotal, int ldLine, int ldAss);
 void dcacheExit(void);
