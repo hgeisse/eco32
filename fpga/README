@@ -5,7 +5,7 @@ experiments
 different experiments to explore implementation alternatives
 
     xsa-xst-3
-    experiments using XESS board
+    experiments using the XESS board
 
         memctrl-64
         64-bit memory controller for pipelined CPU
@@ -27,7 +27,7 @@ different experiments to explore implementation alternatives
         SDRAM speed measurement circuit, new controller
 
     de2-115
-    experiments using Terasic board
+    experiments using the Terasic board
 
         memctrl-32
         32-bit memory controller for multi-cycle CPU
@@ -54,6 +54,15 @@ different experiments to explore implementation alternatives
 
         sdcard
         basic SD card interface simulation
+
+        pipectrl
+        explore pipeline control signals
+
+            sim
+            demo pipeline simulation
+
+            fpga
+            demo pipeline implementation
 
 mc
 multicycle implementations of ECO32
