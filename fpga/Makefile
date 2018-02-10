@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = mc mc-sim mc-vl pl pl-sim pl-vl tests
+DIRS = mc mc-sim pl pl-sim tests
 
 .PHONY:		all install clean
 
