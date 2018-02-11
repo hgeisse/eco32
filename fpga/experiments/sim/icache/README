@@ -1,0 +1,23 @@
+v0: fake cache
+    every access is a hit with correct data
+    no errors until end of test
+
+v1: basic cache read with preloaded cache memory
+    fails after 8 successful reads with wrong data
+
+v2: basic cache read with preloaded cache memory
+    hit detection, pipeline control, startup
+    stalls after 8 successful reads
+
+v3: basic cache read with preloaded cache memory
+    hit detection, pipeline control, startup
+    main memory read, cache memory write
+    cache memory re-read, pipeline restart
+    runs out of predefined data after 32 successful reads
+
+v4: cache reads without predefined cache contents
+    hit detection, pipeline control, startup
+    main memory read, cache memory write
+    cache memory re-read, pipeline restart
+    initialization of valid bits
+    no errors until end of test

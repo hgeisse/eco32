@@ -64,6 +64,12 @@ different experiments to explore implementation alternatives
             fpga
             demo pipeline implementation
 
+    sim
+    experiments using a simulator only
+
+        icache
+        instruction cache demo
+
 mc
 multicycle implementations of ECO32
 

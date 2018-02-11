@@ -1,0 +1,28 @@
+democache.v
+	top-level
+	simulation control
+	clock generator
+	reset synchronizer
+	module instantiations
+
+cachetest.v
+	address pattern generator
+	request timing adjustable
+	reads and checks data from cache
+	adjustable number of tests
+	test end and error indicators
+
+cachectrl.v
+	byte-addressed
+	total capacity 256 bytes
+	line size 4 bytes
+	64 lines
+	direct mapped (1-way associative)
+	64 sets
+
+memory.v
+	capacity 64 KB
+	organized as 2^14 words, 32 bits per word
+	read-only, contents computed from address
+	stb/ack handshake
+	access time adjustable
