@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = relocs
+DIRS = abs relocs
 
 .PHONY:		all clean
 
