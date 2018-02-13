@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = abs cycle relocs simple
+DIRS = abs alloc cycle relocs simple statlib
 
 .PHONY:		all clean
 
