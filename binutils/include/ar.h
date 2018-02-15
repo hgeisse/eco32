@@ -1,5 +1,5 @@
 /*
- * ar.h -- structure of static library file
+ * ar.h -- structure of static library files
  */
 
 
