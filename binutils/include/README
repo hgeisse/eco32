@@ -13,8 +13,10 @@ The file consists of a header and up to 5 sections:
   - segment table
   - symbol table
   - relocation table
-  - object data
+  - segment data
   - string space
+The different sections are not required to appear in this order in
+the file; their offsets and sizes can be extracted from the header.
 
 
 1) Header
@@ -38,11 +40,40 @@ typedef struct {
   unsigned int entry;		/* entry point (if executable) */
 } ExecHeader;
 
-The magic number is used to distinguish executable files from
-other file types. This field must have the value EXEC_MAGIC.
+The magic number is used to distinguish object and executable
+files from other file types. It must have the value EXEC_MAGIC.
+
+The segment table starts at file offset osegs and has nsegs
+entries. It describes the segments contained in the object file
+(typical segments are ".code", ".data", and ".bss").
+
+The symbol table starts at file offset osyms and has nsyms
+entries. It contains information about symbols which are
+exported from or imported into this object file. It is mainly
+used during the link step and may not be present (nsyms = 0)
+if the file is an executable.
+
+The relocation table starts at file offset orels and has nrels
+entries. Each entry points to a place in a segment where the
+binary data has to be modified during the link step. The table
+is empty (nrels = 0) if the file is an executable.
+
+The binary data proper of all segments is contained in the
+segment data section of the file. It begins at file offset
+odata, and has a size of sdata bytes.
+
+The textual representation of all names (of segments, symbols,
+etc.) is contained in the string space which starts at file
+offset ostrs, and has a size of sstrs bytes. The strings are
+null-terminated and stored without any padding.
+
+The program's starting address is given by the value of "entry".
+It only has meaning in executable files.
 
 
 2) Segment Table
+
+Each entry in the segment table describes a single segment:
 
 typedef struct {
   unsigned int name;		/* offset in string space */
@@ -52,8 +83,30 @@ typedef struct {
   unsigned int attr;		/* segment attributes */
 } SegmentRecord;
 
+#define SEG_ATTR_X	0x01	/* executable */
+#define SEG_ATTR_W	0x02	/* writable */
+#define SEG_ATTR_P	0x04	/* present in object file */
+#define SEG_ATTR_A	0x08	/* allocatable in memory */
+
+The segment's name is given by its offset into the string space.
+Its binary data is found at offset offs into the segment data.
+The segment's virtual start address is specified by addr, and its
+size is given in bytes. This is also the size of the binary data
+contained in the file, but only if the "present in object file"
+attribute (SEG_ATTR_P) is set. Otherwise there is no binary data
+present for this segment. The attributes SEG_ATTR_X and SEG_ATTR_W
+specify if the segment is executable and writable, respectively.
+If the attribute SEG_ATTR_A is set, the loader must allocate space
+in memory for the segment during loading. Typical combinations are:
+    .code    APX
+    .data    APW
+    .bss     AW
+
 
 3) Symbol Table
+
+For every symbol which is imported into or exported from the current
+object file, there is a corresponding symbol table record:
 
 typedef struct {
   unsigned int name;		/* offset in string space */
@@ -61,6 +114,10 @@ typedef struct {
   int seg;			/* the symbol's segment, -1: absolute */
   unsigned int attr;		/* symbol attributes */
 } SymbolRecord;
+
+#define SYM_ATTR_U	0x01	/* undefined */
+
+The symbol's name is given by its offset into the string space.
 
 
 4) Relocation Table
@@ -85,8 +142,16 @@ typedef struct {
 
 5) Object Data
 
+This section contains the binary data of all segments. The data of
+each segment is padded with zeros to achieve a segment size which
+is a multiple of 4 bytes. All segments are then concatenated.
+
 
 6) String Space
+
+The string space is used to store the names of all symbols in the
+object file. The strings are null-terminated and stored without
+any padding.
 
 
 7) Executing an Executable
@@ -94,4 +159,32 @@ typedef struct {
 t.b.d.
 
 After loading the program, execution begins at its entry point.
+
+
+
+Format of Static Library Files
+------------------------------
+
+0) General
+
+The "ar" file format is used for library files which are statically
+linked with other object files in order to get an executable file.
+
+typedef struct {
+  unsigned int magic;		/* must be ARCH_MAGIC */
+  unsigned int omods;		/* offset of module table in file */
+  unsigned int nmods;		/* number of module table entries */
+  unsigned int odata;		/* offset of data space in file */
+  unsigned int sdata;		/* size of data space in file */
+  unsigned int ostrs;		/* offset of string space in file */
+  unsigned int sstrs;		/* size of string space in file */
+} ArchHeader;
+
+typedef struct {
+  unsigned int name;		/* offset of name in string space */
+  unsigned int offs;		/* offset of module in data space */
+  unsigned int size;		/* size of module in bytes */
+  unsigned int fsym;		/* first symbol name in string space */
+  unsigned int nsym;		/* number of symbol names */
+} ModuleRecord;
 
