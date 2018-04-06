@@ -147,6 +147,29 @@ long icacheGetReadMisses(void) {
 /**************************************************************/
 
 
+Bool icacheProbe(Word pAddr, Word *data) {
+  unsigned int tag;
+  unsigned int index;
+  unsigned int offset;
+  Bool hit;
+
+  /* compute tag, index, and offset */
+  tag = (pAddr >> tagShift) & tagMask;
+  index = (pAddr >> indexShift) & indexMask;
+  offset = pAddr & offsetMask;
+  /* cache lookup */
+  hit = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  if (hit) {
+    /* return data word */
+    *data = cache[index].line_0.data[offset >> 2];
+  }
+  return hit;
+}
+
+
+/**************************************************************/
+
+
 void icacheReset(void) {
   cPrintf("Resetting Instruction Cache...\n");
   cPrintf("%6d sets * %d lines/set * %d bytes/line = %d bytes installed.\n",

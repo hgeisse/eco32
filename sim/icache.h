@@ -20,6 +20,8 @@ void icacheInvalidate(void);
 long icacheGetReadAccesses(void);
 long icacheGetReadMisses(void);
 
+Bool icacheProbe(Word pAddr, Word *data);
+
 void icacheReset(void);
 void icacheInit(int ldTotal, int ldLine, int ldAss);
 void icacheExit(void);

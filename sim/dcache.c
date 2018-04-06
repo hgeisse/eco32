@@ -324,6 +324,30 @@ long dcacheGetMemoryWrites(void) {
 /**************************************************************/
 
 
+Bool dcacheProbe(Word pAddr, Word *data, Bool *dirty) {
+  unsigned int tag;
+  unsigned int index;
+  unsigned int offset;
+  Bool hit;
+
+  /* compute tag, index, and offset */
+  tag = (pAddr >> tagShift) & tagMask;
+  index = (pAddr >> indexShift) & indexMask;
+  offset = pAddr & offsetMask;
+  /* cache lookup */
+  hit = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  if (hit) {
+    /* return data word and dirty flag */
+    *data = cache[index].line_0.data[offset >> 2];
+    *dirty = cache[index].line_0.dirty;
+  }
+  return hit;
+}
+
+
+/**************************************************************/
+
+
 void dcacheReset(void) {
   cPrintf("Resetting Data Cache...\n");
   cPrintf("%6d sets * %d lines/set * %d bytes/line = %d bytes installed.\n",

@@ -29,6 +29,8 @@ long dcacheGetWriteAccesses(void);
 long dcacheGetWriteMisses(void);
 long dcacheGetMemoryWrites(void);
 
+Bool dcacheProbe(Word pAddr, Word *data, Bool *dirty);
+
 void dcacheReset(void);
 void dcacheInit(int ldTotal, int ldLine, int ldAss);
 void dcacheExit(void);

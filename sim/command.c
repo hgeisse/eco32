@@ -22,6 +22,7 @@
 #include "dcache.h"
 #include "ram.h"
 #include "rom.h"
+#include "io.h"
 #include "timer.h"
 #include "dspkbd.h"
 #include "serial.h"
@@ -67,8 +68,9 @@ static void help(void) {
   cPrintf("  t       show/set TLB contents\n");
   cPrintf("  l       list trace buffer\n");
   cPrintf("  i       initialize hardware\n");
-  cPrintf("  ic      show/reset instr cache\n");
-  cPrintf("  dc      show/reset data cache\n");
+  cPrintf("  ic      instr cache control\n");
+  cPrintf("  dc      data cache control\n");
+  cPrintf("  pm      show physical memory\n");
   cPrintf("  q       quit simulator\n");
   cPrintf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -184,18 +186,27 @@ static void help16(void) {
 
 
 static void help17(void) {
+  cPrintf("  ic i              invalidate instr cache\n");
   cPrintf("  ic s              show instr cache statistics\n");
   cPrintf("  ic r              reset instr cache\n");
 }
 
 
 static void help18(void) {
+  cPrintf("  dc f              flush data cache\n");
+  cPrintf("  dc i              invalidate data cache\n");
   cPrintf("  dc s              show data cache statistics\n");
   cPrintf("  dc r              reset data cache\n");
 }
 
 
 static void help19(void) {
+  cPrintf("  pm <paddr>        show 16 words of phys mem at <paddr>\n");
+  cPrintf("  pm <paddr> <cnt>  show <cnt> words of phys mem at <paddr>\n");
+}
+
+
+static void help20(void) {
   cPrintf("  q                 quit simulator\n");
 }
 
@@ -899,6 +910,9 @@ static void doInit(char *tokens[], int n) {
 
 static void doIcache(char *tokens[], int n) {
   if (n == 2) {
+    if (strcmp(tokens[1], "i") == 0) {
+      icacheInvalidate();
+    } else
     if (strcmp(tokens[1], "s") == 0) {
       cPrintf("instruction cache\n");
       cPrintf("    read accesses  : %ld\n", icacheGetReadAccesses());
@@ -917,6 +931,12 @@ static void doIcache(char *tokens[], int n) {
 
 static void doDcache(char *tokens[], int n) {
   if (n == 2) {
+    if (strcmp(tokens[1], "f") == 0) {
+      dcacheFlush();
+    } else
+    if (strcmp(tokens[1], "i") == 0) {
+      dcacheInvalidate();
+    } else
     if (strcmp(tokens[1], "s") == 0) {
       cPrintf("data cache\n");
       cPrintf("    read accesses  : %ld\n", dcacheGetReadAccesses());
@@ -936,11 +956,67 @@ static void doDcache(char *tokens[], int n) {
 }
 
 
+static void doPhysMem(char *tokens[], int n) {
+  Word pAddr;
+  Word count;
+  Word data;
+  Bool dirty;
+
+  if (n == 2) {
+    if (!getHexNumber(tokens[1], &pAddr)) {
+      cPrintf("illegal physical address\n");
+      return;
+    }
+    count = 16;
+  } else
+  if (n == 3) {
+    if (!getHexNumber(tokens[1], &pAddr)) {
+      cPrintf("illegal physical address\n");
+      return;
+    }
+    if (!getHexNumber(tokens[2], &count)) {
+      cPrintf("illegal count\n");
+      return;
+    }
+  } else {
+    help19();
+    return;
+  }
+  cPrintf("phys addr     i-cache       d-cache         memory\n");
+  pAddr &= ~3;
+  while (count--) {
+    cPrintf("%08X      ", pAddr);
+    if (icacheProbe(pAddr, &data)) {
+      cPrintf("%08X", data);
+    } else {
+      cPrintf("<miss>  ");
+    }
+    cPrintf("      ");
+    if (dcacheProbe(pAddr, &data, &dirty)) {
+      cPrintf("%08X %c", data, dirty ? '*' : ' ');
+    } else {
+      cPrintf("<miss>    ");
+    }
+    cPrintf("      ");
+    if ((pAddr & 0x30000000) == IO_BASE) {
+      data = ioReadWord(pAddr);
+    } else
+    if ((pAddr & 0x30000000) == ROM_BASE) {
+      romRead(pAddr, &data, 1);
+    } else {
+      ramRead(pAddr, &data, 1);
+    }
+    cPrintf("%08X\n", data);
+    pAddr += 4;
+  }
+}
+
+
 static void doQuit(char *tokens[], int n) {
   if (n == 1) {
     quit = true;
   } else {
-    help19();
+    help20();
   }
 }
 
@@ -965,7 +1041,8 @@ Command commands[] = {
   { "i",    help16, doInit       },
   { "ic",   help17, doIcache     },
   { "dc",   help18, doDcache     },
-  { "q",    help19, doQuit       },
+  { "pm",   help19, doPhysMem    },
+  { "q",    help20, doQuit       },
 };
 
 int numCommands = sizeof(commands) / sizeof(commands[0]);
