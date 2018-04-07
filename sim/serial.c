@@ -157,11 +157,6 @@ void serialWrite(Word addr, Word data) {
     } else {
       serials[dev].rcvrCtrl &= ~SERIAL_RCVR_IEN;
     }
-    if (data & SERIAL_RCVR_RDY) {
-      serials[dev].rcvrCtrl |= SERIAL_RCVR_RDY;
-    } else {
-      serials[dev].rcvrCtrl &= ~SERIAL_RCVR_RDY;
-    }
     if ((serials[dev].rcvrCtrl & SERIAL_RCVR_IEN) != 0 &&
         (serials[dev].rcvrCtrl & SERIAL_RCVR_RDY) != 0) {
       /* raise serial line rcvr interrupt */
@@ -180,11 +175,6 @@ void serialWrite(Word addr, Word data) {
       serials[dev].xmtrCtrl |= SERIAL_XMTR_IEN;
     } else {
       serials[dev].xmtrCtrl &= ~SERIAL_XMTR_IEN;
-    }
-    if (data & SERIAL_XMTR_RDY) {
-      serials[dev].xmtrCtrl |= SERIAL_XMTR_RDY;
-    } else {
-      serials[dev].xmtrCtrl &= ~SERIAL_XMTR_RDY;
     }
     if ((serials[dev].xmtrCtrl & SERIAL_XMTR_IEN) != 0 &&
         (serials[dev].xmtrCtrl & SERIAL_XMTR_RDY) != 0) {

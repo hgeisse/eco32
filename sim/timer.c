@@ -65,6 +65,7 @@ Word timerRead(Word addr) {
   reg = addr & 0x0FFF;
   if (reg == TIMER_CTRL) {
     data = timerCounters[dev].ctrl;
+    timerCounters[dev].ctrl &= ~TIMER_EXP;
   } else
   if (reg == TIMER_DIVISOR) {
     data = timerCounters[dev].divisor;
@@ -100,11 +101,6 @@ void timerWrite(Word addr, Word data) {
       timerCounters[dev].ctrl |= TIMER_IEN;
     } else {
       timerCounters[dev].ctrl &= ~TIMER_IEN;
-    }
-    if (data & TIMER_EXP) {
-      timerCounters[dev].ctrl |= TIMER_EXP;
-    } else {
-      timerCounters[dev].ctrl &= ~TIMER_EXP;
     }
     if ((timerCounters[dev].ctrl & TIMER_IEN) != 0 &&
         (timerCounters[dev].ctrl & TIMER_EXP) != 0) {

@@ -849,11 +849,6 @@ void keyboardWrite(Word addr, Word data) {
     } else {
       kbdCtrl &= ~KEYBOARD_IEN;
     }
-    if (data & KEYBOARD_RDY) {
-      kbdCtrl |= KEYBOARD_RDY;
-    } else {
-      kbdCtrl &= ~KEYBOARD_RDY;
-    }
     if ((kbdCtrl & KEYBOARD_IEN) != 0 &&
         (kbdCtrl & KEYBOARD_RDY) != 0) {
       /* raise keyboard interrupt */

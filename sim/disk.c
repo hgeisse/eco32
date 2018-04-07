@@ -89,7 +89,6 @@ static void diskCallback(int n) {
     /* or we have no disk at all */
     diskCtrl |= DISK_ERR;
   }
-  diskCtrl &= ~DISK_STRT;
   diskCtrl |= DISK_DONE;
   if (diskCtrl & DISK_IEN) {
     /* raise disk interrupt */
@@ -149,7 +148,6 @@ void diskWrite(Word addr, Word data) {
       diskCtrl &= ~DISK_IEN;
     }
     if (data & DISK_STRT) {
-      diskCtrl |= DISK_STRT;
       diskCtrl &= ~DISK_ERR;
       diskCtrl &= ~DISK_DONE;
       /* only start a disk operation if disk is present */
@@ -160,18 +158,6 @@ void diskWrite(Word addr, Word data) {
         }
         timerStart(DISK_DELAY_USEC + (delta * DISK_SEEK_USEC) / diskCap,
                    diskCallback, 1);
-      }
-    } else {
-      diskCtrl &= ~DISK_STRT;
-      if (data & DISK_ERR) {
-        diskCtrl |= DISK_ERR;
-      } else {
-        diskCtrl &= ~DISK_ERR;
-      }
-      if (data & DISK_DONE) {
-        diskCtrl |= DISK_DONE;
-      } else {
-        diskCtrl &= ~DISK_DONE;
       }
     }
     if ((diskCtrl & DISK_IEN) != 0 &&
