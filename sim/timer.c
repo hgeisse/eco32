@@ -66,6 +66,10 @@ Word timerRead(Word addr) {
   if (reg == TIMER_CTRL) {
     data = timerCounters[dev].ctrl;
     timerCounters[dev].ctrl &= ~TIMER_EXP;
+    if (timerCounters[dev].ctrl & TIMER_IEN) {
+      /* lower timer interrupt */
+      cpuResetInterrupt(timerCounters[dev].irq);
+    }
   } else
   if (reg == TIMER_DIVISOR) {
     data = timerCounters[dev].divisor;
