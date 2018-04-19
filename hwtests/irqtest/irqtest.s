@@ -37,8 +37,7 @@ noinit:
 	add	$4,$7,$0
 	jal	out
 	add	$8,$0,tmr_base
-	add	$9,$0,0x02
-	stw	$9,$8,0
+	ldw	$9,$8,0			; read tmr ctrl to reset tmr irq
 	add	$4,$0,' '
 	jal	out
 	add	$4,$0,' '

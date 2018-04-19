@@ -16,7 +16,6 @@ wait:
 	ldw	$9,$8,0
 	and	$9,$9,1
 	beq	$9,$0,wait
-	stw	$0,$8,0
 	add	$7,$7,1
 	add	$9,$0,'z'+1
 	bne	$7,$9,again
