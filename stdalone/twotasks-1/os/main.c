@@ -315,9 +315,10 @@ int task2Started = 0;
 
 void timerISR(int irq, unsigned int *registers) {
   unsigned int *timerBase;
+  unsigned int dummy;
 
   timerBase = (unsigned int *) 0xF0000000;
-  *timerBase = 2;
+  dummy = *timerBase;
   printf(">|<");
   if (currentTask == 0) {
     if (!task1Started) {
