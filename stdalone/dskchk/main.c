@@ -185,7 +185,9 @@ int hundredth = 0;
 
 
 int clockISR(int irq) {
-  *TIMER_CTRL = 2;
+  unsigned int dummy;
+
+  dummy = *TIMER_CTRL;
   hundredth++;
   return 0;
 }

@@ -174,11 +174,12 @@ int current;
 
 void timerISR(int irq, unsigned int *registers) {
   unsigned int *timerBase;
+  unsigned int dummy;
   int i;
 
-  /* re-init timer */
+  /* reset timer IRQ */
   timerBase = (unsigned int *) 0xF0000000;
-  *timerBase = 2;
+  dummy = *timerBase;
   /* switch threads */
   if (current == 0) {
     /* try to switch to thread 1 */
