@@ -1556,6 +1556,8 @@ static void writeData(FILE *outFile) {
   SegmentRecord *seg;
   unsigned char *data;
   unsigned int size;
+  unsigned int padSize;
+  unsigned char pad[3] = { 0, 0, 0 };
 
   execHeader.odata = outFileOffset;
   execHeader.sdata = 0;
@@ -1571,12 +1573,18 @@ static void writeData(FILE *outFile) {
           seg = mod->segs + iseg->seg;
           data = mod->data + seg->offs;
           size = seg->size;
+          padSize = WORD_ALIGN(size) - size;
           if (size != 0) {
             if (fwrite(data, 1, size, outFile) != size) {
               error("cannot write output file segment data");
             }
+            if (padSize != 0) {
+              if (fwrite(pad, 1, padSize, outFile) != padSize) {
+                error("cannot write output file segment data");
+              }
+            }
           }
-          execHeader.sdata += size;
+          execHeader.sdata += size + padSize;
           iseg = iseg->next;
         }
         igrp = igrp->next;

@@ -1846,21 +1846,6 @@ Instr *lookupInstr(char *name) {
 /**************************************************************/
 
 
-void roundupSegments(void) {
-  while (segPtr[SEGMENT_CODE] & 3) {
-    fputc(0, codeFile);
-    segPtr[SEGMENT_CODE] += 1;
-  }
-  while (segPtr[SEGMENT_DATA] & 3) {
-    fputc(0, dataFile);
-    segPtr[SEGMENT_DATA] += 1;
-  }
-  while (segPtr[SEGMENT_BSS] & 3) {
-    segPtr[SEGMENT_BSS] += 1;
-  }
-}
-
-
 void asmModule(void) {
   Symbol *label;
   Instr *instr;
@@ -1896,7 +1881,6 @@ void asmModule(void) {
       error("garbage in line %d", lineno);
     }
   }
-  roundupSegments();
 }
 
 
