@@ -1499,10 +1499,7 @@ void relocateModules(void) {
 
 
 static ExecHeader execHeader;
-
 static unsigned int outFileOffset;
-static unsigned int outDataSize;
-static unsigned int outStringSize;
 
 
 static void writeDummyHeader(FILE *outFile) {
@@ -1661,8 +1658,6 @@ void writeOutput(char *outName) {
     error("cannot open output file '%s'", outName);
   }
   outFileOffset = 0;
-  outDataSize = 0;
-  outStringSize = 0;
   writeDummyHeader(outFile);
   writeData(outFile);
   writeStrings(outFile);
