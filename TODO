@@ -18,6 +18,7 @@ sim:
    3. beim dspkbd-device ist ein fehler. und zwar darf man in dem
    keyboard-callback nicht die read-position in dem ring-buffer dort
    weiterschieben, wenn der letzte scancode noch gar nicht gelesen wurde
+   *** DONE ***
 
    4. beim dspkbd sollte man auch den alpha-wert bei den pixeln
    angeben. wenn man z.B. compiz verwendet, was das unterstützt, ist sonst
