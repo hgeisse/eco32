@@ -1289,7 +1289,7 @@ typedef struct {
 } SymtableIterator;
 
 
-void getSymbol(Sym *sym, void *arg) {
+static void getSymbol(Sym *sym, void *arg) {
   SymtableIterator *iter;
 
   iter = (SymtableIterator *) arg;
@@ -1297,7 +1297,7 @@ void getSymbol(Sym *sym, void *arg) {
 }
 
 
-int compareSymbols(const void *p1, const void *p2) {
+static int compareSymbols(const void *p1, const void *p2) {
   Sym **sym1;
   Sym **sym2;
 
@@ -1340,7 +1340,7 @@ void writeSymbolTable(FILE *mapFile) {
 }
 
 
-void resolveSymbol(Sym *sym, void *arg) {
+static void resolveSymbol(Sym *sym, void *arg) {
   Module *mod;
   SegmentRecord *seg;
 
