@@ -12,6 +12,7 @@
 #define SECTOR_SIZE	512
 #define NPE		(SECTOR_SIZE / sizeof(PartEntry))
 #define DESCR_SIZE	20
+#define PART_MAGIC	0xF5A5F2F9
 
 #define LINE_SIZE	100
 
@@ -27,6 +28,14 @@ typedef struct {
 } PartEntry;
 
 PartEntry ptr[NPE];
+
+/*
+ * NOTE: The last entry ptr[NPE - 1] is not used for
+ * any real partition, but holds the magic number which
+ * identifies the ECO32 partitioning scheme. The struct
+ * members 'type' and 'size' must each contain PART_MAGIC,
+ * and 'start' must contain the bitwise complement of it.
+ */
 
 
 /**************************************************************/
@@ -269,7 +278,7 @@ int main(int argc, char *argv[]) {
       error("cannot read partition number in config file '%s', line %d",
             confName, lineNumber);
     }
-    if (partNum >= 16) {
+    if (partNum >= NPE - 1) {
       error("illegal partition number in config file '%s', line %d",
             confName, lineNumber);
     }
@@ -329,7 +338,7 @@ int main(int argc, char *argv[]) {
   /* next, show partition table */
   printf("Partitions:\n");
   printf(" # b type       start      last       size       description\n");
-  for (partNum = 0; partNum < NPE; partNum++) {
+  for (partNum = 0; partNum < NPE - 1; partNum++) {
     if (ptr[partNum].type != 0) {
       partLast = ptr[partNum].start + ptr[partNum].size - 1;
     } else {
@@ -344,6 +353,10 @@ int main(int argc, char *argv[]) {
            ptr[partNum].size,
            ptr[partNum].descr);
   }
+  /* set magic number */
+  ptr[NPE - 1].type = PART_MAGIC;
+  ptr[NPE - 1].start = ~PART_MAGIC;
+  ptr[NPE - 1].size = PART_MAGIC;
   /* finally, write partition table record */
   convertPartitionTable(ptr, NPE);
   disk = fopen(diskName, "r+b");

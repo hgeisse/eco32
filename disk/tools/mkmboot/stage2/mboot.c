@@ -15,6 +15,7 @@
 #define SECTOR_SIZE		512
 #define NPE			(SECTOR_SIZE / sizeof(PartEntry))
 #define DESCR_SIZE		20
+#define PART_MAGIC		0xF5A5F2F9
 
 
 unsigned int bootDisk = 0;	/* gets loaded by previous stage */
@@ -30,6 +31,14 @@ typedef struct {
 } PartEntry;
 
 PartEntry ptr[NPE];
+
+/*
+ * NOTE: The last entry ptr[NPE - 1] is not used for
+ * any real partition, but holds the magic number which
+ * identifies the ECO32 partitioning scheme. The struct
+ * members 'type' and 'size' must each contain PART_MAGIC,
+ * and 'start' must contain the bitwise complement of it.
+ */
 
 
 int strlen(char *str) {
@@ -222,11 +231,17 @@ int main(void) {
   printf("Bootstrap manager executing...\n");
   strcpy(line, DEFAULT_PARTITION);
   readDisk(1, (unsigned char *) ptr, 1);
+  if (ptr[NPE - 1].type != PART_MAGIC ||
+      ptr[NPE - 1].start != ~PART_MAGIC ||
+      ptr[NPE - 1].size != PART_MAGIC) {
+    printf("wrong magic number in partition table\n");
+    halt();
+  }
   while (1) {
     printf("\nPartitions:\n");
     printf(" # | b | description\n");
     printf("---+---+----------------------\n");
-    for (i = 0; i < NPE; i++) {
+    for (i = 0; i < NPE - 1; i++) {
       if (ptr[i].type != 0) {
         printf("%2d | %s | %s\n",
                i, ptr[i].type & 0x80000000 ? "*" : " ", ptr[i].descr);
@@ -242,7 +257,7 @@ int main(void) {
       part = part * 10 + (*p - '0');
       p++;
     }
-    if (*p != '\0' || part < 0 || part > 15) {
+    if (*p != '\0' || part < 0 || part >= NPE - 1) {
       printf("illegal partition number\n");
       continue;
     }

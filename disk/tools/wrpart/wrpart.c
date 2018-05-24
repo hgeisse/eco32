@@ -12,6 +12,7 @@
 #define SECTOR_SIZE	512
 #define NPE		(SECTOR_SIZE / sizeof(PartEntry))
 #define DESCR_SIZE	20
+#define PART_MAGIC	0xF5A5F2F9
 
 
 typedef struct {
@@ -22,6 +23,14 @@ typedef struct {
 } PartEntry;
 
 PartEntry ptr[NPE];
+
+/*
+ * NOTE: The last entry ptr[NPE - 1] is not used for
+ * any real partition, but holds the magic number which
+ * identifies the ECO32 partitioning scheme. The struct
+ * members 'type' and 'size' must each contain PART_MAGIC,
+ * and 'start' must contain the bitwise complement of it.
+ */
 
 
 /**************************************************************/
@@ -105,12 +114,18 @@ int main(int argc, char *argv[]) {
     error("cannot read partition table from disk image '%s'", diskName);
   }
   convertPartitionTable(ptr, NPE);
+  /* check magic number */
+  if (ptr[NPE - 1].type != PART_MAGIC ||
+      ptr[NPE - 1].start != ~PART_MAGIC ||
+      ptr[NPE - 1].size != PART_MAGIC) {
+    error("wrong magic number in partition table");
+  }
   /* get partition number, determine start and size of partition */
   partno = strtol(partNmbr, &endp, 10);
   if (*endp != '\0') {
     error("cannot read partition number");
   }
-  if (partno < 0 || partno > 15) {
+  if (partno < 0 || partno >= NPE - 1) {
     error("illegal partition number %d", partno);
   }
   if ((ptr[partno].type & 0x7FFFFFFF) == 0) {

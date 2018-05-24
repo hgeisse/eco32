@@ -14,7 +14,7 @@
 # partition boot type start last description
 #
 # partition:
-#   possible values 0..15
+#   possible values 0..14
 #   indicates partition number
 #   different entries need not be sorted in any way
 #   no two entries may have the same partition number
@@ -38,7 +38,7 @@
 #   last sector of partition (0-based)
 #   partitions must not overlap
 # description:
-#   max. 512 / 16 - 12 = 20 characters (includes trailing 0)
+#   max. 20 characters (includes trailing 0)
 #   this may be displayed during bootstrap
 #
 # The following example exactly fits on a 650 MB disk:
