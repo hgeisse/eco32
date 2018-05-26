@@ -18,7 +18,8 @@
 #include "ram.h"
 #include "rom.h"
 #include "timer.h"
-#include "dspkbd.h"
+#include "dsp.h"
+#include "kbd.h"
 #include "serial.h"
 #include "disk.h"
 #include "sdcard.h"
@@ -44,13 +45,13 @@ void shutdownWrite(Word addr, Word data) {
   romExit();
   timerExit();
   displayExit();
+  graphExit();
   keyboardExit();
   serialExit();
   diskExit();
   sdcardExit();
   outputExit();
   shutdownExit();
-  graphExit();
   cPrintf("ECO32 Simulator shutdown\n");
   cExit();
   exit(data & 0xFF);

@@ -20,7 +20,8 @@
 #include "ram.h"
 #include "rom.h"
 #include "timer.h"
-#include "dspkbd.h"
+#include "dsp.h"
+#include "kbd.h"
 #include "serial.h"
 #include "disk.h"
 #include "sdcard.h"
@@ -260,6 +261,11 @@ int main(int argc, char *argv[]) {
   timerInit();
   if (console) {
     displayInit();
+  }
+  if (graphics) {
+    graphInit();
+  }
+  if (console || graphics) {
     keyboardInit();
   }
   serialInit(numSerials, connectTerminals, expect);
@@ -267,9 +273,6 @@ int main(int argc, char *argv[]) {
   sdcardInit(sdcardName);
   outputInit(outputName);
   shutdownInit();
-  if (graphics) {
-    graphInit();
-  }
   ramInit(memSize * M, progName, loadAddr);
   romInit(romName);
   icacheInit(icacheTotalSize, icacheLineSize, icacheAssoc);
@@ -307,13 +310,13 @@ int main(int argc, char *argv[]) {
   romExit();
   timerExit();
   displayExit();
+  graphExit();
   keyboardExit();
   serialExit();
   diskExit();
   sdcardExit();
   outputExit();
   shutdownExit();
-  graphExit();
   cPrintf("ECO32 Simulator finished\n");
   cExit();
   return 0;

@@ -19,7 +19,8 @@
 #include "ram.h"
 #include "rom.h"
 #include "timer.h"
-#include "dspkbd.h"
+#include "dsp.h"
+#include "kbd.h"
 #include "serial.h"
 #include "disk.h"
 #include "sdcard.h"
@@ -40,13 +41,13 @@ void error(char *fmt, ...) {
   romExit();
   timerExit();
   displayExit();
+  graphExit();
   keyboardExit();
   serialExit();
   diskExit();
   sdcardExit();
   outputExit();
   shutdownExit();
-  graphExit();
   cExit();
   va_start(ap, fmt);
   fprintf(stderr, "Error: ");

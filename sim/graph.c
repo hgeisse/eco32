@@ -13,6 +13,7 @@
 #include "error.h"
 #include "except.h"
 #include "graph.h"
+#include "kbd.h"
 
 
 static Bool debug = false;
@@ -168,7 +169,7 @@ static void initMonitor(int argc, char *argv[]) {
   colormap = XCreateColormap(vga.display, rootWin, visual, AllocNone);
   /* create the window */
   attrib.colormap = colormap;
-  attrib.event_mask = ExposureMask;
+  attrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
   attrib.background_pixel = RGB2PIXEL(0, 0, 0);
   attrib.border_pixel = RGB2PIXEL(0, 0, 0);
   vga.win =
@@ -265,6 +266,12 @@ static void *server(void *ignore) {
             event.xclient.format == 8) {
           run = false;
         }
+        break;
+      case KeyPress:
+        keyPressed(event.xkey.keycode);
+        break;
+      case KeyRelease:
+        keyReleased(event.xkey.keycode);
         break;
       default:
         break;
