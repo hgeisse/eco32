@@ -1,9 +1,13 @@
 	.export	_start
+	.export	dat2
+	.export	dat3
 
 	.code
-_start:	.gotadr	$1
-	.gotptr	$8,$1,dat3
+_start:	.gotadr	$3
+	.gotptr	$8,$3,dat3
 	ldw	$8,$8,0
+	.gotoff	$9,$3,dat4
+	ldw	$9,$9,0
 loop:	j	loop
 
 	.data
