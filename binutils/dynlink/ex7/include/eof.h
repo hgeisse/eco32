@@ -21,6 +21,11 @@
 #define RELOC_R16	2	/* write 16 bits with value relative to PC */
 #define RELOC_R26	3	/* write 26 bits with value relative to PC */
 #define RELOC_W32	4	/* write full 32 bit word with value */
+#define RELOC_GOTADRH	5	/* PIC: GOT addr, high part of offset to PC */
+#define RELOC_GOTADRL	6	/* PIC: GOT addr, low part of offset to PC */
+#define RELOC_GOTPNTR	7	/* PIC: memory addr by GOT pointer */
+#define RELOC_GOTOFFH	8	/* PIC: memory addr by GOT offset, high part */
+#define RELOC_GOTOFFL	9	/* PIC: memory addr by GOT offset, low part */
 #define RELOC_SYM	0x100	/* symbol flag, may be added to any RELOC */
 
 
