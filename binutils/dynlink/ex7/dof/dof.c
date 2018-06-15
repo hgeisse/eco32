@@ -370,6 +370,21 @@ void dumpRelocTable(void) {
       case RELOC_W32:
         printf("W32");
         break;
+      case RELOC_GOTADRH:
+        printf("GOTADRH");
+        break;
+      case RELOC_GOTADRL:
+        printf("GOTADRL");
+        break;
+      case RELOC_GOTPNTR:
+        printf("GOTPNTR");
+        break;
+      case RELOC_GOTOFFH:
+        printf("GOTOFFH");
+        break;
+      case RELOC_GOTOFFL:
+        printf("GOTOFFL");
+        break;
       default:
         printf("\n");
         error("unknown relocation type 0x%08X", relocTable[rn].typ);
