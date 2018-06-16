@@ -555,8 +555,9 @@ Fixup *newFixup(int segment, unsigned int offset, int method, int value) {
 }
 
 
-void addFixup(Symbol *s,
-              int segment, unsigned int offset, int method, int value) {
+void addFixupToSym(Symbol *s,
+                   int segment, unsigned int offset,
+                   int method, int value) {
   Fixup *f;
 
   if (debugFixup) {
@@ -566,6 +567,20 @@ void addFixup(Symbol *s,
   f = newFixup(segment, offset, method, value);
   f->next = s->fixups;
   s->fixups = f;
+}
+
+
+void addFixupToLst(int segment, unsigned int offset,
+                   int method, int value) {
+  Fixup *f;
+
+  if (debugFixup) {
+    printf("DEBUG: fixup (s:%s, o:%08X, m:%s, v:%08X) added to fixup list\n",
+           segName[segment], offset, methodName[method], value);
+  }
+  f = newFixup(segment, offset, method, value);
+  f->next = fixupList;
+  fixupList = f;
 }
 
 
@@ -1264,7 +1279,7 @@ void dotWord(unsigned int code) {
     if (v.sym == NULL) {
       emitWord(v.con);
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_W32, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_W32, v.con);
       emitWord(0);
     }
     if (token != TOK_COMMA) {
@@ -1311,9 +1326,9 @@ void dotGotadr(unsigned int code) {
   gotReg = tokenvalNumber;
   getToken();
   emitWord(OP_JAL << 26);
-//  addFixup();
+  addFixupToLst(currSeg, segPtr[currSeg], RELOC_GOTADRH, 0);
   emitWord(OP_LDHI << 26 | gotReg << 16);
-//  addFixup();
+  addFixupToLst(currSeg, segPtr[currSeg], RELOC_GOTADRL, -4);
   emitWord(OP_ORI << 26 | gotReg << 21 | gotReg << 16);
   emitWord(OP_ADD << 26 | gotReg << 21 | 31 << 16 | gotReg << 11);
 }
@@ -1341,7 +1356,7 @@ void dotGotptr(unsigned int code) {
   expect(TOK_COMMA);
   getToken();
   v = parseExpression();
-//  addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPTR, v.con);
+//  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPTR, v.con);
   emitWord(OP_LDW << 26 | gotReg << 21 | tgtReg << 16);
 }
 
@@ -1368,9 +1383,9 @@ void dotGotoff(unsigned int code) {
   expect(TOK_COMMA);
   getToken();
   v = parseExpression();
-//  addFixup();
+//  addFixupToSym();
   emitWord(OP_LDHI << 26 | tgtReg << 16);
-//  addFixup();
+//  addFixupToSym();
   emitWord(OP_ORI << 26 | tgtReg << 21 | tgtReg << 16);
   emitWord(OP_ADD << 26 | tgtReg << 21 | gotReg << 16 | tgtReg << 11);
 }
@@ -1410,7 +1425,7 @@ void formatRH(unsigned int code) {
     emitHalf(code << 10 | reg);
     emitHalf(v.con);
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
     emitHalf(code << 10 | reg);
     emitHalf(0);
   }
@@ -1433,7 +1448,7 @@ void formatRHH(unsigned int code) {
     emitHalf(code << 10 | reg);
     emitHalf(v.con >> 16);
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
     emitHalf(code << 10 | reg);
     emitHalf(0);
   }
@@ -1475,10 +1490,10 @@ void formatRRH(unsigned int code) {
       }
     } else {
       /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
       emitHalf(OP_LDHI << 10 | AUX_REG);
       emitHalf(0);
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
       emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
       emitHalf(0);
       emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
@@ -1491,7 +1506,7 @@ void formatRRH(unsigned int code) {
       emitHalf(code << 10 | src << 5 | dst);
       emitHalf(v.con);
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
       emitHalf(code << 10 | src << 5 | dst);
       emitHalf(0);
     }
@@ -1535,10 +1550,10 @@ void formatRRS(unsigned int code) {
       }
     } else {
       /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
       emitHalf(OP_LDHI << 10 | AUX_REG);
       emitHalf(0);
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
       emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
       emitHalf(0);
       emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
@@ -1551,7 +1566,7 @@ void formatRRS(unsigned int code) {
       emitHalf(code << 10 | src << 5 | dst);
       emitHalf(v.con);
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
       emitHalf(code << 10 | src << 5 | dst);
       emitHalf(0);
     }
@@ -1629,10 +1644,10 @@ void formatRRX(unsigned int code) {
         }
       } else {
         /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
         emitHalf(OP_LDHI << 10 | AUX_REG);
         emitHalf(0);
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
         emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
         emitHalf(0);
         emitHalf(code << 10 | src1 << 5 | AUX_REG);
@@ -1643,7 +1658,7 @@ void formatRRX(unsigned int code) {
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(v.con);
       } else {
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(0);
       }
@@ -1701,10 +1716,10 @@ void formatRRY(unsigned int code) {
         }
       } else {
         /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
         emitHalf(OP_LDHI << 10 | AUX_REG);
         emitHalf(0);
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
         emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
         emitHalf(0);
         emitHalf(code << 10 | src1 << 5 | AUX_REG);
@@ -1715,7 +1730,7 @@ void formatRRY(unsigned int code) {
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(v.con);
       } else {
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(0);
       }
@@ -1744,7 +1759,7 @@ void formatRRB(unsigned int code) {
   if (v.sym == NULL) {
     immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
     immed = 0;
   }
   emitHalf(code << 10 | src1 << 5 | src2);
@@ -1768,7 +1783,7 @@ void formatJ(unsigned int code) {
     if (v.sym == NULL) {
       immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
       immed = 0;
     }
     emitWord(code << 26 | (immed & 0x03FFFFFF));
