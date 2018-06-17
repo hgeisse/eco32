@@ -376,14 +376,14 @@ void dumpRelocTable(void) {
       case RELOC_GOTADRL:
         printf("GOTADRL");
         break;
-      case RELOC_GOTPNTR:
-        printf("GOTPNTR");
-        break;
       case RELOC_GOTOFFH:
         printf("GOTOFFH");
         break;
       case RELOC_GOTOFFL:
         printf("GOTOFFL");
+        break;
+      case RELOC_GOTPNTR:
+        printf("GOTPNTR");
         break;
       default:
         printf("\n");
