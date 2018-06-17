@@ -172,7 +172,7 @@ unsigned int segPtr[4] = { 0, 0, 0, 0 };
 char *segName[4] = { "ABS", "CODE", "DATA", "BSS" };
 char *methodName[10] = {
   "H16", "L16", "R16", "R26", "W32",
-  "GOTADRH", "GOTADRL", "GOTPNTR", "GOTOFFH", "GOTOFFL"
+  "GOTADRH", "GOTADRL", "GOTOFFH", "GOTOFFL", "GOTPNTR"
 };
 
 
@@ -1335,33 +1335,6 @@ void dotGotadr(unsigned int code) {
 
 
 /*
- * .gotptr <target reg>,<GOT reg>,<global symbol>
- * emit instructions to get address of symbol into target reg
- * using a pointer loaded from the GOT
- * (which is pointed to by the GOT reg)
- */
-void dotGotptr(unsigned int code) {
-  int tgtReg;
-  int gotReg;
-  Value v;
-
-  expect(TOK_REGISTER);
-  tgtReg = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  gotReg = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  v = parseExpression();
-//  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPTR, v.con);
-  emitWord(OP_LDW << 26 | gotReg << 21 | tgtReg << 16);
-}
-
-
-/*
  * .gotoff <target register>,<GOT register>,<local symbol>
  * emit instructions to get address of symbol into target reg
  * using an offset from the start of the GOT
@@ -1388,6 +1361,33 @@ void dotGotoff(unsigned int code) {
 //  addFixupToSym();
   emitWord(OP_ORI << 26 | tgtReg << 21 | tgtReg << 16);
   emitWord(OP_ADD << 26 | tgtReg << 21 | gotReg << 16 | tgtReg << 11);
+}
+
+
+/*
+ * .gotptr <target reg>,<GOT reg>,<global symbol>
+ * emit instructions to get address of symbol into target reg
+ * using a pointer loaded from the GOT
+ * (which is pointed to by the GOT reg)
+ */
+void dotGotptr(unsigned int code) {
+  int tgtReg;
+  int gotReg;
+  Value v;
+
+  expect(TOK_REGISTER);
+  tgtReg = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  gotReg = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  v = parseExpression();
+//  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPTR, v.con);
+  emitWord(OP_LDW << 26 | gotReg << 21 | tgtReg << 16);
 }
 
 
@@ -1827,8 +1827,8 @@ Instr instrTable[] = {
   { ".word",   dotWord,   0 },
   { ".set",    dotSet,    0 },
   { ".gotadr", dotGotadr, 0 },
-  { ".gotptr", dotGotptr, 0 },
   { ".gotoff", dotGotoff, 0 },
+  { ".gotptr", dotGotptr, 0 },
 
   /* arithmetical instructions */
   { "add",     formatRRY, OP_ADD  },
