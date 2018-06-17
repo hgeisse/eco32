@@ -23,9 +23,9 @@
 #define RELOC_W32	4	/* write full 32 bit word with value */
 #define RELOC_GOTADRH	5	/* PIC: GOT addr, high part of offset to PC */
 #define RELOC_GOTADRL	6	/* PIC: GOT addr, low part of offset to PC */
-#define RELOC_GOTPNTR	7	/* PIC: memory addr by GOT pointer */
-#define RELOC_GOTOFFH	8	/* PIC: memory addr by GOT offset, high part */
-#define RELOC_GOTOFFL	9	/* PIC: memory addr by GOT offset, low part */
+#define RELOC_GOTOFFH	7	/* PIC: memory addr by GOT offset, high part */
+#define RELOC_GOTOFFL	8	/* PIC: memory addr by GOT offset, low part */
+#define RELOC_GOTPNTR	9	/* PIC: memory addr by GOT pointer */
 #define RELOC_SYM	0x100	/* symbol flag, may be added to any RELOC */
 
 
@@ -68,6 +68,7 @@ typedef struct {
   int typ;			/* relocation type: one of RELOC_xxx */
 				/* symbol flag RELOC_SYM may be set */
   int ref;			/* what is referenced */
+				/* if -1: nothing */
 				/* if symbol flag = 0: segment number */
 				/* if symbol flag = 1: symbol number */
   int add;			/* additive part of value */
