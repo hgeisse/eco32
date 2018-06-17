@@ -1356,9 +1356,9 @@ void dotGotoff(unsigned int code) {
   expect(TOK_COMMA);
   getToken();
   v = parseExpression();
-//  addFixupToSym();
+  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, v.con);
   emitWord(OP_LDHI << 26 | tgtReg << 16);
-//  addFixupToSym();
+  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, v.con);
   emitWord(OP_ORI << 26 | tgtReg << 21 | tgtReg << 16);
   emitWord(OP_ADD << 26 | tgtReg << 21 | gotReg << 16 | tgtReg << 11);
 }
@@ -1386,7 +1386,7 @@ void dotGotptr(unsigned int code) {
   expect(TOK_COMMA);
   getToken();
   v = parseExpression();
-//  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPTR, v.con);
+  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, v.con);
   emitWord(OP_LDW << 26 | gotReg << 21 | tgtReg << 16);
 }
 
