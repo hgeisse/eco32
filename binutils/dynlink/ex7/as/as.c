@@ -1328,7 +1328,7 @@ void dotGotadr(unsigned int code) {
   emitWord(OP_JAL << 26);
   addFixupToLst(currSeg, segPtr[currSeg], RELOC_GOTADRH, 0);
   emitWord(OP_LDHI << 26 | gotReg << 16);
-  addFixupToLst(currSeg, segPtr[currSeg], RELOC_GOTADRL, -4);
+  addFixupToLst(currSeg, segPtr[currSeg], RELOC_GOTADRL, 4);
   emitWord(OP_ORI << 26 | gotReg << 21 | gotReg << 16);
   emitWord(OP_ADD << 26 | gotReg << 21 | 31 << 16 | gotReg << 11);
 }
