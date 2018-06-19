@@ -1188,10 +1188,16 @@ void relocateModules(void) {
                 "    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
                 seg->name, rel->loc, addr, data);
       }
-      if (rel->typ & RELOC_SYM) {
-        base = mod->syms[rel->ref]->val;
+      if (rel->ref == -1) {
+        /* nothing is referenced */
+        base = 0;
       } else {
-        base = mod->segs[rel->ref].addr;
+        /* either a symbol or a segment is referenced */
+        if (rel->typ & RELOC_SYM) {
+          base = mod->syms[rel->ref]->val;
+        } else {
+          base = mod->segs[rel->ref].addr;
+        }
       }
       value = base + rel->add;
       switch (rel->typ & ~RELOC_SYM) {
@@ -1246,6 +1252,36 @@ void relocateModules(void) {
           method = "W32";
           mask = 0xFFFFFFFF;
           break;
+        case RELOC_GOTADRH:
+          warning("relocation GOTADRH not handled yet");
+          method = "GOTADRH";
+          mask = 0xFFFFFFFF;
+          value = 0;
+          break;
+        case RELOC_GOTADRL:
+          warning("relocation GOTADRL not handled yet");
+          method = "GOTADRL";
+          mask = 0xFFFFFFFF;
+          value = 0;
+          break;
+        case RELOC_GOTOFFH:
+          warning("relocation GOTOFFH not handled yet");
+          method = "GOTOFFH";
+          mask = 0xFFFFFFFF;
+          value = 0;
+          break;
+        case RELOC_GOTOFFL:
+          warning("relocation GOTOFFL not handled yet");
+          method = "GOTOFFL";
+          mask = 0xFFFFFFFF;
+          value = 0;
+          break;
+        case RELOC_GOTPNTR:
+          warning("relocation GOTPNTR not handled yet");
+          method = "GOTPNTR";
+          mask = 0xFFFFFFFF;
+          value = 0;
+          break;
         default:
           method = "ILL";
           mask = 0;
@@ -1258,9 +1294,10 @@ void relocateModules(void) {
                 "        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
                 method,
                 rel->typ & RELOC_SYM ? "SYM" : "SEG",
-                rel->typ & RELOC_SYM ?
-                  mod->syms[rel->ref]->name :
-                  mod->segs[rel->ref].name,
+                rel->ref == -1 ? "*nothing*" :
+                  rel->typ & RELOC_SYM ?
+                    mod->syms[rel->ref]->name :
+                    mod->segs[rel->ref].name,
                 rel->add,
                 data);
       }
