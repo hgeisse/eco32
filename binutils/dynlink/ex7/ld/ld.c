@@ -1255,31 +1255,31 @@ void relocateModules(void) {
         case RELOC_GOTADRH:
           warning("relocation GOTADRH not handled yet");
           method = "GOTADRH";
-          mask = 0xFFFFFFFF;
+          mask = 0x00000000;
           value = 0;
           break;
         case RELOC_GOTADRL:
           warning("relocation GOTADRL not handled yet");
           method = "GOTADRL";
-          mask = 0xFFFFFFFF;
+          mask = 0x00000000;
           value = 0;
           break;
         case RELOC_GOTOFFH:
           warning("relocation GOTOFFH not handled yet");
           method = "GOTOFFH";
-          mask = 0xFFFFFFFF;
+          mask = 0x00000000;
           value = 0;
           break;
         case RELOC_GOTOFFL:
           warning("relocation GOTOFFL not handled yet");
           method = "GOTOFFL";
-          mask = 0xFFFFFFFF;
+          mask = 0x00000000;
           value = 0;
           break;
         case RELOC_GOTPNTR:
           warning("relocation GOTPNTR not handled yet");
           method = "GOTPNTR";
-          mask = 0xFFFFFFFF;
+          mask = 0x00000000;
           value = 0;
           break;
         default:
