@@ -9,17 +9,27 @@ DIRS = as dof ld
 
 .PHONY:		all install clean
 
-all:
+all:		compiler
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i all ; \
 		done
 
-install:
+install:	compiler
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i install ; \
 		done
 
+compiler:
+		mkdir -p $(BUILD)/bin
+		$(MAKE) -C lcc BUILDDIR=`pwd`/$(BUILD)/bin \
+		  HOSTFILE=etc/eco32-linux.c lcc
+		$(MAKE) -C lcc BUILDDIR=`pwd`/$(BUILD)/bin all
+		rm -f $(BUILD)/bin/*.c
+		rm -f $(BUILD)/bin/*.o
+		rm -f $(BUILD)/bin/*.a
+
 clean:
+		rm -f lcc/lburg/gram.c
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i clean ; \
 		done
