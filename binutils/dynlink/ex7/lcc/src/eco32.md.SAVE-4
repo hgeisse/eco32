@@ -88,8 +88,6 @@ static Symbol freg2w;
 static Symbol blkreg;
 static int tmpregs[] = { 3, 9, 10 };
 
-static int pic = 0;
-
 %}
 
 %start stmt
@@ -693,11 +691,6 @@ static void progbeg(int argc, char *argv[]) {
   setSwap();
   segment(CODE);
   parseflags(argc, argv);
-  for (i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "-pic") == 0) {
-      pic = 1;
-    }
-  }
   for (i = 0; i < 32; i++) {
     ireg[i] = mkreg("%d", i, 1, IREG);
   }
