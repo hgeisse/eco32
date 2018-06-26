@@ -1,9 +1,9 @@
-int a;
-static int b;
+static int a;
+int b;
 extern int c;
 
-int d = 22;
-static int e = 11;
+static int d = 0x11;
+int e = 0x22;
 
 void func(void) {
   a = 1;
