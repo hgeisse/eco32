@@ -14,6 +14,7 @@ all:
 		@echo "  make runhi-m5"
 		@echo "  make runlo-m6"
 		@echo "  make runhi-m6"
+		@echo "  make build-m7"
 
 build-m1:
 		$(BUILD)/bin/as -o m1.o m1.s
@@ -44,6 +45,11 @@ build-m6:
 		$(BUILD)/bin/as -o m6.o m6.s
 		$(BUILD)/bin/ld -c 0xC0000000 -o m6 m6.o
 		$(BUILD)/bin/load m6 m6.bin
+
+build-m7:
+		$(BUILD)/bin/as -o m7.o m7.s
+		$(BUILD)/bin/ld -c 0xC0000000 -o m7 m7.o
+		$(BUILD)/bin/load m7 m7.bin
 
 runlo-m1:	build-m1
 		$(BUILD)/bin/sim -i -l m1.bin
@@ -89,3 +95,4 @@ clean:
 		rm -f m4.o m4 m4.bin
 		rm -f m5.o m5 m5.bin
 		rm -f m6.o m6 m6.bin
+		rm -f m7.o m7 m7.bin
