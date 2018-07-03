@@ -90,6 +90,47 @@ static int tmpregs[] = { 3, 9, 10 };
 
 static int pic = 0;
 
+int ifnotpic(void) {
+  if (pic) {
+    return LBURG_MAX;
+  }
+  return 1;
+}
+
+int ifpicoff(Node p) {
+  Symbol s;
+
+  if (!pic) {
+    return LBURG_MAX;
+  }
+  assert(p != NULL);
+  if (p->op != 4359) {
+    return LBURG_MAX;
+  }
+  s = p->syms[0];
+  if (s->sclass != STATIC) {
+    return LBURG_MAX;
+  }
+  return 1;
+}
+
+int ifpicptr(Node p) {
+  Symbol s;
+
+  if (!pic) {
+    return LBURG_MAX;
+  }
+  assert(p != NULL);
+  if (p->op != 4359) {
+    return LBURG_MAX;
+  }
+  s = p->syms[0];
+  if (s->sclass == STATIC) {
+    return LBURG_MAX;
+  }
+  return 1;
+}
+
 %}
 
 %start stmt
@@ -265,6 +306,7 @@ addr:	ADDP4(reg,acon)		"$%0,%1"
 addr:	ADDU4(reg,acon)		"$%0,%1"
 
 addr:	acon			"$0,%0"
+piaddr:	acon			"$25,%0"
 addr:	reg			"$%0,0"
 addr:	ADDRFP4			"$29,%a+%F"
 addr:	ADDRLP4			"$29,%a+%F"
@@ -279,21 +321,49 @@ reg:	CNSTU1			"# reg\n"		range(a, 0, 0)
 reg:	CNSTU2			"# reg\n"		range(a, 0, 0)
 reg:	CNSTU4			"# reg\n"		range(a, 0, 0)
 
-stmt:	ASGNI1(addr,reg)	"\tstb\t$%1,%0\n"	1
-stmt:	ASGNI2(addr,reg)	"\tsth\t$%1,%0\n"	1
-stmt:	ASGNI4(addr,reg)	"\tstw\t$%1,%0\n"	1
-stmt:	ASGNP4(addr,reg)	"\tstw\t$%1,%0\n"	1
-stmt:	ASGNU1(addr,reg)	"\tstb\t$%1,%0\n"	1
-stmt:	ASGNU2(addr,reg)	"\tsth\t$%1,%0\n"	1
-stmt:	ASGNU4(addr,reg)	"\tstw\t$%1,%0\n"	1
+stmt:	ASGNI1(addr,reg)	"\tstb\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNI1(piaddr,reg)	"\t.gotoff\t$1,%0\n\tstb\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNI1(piaddr,reg)	"\t.gotptr\t$1,%0\n\tstb\t$%1,$1,0\n" ifpicptr(a->kids[0])
+stmt:	ASGNI2(addr,reg)	"\tsth\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNI2(piaddr,reg)	"\t.gotoff\t$1,%0\n\tsth\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNI2(piaddr,reg)	"\t.gotptr\t$1,%0\n\tsth\t$%1,$1,0\n" ifpicptr(a->kids[0])
+stmt:	ASGNI4(addr,reg)	"\tstw\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNI4(piaddr,reg)	"\t.gotoff\t$1,%0\n\tstw\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNI4(piaddr,reg)	"\t.gotptr\t$1,%0\n\tstw\t$%1,$1,0\n" ifpicptr(a->kids[0])
+stmt:	ASGNP4(addr,reg)	"\tstw\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNP4(piaddr,reg)	"\t.gotoff\t$1,%0\n\tstw\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNP4(piaddr,reg)	"\t.gotptr\t$1,%0\n\tstw\t$%1,$1,0\n" ifpicptr(a->kids[0])
+stmt:	ASGNU1(addr,reg)	"\tstb\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNU1(piaddr,reg)	"\t.gotoff\t$1,%0\n\tstb\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNU1(piaddr,reg)	"\t.gotptr\t$1,%0\n\tstb\t$%1,$1,0\n" ifpicptr(a->kids[0])
+stmt:	ASGNU2(addr,reg)	"\tsth\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNU2(piaddr,reg)	"\t.gotoff\t$1,%0\n\tsth\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNU2(piaddr,reg)	"\t.gotptr\t$1,%0\n\tsth\t$%1,$1,0\n" ifpicptr(a->kids[0])
+stmt:	ASGNU4(addr,reg)	"\tstw\t$%1,%0\n"	ifnotpic()
+stmt:	ASGNU4(piaddr,reg)	"\t.gotoff\t$1,%0\n\tstw\t$%1,$1,0\n" ifpicoff(a->kids[0])
+stmt:	ASGNU4(piaddr,reg)	"\t.gotptr\t$1,%0\n\tstw\t$%1,$1,0\n" ifpicptr(a->kids[0])
 
-reg:	INDIRI1(addr)		"\tldb\t$%c,%0\n"	1
-reg:	INDIRI2(addr)		"\tldh\t$%c,%0\n"	1
-reg:	INDIRI4(addr)		"\tldw\t$%c,%0\n"	1
-reg:	INDIRP4(addr)		"\tldw\t$%c,%0\n"	1
-reg:	INDIRU1(addr)		"\tldbu\t$%c,%0\n"	1
-reg:	INDIRU2(addr)		"\tldhu\t$%c,%0\n"	1
-reg:	INDIRU4(addr)		"\tldw\t$%c,%0\n"	1
+reg:	INDIRI1(addr)		"\tldb\t$%c,%0\n"	ifnotpic()
+reg:	INDIRI1(piaddr)		"\t.gotoff\t$1,%0\n\tldb\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRI1(piaddr)		"\t.gotptr\t$1,%0\n\tldb\t$%c,$1,0\n" ifpicptr(a->kids[0])
+reg:	INDIRI2(addr)		"\tldh\t$%c,%0\n"	ifnotpic()
+reg:	INDIRI2(piaddr)		"\t.gotoff\t$1,%0\n\tldh\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRI2(piaddr)		"\t.gotptr\t$1,%0\n\tldh\t$%c,$1,0\n" ifpicptr(a->kids[0])
+reg:	INDIRI4(addr)		"\tldw\t$%c,%0\n"	ifnotpic()
+reg:	INDIRI4(piaddr)		"\t.gotoff\t$1,%0\n\tldw\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRI4(piaddr)		"\t.gotptr\t$1,%0\n\tldw\t$%c,$1,0\n" ifpicptr(a->kids[0])
+reg:	INDIRP4(addr)		"\tldw\t$%c,%0\n"	ifnotpic()
+reg:	INDIRP4(piaddr)		"\t.gotoff\t$1,%0\n\tldw\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRP4(piaddr)		"\t.gotptr\t$1,%0\n\tldw\t$%c,$1,0\n" ifpicptr(a->kids[0])
+reg:	INDIRU1(addr)		"\tldbu\t$%c,%0\n"	ifnotpic()
+reg:	INDIRU1(piaddr)		"\t.gotoff\t$1,%0\n\tldbu\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRU1(piaddr)		"\t.gotptr\t$1,%0\n\tldbu\t$%c,$1,0\n" ifpicptr(a->kids[0])
+reg:	INDIRU2(addr)		"\tldhu\t$%c,%0\n"	ifnotpic()
+reg:	INDIRU2(piaddr)		"\t.gotoff\t$1,%0\n\tldhu\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRU2(piaddr)		"\t.gotptr\t$1,%0\n\tldhu\t$%c,$1,0\n" ifpicptr(a->kids[0])
+reg:	INDIRU4(addr)		"\tldw\t$%c,%0\n"	ifnotpic()
+reg:	INDIRU4(piaddr)		"\t.gotoff\t$1,%0\n\tldw\t$%c,$1,0\n" ifpicoff(a->kids[0])
+reg:	INDIRU4(piaddr)		"\t.gotptr\t$1,%0\n\tldw\t$%c,$1,0\n" ifpicptr(a->kids[0])
 
 reg:	CVII4(INDIRI1(addr))	"\tldb\t$%c,%0\n"	1
 reg:	CVII4(INDIRI2(addr))	"\tldh\t$%c,%0\n"	1
@@ -597,6 +667,9 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
   segment(CODE);
   print("\t.align\t4\n");
   print("%s:\n", f->x.name);
+  if (pic) {
+    print("\t.gotadr\t$25\n");
+  }
   if (framesize > 0) {
     print("\tsub\t$29,$29,%d\n", framesize);
   }
