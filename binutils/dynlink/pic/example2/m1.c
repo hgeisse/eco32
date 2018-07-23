@@ -3,5 +3,5 @@ extern int b;
 
 void func(void) {
   a = b;
-  //b = a;
+  b = a;
 }
