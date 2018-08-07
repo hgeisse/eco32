@@ -37,6 +37,14 @@ unsigned int read4(unsigned char *p) {
 }
 
 
+void write4(unsigned char *p, unsigned int data) {
+  p[0] = data >> 24;
+  p[1] = data >> 16;
+  p[2] = data >>  8;
+  p[3] = data >>  0;
+}
+
+
 /**************************************************************/
 
 
@@ -54,6 +62,7 @@ unsigned int read4(unsigned char *p) {
 #define LDERR_SNO	11	/* segments not ordered, cannot fill gap */
 #define LDERR_SRE	12	/* cannot seek to relocation entry */
 #define LDERR_RRE	13	/* cannot read relocation entry */
+#define LDERR_ILR	14	/* illegal load-time relocation */
 
 
 typedef struct {
@@ -105,6 +114,7 @@ int loadObj(FILE *inFile, FILE *outFile,
   int typ;
   int ref;
   int add;
+  unsigned int word;
   unsigned int vaddr;
   int j;
 
@@ -208,7 +218,12 @@ int loadObj(FILE *inFile, FILE *outFile,
       printf("    ref : %d\n", ref);
       printf("    add : %d\n", add);
     }
-    printf("**** WARNING: load-time relocation ignored for now! ****\n");
+    if (typ != RELOC_ER32 || ref != -1 || add != 0) {
+      return LDERR_ILR;
+    }
+    word = read4((unsigned char *) &allSegs[seg].data[loc]);
+    word += loadOffs;
+    write4((unsigned char *) &allSegs[seg].data[loc], word);
   }
   /* possibly sort segments */
   if (sort) {
@@ -278,6 +293,7 @@ char *loadResult[] = {
   /* 11 */  "segments not ordered, cannot fill gap",
   /* 12 */  "cannot seek to relocation entry",
   /* 13 */  "cannot read relocation entry",
+  /* 14 */  "illegal load-time relocation",
 };
 
 int maxResults = sizeof(loadResult) / sizeof(loadResult[0]);
