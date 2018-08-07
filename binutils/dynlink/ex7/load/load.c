@@ -221,9 +221,9 @@ int loadObj(FILE *inFile, FILE *outFile,
     if (typ != RELOC_ER32 || ref != -1 || add != 0) {
       return LDERR_ILR;
     }
-    word = read4((unsigned char *) &allSegs[seg].data[loc]);
+    word = read4(allSegs[seg].data + loc);
     word += loadOffs;
-    write4((unsigned char *) &allSegs[seg].data[loc], word);
+    write4(allSegs[seg].data + loc, word);
   }
   /* possibly sort segments */
   if (sort) {
