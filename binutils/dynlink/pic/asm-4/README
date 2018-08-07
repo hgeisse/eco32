@@ -1,0 +1,14 @@
+This program shows the assembler realization for accessing static
+data from PIC.
+
+The following two pseudo-instructions are used:
+.gotadr	<got>			load register <got> with the
+				address of the GOT
+.gotoff	<tgt>,<got>,<sym>	load register <tgt> with the
+				address of symbol sym, using
+				the GOT address register <got>
+
+showo: Here you can explore how .gotadr and .gotoff are implemented.
+showx: Here you can look at the resulting executable.
+runlo: Run the program at its link address.
+runhi: Run the program at some location above its link address.
