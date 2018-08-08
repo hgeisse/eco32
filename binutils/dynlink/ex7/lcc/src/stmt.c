@@ -206,6 +206,7 @@ void statement(int loop, Swtch swp, int lev) {
 		       	if (nodecount == 0 || nodecount > 200)
 		       		walk(NULL, 0, 0);
 		       	else if (glevel) walk(NULL, 0, 0);
+		       	else walk(NULL, 0, 0);
 		       	deallocate(STMT);
 		       } expect(';');
 						break;
