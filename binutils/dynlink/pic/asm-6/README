@@ -1,0 +1,5 @@
+This test checks the sharing of a single GOT entry among references
+to a static variable. The GOT should contain only two pointers,
+although there are four references to variables in the code; thus
+the .got segment should have a size of 2*4 = 0x08 bytes. The .data
+segment should have a size of 5*4 = 0x14 bytes.
