@@ -39,7 +39,9 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-a <addr>]    set program load address\n");
   fprintf(stderr, "    [-r <rom>]     set ROM image file name\n");
   fprintf(stderr, "    [-d <disk>]    set disk image file name\n");
+  fprintf(stderr, "    [-d NONE]      no disk, install controller only\n");
   fprintf(stderr, "    [-D <sdcard>]  set SD card image file name\n");
+  fprintf(stderr, "    [-D NONE]      no SD card, install controller only\n");
   fprintf(stderr, "    [-s <n>]       install n serial lines (0-%d)\n",
           MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
@@ -69,7 +71,9 @@ int main(int argc, char *argv[]) {
   char *progName;
   unsigned int loadAddr;
   char *romName;
+  Bool disk;
   char *diskName;
+  Bool sdcard;
   char *sdcardName;
   int numSerials;
   Bool connectTerminals[MAX_NSERIALS];
@@ -92,7 +96,9 @@ int main(int argc, char *argv[]) {
   progName = NULL;
   loadAddr = 0;
   romName = NULL;
+  disk = false;
   diskName = NULL;
+  sdcard = false;
   sdcardName = NULL;
   numSerials = 0;
   for (j = 0; j < MAX_NSERIALS; j++) {
@@ -146,16 +152,24 @@ int main(int argc, char *argv[]) {
       romName = argv[++i];
     } else
     if (strcmp(argp, "-d") == 0) {
-      if (i == argc - 1 || diskName != NULL) {
+      if (i == argc - 1 || disk) {
         usage(argv[0]);
       }
+      disk = true;
       diskName = argv[++i];
+      if (strcmp(diskName, "NONE") == 0) {
+        diskName = NULL;
+      }
     } else
     if (strcmp(argp, "-D") == 0) {
-      if (i == argc - 1 || sdcardName != NULL) {
+      if (i == argc - 1 || sdcard) {
         usage(argv[0]);
       }
+      sdcard = true;
       sdcardName = argv[++i];
+      if (strcmp(sdcardName, "NONE") == 0) {
+        sdcardName = NULL;
+      }
     } else
     if (strcmp(argp, "-s") == 0) {
       if (i == argc - 1) {
@@ -269,8 +283,12 @@ int main(int argc, char *argv[]) {
     keyboardInit();
   }
   serialInit(numSerials, connectTerminals, expect);
-  diskInit(diskName);
-  sdcardInit(sdcardName);
+  if (disk) {
+    diskInit(diskName);
+  }
+  if (sdcard) {
+    sdcardInit(sdcardName);
+  }
   outputInit(outputName);
   shutdownInit();
   ramInit(memSize * M, progName, loadAddr);

@@ -19,6 +19,8 @@
 
 static Bool debug = false;
 
+static Bool installed = false;
+
 static FILE *diskImage;
 static long totalSectors;
 
@@ -103,6 +105,10 @@ Word diskRead(Word addr) {
   if (debug) {
     cPrintf("\n**** DISK READ from 0x%08X", addr);
   }
+  if (!installed) {
+    /* disk controller not installed */
+    throwException(EXC_BUS_TIMEOUT);
+  }
   if (addr == DISK_CTRL) {
     data = diskCtrl;
   } else
@@ -135,6 +141,10 @@ void diskWrite(Word addr, Word data) {
   if (debug) {
     cPrintf("\n**** DISK WRITE to 0x%08X, data = 0x%08X ****\n",
             addr, data);
+  }
+  if (!installed) {
+    /* disk controller not installed */
+    throwException(EXC_BUS_TIMEOUT);
   }
   if (addr == DISK_CTRL) {
     if (data & DISK_WRT) {
@@ -190,6 +200,10 @@ void diskWrite(Word addr, Word data) {
 
 
 void diskReset(void) {
+  if (!installed) {
+    /* disk controller not installed */
+    return;
+  }
   cPrintf("Resetting Disk...\n");
   diskCtrl = 0;
   diskCnt = 0;
@@ -226,11 +240,16 @@ void diskInit(char *diskImageName) {
     }
     totalSectors = numBytes / SECTOR_SIZE;
   }
+  installed = true;
   diskReset();
 }
 
 
 void diskExit(void) {
+  if (!installed) {
+    /* disk controller not installed */
+    return;
+  }
   if (diskImage == NULL) {
     /* disk not installed */
     return;

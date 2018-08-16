@@ -6,10 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include "common.h"
 #include "console.h"
 #include "error.h"
+#include "except.h"
 #include "timer.h"
 #include "sdcard.h"
 
@@ -18,6 +20,8 @@ static Bool debugRead = false;
 static Bool debugWrite = false;
 static Bool debugCallback = false;
 static Bool debugCommand = false;
+
+static Bool installed = false;
 
 static FILE *sdcardImage;
 static long totalSectors;
@@ -473,6 +477,10 @@ Word sdcardRead(Word addr) {
   if (debugRead) {
     cPrintf("\n**** SDCARD READ from 0x%08X", addr);
   }
+  if (!installed) {
+    /* SD card controller not installed */
+    throwException(EXC_BUS_TIMEOUT);
+  }
   switch ((addr >> 2) & 3) {
     case 0:
       /* read status */
@@ -508,6 +516,10 @@ void sdcardWrite(Word addr, Word data) {
     cPrintf("\n**** SDCARD WRITE to 0x%08X, data = 0x%08X ****\n",
             addr, data);
   }
+  if (!installed) {
+    /* SD card controller not installed */
+    throwException(EXC_BUS_TIMEOUT);
+  }
   switch ((addr >> 2) & 3) {
     case 0:
       /* write control */
@@ -533,6 +545,10 @@ void sdcardWrite(Word addr, Word data) {
 
 
 void sdcardReset(void) {
+  if (!installed) {
+    /* SD card controller not installed */
+    return;
+  }
   cPrintf("Resetting SD card...\n");
   status = 0;
   control = 0;
@@ -581,11 +597,16 @@ void sdcardInit(char *sdcardImageName) {
     csd[8] = (csize >>  8) & 0xFF;
     csd[9] = (csize >>  0) & 0xFF;
   }
+  installed = true;
   sdcardReset();
 }
 
 
 void sdcardExit(void) {
+  if (!installed) {
+    /* SD card controller not installed */
+    return;
+  }
   if (sdcardImage == NULL) {
     /* SD card not installed */
     return;
