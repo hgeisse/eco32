@@ -8,6 +8,7 @@
 
 
 #define EXEC_MAGIC	0x8F0B45C0
+#define SHLIB_MAGIC	0xE7B79BFE
 
 #define SEG_ATTR_X	0x01	/* executable */
 #define SEG_ATTR_W	0x02	/* writable */
@@ -31,7 +32,7 @@
 
 
 typedef struct {
-  unsigned int magic;		/* must be EXEC_MAGIC */
+  unsigned int magic;		/* must be EXEC_MAGIC or SHLIB_MAGIC */
   unsigned int osegs;		/* offset of segment table in file */
   unsigned int nsegs;		/* number of segment table entries */
   unsigned int osyms;		/* offset of symbol table in file */
