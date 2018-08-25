@@ -58,3 +58,41 @@ Which relocations can be present in an object file?
 	.data/symbol/R16
 	.data/symbol/R26
 	.data/symbol/W32
+
+6. We concentrate our attention now on those relocations which can be
+   produced by C code.
+   a) The relocation types H16, L16, R16, and R26 are only used to patch
+      instructions, i.e. they never appear in the .data segment.
+   b) R16 and R26 relocations are only used in branch and jump instructions,
+      so they refer to labels in .code or to symbols. Hence the combinations
+      .code/.data/R16, .code/.data/R26, .code/.bss/R16, and .code/.bss/R26
+      will not be generated.
+   c) The C compiler in use does not generate branches which cross
+      module boundaries. Thus the combination .code/symbol/R16 is
+      not generated (but it might be useful, e.g. when optimizing
+      tail calls).
+   d) The C compiler in use does not place constant pointers in .code,
+      which would be possible. Thus the combinations .code/.code/W32,
+      .code/.data/W32, .code/.bss/W32, and .code/symbol/W32 don't get
+      generated.
+   These relocations remain:
+	.code/.code/H16		ok
+	.code/.code/L16		ok
+	.code/.code/R16		ok
+	.code/.code/R26		ok
+	.code/.code/W32		not with current C compiler
+	.code/.data/H16		ok
+	.code/.data/L16		ok
+	.code/.data/W32		not with current C compiler
+	.code/.bss/H16		ok
+	.code/.bss/L16		ok
+	.code/.bss/W32		not with current C compiler
+	.code/symbol/H16	ok
+	.code/symbol/L16	ok
+	.code/symbol/R16	not with current C compiler
+	.code/symbol/R26	ok
+	.code/symbol/W32	not with current C compiler
+	.data/.code/W32		ok
+	.data/.data/W32		ok
+	.data/.bss/W32		ok
+	.data/symbol/W32	ok

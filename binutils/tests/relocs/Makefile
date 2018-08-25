@@ -4,7 +4,7 @@
 
 BUILD = ../../../build
 
-DIRS = H16 L16 R16 R26 W32
+DIRS = H16 L16 R16 R26 W32 C
 
 .PHONY:		all clean
 
