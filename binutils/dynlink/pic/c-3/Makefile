@@ -29,15 +29,18 @@ prog:		start.o prog.o
 showx:		prog
 		$(BUILD)/bin/dof -a prog
 
-prog.bin:	prog
-		$(BUILD)/bin/load prog prog.bin
+proglo.bin:	prog
+		$(BUILD)/bin/load -v prog proglo.bin
 
-runlo:		prog.bin
-		$(BUILD)/bin/sim -i -l prog.bin
+runlo:		proglo.bin
+		$(BUILD)/bin/sim -i -l proglo.bin
 
-runhi:		prog.bin
-		$(BUILD)/bin/sim -i -l prog.bin -a 0x3000
+proghi.bin:	prog
+		$(BUILD)/bin/load -v -l 0x3000 prog proghi.bin
+
+runhi:		proghi.bin
+		$(BUILD)/bin/sim -i -l proghi.bin -a 0x3000
 
 clean:
 		rm -f *~
-		rm -f start.o prog.s prog.o prog prog.bin
+		rm -f start.o prog.s prog.o prog proglo.bin proghi.bin
