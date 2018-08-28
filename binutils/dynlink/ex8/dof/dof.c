@@ -385,6 +385,9 @@ void dumpRelocTable(void) {
       case RELOC_GOTPNTR:
         printf("GOTPNTR");
         break;
+      case RELOC_ER32:
+        printf("ER32");
+        break;
       default:
         printf("\n");
         error("unknown relocation type 0x%08X", relocTable[rn].typ);
