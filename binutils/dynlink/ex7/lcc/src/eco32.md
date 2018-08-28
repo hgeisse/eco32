@@ -37,7 +37,11 @@
  *   $30  interrupt return address
  *   $31  proc/func return address
  * caller-save registers are not preserved across procedure calls
+ *   (i.e., it's the caller's duty to save/restore them, if their
+ *   contents should survive the call)
  * callee-save registers are preserved across procedure calls
+ *   (i.e., it's the callee's duty to save/restore them, if one
+ *   of them is overwritten by the callee)
  *
  * tree grammar terminals produced by:
  *   ops c=1 s=2 i=4 l=4 h=4 f=4 d=8 x=8 p=4
@@ -653,11 +657,14 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
   assert(caller[i] == NULL);
   offset = 0;
   gencode(caller, callee);
-  if (ncalls != 0) {
+  if (ncalls || pic) {
     usedmask[IREG] |= ((unsigned) 1) << 31;
   }
   usedmask[IREG] &= 0x80FF0000;
   usedmask[FREG] &= 0xFFF00000;
+  if (pic && ncalls) {
+    usedmask[IREG] |= 1 << 25;
+  }
   maxargoffset = roundup(maxargoffset, 4);
   if (ncalls != 0 && maxargoffset < 16) {
     maxargoffset = 16;
@@ -667,9 +674,6 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
   segment(CODE);
   print("\t.align\t4\n");
   print("%s:\n", f->x.name);
-  if (pic) {
-    print("\t.gotadr\t$25\n");
-  }
   if (framesize > 0) {
     print("\tsub\t$29,$29,%d\n", framesize);
   }
@@ -679,6 +683,9 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
       print("\tstw\t$%d,$29,%d\n", i, saved);
       saved += 4;
     }
+  }
+  if (pic) {
+    print("\t.gotadr\t$25\n");
   }
   for (i = 0; i < 4 && callee[i] != NULL; i++) {
     r = argregs[i];
