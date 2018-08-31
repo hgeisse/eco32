@@ -114,7 +114,7 @@ $Bx86linux$O:	$Bx86linux.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ $Bx86linux.c
 $Bdagcheck.c:	$Blburg$E src/dagcheck.md; $Blburg src/dagcheck.md $@
 $Balpha.c:	$Blburg$E src/alpha.md;    $Blburg src/alpha.md    $@
 $Bmips.c:	$Blburg$E src/mips.md;     $Blburg src/mips.md     $@
-$Beco32.c:	$Blburg$E src/eco32.md;    $Blburg src/eco32.md    $@
+$Beco32.c:	$Blburg$E src/eco32.md;    $Blburg -T src/eco32.md    $@
 $Bsparc.c:	$Blburg$E src/sparc.md;    $Blburg src/sparc.md    $@
 $Bx86.c:	$Blburg$E src/x86.md;      $Blburg src/x86.md      $@
 $Bx86linux.c:	$Blburg$E src/x86linux.md; $Blburg src/x86linux.md $@

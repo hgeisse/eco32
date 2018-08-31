@@ -2,6 +2,8 @@
 
 static char rcsid[] = "$Id: gen.c,v 1.1 2002/08/28 23:12:43 drh Exp $";
 
+static int trace_codegen = 1;
+
 #define readsreg(p) \
 	(generic((p)->op)==INDIR && (p)->kids[0]->op==VREG+P)
 #define setsrc(d) ((d) && (d)->x.regnode && \
@@ -472,9 +474,28 @@ static void rewrite(Node p) {
 	prelabel(p);
 	debug(dumptree(p));
 	debug(fprint(stderr, "\n"));
+	if (trace_codegen) {
+		fprintf(stderr, "TRACE: tree =\n");
+		dumptree(p);
+		fprintf(stderr, "\n");
+		fprintf(stderr, "TRACE: before labelling node %p->op=%s\n",
+		        p, opname(p->op));
+	}
 	(*IR->x._label)(p);
+	if (trace_codegen) {
+		fprintf(stderr, "TRACE: after labelling node %p->op=%s\n",
+		        p, opname(p->op));
+	}
 	debug(dumpcover(p, 1, 0));
+	if (trace_codegen) {
+		fprintf(stderr, "TRACE: before reducing node %p->op=%s\n",
+		        p, opname(p->op));
+	}
 	reduce(p, 1);
+	if (trace_codegen) {
+		fprintf(stderr, "TRACE: after reducing node %p->op=%s\n",
+		        p, opname(p->op));
+	}
 }
 Node gen(Node forest) {
 	int i;
