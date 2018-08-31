@@ -1,5 +1,5 @@
 unsigned int n = 42U;
-unsigned int m = 1337U;
+int m = 1337;
 
 unsigned int f(void) {
   return n << m;
