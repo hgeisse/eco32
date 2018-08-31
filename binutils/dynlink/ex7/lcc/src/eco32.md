@@ -279,6 +279,18 @@ reg:	DIVU4(reg,reg)		"\tdivu\t$%c,$%0,$%1\n"		1
 reg:	MODI4(reg,reg)		"\trem\t$%c,$%0,$%1\n"		1
 reg:	MODU4(reg,reg)		"\tremu\t$%c,$%0,$%1\n"		1
 
+reg:	BANDI4(reg,reg)		"\tand\t$%c,$%0,$%1\n"		1
+reg:	BANDU4(reg,reg)		"\tand\t$%c,$%0,$%1\n"		1
+reg:	BORI4(reg,reg)		"\tor\t$%c,$%0,$%1\n"		1
+reg:	BORU4(reg,reg)		"\tor\t$%c,$%0,$%1\n"		1
+reg:	BXORI4(reg,reg)		"\txor\t$%c,$%0,$%1\n"		1
+reg:	BXORU4(reg,reg)		"\txor\t$%c,$%0,$%1\n"		1
+reg:	BCOMI4(reg)		"\txnor\t$%c,$0,$%0\n"		1
+reg:	BCOMU4(reg)		"\txnor\t$%c,$0,$%0\n"		1
+
+reg:	LSHI4(reg,reg)		"\tsll\t$%c,$%0,$%1\n"		1
+reg:	LSHU4(reg,reg)		"\tsll\t$%c,$%0,$%1\n"		1
+
 
 %%
 
