@@ -1,0 +1,6 @@
+This program checks the following two statements:
+1. The GOT register is properly saved and restored across
+   function calls.
+2. The storage class of variables is correctly interpreted
+   by the assembler, although only revealed at the end of
+   the assembler source.
