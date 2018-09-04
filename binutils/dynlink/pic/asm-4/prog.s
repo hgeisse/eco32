@@ -2,9 +2,8 @@
 
 	.code
 
-_start:	.gotadr	$3
-	.gotoff	$1,$3,dat3
-	ldw	$8,$1,0
+_start:	.ldgot	$3
+	ldw	$8,$0,dat3
 loop:	j	loop
 
 	.data
