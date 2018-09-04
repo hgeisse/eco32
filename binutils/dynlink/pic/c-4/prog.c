@@ -11,3 +11,8 @@ void func(void) {
   a = b;
   b = a;
 }
+
+int main() {
+  func();
+  return 0;
+}
