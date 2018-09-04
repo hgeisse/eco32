@@ -1507,7 +1507,7 @@ void formatRRS(unsigned int code) {
         } else {
           /* GOT-indirect access */
           addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
-          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 11);
+          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
         }
         emitHalf(code << 10 | AUX_REG << 5 | dst);
         emitHalf(v.con);
