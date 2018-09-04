@@ -8,7 +8,7 @@ all:
 		@echo "  make runhi"
 
 prog.o:		prog.s
-		$(BUILD)/bin/as -o prog.o prog.s
+		$(BUILD)/bin/as -p -o prog.o prog.s
 
 showo:		prog.o
 		$(BUILD)/bin/dof -a prog.o
