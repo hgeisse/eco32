@@ -18,7 +18,7 @@ shows:		prog.s
 		cat prog.s
 
 prog.o:		prog.s
-		$(BUILD)/bin/lcc -o prog.o -c prog.s
+		$(BUILD)/bin/lcc -pic -o prog.o -c prog.s
 
 showo:		prog.o
 		$(BUILD)/bin/dof -a prog.o
