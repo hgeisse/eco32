@@ -1,14 +1,10 @@
 This program shows the assembler realization for accessing global
 data from PIC.
 
-The following two pseudo-instructions are used:
-.gotadr	<got>			load register <got> with the
-				address of the GOT
-.gotptr	<tgt>,<got>,<sym>	load register <tgt> with the
-				address of symbol sym, using
-				the GOT address register <got>
+The following pseudo-instruction is used:
+.ldgot	<got>		load register <got> with the address of the GOT
 
-showo: Here you can explore how .gotadr and .gotptr are implemented.
-showx: Here you can look at the resulting executable.
+showo: Explore how .ldgot and the variable access are implemented.
+showx: Look at the resulting executable.
 runlo: Run the program at its link address.
 runhi: Run the program at some location above its link address.
