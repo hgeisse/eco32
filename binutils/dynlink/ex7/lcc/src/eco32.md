@@ -55,6 +55,9 @@
 #define RIGHT_CHILD(p)	((p)->kids[1])
 #define STATE_LABEL(p)	((p)->x.state)
 
+static char *_string[];
+static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost);
+
 static void address(Symbol, Symbol, long);
 static void defaddress(Symbol);
 static void defconst(int, int, Value);
@@ -93,14 +96,6 @@ static Symbol blkreg;
 static int tmpregs[] = { 3, 9, 10 };
 
 static int pic = 0;
-
-static char *_string[];
-
-static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost) {
-  fprintf(stderr,
-          "%p->op=%s, rule \"%s\", cost %d, best %d\n",
-          p, opname(p->op), _string[eruleno], cost, bestcost);
-}
 
 %}
 
@@ -231,68 +226,229 @@ static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost) {
 
 %term LABELV=600
 
+%term LOADB=233
+%term LOADF4=4321 LOADF8=8417
+%term LOADI1=1253 LOADI2=2277 LOADI4=4325
+%term LOADP4=4327
+%term LOADU1=1254 LOADU2=2278 LOADU4=4326
+
+%term VREGP=711
+
 
 %%
 
+
+reg:	INDIRI1(VREGP)		"# read register\n"
+reg:	INDIRI2(VREGP)		"# read register\n"
+reg:	INDIRI4(VREGP)		"# read register\n"
+reg:	INDIRP4(VREGP)		"# read register\n"
+reg:	INDIRU1(VREGP)		"# read register\n"
+reg:	INDIRU2(VREGP)		"# read register\n"
+reg:	INDIRU4(VREGP)		"# read register\n"
+
+stmt:	ASGNI1(VREGP,reg)	"# write register\n"
+stmt:	ASGNI2(VREGP,reg)	"# write register\n"
+stmt:	ASGNI4(VREGP,reg)	"# write register\n"
+stmt:	ASGNP4(VREGP,reg)	"# write register\n"
+stmt:	ASGNU1(VREGP,reg)	"# write register\n"
+stmt:	ASGNU2(VREGP,reg)	"# write register\n"
+stmt:	ASGNU4(VREGP,reg)	"# write register\n"
+
+con:	CNSTI1			"%a"
+con:	CNSTI2			"%a"
+con:	CNSTI4			"%a"
+con:	CNSTP4			"%a"
+con:	CNSTU1			"%a"
+con:	CNSTU2			"%a"
+con:	CNSTU4			"%a"
+
+stmt:	reg			""
+
+acon:	con			"%0"
+acon:	ADDRGP4			"%a"
+
+addr:	ADDI4(reg,acon)		"$%0,%1"
+addr:	ADDP4(reg,acon)		"$%0,%1"
+addr:	ADDU4(reg,acon)		"$%0,%1"
+
+addr:	acon			"$0,%0"
+addr:	reg			"$%0,0"
+addr:	ADDRFP4			"$29,%a+%F"
+addr:	ADDRLP4			"$29,%a+%F"
+
+reg:	addr			"\tadd\t$%c,%0\n"	1
+
+reg:	CNSTI1			"# reg\n"		range(a, 0, 0)
+reg:	CNSTI2			"# reg\n"		range(a, 0, 0)
+reg:	CNSTI4			"# reg\n"		range(a, 0, 0)
+reg:	CNSTP4			"# reg\n"		range(a, 0, 0)
+reg:	CNSTU1			"# reg\n"		range(a, 0, 0)
+reg:	CNSTU2			"# reg\n"		range(a, 0, 0)
+reg:	CNSTU4			"# reg\n"		range(a, 0, 0)
+
+stmt:	ASGNI1(addr,reg)	"\tstb\t$%1,%0\n"	1
+stmt:	ASGNI2(addr,reg)	"\tsth\t$%1,%0\n"	1
+stmt:	ASGNI4(addr,reg)	"\tstw\t$%1,%0\n"	1
+stmt:	ASGNP4(addr,reg)	"\tstw\t$%1,%0\n"	1
+stmt:	ASGNU1(addr,reg)	"\tstb\t$%1,%0\n"	1
+stmt:	ASGNU2(addr,reg)	"\tsth\t$%1,%0\n"	1
+stmt:	ASGNU4(addr,reg)	"\tstw\t$%1,%0\n"	1
+
+reg:	INDIRI1(addr)		"\tldb\t$%c,%0\n"	1
+reg:	INDIRI2(addr)		"\tldh\t$%c,%0\n"	1
+reg:	INDIRI4(addr)		"\tldw\t$%c,%0\n"	1
+reg:	INDIRP4(addr)		"\tldw\t$%c,%0\n"	1
+reg:	INDIRU1(addr)		"\tldbu\t$%c,%0\n"	1
+reg:	INDIRU2(addr)		"\tldhu\t$%c,%0\n"	1
+reg:	INDIRU4(addr)		"\tldw\t$%c,%0\n"	1
+
+reg:	CVII4(INDIRI1(addr))	"\tldb\t$%c,%0\n"	1
+reg:	CVII4(INDIRI2(addr))	"\tldh\t$%c,%0\n"	1
+reg:	CVUU4(INDIRU1(addr))	"\tldbu\t$%c,%0\n"	1
+reg:	CVUU4(INDIRU2(addr))	"\tldhu\t$%c,%0\n"	1
+reg:	CVUI4(INDIRU1(addr))	"\tldbu\t$%c,%0\n"	1
+reg:	CVUI4(INDIRU2(addr))	"\tldhu\t$%c,%0\n"	1
+
+rc:	con			"%0"
+rc:	reg			"$%0"
+
+reg:	ADDI4(reg,rc)		"\tadd\t$%c,$%0,%1\n"	1
+reg:	ADDP4(reg,rc)		"\tadd\t$%c,$%0,%1\n"	1
+reg:	ADDU4(reg,rc)		"\tadd\t$%c,$%0,%1\n"	1
+reg:	SUBI4(reg,rc)		"\tsub\t$%c,$%0,%1\n"	1
+reg:	SUBP4(reg,rc)		"\tsub\t$%c,$%0,%1\n"	1
+reg:	SUBU4(reg,rc)		"\tsub\t$%c,$%0,%1\n"	1
+reg:	NEGI4(reg)		"\tsub\t$%c,$0,$%0\n"	1
+
+reg:	MULI4(reg,rc)		"\tmul\t$%c,$%0,%1\n"	1
+reg:	MULU4(reg,rc)		"\tmulu\t$%c,$%0,%1\n"	1
+reg:	DIVI4(reg,rc)		"\tdiv\t$%c,$%0,%1\n"	1
+reg:	DIVU4(reg,rc)		"\tdivu\t$%c,$%0,%1\n"	1
+reg:	MODI4(reg,rc)		"\trem\t$%c,$%0,%1\n"	1
+reg:	MODU4(reg,rc)		"\tremu\t$%c,$%0,%1\n"	1
+
+reg:	BANDI4(reg,rc)		"\tand\t$%c,$%0,%1\n"	1
+reg:	BANDU4(reg,rc)		"\tand\t$%c,$%0,%1\n"	1
+reg:	BORI4(reg,rc)		"\tor\t$%c,$%0,%1\n"	1
+reg:	BORU4(reg,rc)		"\tor\t$%c,$%0,%1\n"	1
+reg:	BXORI4(reg,rc)		"\txor\t$%c,$%0,%1\n"	1
+reg:	BXORU4(reg,rc)		"\txor\t$%c,$%0,%1\n"	1
+reg:	BCOMI4(reg)		"\txnor\t$%c,$0,$%0\n"	1
+reg:	BCOMU4(reg)		"\txnor\t$%c,$0,$%0\n"	1
+
+rc5:	CNSTI4			"%a"			range(a, 0, 31)
+rc5:	reg			"$%0"
+
+reg:	LSHI4(reg,rc5)		"\tsll\t$%c,$%0,%1\n"	1
+reg:	LSHU4(reg,rc5)		"\tsll\t$%c,$%0,%1\n"	1
+reg:	RSHI4(reg,rc5)		"\tsar\t$%c,$%0,%1\n"	1
+reg:	RSHU4(reg,rc5)		"\tslr\t$%c,$%0,%1\n"	1
+
+reg:	LOADI1(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+reg:	LOADI2(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+reg:	LOADI4(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+reg:	LOADP4(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+reg:	LOADU1(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+reg:	LOADU2(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+reg:	LOADU4(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
+
+reg:	CVII4(reg)  "\tsll\t$%c,$%0,8*(4-%a)\n\tsar\t$%c,$%c,8*(4-%a)\n"  2
+reg:	CVUI4(reg)  "\tand\t$%c,$%0,(1<<(8*%a))-1\n"	1
+reg:	CVUU4(reg)  "\tand\t$%c,$%0,(1<<(8*%a))-1\n"	1
 
 stmt:	LABELV			"%a:\n"
+stmt:	JUMPV(acon)		"\tj\t%0\n"		1
+stmt:	JUMPV(reg)		"\tjr\t$%0\n"		1
 
-stmt:	RETI4(reg)		"# ret\n"
-stmt:	RETU4(reg)		"# ret\n"
+stmt:	EQI4(reg,reg)		"\tbeq\t$%0,$%1,%a\n"	1
+stmt:	EQU4(reg,reg)		"\tbeq\t$%0,$%1,%a\n"	1
+stmt:	NEI4(reg,reg)		"\tbne\t$%0,$%1,%a\n"	1
+stmt:	NEU4(reg,reg)		"\tbne\t$%0,$%1,%a\n"	1
+stmt:	LEI4(reg,reg)		"\tble\t$%0,$%1,%a\n"	1
+stmt:	LEU4(reg,reg)		"\tbleu\t$%0,$%1,%a\n"	1
+stmt:	LTI4(reg,reg)		"\tblt\t$%0,$%1,%a\n"	1
+stmt:	LTU4(reg,reg)		"\tbltu\t$%0,$%1,%a\n"	1
+stmt:	GEI4(reg,reg)		"\tbge\t$%0,$%1,%a\n"	1
+stmt:	GEU4(reg,reg)		"\tbgeu\t$%0,$%1,%a\n"	1
+stmt:	GTI4(reg,reg)		"\tbgt\t$%0,$%1,%a\n"	1
+stmt:	GTU4(reg,reg)		"\tbgtu\t$%0,$%1,%a\n"	1
 
-stmt:	ASGNI4(reg,reg)		"\tstw\t$%1,$%0,0\n"		1
-stmt:	ASGNU4(reg,reg)		"\tstw\t$%1,$%0,0\n"		1
+reg:	CALLI4(ar)		"\tjal\t%0\n"		1
+reg:	CALLP4(ar)		"\tjal\t%0\n"		1
+reg:	CALLU4(ar)		"\tjal\t%0\n"		1
+stmt:	CALLV(ar)		"\tjal\t%0\n"		1
 
-stmt:	CALLV(reg)		"\tjalr\t$%0\n"			1
-stmt:	JUMPV(reg)		"\tjr\t$%0\n"			1
+ar:	ADDRGP4			"%a"
+ar:	reg			"$%0"
+ar:	CNSTP4			"%a"		range(a, 0, 0x03FFFFFF)
 
-stmt:	NEI4(reg,reg)		"\tbne\t$%0,$%1,%a\n"		1
-stmt:	NEU4(reg,reg)		"\tbne\t$%0,$%1,%a\n"		1
-stmt:	EQI4(reg,reg)		"\tbeq\t$%0,$%1,%a\n"		1
-stmt:	EQU4(reg,reg)		"\tbeq\t$%0,$%1,%a\n"		1
-stmt:	GEI4(reg,reg)		"\tbge\t$%0,$%1,%a\n"		1
-stmt:	GEU4(reg,reg)		"\tbgeu\t$%0,$%1,%a\n"		1
-stmt:	LEI4(reg,reg)		"\tble\t$%0,$%1,%a\n"		1
-stmt:	LEU4(reg,reg)		"\tbleu\t$%0,$%1,%a\n"		1
-stmt:	GTI4(reg,reg)		"\tbgt\t$%0,$%1,%a\n"		1
-stmt:	GTU4(reg,reg)		"\tbgtu\t$%0,$%1,%a\n"		1
-stmt:	LTI4(reg,reg)		"\tblt\t$%0,$%1,%a\n"		1
-stmt:	LTU4(reg,reg)		"\tbltu\t$%0,$%1,%a\n"		1
+stmt:	RETI4(reg)		"# ret\n"		1
+stmt:	RETP4(reg)		"# ret\n"		1
+stmt:	RETU4(reg)		"# ret\n"		1
+stmt:	RETV(reg)		"# ret\n"		1
 
-reg:	CNSTI4			"\tadd\t$%c,$0,%a\n"		1
-reg:	CNSTU4			"\tadd\t$%c,$0,%a\n"		1
+stmt:	ARGI4(reg)		"# arg\n"		1
+stmt:	ARGP4(reg)		"# arg\n"		1
+stmt:	ARGU4(reg)		"# arg\n"		1
 
-reg:	INDIRI4(reg)		"\tldw\t$%c,$%0,0\n"		1
-reg:	INDIRU4(reg)		"\tldw\t$%c,$%0,0\n"		1
+stmt:	ARGB(INDIRB(reg))	"# argb %0\n"		1
+stmt:	ASGNB(reg,INDIRB(reg))	"# asgnb %0 %1\n"	1
 
-reg:	ADDRGP4			"\tadd\t$%c,$0,%a\n"		1
-reg:	ADDRLP4			"\tadd\t$%c,$29,%a+%F\n"	1
+reg:	INDIRF4(VREGP)		"# read register\n"
+stmt:	ASGNF4(VREGP,reg)	"# write register\n"
+reg:	INDIRF4(addr)		";FP: l.s $f%c,%0\n"		1
+stmt:	ASGNF4(addr,reg)	";FP: s.s $f%1,%0\n"		1
+reg:	ADDF4(reg,reg)		";FP: add.s $f%c,$f%0,$f%1\n"	1
+reg:	SUBF4(reg,reg)		";FP: sub.s $f%c,$f%0,$f%1\n"	1
+reg:	MULF4(reg,reg)		";FP: mul.s $f%c,$f%0,$f%1\n"	1
+reg:	DIVF4(reg,reg)		";FP: div.s $f%c,$f%0,$f%1\n"	1
+reg:	LOADF4(reg)		";FP: mov.s $f%c,$f%0\n"	1
+reg:	NEGF4(reg)		";FP: neg.s $f%c,$f%0\n"	1
+reg:	CVFF4(reg)		";FP: cvt.s.d $f%c,$f%0\n"	1
+reg:	CVIF4(reg)		";FP: mtc1 $%0,$f%c; cvt.s.w $f%c,$f%c\n"      1
+reg:	CVFI4(reg)		";FP: trunc.w.s $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i == 4 ? 1 : LBURG_MAX)
+stmt:	EQF4(reg,reg)		";FP: c.eq.s $f%0,$f%1; bc1t %a\n"	1
+stmt:	LEF4(reg,reg)		";FP: c.ule.s $f%0,$f%1; bc1t %a\n"	1
+stmt:	LTF4(reg,reg)		";FP: c.ult.s $f%0,$f%1; bc1t %a\n"	1
+stmt:	GEF4(reg,reg)		";FP: c.lt.s $f%0,$f%1; bc1f %a\n"	1
+stmt:	GTF4(reg,reg)		";FP: c.le.s $f%0,$f%1; bc1f %a\n"	1
+stmt:	NEF4(reg,reg)		";FP: c.eq.s $f%0,$f%1; bc1f %a\n"	1
+reg:	CALLF4(ar)		"\tjal\t%0\n"			1
+stmt:	RETF4(reg)		"# ret\n"			1
+stmt:	ARGF4(reg)		"# arg\n"			1
 
-reg:	ADDI4(reg,reg)		"\tadd\t$%c,$%0,$%1\n"		1
-reg:	ADDU4(reg,reg)		"\tadd\t$%c,$%0,$%1\n"		1
-reg:	SUBI4(reg,reg)		"\tsub\t$%c,$%0,$%1\n"		1
-reg:	SUBU4(reg,reg)		"\tsub\t$%c,$%0,$%1\n"		1
-reg:	MULI4(reg,reg)		"\tmul\t$%c,$%0,$%1\n"		1
-reg:	MULU4(reg,reg)		"\tmulu\t$%c,$%0,$%1\n"		1
-reg:	DIVI4(reg,reg)		"\tdiv\t$%c,$%0,$%1\n"		1
-reg:	DIVU4(reg,reg)		"\tdivu\t$%c,$%0,$%1\n"		1
-reg:	MODI4(reg,reg)		"\trem\t$%c,$%0,$%1\n"		1
-reg:	MODU4(reg,reg)		"\tremu\t$%c,$%0,$%1\n"		1
-
-reg:	BANDI4(reg,reg)		"\tand\t$%c,$%0,$%1\n"		1
-reg:	BANDU4(reg,reg)		"\tand\t$%c,$%0,$%1\n"		1
-reg:	BORI4(reg,reg)		"\tor\t$%c,$%0,$%1\n"		1
-reg:	BORU4(reg,reg)		"\tor\t$%c,$%0,$%1\n"		1
-reg:	BXORI4(reg,reg)		"\txor\t$%c,$%0,$%1\n"		1
-reg:	BXORU4(reg,reg)		"\txor\t$%c,$%0,$%1\n"		1
-reg:	BCOMI4(reg)		"\txnor\t$%c,$0,$%0\n"		1
-reg:	BCOMU4(reg)		"\txnor\t$%c,$0,$%0\n"		1
-
-reg:	LSHI4(reg,reg)		"\tsll\t$%c,$%0,$%1\n"		1
-reg:	LSHU4(reg,reg)		"\tsll\t$%c,$%0,$%1\n"		1
+reg:	INDIRF8(VREGP)		"# read register\n"
+stmt:	ASGNF8(VREGP,reg)	"# write register\n"
+reg:	INDIRF8(addr)		";FP: l.d $f%c,%0\n"		1
+stmt:	ASGNF8(addr,reg)	";FP: s.d $f%1,%0\n"		1
+reg:	ADDF8(reg,reg)		";FP: add.d $f%c,$f%0,$f%1\n"	1
+reg:	SUBF8(reg,reg)		";FP: sub.d $f%c,$f%0,$f%1\n"	1
+reg:	MULF8(reg,reg)		";FP: mul.d $f%c,$f%0,$f%1\n"	1
+reg:	DIVF8(reg,reg)		";FP: div.d $f%c,$f%0,$f%1\n"	1
+reg:	LOADF8(reg)		";FP: mov.d $f%c,$f%0\n"	1
+reg:	NEGF8(reg)		";FP: neg.d $f%c,$f%0\n"	1
+reg:	CVFF8(reg)		";FP: cvt.d.s $f%c,$f%0\n"	1
+reg:	CVIF8(reg)		";FP: mtc1 $%0,$f%c; cvt.d.w $f%c,$f%c\n"      1
+reg:	CVFI4(reg)		";FP: trunc.w.d $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i == 8 ? 1 : LBURG_MAX)
+stmt:	EQF8(reg,reg)		";FP: c.eq.d $f%0,$f%1; bc1t %a\n"	1
+stmt:	LEF8(reg,reg)		";FP: c.ule.d $f%0,$f%1; bc1t %a\n"	1
+stmt:	LTF8(reg,reg)		";FP: c.ult.d $f%0,$f%1; bc1t %a\n"	1
+stmt:	GEF8(reg,reg)		";FP: c.lt.d $f%0,$f%1; bc1f %a\n"	1
+stmt:	GTF8(reg,reg)		";FP: c.le.d $f%0,$f%1; bc1f %a\n"	1
+stmt:	NEF8(reg,reg)		";FP: c.eq.d $f%0,$f%1; bc1f %a\n"	1
+reg:	CALLF8(ar)		"\tjal\t%0\n"			1
+stmt:	RETF8(reg)		"# ret\n"			1
+stmt:	ARGF8(reg)		"# arg\n"			1
 
 
 %%
+
+
+static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost) {
+  fprintf(stderr,
+          "%p->op=%s, rule \"%s\", cost %d, best %d\n",
+          p, opname(p->op), _string[eruleno], cost, bestcost);
+}
 
 
 static void address(Symbol s1, Symbol s2, long n) {
@@ -446,7 +602,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
   }
   usedmask[IREG] &= 0x80FF0000;
   usedmask[FREG] &= 0xFFF00000;
-  if (pic && ncalls) {
+  if (pic) {
     usedmask[IREG] |= 1 << 25;
   }
   maxargoffset = roundup(maxargoffset, 4);
@@ -469,7 +625,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
     }
   }
   if (pic) {
-    print("\t.gotadr\t$25\n");
+    print("\t.ldgot\t$25\n");
   }
   for (i = 0; i < 4 && callee[i] != NULL; i++) {
     r = argregs[i];
