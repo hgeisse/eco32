@@ -55,6 +55,9 @@
 #define RIGHT_CHILD(p)	((p)->kids[1])
 #define STATE_LABEL(p)	((p)->x.state)
 
+static char *_string[];
+static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost);
+
 static void address(Symbol, Symbol, long);
 static void defaddress(Symbol);
 static void defconst(int, int, Value);
@@ -133,14 +136,6 @@ int ifpicptr(Node p) {
     return LBURG_MAX;
   }
   return 1;
-}
-
-static char *_string[];
-
-static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost) {
-  fprintf(stderr,
-          "%p->op=%s, rule \"%s\", cost %d, best %d\n",
-          p, opname(p->op), _string[eruleno], cost, bestcost);
 }
 
 %}
@@ -517,6 +512,13 @@ stmt:	ARGF8(reg)		"# arg\n"			1
 
 
 %%
+
+
+static void _trace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost) {
+  fprintf(stderr,
+          "%p->op=%s, rule \"%s\", cost %d, best %d\n",
+          p, opname(p->op), _string[eruleno], cost, bestcost);
+}
 
 
 static void address(Symbol s1, Symbol s2, long n) {
