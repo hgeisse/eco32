@@ -1,3 +1,6 @@
+This program shows that an ordinary executable cannot be executed
+successfully at an arbitrary load address.
+
 A pointer into the data segment is constructed in $1. The pointer
 is then used to load the word 0x3456789A into the register $8.
 
