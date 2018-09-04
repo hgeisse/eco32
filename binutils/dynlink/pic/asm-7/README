@@ -1,6 +1,0 @@
-The executable is the result of linking two almost identical modules
-(the function labels are different), each with some static variables.
-The test checks that within a module the GOT entries to the same static
-variables are shared, but the references in different modules don't
-share the same GOT entry. The .got segment should have a size of 4*4 =
-0x10 bytes. The .data segment should have a size of 10*4 = 0x28 bytes.
