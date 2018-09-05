@@ -1326,6 +1326,9 @@ void dotSet(unsigned int code) {
  * emit instructions to get address of GOT in a reg
  */
 void dotLdgot(unsigned int code) {
+  if (!genPIC) {
+    error("illegal .ldgot in line %d, cmdline switch -p missing?", lineno);
+  }
   expect(TOK_REGISTER);
   gotReg = tokenvalNumber;
   getToken();
