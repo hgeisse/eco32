@@ -23,8 +23,14 @@ prog.o:		prog.s
 showo:		prog.o
 		$(BUILD)/bin/dof -a prog.o
 
-prog:		start.o prog.o
-		$(BUILD)/bin/ld -c 0xC0000000 -o prog start.o prog.o
+mod1.s:		mod1.c
+		$(BUILD)/bin/lcc -pic -o mod1.s -S mod1.c
+
+mod1.o:		mod1.s
+		$(BUILD)/bin/lcc -pic -o mod1.o -c mod1.s
+
+prog:		start.o prog.o mod1.o
+		$(BUILD)/bin/ld -c 0xC0000000 -o prog start.o prog.o mod1.o
 
 showx:		prog
 		$(BUILD)/bin/dof -a prog
@@ -43,4 +49,5 @@ runhi:		proghi.bin
 
 clean:
 		rm -f *~
-		rm -f start.o prog.s prog.o prog proglo.bin proghi.bin
+		rm -f start.o prog.s prog.o mod1.s mod1.o
+		rm -f prog proglo.bin proghi.bin
