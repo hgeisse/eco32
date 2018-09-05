@@ -26,7 +26,7 @@
 #define RELOC_GOTOFFH	7	/* PIC: memory addr by GOT offset, high part */
 #define RELOC_GOTOFFL	8	/* PIC: memory addr by GOT offset, low part */
 #define RELOC_GOTPNTR	9	/* PIC: memory addr by GOT pointer */
-#define RELOC_ER32	10	/* load-time reloc for ptr in data segment */
+#define RELOC_LD_W32	10	/* load-time reloc for full 32 bit word */
 #define RELOC_SYM	0x100	/* symbol flag, may be added to any RELOC */
 
 

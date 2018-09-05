@@ -385,8 +385,8 @@ void dumpRelocTable(void) {
       case RELOC_GOTPNTR:
         printf("GOTPNTR");
         break;
-      case RELOC_ER32:
-        printf("ER32");
+      case RELOC_LD_W32:
+        printf("LD_W32");
         break;
       default:
         printf("\n");
