@@ -4,3 +4,4 @@ This program checks the following two statements:
 2. The storage class of variables is correctly interpreted
    by the assembler, although only revealed at the end of
    the assembler source.
+3. The result after running the program is 4 (found in $2).
