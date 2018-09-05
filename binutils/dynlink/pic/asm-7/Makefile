@@ -8,16 +8,16 @@ all:
 		@echo "  make runhi"
 
 prog.o:		prog.s
-		$(BUILD)/bin/as -o prog.o prog.s
+		$(BUILD)/bin/as -p -o prog.o prog.s
 
 showo:		prog.o
 		$(BUILD)/bin/dof -a prog.o
 
 mod1.o:		mod1.s
-		$(BUILD)/bin/as -o mod1.o mod1.s
+		$(BUILD)/bin/as -p -o mod1.o mod1.s
 
 mod2.o:		mod2.s
-		$(BUILD)/bin/as -o mod2.o mod2.s
+		$(BUILD)/bin/as -p -o mod2.o mod2.s
 
 prog:		prog.o mod1.o mod2.o
 		$(BUILD)/bin/ld -c 0xC0000000 -o prog prog.o mod1.o mod2.o

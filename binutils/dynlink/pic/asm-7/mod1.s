@@ -8,13 +8,9 @@
 
 	.code
 
-func:	.gotadr	$3
-	.gotptr	$1,$3,dat3
-	ldw	$8,$1,0
-	.gotptr	$1,$3,dat4
-	ldw	$7,$1,0
-	.gotptr	$1,$3,dat3
-	ldw	$6,$1,0
-	.gotptr	$1,$3,dat4
-	ldw	$5,$1,0
+func:	.ldgot	$3
+	ldw	$8,$0,dat3
+	ldw	$7,$0,dat4
+	ldw	$6,$0,dat3
+	ldw	$5,$0,dat4
 loop:	j	loop
