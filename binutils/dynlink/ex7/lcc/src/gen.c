@@ -2,7 +2,7 @@
 
 static char rcsid[] = "$Id: gen.c,v 1.1 2002/08/28 23:12:43 drh Exp $";
 
-static int trace_codegen = 1;
+static int trace_codegen = 0;
 
 #define readsreg(p) \
 	(generic((p)->op)==INDIR && (p)->kids[0]->op==VREG+P)
