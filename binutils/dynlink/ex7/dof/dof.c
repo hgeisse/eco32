@@ -393,9 +393,15 @@ void dumpRelocTable(void) {
         error("unknown relocation type 0x%08X", relocTable[rn].typ);
     }
     printf("\n");
-    printf("        ref  = %s # %d\n",
-           relocTable[rn].typ & RELOC_SYM ? "symbol" : "segment",
-           relocTable[rn].ref);
+    printf("        ref  = ");
+    if (relocTable[rn].ref == -1) {
+      printf("*nothing*");
+    } else {
+      printf("%s # %d",
+             relocTable[rn].typ & RELOC_SYM ? "symbol" : "segment",
+             relocTable[rn].ref);
+    }
+    printf("\n");
     printf("        add  = 0x%08X\n", relocTable[rn].add);
   }
 }
