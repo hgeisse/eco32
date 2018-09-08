@@ -143,10 +143,14 @@
 #define SEGMENT_BSS	3	/* uninitialized data segment */
 
 
+int debugCmdline = 0;
 int debugToken = 0;
 int debugCode = 0;
 int debugFixup = 1;
 int debugModule = 0;
+
+int genPIC = 0;
+int gotReg = 25;
 
 char codeName[L_tmpnam];
 char dataName[L_tmpnam];
@@ -189,6 +193,7 @@ typedef struct fixup {
 
 typedef struct symbol {
   char *name;			/* name of symbol */
+  int whichTable;		/* GLOBAL_TABLE or LOCAL_TABLE */
   int status;			/* status of symbol */
   int segment;			/* the symbol's segment */
   int value;			/* the symbol's value */
@@ -600,12 +605,13 @@ Symbol *deref(Symbol *s) {
 }
 
 
-Symbol *newSymbol(char *name) {
+Symbol *newSymbol(char *name, int whichTable) {
   Symbol *p;
 
   p = allocateMemory(sizeof(Symbol));
   p->name = allocateMemory(strlen(name) + 1);
   strcpy(p->name, name);
+  p->whichTable = whichTable;
   p->status = STATUS_UNKNOWN;
   p->segment = 0;
   p->value = 0;
@@ -627,7 +633,7 @@ Symbol *lookupEnter(char *name, int whichTable) {
     p = localTable;
   }
   if (p == NULL) {
-    r = newSymbol(name);
+    r = newSymbol(name, whichTable);
     if (whichTable == GLOBAL_TABLE) {
       globalTable = r;
     } else {
@@ -647,7 +653,7 @@ Symbol *lookupEnter(char *name, int whichTable) {
       p = q->right;
     }
     if (p == NULL) {
-      r = newSymbol(name);
+      r = newSymbol(name, whichTable);
       if (cmp < 0) {
         q->left = r;
       } else {
@@ -1316,12 +1322,13 @@ void dotSet(unsigned int code) {
 
 
 /*
- * .gotadr <GOT reg>
+ * .ldgot <GOT reg>
  * emit instructions to get address of GOT in a reg
  */
-void dotGotadr(unsigned int code) {
-  int gotReg;
-
+void dotLdgot(unsigned int code) {
+  if (!genPIC) {
+    error("illegal .ldgot in line %d, cmdline switch -p missing?", lineno);
+  }
   expect(TOK_REGISTER);
   gotReg = tokenvalNumber;
   getToken();
@@ -1331,63 +1338,6 @@ void dotGotadr(unsigned int code) {
   addFixupToLst(currSeg, segPtr[currSeg], RELOC_GOTADRL, 4);
   emitWord(OP_ORI << 26 | gotReg << 21 | gotReg << 16);
   emitWord(OP_ADD << 26 | gotReg << 21 | 31 << 16 | gotReg << 11);
-}
-
-
-/*
- * .gotoff <target register>,<GOT register>,<local symbol>
- * emit instructions to get address of symbol into target reg
- * using an offset from the start of the GOT
- * (which is pointed to by the GOT reg)
- */
-void dotGotoff(unsigned int code) {
-  int tgtReg;
-  int gotReg;
-  Value v;
-
-  expect(TOK_REGISTER);
-  tgtReg = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  gotReg = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  v = parseExpression();
-  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, v.con);
-  emitWord(OP_LDHI << 26 | tgtReg << 16);
-  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, v.con);
-  emitWord(OP_ORI << 26 | tgtReg << 21 | tgtReg << 16);
-  emitWord(OP_ADD << 26 | tgtReg << 21 | gotReg << 16 | tgtReg << 11);
-}
-
-
-/*
- * .gotptr <target reg>,<GOT reg>,<global symbol>
- * emit instructions to get address of symbol into target reg
- * using a pointer loaded from the GOT
- * (which is pointed to by the GOT reg)
- */
-void dotGotptr(unsigned int code) {
-  int tgtReg;
-  int gotReg;
-  Value v;
-
-  expect(TOK_REGISTER);
-  tgtReg = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  gotReg = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  v = parseExpression();
-  addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, v.con);
-  emitWord(OP_LDW << 26 | gotReg << 21 | tgtReg << 16);
 }
 
 
@@ -1549,17 +1499,34 @@ void formatRRS(unsigned int code) {
         emitHalf(0);
       }
     } else {
-      /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-      emitHalf(OP_LDHI << 10 | AUX_REG);
-      emitHalf(0);
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-      emitHalf(0);
-      emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-      emitHalf(AUX_REG << 11);
-      emitHalf(code << 10 | AUX_REG << 5 | dst);
-      emitHalf(0);
+      if (genPIC) {
+        if (v.sym->whichTable == LOCAL_TABLE) {
+          /* GOT-relative access */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, 0);
+          emitWord(OP_LDHI << 26 | AUX_REG << 16);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, 0);
+          emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+          emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+        } else {
+          /* GOT-indirect access */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+        }
+        emitHalf(code << 10 | AUX_REG << 5 | dst);
+        emitHalf(v.con);
+      } else {
+        /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+        emitHalf(OP_LDHI << 10 | AUX_REG);
+        emitHalf(0);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+        emitHalf(0);
+        emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
+        emitHalf(AUX_REG << 11);
+        emitHalf(code << 10 | AUX_REG << 5 | dst);
+        emitHalf(0);
+      }
     }
   } else {
     if (v.sym == NULL) {
@@ -1826,9 +1793,7 @@ Instr instrTable[] = {
   { ".half",   dotHalf,   0 },
   { ".word",   dotWord,   0 },
   { ".set",    dotSet,    0 },
-  { ".gotadr", dotGotadr, 0 },
-  { ".gotoff", dotGotoff, 0 },
-  { ".gotptr", dotGotptr, 0 },
+  { ".ldgot",  dotLdgot,  0 },
 
   /* arithmetical instructions */
   { "add",     formatRRY, OP_ADD  },
@@ -1947,6 +1912,41 @@ void asmModule(void) {
   Symbol *label;
   Instr *instr;
 
+  /* extra pass to handle imported/exported symbols */
+  allowSyn = 1;
+  currSeg = SEGMENT_CODE;
+  lineno = 0;
+  while (fgets(line, LINE_SIZE, inFile) != NULL) {
+    lineno++;
+    lineptr = line;
+    getToken();
+    while (token == TOK_LABEL) {
+      getToken();
+    }
+    if (token == TOK_IDENT) {
+      instr = lookupInstr(tokenvalString);
+      if (instr == NULL) {
+        error("unknown instruction '%s' in line %d",
+              tokenvalString, lineno);
+      }
+      getToken();
+      if (instr->func == dotExport ||
+          instr->func == dotImport) {
+        /* handle */
+        (*instr->func)(instr->code);
+      } else {
+        /* skip */
+        while (token != TOK_EOL) {
+          getToken();
+        }
+      }
+    }
+    if (token != TOK_EOL) {
+      error("garbage in line %d", lineno);
+    }
+  }
+  rewind(inFile);
+  /* regular pass to assemble the module */
   allowSyn = 1;
   currSeg = SEGMENT_CODE;
   lineno = 0;
@@ -1972,7 +1972,16 @@ void asmModule(void) {
               tokenvalString, lineno);
       }
       getToken();
-      (*instr->func)(instr->code);
+      if (instr->func == dotExport ||
+          instr->func == dotImport) {
+        /* skip */
+        while (token != TOK_EOL) {
+          getToken();
+        }
+      } else {
+        /* handle */
+        (*instr->func)(instr->code);
+      }
     }
     if (token != TOK_EOL) {
       error("garbage in line %d", lineno);
@@ -2295,6 +2304,7 @@ void writeAll(void) {
 
 void usage(char *myself) {
   fprintf(stderr, "Usage: %s\n", myself);
+  fprintf(stderr, "         [-p]             position-independent code\n");
   fprintf(stderr, "         [-o objfile]     set object file name\n");
   fprintf(stderr, "         file             source file name\n");
   fprintf(stderr, "         [files...]       additional source files\n");
@@ -2306,10 +2316,16 @@ int main(int argc, char *argv[]) {
   int i;
   char *argp;
 
+  if (debugCmdline) {
+    for (i = 1; i < argc; i++) {
+      fprintf(stderr, "%s cmdline arg %d: %s\n", argv[0], i, argv[i]);
+    }
+  }
   sortInstrTable();
   tmpnam(codeName);
   tmpnam(dataName);
   outName = "a.out";
+  genPIC = 0;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (*argp != '-') {
@@ -2322,6 +2338,9 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
         }
         outName = argv[++i];
+        break;
+      case 'p':
+        genPIC = 1;
         break;
       default:
         usage(argv[0]);
