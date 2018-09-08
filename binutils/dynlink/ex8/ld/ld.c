@@ -4,7 +4,7 @@
 
 
 /*
- * This is the solution to exercise 6:
+ * This is the solution to exercise 7:
  *   - read a list of object files
  *   - build the global symbol table
  *   - some of the files may be static libraries
@@ -13,6 +13,10 @@
  *   - resolve symbols
  *   - relocate modules
  *   - write executable file
+ *   - collect GOTPNTR relocations
+ *   - add a segment containing the GOT
+ *   - handle all PIC relocations correctly
+ *   - generate LD_W32 relocations in the executable
  */
 
 
@@ -39,6 +43,10 @@
 
 #define WORD_ALIGN(x)		(((x) + 0x03) & ~0x03)
 #define PAGE_ALIGN(x)		(((x) + 0x0FFF) & ~0x0FFF)
+
+#define SEG_ATTR_APX		(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X)
+#define SEG_ATTR_APW		(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W)
+#define SEG_ATTR_AW		(SEG_ATTR_A | SEG_ATTR_W)
 
 
 /**************************************************************/
@@ -238,6 +246,7 @@ typedef struct reloc {
 				/* if symbol flag = 0: segment number */
 				/* if symbol flag = 1: symbol number */
   int add;			/* additive part of value */
+  unsigned int gotOffs;		/* only used for PIC: offset within GOT */
 } Reloc;
 
 
@@ -573,6 +582,9 @@ void readObjSymbols(Module *mod,
 }
 
 
+unsigned int getGotOffs(Module *mod, Reloc *rel);
+
+
 void readObjRelocs(Module *mod,
                    unsigned int orels,
                    unsigned int nrels,
@@ -601,6 +613,18 @@ void readObjRelocs(Module *mod,
     rel->typ = relRec.typ;
     rel->ref = relRec.ref;
     rel->add = relRec.add;
+    if ((rel->typ & ~RELOC_SYM) == RELOC_GOTPNTR) {
+      if ((rel->typ & RELOC_SYM) == 0) {
+        /* RELOC_GOTPNTR needs a symbol as reference */
+        error("illegal relocation (RELOC_GOTPNTR without symbol)");
+      }
+      /* find or create a corresponding GOT entry */
+      /* and remember its offset within the GOT */
+      rel->gotOffs = getGotOffs(mod, rel);
+    } else {
+      /* otherwise rel->gotOffs will not be used */
+      rel->gotOffs = 0;
+    }
   }
 }
 
@@ -865,13 +889,95 @@ void showSegments(void) {
 /**************************************************************/
 
 /*
- * storage allocator
+ * global offset table (GOT)
  */
 
 
-#define SEG_ATTR_APX	(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X)
-#define SEG_ATTR_APW	(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W)
-#define SEG_ATTR_AW	(SEG_ATTR_A | SEG_ATTR_W)
+typedef struct gotEntry {
+  Symbol *sym;			/* symbol which is referenced */
+  unsigned int gotOffs;		/* offset of entry in GOT */
+  struct gotEntry *next;
+} GotEntry;
+
+static GotEntry *gotEntries = NULL;
+static int numGotEntries = 0;
+
+
+static Segment gotSeg = {
+  ".got",		/* segment name */
+  NULL,			/* segment data */
+  0,			/* virtual start address */
+  0,			/* size of segment in bytes */
+  0,			/* number of padding bytes */
+  SEG_ATTR_APW		/* segment attributes */
+};
+
+Segment *gotSegment = &gotSeg;
+
+
+static GotEntry *lookupGotEntry(Module *mod, Reloc *rel) {
+  GotEntry *gotEntry;
+
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    if (gotEntry->sym == mod->syms[rel->ref]) {
+      /* found */
+      return gotEntry;
+    }
+    gotEntry = gotEntry->next;
+  }
+  /* not found */
+  return NULL;
+}
+
+
+unsigned int getGotOffs(Module *mod, Reloc *rel) {
+  GotEntry *gotEntry;
+
+  /* try to find a matching GOT entry */
+  gotEntry = lookupGotEntry(mod, rel);
+  if (gotEntry == NULL) {
+    /* not found, create a new one */
+    if (numGotEntries == (1 << 13)) {
+      error("too many GOT entries");
+    }
+    gotEntry = memAlloc(sizeof(GotEntry));
+    gotEntry->sym = mod->syms[rel->ref];
+    gotEntry->gotOffs = numGotEntries << 2;
+    gotEntry->next = gotEntries;
+    gotEntries = gotEntry;
+    numGotEntries++;
+    gotSegment->size += 4;
+  }
+  return gotEntry->gotOffs;
+}
+
+
+void makeGotSegment(void) {
+  GotEntry *gotEntry;
+  unsigned char *addr;
+  unsigned int data;
+
+  if (gotSegment->size == 0) {
+    /* no entries present */
+    return;
+  }
+  gotSegment->data = memAlloc(gotSegment->size);
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    addr = gotSegment->data + gotEntry->gotOffs;
+    data = gotEntry->sym->val;
+    write4ToEco(addr, data);
+    gotEntry = gotEntry->next;
+  }
+}
+
+
+/**************************************************************/
+
+/*
+ * storage allocator
+ */
 
 
 typedef struct partialSegment {
@@ -994,6 +1100,9 @@ void allocateStorage(unsigned int codeBase,
   unsigned int size;
   Symbol *endSym;
 
+  /* install the GOT in a separate segment */
+  /* must be the first segment in group APW */
+  addToGroup(&linkerModule, gotSegment, &groupAPW);
   /* pass 1: combine segments from modules in three groups */
   mod = firstModule;
   while (mod != NULL) {
@@ -1253,34 +1362,31 @@ void relocateModules(void) {
           mask = 0xFFFFFFFF;
           break;
         case RELOC_GOTADRH:
-          warning("relocation GOTADRH not handled yet");
           method = "GOTADRH";
-          mask = 0x00000000;
-          value = 0;
+          mask = 0x0000FFFF;
+          value += gotSegment->addr - addr;
+          value >>= 16;
           break;
         case RELOC_GOTADRL:
-          warning("relocation GOTADRL not handled yet");
           method = "GOTADRL";
-          mask = 0x00000000;
-          value = 0;
+          mask = 0x0000FFFF;
+          value += gotSegment->addr - addr;
           break;
         case RELOC_GOTOFFH:
-          warning("relocation GOTOFFH not handled yet");
           method = "GOTOFFH";
-          mask = 0x00000000;
-          value = 0;
+          mask = 0x0000FFFF;
+          value -= gotSegment->addr;
+          value >>= 16;
           break;
         case RELOC_GOTOFFL:
-          warning("relocation GOTOFFL not handled yet");
           method = "GOTOFFL";
-          mask = 0x00000000;
-          value = 0;
+          mask = 0x0000FFFF;
+          value -= gotSegment->addr;
           break;
         case RELOC_GOTPNTR:
-          warning("relocation GOTPNTR not handled yet");
           method = "GOTPNTR";
-          mask = 0x00000000;
-          value = 0;
+          mask = 0x0000FFFF;
+          value = rel->gotOffs;
           break;
         default:
           method = "ILL";
@@ -1380,6 +1486,7 @@ void writeSymbolTable(FILE *mapFile) {
 
 static ExecHeader execHeader;
 static unsigned int outFileOffset;
+static int gotSegmentNumber;
 
 
 static void writeDummyHeader(FILE *outFile) {
@@ -1521,8 +1628,44 @@ void writeSegmentsForGroups(FILE *outFile) {
   execHeader.osegs = outFileOffset;
   execHeader.nsegs = 0;
   writeSegmentForTotals(groupAPX.firstTotal, outFile);
+  gotSegmentNumber = execHeader.nsegs;
   writeSegmentForTotals(groupAPW.firstTotal, outFile);
   writeSegmentForTotals(groupAW.firstTotal, outFile);
+}
+
+
+void writeGotReloc(GotEntry *gotEntry, FILE *outFile) {
+  RelocRecord relRec;
+
+  relRec.loc = gotEntry->gotOffs;
+  relRec.seg = gotSegmentNumber;
+  relRec.typ = RELOC_LD_W32;
+  relRec.ref = -1;
+  relRec.add = 0;
+  conv4FromNativeToEco((unsigned char *) &relRec.loc);
+  conv4FromNativeToEco((unsigned char *) &relRec.seg);
+  conv4FromNativeToEco((unsigned char *) &relRec.typ);
+  conv4FromNativeToEco((unsigned char *) &relRec.ref);
+  conv4FromNativeToEco((unsigned char *) &relRec.add);
+  if (fwrite(&relRec, sizeof(RelocRecord), 1, outFile) != 1) {
+    error("cannot write output file relocation record");
+  }
+  /* update file offset */
+  outFileOffset += sizeof(RelocRecord);
+}
+
+
+void writeLoadTimeRelocs(FILE *outFile) {
+  GotEntry *gotEntry;
+
+  execHeader.orels = outFileOffset;
+  execHeader.nrels = 0;
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    writeGotReloc(gotEntry, outFile);
+    execHeader.nrels++;
+    gotEntry = gotEntry->next;
+  }
 }
 
 
@@ -1544,6 +1687,7 @@ void writeObjModule(char *startSymbol, char *outPath) {
   writeDataForGroups(outFile);
   writeStringsForGroups(outFile);
   writeSegmentsForGroups(outFile);
+  writeLoadTimeRelocs(outFile);
   writeRealHeader(entry, outFile);
   fclose(outFile);
 }
@@ -1665,6 +1809,7 @@ int main(int argc, char *argv[]) {
     showGroups();
   }
   resolveSymbols();
+  makeGotSegment();
   relocateModules();
   writeObjModule(startSymbol, outName);
   if (mapName != NULL) {

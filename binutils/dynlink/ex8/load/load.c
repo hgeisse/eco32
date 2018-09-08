@@ -218,7 +218,7 @@ int loadObj(FILE *inFile, FILE *outFile,
       printf("    ref : %d\n", ref);
       printf("    add : %d\n", add);
     }
-    if (typ != RELOC_ER32 || ref != -1 || add != 0) {
+    if (typ != RELOC_LD_W32 || ref != -1 || add != 0) {
       return LDERR_ILR;
     }
     word = read4(allSegs[seg].data + loc);
