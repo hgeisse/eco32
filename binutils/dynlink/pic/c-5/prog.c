@@ -2,7 +2,7 @@
  * program that produces all sorts of relocations
  */
 
-static int stat_dummy_1 = 0x1111;
+static int stat_dummy_1 = 0x11111111;
 static int stat_dummy_3;
 static int stat_dummy_4;
 
@@ -10,7 +10,7 @@ static int m = 0x12345678;
 static int k;
 extern int n;
 
-static int stat_dummy_2 = 0x2222;
+static int stat_dummy_2 = 0x22222222;
 static int stat_dummy_5;
 static int stat_dummy_6;
 
