@@ -1,3 +1,6 @@
+Load Map
+--------
+
 _start                    0xC0000000  .code         start.o
 (loop)                    0xC000000C  .code         start.o
 (f)                       0xC0000010  .code         prog.o
@@ -29,3 +32,45 @@ glob_dummy_2              0xC000104C  .bss          mod1.o
 glob_dummy_1              0xC0001050  .bss          mod1.o
 
 _end                      0xC0001054  *ABS*         linker
+
+
+Test with 'make runlo'
+----------------------
+
+   1:  ?
+   2:  ?
+   3:  ?
+   4:  ?
+   5:  ?
+   6:  ?
+   7:  ?
+   8:  ?
+   9:  ?
+  10:  ?
+  11:  ?
+  12:  ?
+  13:  ?
+  14:  ?
+  15:  ?
+  16:  ?
+
+
+Test with 'make runhi'
+----------------------
+
+   1:  ?
+   2:  ?
+   3:  ?
+   4:  ?
+   5:  ?
+   6:  ?
+   7:  ?
+   8:  ?
+   9:  ?
+  10:  ?
+  11:  ?
+  12:  ?
+  13:  ?
+  14:  ?
+  15:  ?
+  16:  ?
