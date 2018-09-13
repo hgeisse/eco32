@@ -1529,15 +1529,32 @@ void formatRRX(unsigned int code) {
           }
         }
       } else {
-        /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(0);
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(0);
-        emitHalf(code << 10 | src1 << 5 | AUX_REG);
-        emitHalf(dst << 11);
+        if (genPIC) {
+          if (v.sym->whichTable == LOCAL_TABLE) {
+            /* GOT-relative access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, 0);
+            emitWord(OP_LDHI << 26 | AUX_REG << 16);
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, 0);
+            emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+            emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+          } else {
+            /* GOT-indirect access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+            emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          }
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        } else {
+          /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+          emitHalf(OP_LDHI << 10 | AUX_REG);
+          emitHalf(0);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+          emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+          emitHalf(0);
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        }
       }
     } else {
       if (v.sym == NULL) {
@@ -1601,15 +1618,32 @@ void formatRRY(unsigned int code) {
           }
         }
       } else {
-        /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(0);
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(0);
-        emitHalf(code << 10 | src1 << 5 | AUX_REG);
-        emitHalf(dst << 11);
+        if (genPIC) {
+          if (v.sym->whichTable == LOCAL_TABLE) {
+            /* GOT-relative access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, 0);
+            emitWord(OP_LDHI << 26 | AUX_REG << 16);
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, 0);
+            emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+            emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+          } else {
+            /* GOT-indirect access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+            emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          }
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        } else {
+          /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+          emitHalf(OP_LDHI << 10 | AUX_REG);
+          emitHalf(0);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+          emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+          emitHalf(0);
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        }
       }
     } else {
       if (v.sym == NULL) {
