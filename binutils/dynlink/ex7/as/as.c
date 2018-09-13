@@ -1541,28 +1541,6 @@ void formatRRS(unsigned int code) {
 }
 
 
-void formatRRR(unsigned int code) {
-  int dst, src1, src2;
-
-  /* opcode with three register operands */
-  expect(TOK_REGISTER);
-  dst = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src1 = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src2 = tokenvalNumber;
-  getToken();
-  emitHalf(code << 10 | src1 << 5 | src2);
-  emitHalf(dst << 11);
-}
-
-
 void formatRRX(unsigned int code) {
   int dst, src1, src2;
   Value v;
