@@ -1405,65 +1405,6 @@ void formatRHH(unsigned int code) {
 }
 
 
-void formatRRH(unsigned int code) {
-  int dst, src;
-  Value v;
-
-  /* opcode with two registers and a half operand */
-  expect(TOK_REGISTER);
-  dst = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  v = parseExpression();
-  if (allowSyn) {
-    if (v.sym == NULL) {
-      if ((v.con & 0xFFFF0000) == 0) {
-        /* code: op dst,src,con */
-        emitHalf(code << 10 | src << 5 | dst);
-        emitHalf(v.con);
-      } else {
-        /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(v.con >> 16);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(v.con);
-        emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-        emitHalf(AUX_REG << 11);
-        emitHalf(code << 10 | AUX_REG << 5 | dst);
-        emitHalf(0);
-      }
-    } else {
-      /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-      emitHalf(OP_LDHI << 10 | AUX_REG);
-      emitHalf(0);
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-      emitHalf(0);
-      emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-      emitHalf(AUX_REG << 11);
-      emitHalf(code << 10 | AUX_REG << 5 | dst);
-      emitHalf(0);
-    }
-  } else {
-    if (v.sym == NULL) {
-      emitHalf(code << 10 | src << 5 | dst);
-      emitHalf(v.con);
-    } else {
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf(code << 10 | src << 5 | dst);
-      emitHalf(0);
-    }
-  }
-}
-
-
 void formatRRS(unsigned int code) {
   int dst, src;
   Value v;
