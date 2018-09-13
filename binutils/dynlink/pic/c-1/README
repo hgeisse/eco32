@@ -1,3 +1,7 @@
+This program shows that an ordinary executable cannot be
+executed successfully at an arbitrary load address, even
+when generated from C source.
+
 In this little program, main() returns the value of a static
 variable (its value is 0x3456789A).
 
