@@ -56,11 +56,13 @@
  */
 
 
+int debugCmdline = 0;
 int debugExtract = 1;
 int debugSegments = 1;
 int debugGroups = 1;
 int debugResolve = 1;
 int debugRelocs = 1;
+int debugLTRelocs = 1;
 
 
 /**************************************************************/
@@ -221,6 +223,7 @@ typedef struct segment {
   unsigned int size;		/* size of segment in bytes */
   unsigned int npad;		/* number of padding bytes */
   unsigned int attr;		/* segment attributes */
+  struct totalSegment *tseg;	/* total segment this segment is part of */
 } Segment;
 
 
@@ -248,6 +251,34 @@ typedef struct reloc {
   int add;			/* additive part of value */
   unsigned int gotOffs;		/* only used for PIC: offset within GOT */
 } Reloc;
+
+
+typedef struct partialSegment {
+  Module *mod;				/* module where part comes from */
+  Segment *seg;				/* which segment in the module */
+  struct partialSegment *next;		/* next part in total segment */
+} PartialSegment;
+
+
+typedef struct totalSegment {
+  char *name;				/* name of total segment */
+  unsigned int nameOffs;		/* name offset in string space */
+  unsigned int dataOffs;		/* data offset in data space */
+  unsigned int addr;			/* virtual address */
+  unsigned int size;			/* size in bytes */
+  unsigned int attr;			/* attributes */
+  int outSeg;				/* output segment number */
+  struct partialSegment *firstPart;	/* first partial segment in total */
+  struct partialSegment *lastPart;	/* last partial segment in total */
+  struct totalSegment *next;		/* next total in segment group */
+} TotalSegment;
+
+
+typedef struct segmentGroup {
+  unsigned int attr;			/* attributes of this group */
+  TotalSegment *firstTotal;		/* first total segment in group */
+  TotalSegment *lastTotal;		/* last total segment in group */
+} SegmentGroup;
 
 
 /**************************************************************/
@@ -535,6 +566,7 @@ void readObjSegments(Module *mod,
     seg->size = segRec.size;
     seg->npad = 0;
     seg->attr = segRec.attr;
+    seg->tseg = NULL;
   }
 }
 
@@ -889,6 +921,37 @@ void showSegments(void) {
 /**************************************************************/
 
 /*
+ * load-time relocations
+ */
+
+
+typedef struct loadTimeReloc {
+  unsigned int loc;
+  struct totalSegment *seg;
+  struct loadTimeReloc *next;
+} LoadTimeReloc;
+
+static LoadTimeReloc *loadTimeRelocs = NULL;
+
+
+void recordLoadTimeReloc(unsigned int loc, TotalSegment *seg) {
+  LoadTimeReloc *loadTimeReloc;
+
+  if (debugLTRelocs) {
+    printf("<load-time relocation ('%s', 0x%08X) recorded>\n",
+           seg->name, loc);
+  }
+  loadTimeReloc = memAlloc(sizeof(LoadTimeReloc));
+  loadTimeReloc->loc = loc;
+  loadTimeReloc->seg = seg;
+  loadTimeReloc->next = loadTimeRelocs;
+  loadTimeRelocs = loadTimeReloc;
+}
+
+
+/**************************************************************/
+
+/*
  * global offset table (GOT)
  */
 
@@ -909,7 +972,8 @@ static Segment gotSeg = {
   0,			/* virtual start address */
   0,			/* size of segment in bytes */
   0,			/* number of padding bytes */
-  SEG_ATTR_APW		/* segment attributes */
+  SEG_ATTR_APW,		/* segment attributes */
+  NULL,			/* total segment this segment is part of */
 };
 
 Segment *gotSegment = &gotSeg;
@@ -968,6 +1032,7 @@ void makeGotSegment(void) {
     addr = gotSegment->data + gotEntry->gotOffs;
     data = gotEntry->sym->val;
     write4ToEco(addr, data);
+    recordLoadTimeReloc(gotEntry->gotOffs, gotSegment->tseg);
     gotEntry = gotEntry->next;
   }
 }
@@ -978,33 +1043,6 @@ void makeGotSegment(void) {
 /*
  * storage allocator
  */
-
-
-typedef struct partialSegment {
-  Module *mod;				/* module where part comes from */
-  Segment *seg;				/* which segment in the module */
-  struct partialSegment *next;		/* next part in total segment */
-} PartialSegment;
-
-
-typedef struct totalSegment {
-  char *name;				/* name of total segment */
-  unsigned int nameOffs;		/* name offset in string space */
-  unsigned int dataOffs;		/* data offset in data space */
-  unsigned int addr;			/* virtual address */
-  unsigned int size;			/* size in bytes */
-  unsigned int attr;			/* attributes */
-  struct partialSegment *firstPart;	/* first partial segment in total */
-  struct partialSegment *lastPart;	/* last partial segment in total */
-  struct totalSegment *next;		/* next total in segment group */
-} TotalSegment;
-
-
-typedef struct segmentGroup {
-  unsigned int attr;			/* attributes of this group */
-  TotalSegment *firstTotal;		/* first total segment in group */
-  TotalSegment *lastTotal;		/* last total segment in group */
-} SegmentGroup;
 
 
 SegmentGroup groupAPX = { SEG_ATTR_APX, NULL, NULL };
@@ -1031,6 +1069,7 @@ void addToGroup(Module *mod, Segment *seg, SegmentGroup *grp) {
     total->addr = 0;
     total->size = 0;
     total->attr = grp->attr;
+    total->outSeg = 0;
     total->firstPart = NULL;
     total->lastPart = NULL;
     total->next = NULL;
@@ -1051,6 +1090,8 @@ void addToGroup(Module *mod, Segment *seg, SegmentGroup *grp) {
     total->lastPart->next = part;
   }
   total->lastPart = part;
+  /* remember in the segment to which total segment it was added */
+  seg->tseg = total;
 }
 
 
@@ -1101,7 +1142,7 @@ void allocateStorage(unsigned int codeBase,
   Symbol *endSym;
 
   /* install the GOT in a separate segment */
-  /* must be the first segment in group APW */
+  /* should be the first segment in group APW */
   addToGroup(&linkerModule, gotSegment, &groupAPW);
   /* pass 1: combine segments from modules in three groups */
   mod = firstModule;
@@ -1407,6 +1448,9 @@ void relocateModules(void) {
                 rel->add,
                 data);
       }
+      if ((rel->typ & ~RELOC_SYM) == RELOC_W32) {
+        recordLoadTimeReloc(addr - seg->tseg->addr, seg->tseg);
+      }
     }
     mod = mod->next;
   }
@@ -1486,7 +1530,6 @@ void writeSymbolTable(FILE *mapFile) {
 
 static ExecHeader execHeader;
 static unsigned int outFileOffset;
-static int gotSegmentNumber;
 
 
 static void writeDummyHeader(FILE *outFile) {
@@ -1618,7 +1661,7 @@ void writeSegment(TotalSegment *total, FILE *outFile) {
 void writeSegmentForTotals(TotalSegment *total, FILE *outFile) {
   while (total != NULL) {
     writeSegment(total, outFile);
-    execHeader.nsegs++;
+    total->outSeg = execHeader.nsegs++;
     total = total->next;
   }
 }
@@ -1628,17 +1671,16 @@ void writeSegmentsForGroups(FILE *outFile) {
   execHeader.osegs = outFileOffset;
   execHeader.nsegs = 0;
   writeSegmentForTotals(groupAPX.firstTotal, outFile);
-  gotSegmentNumber = execHeader.nsegs;
   writeSegmentForTotals(groupAPW.firstTotal, outFile);
   writeSegmentForTotals(groupAW.firstTotal, outFile);
 }
 
 
-void writeGotReloc(GotEntry *gotEntry, FILE *outFile) {
+void writeLoadTimeReloc(LoadTimeReloc *loadTimeReloc, FILE *outFile) {
   RelocRecord relRec;
 
-  relRec.loc = gotEntry->gotOffs;
-  relRec.seg = gotSegmentNumber;
+  relRec.loc = loadTimeReloc->loc;
+  relRec.seg = loadTimeReloc->seg->outSeg;
   relRec.typ = RELOC_LD_W32;
   relRec.ref = -1;
   relRec.add = 0;
@@ -1656,15 +1698,15 @@ void writeGotReloc(GotEntry *gotEntry, FILE *outFile) {
 
 
 void writeLoadTimeRelocs(FILE *outFile) {
-  GotEntry *gotEntry;
+  LoadTimeReloc *loadTimeReloc;
 
   execHeader.orels = outFileOffset;
   execHeader.nrels = 0;
-  gotEntry = gotEntries;
-  while (gotEntry != NULL) {
-    writeGotReloc(gotEntry, outFile);
+  loadTimeReloc = loadTimeRelocs;
+  while (loadTimeReloc != NULL) {
+    writeLoadTimeReloc(loadTimeReloc, outFile);
     execHeader.nrels++;
-    gotEntry = gotEntry->next;
+    loadTimeReloc = loadTimeReloc->next;
   }
 }
 
@@ -1742,6 +1784,11 @@ int main(int argc, char *argv[]) {
   char *mapName;
   char *endptr;
 
+  if (debugCmdline) {
+    for (i = 1; i < argc; i++) {
+      fprintf(stderr, "%s cmdline arg %d: %s\n", argv[0], i, argv[i]);
+    }
+  }
   dataPageAlign = 1;
   codeBase = DEFAULT_CODE_BASE;
   startSymbol = DEFAULT_START_SYMBOL;
