@@ -42,27 +42,25 @@ int main(void) {
   fp = f;
 
   /* 10: .code/.code/R16 */
-  if (m == k) {
-    m++;
-  }
+  if (m == k) m++;
 
   /* 11: .code/.code/R26 */
   f();
 
-  /* 12: .code/.data/H16, .code/.data/L16 */
+  /* 12: .code/symbol/R26 */
+  g();
+
+  /* 13: .code/.data/H16, .code/.data/L16 */
   i = m;
 
-  /* 13: .code/.bss/H16, .code/.bss/L16 */
+  /* 14: .code/.bss/H16, .code/.bss/L16 */
   i = k;
 
-  /* 14: .code/symbol/H16, .code/symbol/L16 */
+  /* 15: .code/symbol/H16, .code/symbol/L16 */
   i = n;
 
-  /* 15: .code/symbol/H16, .code/symbol/L16 */
+  /* 16: .code/symbol/H16, .code/symbol/L16 */
   fp = g;
-
-  /* 16: .code/symbol/R26 */
-  g();
 
   return 0;
 }
