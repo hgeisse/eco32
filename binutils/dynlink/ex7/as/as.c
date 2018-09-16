@@ -18,6 +18,7 @@
 
 #define NUM_REGS	32
 #define AUX_REG		1
+#define GOT_REG		25
 
 #define LINE_SIZE	200
 
@@ -146,11 +147,11 @@
 int debugCmdline = 0;
 int debugToken = 0;
 int debugCode = 0;
-int debugFixup = 1;
+int debugFixup = 0;
 int debugModule = 0;
 
 int genPIC = 0;
-int gotReg = 25;
+int gotReg = GOT_REG;
 
 char codeName[L_tmpnam];
 char dataName[L_tmpnam];
