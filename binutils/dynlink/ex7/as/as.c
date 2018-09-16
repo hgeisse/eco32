@@ -1702,11 +1702,26 @@ void formatJ(unsigned int code) {
     v = parseExpression();
     if (v.sym == NULL) {
       immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
+      emitWord(code << 26 | (immed & 0x03FFFFFF));
     } else {
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
-      immed = 0;
+      if (genPIC) {
+        if (v.sym->whichTable == LOCAL_TABLE) {
+          /* generate PC-relative jump with R26 relocation */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+          immed = 0;
+          emitWord(code << 26 | (immed & 0x03FFFFFF));
+        } else {
+          /* load address from GOT in register and jump */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          emitWord((code + 1) << 26 | AUX_REG << 21);
+        }
+      } else {
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+        immed = 0;
+        emitWord(code << 26 | (immed & 0x03FFFFFF));
+      }
     }
-    emitWord(code << 26 | (immed & 0x03FFFFFF));
   }
 }
 
