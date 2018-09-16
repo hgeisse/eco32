@@ -5,7 +5,7 @@ _start                    0xC0000000  .code         start.o
 (loop)                    0xC000000C  .code         start.o
 (f)                       0xC0000010  .code         prog.o
 main                      0xC000003C  .code         prog.o
-g                         0xC000010C  .code         mod1.o
+g                         0xC0000110  .code         mod1.o
 
 (GOT)                     0xC0001000  .got          linker
 
