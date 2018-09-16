@@ -18,6 +18,7 @@
 
 #define NUM_REGS	32
 #define AUX_REG		1
+#define GOT_REG		25
 
 #define LINE_SIZE	200
 
@@ -146,11 +147,11 @@
 int debugCmdline = 0;
 int debugToken = 0;
 int debugCode = 0;
-int debugFixup = 1;
+int debugFixup = 0;
 int debugModule = 0;
 
 int genPIC = 0;
-int gotReg = 25;
+int gotReg = GOT_REG;
 
 char codeName[L_tmpnam];
 char dataName[L_tmpnam];
@@ -1405,65 +1406,6 @@ void formatRHH(unsigned int code) {
 }
 
 
-void formatRRH(unsigned int code) {
-  int dst, src;
-  Value v;
-
-  /* opcode with two registers and a half operand */
-  expect(TOK_REGISTER);
-  dst = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  v = parseExpression();
-  if (allowSyn) {
-    if (v.sym == NULL) {
-      if ((v.con & 0xFFFF0000) == 0) {
-        /* code: op dst,src,con */
-        emitHalf(code << 10 | src << 5 | dst);
-        emitHalf(v.con);
-      } else {
-        /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(v.con >> 16);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(v.con);
-        emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-        emitHalf(AUX_REG << 11);
-        emitHalf(code << 10 | AUX_REG << 5 | dst);
-        emitHalf(0);
-      }
-    } else {
-      /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-      emitHalf(OP_LDHI << 10 | AUX_REG);
-      emitHalf(0);
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-      emitHalf(0);
-      emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-      emitHalf(AUX_REG << 11);
-      emitHalf(code << 10 | AUX_REG << 5 | dst);
-      emitHalf(0);
-    }
-  } else {
-    if (v.sym == NULL) {
-      emitHalf(code << 10 | src << 5 | dst);
-      emitHalf(v.con);
-    } else {
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf(code << 10 | src << 5 | dst);
-      emitHalf(0);
-    }
-  }
-}
-
-
 void formatRRS(unsigned int code) {
   int dst, src;
   Value v;
@@ -1541,28 +1483,6 @@ void formatRRS(unsigned int code) {
 }
 
 
-void formatRRR(unsigned int code) {
-  int dst, src1, src2;
-
-  /* opcode with three register operands */
-  expect(TOK_REGISTER);
-  dst = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src1 = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src2 = tokenvalNumber;
-  getToken();
-  emitHalf(code << 10 | src1 << 5 | src2);
-  emitHalf(dst << 11);
-}
-
-
 void formatRRX(unsigned int code) {
   int dst, src1, src2;
   Value v;
@@ -1610,15 +1530,32 @@ void formatRRX(unsigned int code) {
           }
         }
       } else {
-        /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(0);
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(0);
-        emitHalf(code << 10 | src1 << 5 | AUX_REG);
-        emitHalf(dst << 11);
+        if (genPIC) {
+          if (v.sym->whichTable == LOCAL_TABLE) {
+            /* GOT-relative access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, 0);
+            emitWord(OP_LDHI << 26 | AUX_REG << 16);
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, 0);
+            emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+            emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+          } else {
+            /* GOT-indirect access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+            emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          }
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        } else {
+          /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+          emitHalf(OP_LDHI << 10 | AUX_REG);
+          emitHalf(0);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+          emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+          emitHalf(0);
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        }
       }
     } else {
       if (v.sym == NULL) {
@@ -1682,15 +1619,32 @@ void formatRRY(unsigned int code) {
           }
         }
       } else {
-        /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(0);
-        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(0);
-        emitHalf(code << 10 | src1 << 5 | AUX_REG);
-        emitHalf(dst << 11);
+        if (genPIC) {
+          if (v.sym->whichTable == LOCAL_TABLE) {
+            /* GOT-relative access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFH, 0);
+            emitWord(OP_LDHI << 26 | AUX_REG << 16);
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTOFFL, 0);
+            emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+            emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+          } else {
+            /* GOT-indirect access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+            emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          }
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        } else {
+          /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+          emitHalf(OP_LDHI << 10 | AUX_REG);
+          emitHalf(0);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+          emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+          emitHalf(0);
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        }
       }
     } else {
       if (v.sym == NULL) {
@@ -1749,11 +1703,26 @@ void formatJ(unsigned int code) {
     v = parseExpression();
     if (v.sym == NULL) {
       immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
+      emitWord(code << 26 | (immed & 0x03FFFFFF));
     } else {
-      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
-      immed = 0;
+      if (genPIC) {
+        if (v.sym->whichTable == LOCAL_TABLE) {
+          /* generate PC-relative jump with R26 relocation */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+          immed = 0;
+          emitWord(code << 26 | (immed & 0x03FFFFFF));
+        } else {
+          /* load address from GOT in register and jump */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GOTPNTR, 0);
+          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          emitWord((code + 1) << 26 | AUX_REG << 21);
+        }
+      } else {
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+        immed = 0;
+        emitWord(code << 26 | (immed & 0x03FFFFFF));
+      }
     }
-    emitWord(code << 26 | (immed & 0x03FFFFFF));
   }
 }
 
