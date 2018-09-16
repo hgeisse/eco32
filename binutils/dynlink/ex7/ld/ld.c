@@ -57,12 +57,12 @@
 
 
 int debugCmdline = 0;
-int debugExtract = 1;
-int debugSegments = 1;
-int debugGroups = 1;
-int debugResolve = 1;
-int debugRelocs = 1;
-int debugLTRelocs = 1;
+int debugExtract = 0;
+int debugSegments = 0;
+int debugGroups = 0;
+int debugResolve = 0;
+int debugRelocs = 0;
+int debugLTRelocs = 0;
 
 
 /**************************************************************/
