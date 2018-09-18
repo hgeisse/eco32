@@ -118,9 +118,19 @@ typedef struct {
 #define SYM_ATTR_U	0x01	/* undefined */
 
 The symbol's name is given by its offset into the string space.
+If the symbol is defined, val holds its value and seg holds the
+segment in which the symbol is defined (-1 meaning "the symbol's
+value is not relative to a segment but absolute"). The symbol's
+attribute is a single bit, which means "symbol undefined" when
+set. In this case, val and seg are meaningless.
 
 
 4) Relocation Table
+
+The relocation table consists of records, each of which points
+to a specific location where the contents must be modified when
+segments are moved within the virtual address space or when the
+value of a symbol becomes known during the link step:
 
 typedef struct {
   unsigned int loc;		/* where to relocate */
@@ -139,6 +149,19 @@ typedef struct {
 #define RELOC_W32	4	/* write full 32 bit word with value */
 #define RELOC_SYM	0x100	/* symbol flag, may be added to any RELOC */
 
+Loc and seg together determine the place where the relocation
+must be applied. This is always a word address, i.e., loc is
+divisible by 4. Typ specifies what exactly is to be done with
+the computed value (e.g., take only the 16 lower bits and write
+them into the lower half of the word). Typ may have its symbol
+flag set (or cleared), which influences the interpretation of
+ref. In case the symbol flag is set, ref is a symbol number
+(index into the symbol table), otherwise (symbol flag cleared)
+ref is a segment number (index into the segment table). In both
+cases, the value which is used in the relocation is computed as
+the sum of the symbols's value (or the segment's start address)
+and add, the additive part in the relocation record.
+
 
 5) Object Data
 
@@ -156,9 +179,18 @@ any padding.
 
 7) Executing an Executable
 
-t.b.d.
+It is the task of the loader to prepare execution of a program.
 
-After loading the program, execution begins at its entry point.
+The loader has to execute the following steps:
+  - read and inspect file header, check magic number
+  - read segment table, process segment records individually
+  - ignore the segment if its SEG_ATTR_A is cleared
+  - allocate virtual memory (addr and size given in segment record)
+  - if SEG_ATTR_P is set, read memory contents from file
+  - if SEG_ATTR_P is cleared, set memory contents to zero
+  - set up memory protection according to SEG_ATTR_W and SEG_ATTR_X
+  - after all segments are loaded, set up a stack
+  - begin execution of the program at its entry point.
 
 
 
