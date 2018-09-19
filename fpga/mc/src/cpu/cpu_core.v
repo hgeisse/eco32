@@ -300,6 +300,7 @@ module ctrl(clk, rst,
   wire type_rfx;		// instr is rfx
   wire type_trap;		// instr is trap
   wire type_tb;			// instr is a TLB instr
+  wire type_cctl;		// instr is cctl
   reg [5:0] state;		// cpu internal state
 				//  0: reset
 				//  1: fetch instr (addr xlat)
@@ -334,6 +335,7 @@ module ctrl(clk, rst,
 				// 28: fetch instr (bus cycle)
 				// 29: execute LD-type instr (bus cycle)
 				// 30: execute ST-type instr (bus cycle)
+				// 31: execute cctl instr
 				// all other: unused
   reg branch;			// take the branch iff true
   wire [15:0] irq_pending;	// the vector of pending unmasked irqs
@@ -443,6 +445,7 @@ module ctrl(clk, rst,
                         (opcode == 6'h3B) ||
                         (opcode == 6'h3C) ||
                         (opcode == 6'h3D)) ? 1'b1 : 1'b0;
+  assign type_cctl   = (opcode == 6'h1E) ? 1'b1 : 1'b0;
 
   // state machine
   always @(posedge clk) begin
@@ -472,19 +475,19 @@ module ctrl(clk, rst,
                // possibly store pc+4 in $31
           begin
             if (type_rrr) begin
-              // RRR-type instruction
+              // RRR-type instr
               state <= 6'd3;
             end else
             if (type_rrs) begin
-              // RRS-type instruction
+              // RRS-type instr
               state <= 6'd4;
             end else
             if (type_rrh) begin
-              // RRH-type instruction
+              // RRH-type instr
               state <= 6'd5;
             end else
             if (type_rhh) begin
-              // RHH-type instruction
+              // RHH-type instr
               state <= 6'd6;
             end else
             if (type_rrb) begin
@@ -538,8 +541,12 @@ module ctrl(clk, rst,
               end else begin
                 state <= 6'd27;
               end
+            end else
+            if (type_cctl) begin
+              // cctl instr
+              state <= 6'd31;
             end else begin
-              // illegal instruction
+              // illegal instr
               state <= 6'd25;
               exc_priority <= 4'd1;
             end
@@ -849,6 +856,14 @@ module ctrl(clk, rst,
               end else begin
                 state <= 6'd1;
               end
+            end
+          end
+        6'd31:  // execute cctl instr
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
             end
           end
         default:  // all other states: unused
@@ -1870,6 +1885,37 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_any;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_any;
+        end
+      6'd31:  // execute cctl instr
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'bxx;
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
         end
       default:  // all other states: unused
         begin
