@@ -300,7 +300,7 @@ module ctrl(clk, rst,
   wire type_rfx;		// instr is rfx
   wire type_trap;		// instr is trap
   wire type_tb;			// instr is a TLB instr
-  reg [4:0] state;		// cpu internal state
+  reg [5:0] state;		// cpu internal state
 				//  0: reset
 				//  1: fetch instr (addr xlat)
 				//  2: decode instr
@@ -316,7 +316,7 @@ module ctrl(clk, rst,
 				// 10: execute JR-type instr
 				// 11: execute LDST-type instr (1)
 				// 12: execute LD-type instr (addr xlat)
-				// 13: execute LD-type instr (3)
+				// 13: execute LD-type instr (4)
 				// 14: execute ST-type instr (addr xlat)
 				// 15: interrupt
 				// 16: extra state for RRR shift instr
@@ -446,414 +446,414 @@ module ctrl(clk, rst,
 
   // state machine
   always @(posedge clk) begin
-    if (rst == 1) begin
-      state <= 0;
+    if (rst) begin
+      state <= 6'd0;
     end else begin
       case (state)
-        5'd0:  // reset
+        6'd0:  // reset
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd1:  // fetch instr (addr xlat)
+        6'd1:  // fetch instr (addr xlat)
           begin
             if (exc_prv_addr) begin
-              state <= 26;
+              state <= 6'd26;
               exc_priority <= 4'd9;
             end else
             if (exc_ill_addr) begin
-              state <= 26;
+              state <= 6'd26;
               exc_priority <= 4'd8;
             end else begin
-              state <= 5'd28;
+              state <= 6'd28;
             end
           end
-        5'd2:  // decode instr
+        6'd2:  // decode instr
                // increment pc by 4
                // possibly store pc+4 in $31
           begin
             if (type_rrr) begin
               // RRR-type instruction
-              state <= 5'd3;
+              state <= 6'd3;
             end else
             if (type_rrs) begin
               // RRS-type instruction
-              state <= 5'd4;
+              state <= 6'd4;
             end else
             if (type_rrh) begin
               // RRH-type instruction
-              state <= 5'd5;
+              state <= 6'd5;
             end else
             if (type_rhh) begin
               // RHH-type instruction
-              state <= 5'd6;
+              state <= 6'd6;
             end else
             if (type_rrb) begin
               // RRB-type instr
-              state <= 5'd7;
+              state <= 6'd7;
             end else
             if (type_j) begin
               // J-type instr
-              state <= 5'd9;
+              state <= 6'd9;
             end else
             if (type_jr) begin
               // JR-type instr
-              state <= 5'd10;
+              state <= 6'd10;
             end else
             if (type_ldst) begin
               // LDST-type instr
-              state <= 5'd11;
+              state <= 6'd11;
             end else
             if (type_mvfs) begin
               // mvfs instr
-              state <= 5'd21;
+              state <= 6'd21;
             end else
             if (type_mvts) begin
               // mvts instr
               if (psw[26] == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd2;
               end else begin
-                state <= 5'd22;
+                state <= 6'd22;
               end
             end else
             if (type_rfx) begin
               // rfx instr
               if (psw[26] == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd2;
               end else begin
-                state <= 5'd23;
+                state <= 6'd23;
               end
             end else
             if (type_trap) begin
               // trap instr
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd4;
             end else
             if (type_tb) begin
               // TLB instr
               if (psw[26] == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd2;
               end else begin
-                state <= 5'd27;
+                state <= 6'd27;
               end
             end else begin
               // illegal instruction
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd1;
             end
           end
-        5'd3:  // execute RRR-type instr
+        6'd3:  // execute RRR-type instr
           begin
             if (type_muldiv) begin
-              state <= 5'd18;
+              state <= 6'd18;
             end else
             if (type_shift) begin
-              state <= 5'd16;
+              state <= 6'd16;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd4:  // execute RRS-type instr
+        6'd4:  // execute RRS-type instr
           begin
             if (type_muldiv) begin
-              state <= 5'd19;
+              state <= 6'd19;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd5:  // execute RRH-type instr
+        6'd5:  // execute RRH-type instr
           begin
             if (type_muldiv) begin
-              state <= 5'd20;
+              state <= 6'd20;
             end else
             if (type_shift) begin
-              state <= 5'd17;
+              state <= 6'd17;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd6:  // execute RHH-type instr
+        6'd6:  // execute RHH-type instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd7:  // execute RRB-type instr (1)
+        6'd7:  // execute RRB-type instr (1)
           begin
             if (branch) begin
-              state <= 5'd8;
+              state <= 6'd8;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd8:  // execute RRB-type instr (2)
+        6'd8:  // execute RRB-type instr (2)
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd9:  // execute J-type instr
+        6'd9:  // execute J-type instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd10:  // execute JR-type instr
+        6'd10:  // execute JR-type instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd11:  // execute LDST-type instr (1)
+        6'd11:  // execute LDST-type instr (1)
           begin
             if (type_ld) begin
-              state <= 5'd12;
+              state <= 6'd12;
             end else begin
-              state <= 5'd14;
+              state <= 6'd14;
             end
           end
-        5'd12:  // execute LD-type instr (addr xlat)
+        6'd12:  // execute LD-type instr (addr xlat)
           begin
             if (exc_prv_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd9;
             end else
             if (exc_ill_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd8;
             end else begin
-              state <= 5'd29;
+              state <= 6'd29;
             end
           end
-        5'd13:  // execute LD-type instr (3)
+        6'd13:  // execute LD-type instr (4)
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd14:  // execute ST-type instr (addr xlat)
+        6'd14:  // execute ST-type instr (addr xlat)
           begin
             if (exc_prv_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd9;
             end else
             if (exc_ill_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd8;
             end else begin
-              state <= 5'd30;
+              state <= 6'd30;
             end
           end
-        5'd15:  // interrupt
+        6'd15:  // interrupt
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd16:  // extra state for RRR shift instr
-          begin
-            if (irq_trigger) begin
-              state <= 5'd15;
-            end else begin
-              state <= 5'd1;
-            end
-          end
-        5'd17:  // extra state for RRH shift instr
+        6'd16:  // extra state for RRR shift instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd18:  // extra state for RRR muldiv instr
+        6'd17:  // extra state for RRH shift instr
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
+            end
+          end
+        6'd18:  // extra state for RRR muldiv instr
           begin
             if (muldiv_done) begin
               if (muldiv_error) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd3;
               end else
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end else begin
-              state <= 5'd18;
+              state <= 6'd18;
             end
           end
-        5'd19:  // extra state for RRS muldiv instr
+        6'd19:  // extra state for RRS muldiv instr
           begin
             if (muldiv_done) begin
               if (muldiv_error) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd3;
               end else
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end else begin
-              state <= 5'd19;
+              state <= 6'd19;
             end
           end
-        5'd20:  // extra state for RRH muldiv instr
+        6'd20:  // extra state for RRH muldiv instr
           begin
             if (muldiv_done) begin
               if (muldiv_error) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd3;
               end else
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end else begin
-              state <= 5'd20;
+              state <= 6'd20;
             end
           end
-        5'd21:  // execute mvfs instr
+        6'd21:  // execute mvfs instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd22:  // execute mvts instr
+        6'd22:  // execute mvts instr
           begin
-            state <= 5'd24;
+            state <= 6'd24;
           end
-        5'd23:  // execute rfx instr
+        6'd23:  // execute rfx instr
           begin
-            state <= 5'd24;
+            state <= 6'd24;
           end
-        5'd24:  // irq_trigger check for mvts and rfx
+        6'd24:  // irq_trigger check for mvts and rfx
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd25:  // exception (locus is PC-4)
+        6'd25:  // exception (locus is PC-4)
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd26:  // exception (locus is PC)
+        6'd26:  // exception (locus is PC)
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd27:  // execute TLB instr
+        6'd27:  // execute TLB instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd28:  // fetch instr (bus cycle)
+        6'd28:  // fetch instr (bus cycle)
           begin
             if (tlb_kmissed == 1 || tlb_umissed == 1) begin
-              state <= 5'd26;
+              state <= 6'd26;
               exc_priority <= 4'd5;
             end else
             if (tlb_invalid == 1) begin
-              state <= 5'd26;
+              state <= 6'd26;
               exc_priority <= 4'd7;
             end else
             if (bus_ack == 0) begin
               if (bus_timeout == 1) begin
-                state <= 5'd26;
+                state <= 6'd26;
                 exc_priority <= 4'd0;
               end else begin
-                state <= 5'd28;
+                state <= 6'd28;
               end
             end else begin
-              state <= 5'd2;
+              state <= 6'd2;
             end
           end
-        5'd29:  // execute LD-type instr (bus cycle)
+        6'd29:  // execute LD-type instr (bus cycle)
           begin
             if (tlb_kmissed == 1 || tlb_umissed == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd5;
             end else
             if (tlb_invalid == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd7;
             end else
             if (bus_ack == 0) begin
               if (bus_timeout == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd0;
               end else begin
-                state <= 5'd29;
+                state <= 6'd29;
               end
             end else begin
-              state <= 5'd13;
+              state <= 6'd13;
             end
           end
-        5'd30:  // execute ST-type instr (bus cycle)
+        6'd30:  // execute ST-type instr (bus cycle)
           begin
             if (tlb_kmissed == 1 || tlb_umissed == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd5;
             end else
             if (tlb_invalid == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd7;
             end else
             if (tlb_wrtprot == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd6;
             end else
             if (bus_ack == 0) begin
               if (bus_timeout == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd0;
               end else begin
-                state <= 5'd30;
+                state <= 6'd30;
               end
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
         default:  // all other states: unused
           begin
-            state <= 5'd0;
+            state <= 6'd0;
           end
       endcase
     end
@@ -874,7 +874,7 @@ module ctrl(clk, rst,
   // output logic
   always @(*) begin
     case (state)
-      5'd0:  // reset
+      6'd0:  // reset
         begin
           pc_src = 3'b001;
           pc_we = 1'b1;
@@ -905,7 +905,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd1:  // fetch instr (addr xlat)
+      6'd1:  // fetch instr (addr xlat)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -936,7 +936,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
         end
-      5'd2:  // decode instr
+      6'd2:  // decode instr
              // increment pc by 4
              // possibly store pc+4 in $31
         begin
@@ -971,7 +971,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd3:  // execute RRR-type instr
+      6'd3:  // execute RRR-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1002,7 +1002,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd4:  // execute RRS-type instr
+      6'd4:  // execute RRS-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1033,7 +1033,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd5:  // execute RRH-type instr
+      6'd5:  // execute RRH-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1064,7 +1064,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd6:  // execute RHH-type instr
+      6'd6:  // execute RHH-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1095,7 +1095,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd7:  // execute RRB-type instr (1)
+      6'd7:  // execute RRB-type instr (1)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1126,7 +1126,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd8:  // execute RRB-type instr (2)
+      6'd8:  // execute RRB-type instr (2)
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1157,7 +1157,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd9:  // execute J-type instr
+      6'd9:  // execute J-type instr
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1188,7 +1188,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd10:  // execute JR-type instr
+      6'd10:  // execute JR-type instr
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1219,7 +1219,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd11:  // execute LDST-type instr (1)
+      6'd11:  // execute LDST-type instr (1)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1250,7 +1250,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd12:  // execute LD-type instr (addr xlat)
+      6'd12:  // execute LD-type instr (addr xlat)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1281,7 +1281,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
         end
-      5'd13:  // execute LD-type instr (3)
+      6'd13:  // execute LD-type instr (4)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1312,7 +1312,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd14:  // execute ST-type instr (addr xlat)
+      6'd14:  // execute ST-type instr (addr xlat)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1343,7 +1343,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
         end
-      5'd15:  // interrupt
+      6'd15:  // interrupt
         begin
           pc_src = (psw[27] == 0) ? 3'b010 : 3'b011;
           pc_we = 1'b1;
@@ -1381,7 +1381,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd16:  // extra state for RRR shift instr
+      6'd16:  // extra state for RRR shift instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1412,7 +1412,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd17:  // extra state for RRH shift instr
+      6'd17:  // extra state for RRH shift instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1443,7 +1443,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd18:  // extra state for RRR muldiv instr
+      6'd18:  // extra state for RRR muldiv instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1474,7 +1474,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd19:  // extra state for RRS muldiv instr
+      6'd19:  // extra state for RRS muldiv instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1505,7 +1505,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd20:  // extra state for RRH muldiv instr
+      6'd20:  // extra state for RRH muldiv instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1536,7 +1536,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd21:  // execute mvfs instr
+      6'd21:  // execute mvfs instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1567,7 +1567,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd22:  // execute mvts instr
+      6'd22:  // execute mvts instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1598,7 +1598,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd23:  // execute rfx instr
+      6'd23:  // execute rfx instr
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1636,7 +1636,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd24:  // irq_trigger check for mvts and rfx
+      6'd24:  // irq_trigger check for mvts and rfx
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1667,7 +1667,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd25:  // exception (locus is PC-4)
+      6'd25:  // exception (locus is PC-4)
         begin
           pc_src = (psw[27] != 0) ?
                      ((tlb_umissed != 0) ? 3'b101 : 3'b011) :
@@ -1707,7 +1707,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd26:  // exception (locus is PC)
+      6'd26:  // exception (locus is PC)
         begin
           pc_src = (psw[27] != 0) ?
                      ((tlb_umissed != 0) ? 3'b101 : 3'b011) :
@@ -1747,7 +1747,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd27:  // execute TLB instr
+      6'd27:  // execute TLB instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1778,7 +1778,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
           mmu_bad_addr_we = 1'b0;
         end
-      5'd28:  // fetch instr (bus cycle)
+      6'd28:  // fetch instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1809,7 +1809,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
         end
-      5'd29:  // execute LD-type instr (bus cycle)
+      6'd29:  // execute LD-type instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1840,7 +1840,7 @@ module ctrl(clk, rst,
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
         end
-      5'd30:  // execute ST-type instr (bus cycle)
+      6'd30:  // execute ST-type instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -2515,7 +2515,7 @@ module sregs(clk, rst,
   assign mmu_bad_accs = sr[5];
 
   always @(posedge clk) begin
-    if (rst == 1) begin
+    if (rst) begin
       sr[0] <= 32'h00000000;
     end else begin
       if (we == 1) begin
@@ -2648,7 +2648,7 @@ module mmu(clk, rst, fnc, virt, phys,
 
   // generate "random" index
   always @(posedge clk) begin
-    if (rst == 1) begin
+    if (rst) begin
       // the index register is counting down
       // so we must start at topmost index
       random_index <= 5'd31;
