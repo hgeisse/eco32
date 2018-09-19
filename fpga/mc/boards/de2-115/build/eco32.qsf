@@ -57,19 +57,19 @@ set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_global_assignment -name VERILOG_FILE ../src/sdc/sdc.v
-set_global_assignment -name VERILOG_FILE ../src/kbd/keyboard.v
-set_global_assignment -name VERILOG_FILE ../src/kbd/kbd.v
+set_global_assignment -name VERILOG_FILE ../../../src/sdc/sdc.v
+set_global_assignment -name VERILOG_FILE ../../../src/kbd/keyboard.v
+set_global_assignment -name VERILOG_FILE ../../../src/kbd/kbd.v
 set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
-set_global_assignment -name VERILOG_FILE ../src/tmr/tmr.v
-set_global_assignment -name VERILOG_FILE ../src/ser/xmt.v
-set_global_assignment -name VERILOG_FILE ../src/ser/rcv.v
-set_global_assignment -name VERILOG_FILE ../src/ser/xmtbuf.v
-set_global_assignment -name VERILOG_FILE ../src/ser/rcvbuf.v
-set_global_assignment -name VERILOG_FILE ../src/ser/ser.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/cpu_core.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/cpu_bus.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/cpu.v
+set_global_assignment -name VERILOG_FILE ../../../src/tmr/tmr.v
+set_global_assignment -name VERILOG_FILE ../../../src/ser/xmt.v
+set_global_assignment -name VERILOG_FILE ../../../src/ser/rcv.v
+set_global_assignment -name VERILOG_FILE ../../../src/ser/xmtbuf.v
+set_global_assignment -name VERILOG_FILE ../../../src/ser/rcvbuf.v
+set_global_assignment -name VERILOG_FILE ../../../src/ser/ser.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu_core.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu_bus.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu.v
 set_global_assignment -name VERILOG_FILE ../src/rom/rom.v
 set_global_assignment -name VERILOG_FILE ../src/ram/ramctrl.v
 set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
