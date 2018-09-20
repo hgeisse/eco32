@@ -301,6 +301,8 @@ module ctrl(clk, rst,
   wire type_trap;		// instr is trap
   wire type_tb;			// instr is a TLB instr
   wire type_cctl;		// instr is cctl
+  wire type_ldlw;		// instr is ldlw
+  wire type_stcw;		// instr is stcw
   reg [5:0] state;		// cpu internal state
 				//  0: reset
 				//  1: fetch instr (addr xlat)
@@ -336,6 +338,12 @@ module ctrl(clk, rst,
 				// 29: execute LD-type instr (bus cycle)
 				// 30: execute ST-type instr (bus cycle)
 				// 31: execute cctl instr
+				// 32: execute ldlw/stcw instr (1)
+				// 33: execute ldlw instr (addr xlat)
+				// 34: execute ldlw instr (bus cycle)
+				// 35: execute ldlw instr (4)
+				// 36: execute stcw instr (addr xlat)
+				// 37: execute stcw instr (bus cycle)
 				// all other: unused
   reg branch;			// take the branch iff true
   wire [15:0] irq_pending;	// the vector of pending unmasked irqs
@@ -446,6 +454,8 @@ module ctrl(clk, rst,
                         (opcode == 6'h3C) ||
                         (opcode == 6'h3D)) ? 1'b1 : 1'b0;
   assign type_cctl   = (opcode == 6'h1E) ? 1'b1 : 1'b0;
+  assign type_ldlw   = (opcode == 6'h3E) ? 1'b1 : 1'b0;
+  assign type_stcw   = (opcode == 6'h3F) ? 1'b1 : 1'b0;
 
   // state machine
   always @(posedge clk) begin
@@ -545,6 +555,10 @@ module ctrl(clk, rst,
             if (type_cctl) begin
               // cctl instr
               state <= 6'd31;
+            end else
+            if (type_ldlw | type_stcw) begin
+              // ldlw/stcw instr
+              state <= 6'd32;
             end else begin
               // illegal instr
               state <= 6'd25;
@@ -864,6 +878,98 @@ module ctrl(clk, rst,
               state <= 6'd15;
             end else begin
               state <= 6'd1;
+            end
+          end
+        6'd32:  // execute ldlw/stcw instr (1)
+          begin
+            if (type_ldlw) begin
+              state <= 6'd33;
+            end else begin
+              state <= 6'd36;
+            end
+          end
+        6'd33:  // execute ldlw instr (addr xlat)
+          begin
+            if (exc_prv_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd9;
+            end else
+            if (exc_ill_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd8;
+            end else begin
+              state <= 6'd34;
+            end
+          end
+        6'd34:  // execute ldlw instr (bus cycle)
+          begin
+            if (tlb_kmissed == 1 || tlb_umissed == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd5;
+            end else
+            if (tlb_invalid == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd7;
+            end else
+            if (bus_ack == 0) begin
+              if (bus_timeout == 1) begin
+                state <= 6'd25;
+                exc_priority <= 4'd0;
+              end else begin
+                state <= 6'd34;
+              end
+            end else begin
+              state <= 6'd35;
+            end
+          end
+        6'd35:  // execute ldlw instr (4)
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
+            end
+          end
+        6'd36:  // execute stcw instr (addr xlat)
+          begin
+            if (exc_prv_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd9;
+            end else
+            if (exc_ill_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd8;
+            end else begin
+              state <= 6'd37;
+            end
+          end
+        6'd37:  // execute stcw instr (bus cycle)
+          begin
+            if (tlb_kmissed == 1 || tlb_umissed == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd5;
+            end else
+            if (tlb_invalid == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd7;
+            end else
+            if (tlb_wrtprot == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd6;
+            end else
+            if (bus_ack == 0) begin
+              if (bus_timeout == 1) begin
+                state <= 6'd25;
+                exc_priority <= 4'd0;
+              end else begin
+                state <= 6'd37;
+              end
+            end else begin
+              if (irq_trigger) begin
+                state <= 6'd15;
+              end else begin
+                state <= 6'd1;
+              end
             end
           end
         default:  // all other states: unused
@@ -1916,6 +2022,192 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+        end
+      6'd32:  // execute ldlw/stcw instr (1)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b1;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b1;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'bxx;
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'b1;
+          alu_src2 = 3'b010;
+          alu_fnc = 3'b000;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+        end
+      6'd33:  // execute ldlw instr (addr xlat)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;
+          mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'b0;         // get bad_accs right in case of exc
+          bus_size = 2'b10;      // enable illegal address detection
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+        end
+      6'd34:  // execute ldlw instr (bus cycle)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;	// hold vaddr for latching in bad addr reg
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = ~exc_tlb_but_wrtprot;
+          bus_we = 1'b0;
+          bus_size = 2'b10;
+          mdir_we = 1'b1;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = exc_tlb_but_wrtprot;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_but_wrtprot;
+        end
+      6'd35:  // execute ldlw instr (4)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'b10;
+          mdir_we = 1'b0;
+          mdir_sx = 1'b0;
+          ir_we = 1'b0;
+          reg_src2 = 2'b00;
+          reg_di2_src = 3'b011;
+          reg_we2 = 1'b1;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+        end
+      6'd36:  // execute stcw instr (addr xlat)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;
+          mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'b1;         // get bad_accs right in case of exc
+          bus_size = 2'b10;      // enable illegal address detection
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+        end
+      6'd37:  // execute stcw instr (bus cycle)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;	// hold vaddr for latching in bad addr reg
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = ~exc_tlb_any;
+          bus_we = 1'b1;
+          bus_size = 2'b10;
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = exc_tlb_any;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_any;
         end
       default:  // all other states: unused
         begin
