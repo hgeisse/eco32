@@ -5,7 +5,7 @@
 BUILD = ../../build
 
 SRC = start.s main.c
-EXE = atomic
+EXE = atomics
 BIN = atomics.bin
 MAP = atomics.map
 EXO = atomics.exo
