@@ -25,7 +25,7 @@ module tmr(clk, rst,
   reg [31:0] divisor;
   reg divisor_loaded;
   reg expired;
-  reg alarm;
+  reg exp;
   reg ien;
 
   always @(posedge clk) begin
@@ -47,19 +47,22 @@ module tmr(clk, rst,
     if (rst) begin
       divisor <= 32'hFFFFFFFF;
       divisor_loaded <= 1'b1;
-      alarm <= 1'b0;
+      exp <= 1'b0;
       ien <= 1'b0;
     end else begin
       if (expired) begin
-        alarm <= 1'b1;
+        exp <= 1'b1;
       end else begin
+        if (stb == 1'b1 && we == 1'b0 && addr[3:2] == 2'b00) begin
+          // read ctrl
+          exp <= 1'b0;
+        end
         if (stb == 1'b1 && we == 1'b1 && addr[3:2] == 2'b00) begin
-          // ctrl
-          alarm <= data_in[0];
+          // write ctrl
           ien <= data_in[1];
         end
         if (stb == 1'b1 && we == 1'b1 && addr[3:2] == 2'b01) begin
-          // divisor
+          // write divisor
           divisor <= data_in;
           divisor_loaded <= 1'b1;
         end else begin
@@ -73,7 +76,7 @@ module tmr(clk, rst,
     case (addr[3:2])
       2'b00:
         // ctrl
-        data_out = { 28'h0000000, 2'b00, ien, alarm };
+        data_out = { 28'h0000000, 2'b00, ien, exp };
       2'b01:
         // divisor
         data_out = divisor;
@@ -89,6 +92,6 @@ module tmr(clk, rst,
   end
 
   assign ack = stb;
-  assign irq = ien & alarm;
+  assign irq = ien & exp;
 
 endmodule
