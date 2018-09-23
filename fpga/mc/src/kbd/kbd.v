@@ -31,7 +31,6 @@ module kbd(clk, rst,
   reg [7:0] data;
   reg rdy;
   reg ien;
-  reg [7:2] other_bits;
 
   keyboard keyboard_1(
     .ps2_clk(ps2_clk),
@@ -47,7 +46,6 @@ module kbd(clk, rst,
       data <= 8'h00;
       rdy <= 1'b0;
       ien <= 1'b0;
-      other_bits <= 6'b000000;
     end else begin
       if (keyboard_rdy) begin
         data[7:0] <= keyboard_data[7:0];
@@ -56,15 +54,12 @@ module kbd(clk, rst,
         rdy <= keyboard_rdy;
       end
       if (stb & we & ~addr) begin
-        rdy <= data_in[0];
         ien <= data_in[1];
-        other_bits[7:2] <= data_in[7:2];
       end
     end
   end
 
-  assign data_out =
-    ~addr ? { other_bits[7:2], ien, rdy } : data[7:0];
+  assign data_out = ~addr ? { 6'h00, ien, rdy } : data[7:0];
   assign ack = stb;
   assign irq = ien & rdy;
 
