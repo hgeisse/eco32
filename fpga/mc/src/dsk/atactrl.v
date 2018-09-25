@@ -215,7 +215,6 @@ always @(posedge clk) begin
 
     	if (bus_en & bus_wr & control_bus_addressed) begin
     		if (bus_addr [3:2] == 2'b00) begin
-			    operationFinished <= bus_din [4];
     			if (commandUnlocked)
 				    requestedWrite <= bus_din [2];
 			    enableInterrupts <= bus_din [1];
@@ -337,6 +336,8 @@ always @(posedge clk) begin
                     io_en <= 1'b1;
                     io_write <= 1'b0;
                     io_addr <= `ADDR_STATUS;
+                    errorOutput <= 1'b0;
+                    operationFinished <= 1'b0;
                 end else begin
                     io_en <= 1'b0;
                 end
@@ -431,7 +432,6 @@ always @(posedge clk) begin
                     if (requestedSectorCount == 4'b0001) begin
                         io_en <= 1'b0;
                         state <= 5'd8;
-                        errorOutput <= 1'b0;
                         operationFinished <= 1'b1;
                     end else begin
                         if (debounced_ata_intrq) begin
@@ -482,7 +482,6 @@ always @(posedge clk) begin
                         io_addr <= `ADDR_STATUS;
                         if (requestedSectorCount == 4'b0001) begin
                             state <= 5'd8;
-                            errorOutput <= 1'b0;
                             operationFinished <= 1'b1;
                         end else begin
                             requestedSectorCount <= requestedSectorCount - 1;
