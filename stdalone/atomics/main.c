@@ -213,7 +213,7 @@ void initTimer(void) {
   unsigned int *timerBase;
 
   timerBase = (unsigned int *) 0xF0000000;
-  *(timerBase + 1) = 50000;
+  *(timerBase + 1) = 100000;
   *timerBase = 2;
   orMask(1 << 14);
 }
@@ -305,7 +305,7 @@ int f_critical;
 
 
 void f(void) {
-  int i, j;
+  int i;
 
   for (i = 0; i < TRIES; i++) {
     lock();
@@ -322,7 +322,7 @@ void f(void) {
 
 
 int g(void) {
-  int i, j;
+  int i;
   int violations;
 
   violations = 0;
