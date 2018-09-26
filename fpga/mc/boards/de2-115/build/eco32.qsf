@@ -70,7 +70,7 @@ set_global_assignment -name VERILOG_FILE ../../../src/ser/ser.v
 set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu_core.v
 set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu_bus.v
 set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu.v
-set_global_assignment -name VERILOG_FILE ../src/rom/rom.v
+set_global_assignment -name VERILOG_FILE ../../../src/rom/S29GL064N/rom.v
 set_global_assignment -name VERILOG_FILE ../src/ram/ramctrl.v
 set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
 set_global_assignment -name VERILOG_FILE ../src/dsp/pixel.v

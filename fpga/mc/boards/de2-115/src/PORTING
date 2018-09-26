@@ -9,7 +9,7 @@ toplevel	preliminary
 clk_rst		finished
 cpu		finished, backported
 ram		finished
-rom		finished
+rom		finished, backported
 tmr		finished, backported
 dsp		finished
 kbd		finished, backported
