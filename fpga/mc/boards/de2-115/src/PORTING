@@ -8,7 +8,7 @@ Hardware:
 toplevel	preliminary
 clk_rst		finished
 cpu		finished, backported
-ram		finished
+ram		finished, backported
 rom		finished, backported
 tmr		finished, backported
 dsp		finished
