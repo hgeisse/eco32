@@ -112,6 +112,11 @@ module cpu_core(clk, rst,
   wire tlb_invalid;		// tlb entry is invalid
   wire tlb_wrtprot;		// frame is write-protected
 
+  // link register
+  wire link;			// link register
+  wire link_we;			// link register write enable
+  wire link_next;		// link register next value
+
   //------------------------------------------------------------
 
   // program counter
@@ -157,6 +162,7 @@ module cpu_core(clk, rst,
                    (reg_di2_src == 3'b010) ? muldiv_res :
                    (reg_di2_src == 3'b011) ? mdir :
                    (reg_di2_src == 3'b100) ? sreg_do :
+                   (reg_di2_src == 3'b101) ? { 31'h00000000, link } :
                    32'hxxxxxxxx;
   regs regs_1(clk,
               reg_a1, reg_do1,
@@ -193,6 +199,9 @@ module cpu_core(clk, rst,
   assign mmu_bad_accs_we = mmu_bad_addr_we;
   assign mmu_bad_accs_new = { 29'b0, bus_we, bus_size[1:0] };
 
+  // link register
+  link link_1(clk, link_we, link_next, link);
+
   // ctrl
   ctrl ctrl_1(clk, rst,
               opcode, alu_equ, alu_ult, alu_slt,
@@ -209,7 +218,8 @@ module cpu_core(clk, rst,
               tlb_kmissed, tlb_umissed,
               tlb_invalid, tlb_wrtprot,
               tlb_index_we, tlb_entry_hi_we,
-              tlb_entry_lo_we, mmu_bad_addr_we);
+              tlb_entry_lo_we, mmu_bad_addr_we,
+              link, link_we, link_next);
 
 endmodule
 
@@ -234,7 +244,8 @@ module ctrl(clk, rst,
             tlb_kmissed, tlb_umissed,
             tlb_invalid, tlb_wrtprot,
             tlb_index_we, tlb_entry_hi_we,
-            tlb_entry_lo_we, mmu_bad_addr_we);
+            tlb_entry_lo_we, mmu_bad_addr_we,
+            link, link_we, link_next);
     input clk;
     input rst;
     input [5:0] opcode;
@@ -279,6 +290,9 @@ module ctrl(clk, rst,
     output reg tlb_entry_hi_we;
     output reg tlb_entry_lo_we;
     output reg mmu_bad_addr_we;
+    input link;
+    output reg link_we;
+    output reg link_next;
 
   wire type_rrr;		// instr type is RRR
   wire type_rrs;		// instr type is RRS
@@ -940,7 +954,11 @@ module ctrl(clk, rst,
               state <= 6'd25;
               exc_priority <= 4'd8;
             end else begin
-              state <= 6'd37;
+              if (link) begin
+                state <= 6'd37;
+              end else begin
+                state <= 6'd38;
+              end
             end
           end
         6'd37:  // execute stcw instr (bus cycle)
@@ -965,11 +983,15 @@ module ctrl(clk, rst,
                 state <= 6'd37;
               end
             end else begin
-              if (irq_trigger) begin
-                state <= 6'd15;
-              end else begin
-                state <= 6'd1;
-              end
+              state <= 6'd38;
+            end
+          end
+        6'd38:  // execute stcw instr (4)
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
             end
           end
         default:  // all other states: unused
@@ -1025,6 +1047,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
       6'd1:  // fetch instr (addr xlat)
         begin
@@ -1056,6 +1080,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd2:  // decode instr
              // increment pc by 4
@@ -1091,6 +1117,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd3:  // execute RRR-type instr
         begin
@@ -1122,6 +1150,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd4:  // execute RRS-type instr
         begin
@@ -1153,6 +1183,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd5:  // execute RRH-type instr
         begin
@@ -1184,6 +1216,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd6:  // execute RHH-type instr
         begin
@@ -1215,6 +1249,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd7:  // execute RRB-type instr (1)
         begin
@@ -1246,6 +1282,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd8:  // execute RRB-type instr (2)
         begin
@@ -1277,6 +1315,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd9:  // execute J-type instr
         begin
@@ -1308,6 +1348,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd10:  // execute JR-type instr
         begin
@@ -1339,6 +1381,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd11:  // execute LDST-type instr (1)
         begin
@@ -1370,6 +1414,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd12:  // execute LD-type instr (addr xlat)
         begin
@@ -1401,6 +1447,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd13:  // execute LD-type instr (4)
         begin
@@ -1432,6 +1480,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd14:  // execute ST-type instr (addr xlat)
         begin
@@ -1463,6 +1513,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd15:  // interrupt
         begin
@@ -1501,6 +1553,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
       6'd16:  // extra state for RRR shift instr
         begin
@@ -1532,6 +1586,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd17:  // extra state for RRH shift instr
         begin
@@ -1563,6 +1619,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd18:  // extra state for RRR muldiv instr
         begin
@@ -1594,6 +1652,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd19:  // extra state for RRS muldiv instr
         begin
@@ -1625,6 +1685,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd20:  // extra state for RRH muldiv instr
         begin
@@ -1656,6 +1718,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd21:  // execute mvfs instr
         begin
@@ -1687,6 +1751,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd22:  // execute mvts instr
         begin
@@ -1718,6 +1784,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd23:  // execute rfx instr
         begin
@@ -1756,6 +1824,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd24:  // irq_trigger check for mvts and rfx
         begin
@@ -1787,6 +1857,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd25:  // exception (locus is PC-4)
         begin
@@ -1827,6 +1899,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
       6'd26:  // exception (locus is PC)
         begin
@@ -1867,6 +1941,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
       6'd27:  // execute TLB instr
         begin
@@ -1898,6 +1974,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
           tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd28:  // fetch instr (bus cycle)
         begin
@@ -1929,6 +2007,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd29:  // execute LD-type instr (bus cycle)
         begin
@@ -1960,6 +2040,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd30:  // execute ST-type instr (bus cycle)
         begin
@@ -1991,6 +2073,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_any;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_any;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd31:  // execute cctl instr
         begin
@@ -2022,6 +2106,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd32:  // execute ldlw/stcw instr (1)
         begin
@@ -2053,6 +2139,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd33:  // execute ldlw instr (addr xlat)
         begin
@@ -2084,6 +2172,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd34:  // execute ldlw instr (bus cycle)
         begin
@@ -2115,6 +2205,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd35:  // execute ldlw instr (4)
         begin
@@ -2146,6 +2238,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b1;
         end
       6'd36:  // execute stcw instr (addr xlat)
         begin
@@ -2177,6 +2271,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
       6'd37:  // execute stcw instr (bus cycle)
         begin
@@ -2208,6 +2304,41 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_any;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_any;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd38:  // execute stcw instr (4)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'b10;
+          mdir_we = 1'b0;
+          mdir_sx = 1'b0;
+          ir_we = 1'b0;
+          reg_src2 = 2'b00;
+          reg_di2_src = 3'b101;
+          reg_we2 = 1'b1;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
       default:  // all other states: unused
         begin
@@ -2239,6 +2370,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'bx;
           tlb_entry_lo_we = 1'bx;
           mmu_bad_addr_we = 1'bx;
+          link_we = 1'bx;
+          link_next = 1'bx;
         end
     endcase
   end
@@ -3155,6 +3288,26 @@ module tlb(page_in, miss, found,
     end else begin
       r_page <= page[rw_index];
       r_frame <= frame[rw_index];
+    end
+  end
+
+endmodule
+
+
+//--------------------------------------------------------------
+// link -- the link register
+//--------------------------------------------------------------
+
+
+module link(clk, link_we, link_next, link);
+    input clk;
+    input link_we;
+    input link_next;
+    output reg link;
+
+  always @(posedge clk) begin
+    if (link_we == 1) begin
+      link <= link_next;
     end
   end
 
