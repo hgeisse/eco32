@@ -52,8 +52,10 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-x]           use simulator with DejaGnu/expect\n");
   fprintf(stderr, "    [-ics <n>]     icache ld size in bytes (2-28)\n");
   fprintf(stderr, "    [-icl <n>]     icache ld line size in bytes (2-10)\n");
+  fprintf(stderr, "    [-ica <n>]     icache ld associativity (0-1)\n");
   fprintf(stderr, "    [-dcs <n>]     dcache ld size in bytes (2-28)\n");
   fprintf(stderr, "    [-dcl <n>]     dcache ld line size in bytes (2-10)\n");
+  fprintf(stderr, "    [-dca <n>]     dcache ld associativity (0-1)\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
   fprintf(stderr, "Unconnected serial lines can be accessed by opening\n");
@@ -231,6 +233,17 @@ int main(int argc, char *argv[]) {
         usage(argv[0]);
       }
     } else
+    if (strcmp(argp, "-ica") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      icacheAssoc = strtol(argv[++i], &endp, 10);
+      if (*endp != '\0' ||
+          icacheAssoc < 0 ||
+          icacheAssoc > 1) {
+        usage(argv[0]);
+      }
+    } else
     if (strcmp(argp, "-dcs") == 0) {
       if (i == argc - 1) {
         usage(argv[0]);
@@ -250,6 +263,17 @@ int main(int argc, char *argv[]) {
       if (*endp != '\0' ||
           dcacheLineSize < 2 ||
           dcacheLineSize > 10) {
+        usage(argv[0]);
+      }
+    } else
+    if (strcmp(argp, "-dca") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      dcacheAssoc = strtol(argv[++i], &endp, 10);
+      if (*endp != '\0' ||
+          dcacheAssoc < 0 ||
+          dcacheAssoc > 1) {
         usage(argv[0]);
       }
     } else {
