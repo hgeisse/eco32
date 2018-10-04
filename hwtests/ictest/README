@@ -1,0 +1,6 @@
+This is a test for the instruction cache, intended
+to be executed on the simulator only. A direct-mapped
+4 KB cache with a line size of 16 bytes should exhibit
+264 read misses. If the cache is two-way associative,
+with the same total size and line size as above, the
+read miss count should drop to 12.
