@@ -4,3 +4,13 @@ to be executed on the simulator only. A direct-mapped
 264 read misses. If the cache is two-way associative,
 with the same total size and line size as above, the
 read miss count should drop to 12.
+
+Here is a table which shows the dynamic behavior of
+the program running with the two types of caches:
+
+part1:   226 instrs,   4 / yy read misses
+part2:   226 instrs,   4 / yy read misses
+part3:   322 instrs, 256 / yy read misses
+part4:   234 instrs, 176 / yy read misses
+-----------------------------------------
+all:    1008 instrs, 440 / yy read misses
