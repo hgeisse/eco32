@@ -1,7 +1,6 @@
 /*
  * icache.c -- instruction cache simulation
- *             direct mapped (working)
- *             two way associative (not working)
+ *             direct-mapped or two-way associative
  */
 
 
@@ -24,8 +23,9 @@ typedef struct {
 } CacheLine;
 
 typedef struct {
+  int lru;			/* least recently used cache line */
   CacheLine line_0;		/* first cache line in set */
-  /*CacheLine line_1;*/		/* second cache line in set */
+  CacheLine line_1;		/* second cache line in set */
 } CacheSet;
 
 
@@ -33,12 +33,12 @@ static Bool debug = false;
 
 static int ldTotalSize;		/* ld(total size in bytes) */
 static int ldLineSize;		/* ld(line size in bytes) */
-static int ldAssoc;		/* 0 (direct) or 1 (two way) */
+static int ldAssoc;		/* 0 (direct) or 1 (two-way) */
 static int ldSets;		/* ld(number of sets) */
 
 static int totalSize;		/* total size in bytes */
 static int lineSize;		/* line size in bytes */
-static int assoc;		/* 1 (direct) or 2 (two way) */
+static int assoc;		/* 1 (direct) or 2 (two-way) */
 static int sets;		/* number of sets */
 
 static unsigned int offsetMask;	/* mask for offset bits */
@@ -56,19 +56,14 @@ static long readMisses;		/* number of read misses */
 /**************************************************************/
 
 
-static void readLineFromMemory(Word pAddr, unsigned int index) {
+static void readLineFromMemory(Word pAddr, Word *dst) {
   if (debug) {
-    cPrintf("**** icache read from mem: index 0x%04X @ pAddr 0x%08X ****\n",
-            index, pAddr);
+    cPrintf("**** icache read from mem: pAddr 0x%08X ****\n", pAddr);
   }
   if ((pAddr & 0x30000000) == ROM_BASE) {
-    romRead(pAddr & ~offsetMask,
-            cache[index].line_0.data,
-            lineSize >> 2);
+    romRead(pAddr & ~offsetMask, dst, lineSize >> 2);
   } else {
-    ramRead(pAddr & ~offsetMask,
-            cache[index].line_0.data,
-            lineSize >> 2);
+    ramRead(pAddr & ~offsetMask, dst, lineSize >> 2);
   }
 }
 
@@ -77,29 +72,53 @@ static Word *getWordPtr(Word pAddr) {
   unsigned int tag;
   unsigned int index;
   unsigned int offset;
-  Bool hit;
+  Bool hit0, hit1;
+  CacheLine *cacheLine;
 
   /* compute tag, index, and offset */
   tag = (pAddr >> tagShift) & tagMask;
   index = (pAddr >> indexShift) & indexMask;
   offset = pAddr & offsetMask;
   /* cache lookup */
-  hit = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  hit0 = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  if (ldAssoc) {
+    hit1 = cache[index].line_1.valid && cache[index].line_1.tag == tag;
+  } else {
+    hit1 = false;
+  }
   if (debug) {
     cPrintf("**** icache tag = 0x%08X, index = 0x%04X, offset = 0x%02X",
             tag, index, offset);
-    cPrintf(" : %s ****\n", hit ? "hit" : "miss");
+    cPrintf(" : %s%s ****\n",
+            hit0 ? "hit" : "miss",
+            ldAssoc ? (hit1 ? "/hit" : "/miss") : "");
   }
-  if (!hit) {
-    /* handle cache miss */
-    readLineFromMemory(pAddr, index);
-    cache[index].line_0.valid = true;
-    cache[index].line_0.tag = tag;
+  if (hit0) {
+    /* cache hit in line_0 */
+    cacheLine = &cache[index].line_0;
+    cache[index].lru = 1;
+  } else
+  if (hit1) {
+    /* cache hit in line_1 */
+    cacheLine = &cache[index].line_1;
+    cache[index].lru = 0;
+  } else {
+    /* cache miss */
+    if (ldAssoc == 0 || cache[index].lru == 0) {
+      cacheLine = &cache[index].line_0;
+      cache[index].lru = 1;
+    } else {
+      cacheLine = &cache[index].line_1;
+      cache[index].lru = 0;
+    }
+    readLineFromMemory(pAddr, cacheLine->data);
+    cacheLine->valid = true;
+    cacheLine->tag = tag;
     readMisses++;
   }
   readAccesses++;
   /* cached data is (now) present */
-  return cache[index].line_0.data + (offset >> 2);
+  return cacheLine->data + (offset >> 2);
 }
 
 
@@ -126,7 +145,11 @@ void icacheInvalidate(void) {
     cPrintf("**** icache invalidate ****\n");
   }
   for (index = 0; index < sets; index++) {
+    cache[index].lru = 0;
     cache[index].line_0.valid = false;
+    if (ldAssoc) {
+      cache[index].line_1.valid = false;
+    }
   }
 }
 
@@ -151,19 +174,28 @@ Bool icacheProbe(Word pAddr, Word *data) {
   unsigned int tag;
   unsigned int index;
   unsigned int offset;
-  Bool hit;
+  Bool hit0, hit1;
 
   /* compute tag, index, and offset */
   tag = (pAddr >> tagShift) & tagMask;
   index = (pAddr >> indexShift) & indexMask;
   offset = pAddr & offsetMask;
   /* cache lookup */
-  hit = cache[index].line_0.valid && cache[index].line_0.tag == tag;
-  if (hit) {
-    /* return data word */
-    *data = cache[index].line_0.data[offset >> 2];
+  hit0 = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  if (ldAssoc) {
+    hit1 = cache[index].line_1.valid && cache[index].line_1.tag == tag;
+  } else {
+    hit1 = false;
   }
-  return hit;
+  if (hit0) {
+    /* return data word from line_0 */
+    *data = cache[index].line_0.data[offset >> 2];
+  } else
+  if (hit1) {
+    /* return data word from line_1 */
+    *data = cache[index].line_1.data[offset >> 2];
+  }
+  return hit0 || hit1;
 }
 
 
@@ -216,6 +248,12 @@ void icacheInit(int ldTotal, int ldLine, int ldAss) {
     if (cache[index].line_0.data == NULL) {
       error("cannot allocate icache data");
     }
+    if (ldAssoc) {
+      cache[index].line_1.data = malloc(lineSize);
+      if (cache[index].line_1.data == NULL) {
+        error("cannot allocate icache data");
+      }
+    }
   }
   icacheReset();
 }
@@ -226,6 +264,9 @@ void icacheExit(void) {
 
   for (index = 0; index < sets; index++) {
     free(cache[index].line_0.data);
+    if (ldAssoc) {
+      free(cache[index].line_1.data);
+    }
   }
   free(cache);
 }
