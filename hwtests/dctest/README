@@ -1,0 +1,49 @@
+This is a test for the data cache, intended to be
+executed on the simulator only. A direct-mapped
+4 KB cache with a line size of 16 bytes should show
+the following performance:
+
+    read accesses  : 8193
+    read misses    : 8193
+    write accesses : 8192
+    write misses   : 8192
+    memory writes  : 8192
+
+Explanation: The program copies 0x200 words of data from
+consecutive read addresses to consecutive write addresses.
+Each read address gets mapped to the same cache line as
+its corresponding write address. The copy operations is
+repeated 16 times for the same block of 0x200 words.
+
+The cache is big enough to hold the complete block of data
+(4 KB vs 2 KB). The block is read with 128 read operations
+(because it is composed of 2048 / 16 = 128 cache lines).
+For each cache line there are 4 reads and 4 writes, each of
+them reading and writing the same line (each is a miss). So
+there are a total of 4 * 128 * 16 = 8192 reads, and the
+same amount of writes, all of them misses.
+
+The additional read access (which is a miss) results from
+the monitor which has to fetch the current instruction as
+data in order to disassemble and show it.
+
+If the cache is two-way associative, with the same
+total size and line size as above, the performance
+should rise:
+
+    read accesses  : 8193
+    read misses    : 129
+    write accesses : 8192
+    write misses   : 128
+    memory writes  : 128
+
+Explanation: We have of course the same amount of read and
+write accesses as above. But now the destination line can
+be stored in parallel to the souce line (associativity is 2,
+and the cache is just big enough to hold them both). So the
+cache line's contents are kept for the 4 reads and writes,
+and they are valid even in the following 15 copy operations.
+This results in having only one read and one write for each
+of the 128 cache lines of the block.
+
+For the additional read access see above.

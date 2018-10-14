@@ -1,7 +1,22 @@
-The simulator now contains a first version of separate instruction
-and data caches. Their total sizes and line sizes are configurable
-from the simulator's command line, but they are only direct-mapped
-for now.
+There are two equations which describe the "cache geometry":
+    phys_addr_bits = tag_bits + index_bits + offset_bits
+    cache_size = associativity * 2^index_bits * 2^offset_bits
+Meaning of variables in these equations:
+    tag_bits          number of bits in the tag field
+    index_bits        number of bits in the index field
+                      2^index_bits is the number of sets in the cache
+    offset_bits       number of bits in the offset field
+                      2^offset_bits is the number of bytes in a line
+    phys_addr_bits    total number of bits in a physical address
+                      this is fixed to 30 in ECO32
+    associativity     number of lines in a set
+                      1 for direct-mapped, 2 for two-way associative
+    cache_size        total cache size in bytes
+
+The simulator now contains separate instruction and data caches.
+Their total sizes, line sizes, and associativities are configurable
+from the simulator's command line (with the restriction that only
+direct-mapped or two-way associative caches are allowed).
 
 The CPU got an instruction which deals with cache management,
 "cctl <m>". The immediate value m is a bit mask, where the three
