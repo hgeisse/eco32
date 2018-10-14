@@ -1,7 +1,6 @@
 /*
  * dcache.c -- data cache simulation
- *             direct mapped (working)
- *             two way associative (not working)
+ *             direct-mapped or two-way associative
  */
 
 
@@ -25,8 +24,9 @@ typedef struct {
 } CacheLine;
 
 typedef struct {
+  int lru;			/* least recently used cache line */
   CacheLine line_0;		/* first cache line in set */
-  /*CacheLine line_1;*/		/* second cache line in set */
+  CacheLine line_1;		/* second cache line in set */
 } CacheSet;
 
 
@@ -34,12 +34,12 @@ static Bool debug = false;
 
 static int ldTotalSize;		/* ld(total size in bytes) */
 static int ldLineSize;		/* ld(line size in bytes) */
-static int ldAssoc;		/* 0 (direct) or 1 (two way) */
+static int ldAssoc;		/* 0 (direct) or 1 (two-way) */
 static int ldSets;		/* ld(number of sets) */
 
 static int totalSize;		/* total size in bytes */
 static int lineSize;		/* line size in bytes */
-static int assoc;		/* 1 (direct) or 2 (two way) */
+static int assoc;		/* 1 (direct) or 2 (two-way) */
 static int sets;		/* number of sets */
 
 static unsigned int offsetMask;	/* mask for offset bits */
@@ -60,36 +60,26 @@ static long memoryWrites;	/* number of lines written back */
 /**************************************************************/
 
 
-static void readLineFromMemory(Word pAddr, unsigned int index) {
+static void readLineFromMemory(Word pAddr, Word *dst) {
   if (debug) {
-    cPrintf("**** dcache read from mem: index 0x%04X @ pAddr 0x%08X ****\n",
-            index, pAddr);
+    cPrintf("**** dcache read from mem: pAddr 0x%08X ****\n", pAddr);
   }
   if ((pAddr & 0x30000000) == ROM_BASE) {
-    romRead(pAddr & ~offsetMask,
-            cache[index].line_0.data,
-            lineSize >> 2);
+    romRead(pAddr & ~offsetMask, dst, lineSize >> 2);
   } else {
-    ramRead(pAddr & ~offsetMask,
-            cache[index].line_0.data,
-            lineSize >> 2);
+    ramRead(pAddr & ~offsetMask, dst, lineSize >> 2);
   }
 }
 
 
-static void writeLineToMemory(Word pAddr, unsigned int index) {
+static void writeLineToMemory(Word pAddr, Word *src) {
   if (debug) {
-    cPrintf("**** dcache write to mem: index 0x%04X @ pAddr 0x%08X ****\n",
-            index, pAddr);
+    cPrintf("**** dcache write to mem: pAddr 0x%08X ****\n", pAddr);
   }
   if ((pAddr & 0x30000000) == ROM_BASE) {
-    romWrite(pAddr & ~offsetMask,
-             cache[index].line_0.data,
-             lineSize >> 2);
+    romWrite(pAddr & ~offsetMask, src, lineSize >> 2);
   } else {
-    ramWrite(pAddr & ~offsetMask,
-             cache[index].line_0.data,
-             lineSize >> 2);
+    ramWrite(pAddr & ~offsetMask, src, lineSize >> 2);
   }
 }
 
@@ -98,7 +88,8 @@ static Word *getWordPtr(Word pAddr, Bool write) {
   unsigned int tag;
   unsigned int index;
   unsigned int offset;
-  Bool hit;
+  Bool hit0, hit1;
+  CacheLine *cacheLine;
   Word memAddr;
 
   /* compute tag, index, and offset */
@@ -106,26 +97,48 @@ static Word *getWordPtr(Word pAddr, Bool write) {
   index = (pAddr >> indexShift) & indexMask;
   offset = pAddr & offsetMask;
   /* cache lookup */
-  hit = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  hit0 = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  if (ldAssoc) {
+    hit1 = cache[index].line_1.valid && cache[index].line_1.tag == tag;
+  } else {
+    hit1 = false;
+  }
   if (debug) {
     cPrintf("**** dcache tag = 0x%08X, index = 0x%04X, offset = 0x%02X",
             tag, index, offset);
-    cPrintf(" : %s (%s) ****\n",
-            hit ? "hit" : "miss", write ? "wr" : "rd");
+    cPrintf(" : %s%s (%s) ****\n",
+            hit0 ? "hit" : "miss",
+            ldAssoc ? (hit1 ? "/hit" : "/miss") : "",
+            write ? "wr" : "rd");
   }
-  if (!hit) {
-    /* handle cache miss */
-    if (cache[index].line_0.valid & cache[index].line_0.dirty) {
+  if (hit0) {
+    /* cache hit in line_0 */
+    cacheLine = &cache[index].line_0;
+    cache[index].lru = 1;
+  } else
+  if (hit1) {
+    /* cache hit in line_1 */
+    cacheLine = &cache[index].line_1;
+    cache[index].lru = 0;
+  } else {
+    /* cache miss */
+    if (ldAssoc == 0 || cache[index].lru == 0) {
+      cacheLine = &cache[index].line_0;
+      cache[index].lru = 1;
+    } else {
+      cacheLine = &cache[index].line_1;
+      cache[index].lru = 0;
+    }
+    if (cacheLine->valid && cacheLine->dirty) {
       /* handle write-back */
-      memAddr = (cache[index].line_0.tag << tagShift) |
-                (index << indexShift);
-      writeLineToMemory(memAddr, index);
+      memAddr = (cacheLine->tag << tagShift) | (index << indexShift);
+      writeLineToMemory(memAddr, cacheLine->data);
       memoryWrites++;
     }
-    readLineFromMemory(pAddr, index);
-    cache[index].line_0.valid = true;
-    cache[index].line_0.dirty = false;
-    cache[index].line_0.tag = tag;
+    readLineFromMemory(pAddr, cacheLine->data);
+    cacheLine->valid = true;
+    cacheLine->dirty = false;
+    cacheLine->tag = tag;
     if (write) {
       writeMisses++;
     } else {
@@ -134,14 +147,14 @@ static Word *getWordPtr(Word pAddr, Bool write) {
   }
   if (write) {
     /* handle cache write */
-    cache[index].line_0.dirty = true;
+    cacheLine->dirty = true;
     writeAccesses++;
   } else {
     /* handle cache read */
     readAccesses++;
   }
   /* cached data is (now) present */
-  return cache[index].line_0.data + (offset >> 2);
+  return cacheLine->data + (offset >> 2);
 }
 
 
@@ -268,26 +281,41 @@ void dcacheInvalidate(void) {
     cPrintf("**** dcache invalidate ****\n");
   }
   for (index = 0; index < sets; index++) {
+    cache[index].lru = 0;
     cache[index].line_0.valid = false;
+    if (ldAssoc) {
+      cache[index].line_1.valid = false;
+    }
   }
 }
 
 
 void dcacheFlush(void) {
   unsigned int index;
+  CacheLine *cacheLine;
   Word memAddr;
 
   if (debug) {
     cPrintf("**** dcache flush ****\n");
   }
   for (index = 0; index < sets; index++) {
-    if (cache[index].line_0.valid & cache[index].line_0.dirty) {
-      /* handle write-back */
-      memAddr = (cache[index].line_0.tag << tagShift) |
-                (index << indexShift);
-      writeLineToMemory(memAddr, index);
-      cache[index].line_0.dirty = false;
+    cacheLine = &cache[index].line_0;
+    if (cacheLine->valid && cacheLine->dirty) {
+      /* handle write-back from line_0 */
+      memAddr = (cacheLine->tag << tagShift) | (index << indexShift);
+      writeLineToMemory(memAddr, cacheLine->data);
+      cacheLine->dirty = false;
       memoryWrites++;
+    }
+    if (ldAssoc) {
+      cacheLine = &cache[index].line_1;
+      if (cacheLine->valid && cacheLine->dirty) {
+        /* handle write-back from line_1 */
+        memAddr = (cacheLine->tag << tagShift) | (index << indexShift);
+        writeLineToMemory(memAddr, cacheLine->data);
+        cacheLine->dirty = false;
+        memoryWrites++;
+      }
     }
   }
 }
@@ -328,20 +356,30 @@ Bool dcacheProbe(Word pAddr, Word *data, Bool *dirty) {
   unsigned int tag;
   unsigned int index;
   unsigned int offset;
-  Bool hit;
+  Bool hit0, hit1;
 
   /* compute tag, index, and offset */
   tag = (pAddr >> tagShift) & tagMask;
   index = (pAddr >> indexShift) & indexMask;
   offset = pAddr & offsetMask;
   /* cache lookup */
-  hit = cache[index].line_0.valid && cache[index].line_0.tag == tag;
-  if (hit) {
-    /* return data word and dirty flag */
+  hit0 = cache[index].line_0.valid && cache[index].line_0.tag == tag;
+  if (ldAssoc) {
+    hit1 = cache[index].line_1.valid && cache[index].line_1.tag == tag;
+  } else {
+    hit1 = false;
+  }
+  if (hit0) {
+    /* return data word and dirty flag from line_0 */
     *data = cache[index].line_0.data[offset >> 2];
     *dirty = cache[index].line_0.dirty;
+  } else
+  if (hit1) {
+    /* return data word and dirty flag from line_1 */
+    *data = cache[index].line_1.data[offset >> 2];
+    *dirty = cache[index].line_1.dirty;
   }
-  return hit;
+  return hit0 || hit1;
 }
 
 
@@ -397,6 +435,12 @@ void dcacheInit(int ldTotal, int ldLine, int ldAss) {
     if (cache[index].line_0.data == NULL) {
       error("cannot allocate dcache data");
     }
+    if (ldAssoc) {
+      cache[index].line_1.data = malloc(lineSize);
+      if (cache[index].line_1.data == NULL) {
+        error("cannot allocate dcache data");
+      }
+    }
   }
   dcacheReset();
 }
@@ -407,6 +451,9 @@ void dcacheExit(void) {
 
   for (index = 0; index < sets; index++) {
     free(cache[index].line_0.data);
+    if (ldAssoc) {
+      free(cache[index].line_1.data);
+    }
   }
   free(cache);
 }

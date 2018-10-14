@@ -9,8 +9,8 @@
 
 #define DC_LD_TOTAL_SIZE	12	/* ld(total size in bytes) */
 #define DC_LD_LINE_SIZE		4	/* ld(line size in bytes) */
-#define DC_LD_ASSOC		0	/* 0: direct mapped */
-					/* 1: two way associative */
+#define DC_LD_ASSOC		0	/* 0: direct-mapped */
+					/* 1: two-way associative */
 
 
 Word dcacheReadWord(Word pAddr);
