@@ -55,18 +55,18 @@ module ram(clk, rst,
       if (counter[3:0] == 4'h0) begin
         if (stb & ~we) begin
           // a read may need some clock cycles
-          counter[3:0] <= `RD_CYCLES - 1;
+          counter[3:0] <= `RD_CYCLES - 4'h1;
         end
         if (stb & we) begin
           // a write may need some clock cycles
-          counter[3:0] <= `WR_CYCLES - 1;
+          counter[3:0] <= `WR_CYCLES - 4'h1;
         end
       end else begin
-        counter[3:0] <= counter[3:0] - 1;
+        counter[3:0] <= counter[3:0] - 4'h1;
       end
     end
   end
 
-  assign ack = (counter[3:0] == 4'h1) ? 1 : 0;
+  assign ack = (counter[3:0] == 4'h1) ? 1'b1 : 1'b0;
 
 endmodule
