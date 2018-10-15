@@ -5,7 +5,7 @@
 BUILD = ../../build
 
 SRCS = eco32test.v \
-       src/eco32/eco32.v \
+       src/toplevel/eco32.v \
        src/clk_rst/clk_rst.v \
        src/cpu/cpu.v \
        src/cpu/cpu_bus.v \
@@ -20,9 +20,9 @@ BIN = eco32test
 
 .PHONY:		all install run show clean
 
-all:
+all:		show
 
-install:
+install:	$(BIN)
 
 $(BIN):		$(SRCS)
 		iverilog -Wall -o $(BIN) $(SRCS)
@@ -60,6 +60,6 @@ clean:
 		rm -f ser0.dat ser0.out
 		rm -f ser1.dat ser1.out
 		rm -f src/*~
-		rm -f src/eco32/*~ src/clk_rst/*~ src/cpu/*~
+		rm -f src/toplevel/*~ src/clk_rst/*~ src/cpu/*~
 		rm -f src/ram/*~ src/rom/*~ src/tmr/*~
 		rm -f src/dsp/*~ src/kbd/*~ src/ser/*~
