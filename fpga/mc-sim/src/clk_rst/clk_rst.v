@@ -23,15 +23,15 @@ module clk_rst(clk_in, rst_in_n,
   always @(posedge clk) begin
     rst_p_n <= rst_in_n;
     rst_s_n <= rst_p_n;
-    if (rst_s_n == 0) begin
+    if (~rst_s_n) begin
       cnt <= 4'h0;
     end else begin
       if (cnt != 4'hF) begin
-        cnt <= cnt + 1;
+        cnt <= cnt + 4'h1;
       end
     end
   end
 
-  assign rst = (cnt == 4'hF) ? 0 : 1;
+  assign rst = (cnt == 4'hF) ? 1'b0 : 1'b1;
 
 endmodule
