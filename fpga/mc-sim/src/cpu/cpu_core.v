@@ -112,6 +112,11 @@ module cpu_core(clk, rst,
   wire tlb_invalid;		// tlb entry is invalid
   wire tlb_wrtprot;		// frame is write-protected
 
+  // link register
+  wire link;			// link register
+  wire link_we;			// link register write enable
+  wire link_next;		// link register next value
+
   //------------------------------------------------------------
 
   // program counter
@@ -157,6 +162,7 @@ module cpu_core(clk, rst,
                    (reg_di2_src == 3'b010) ? muldiv_res :
                    (reg_di2_src == 3'b011) ? mdir :
                    (reg_di2_src == 3'b100) ? sreg_do :
+                   (reg_di2_src == 3'b101) ? { 31'h00000000, link } :
                    32'hxxxxxxxx;
   regs regs_1(clk,
               reg_a1, reg_do1,
@@ -193,6 +199,9 @@ module cpu_core(clk, rst,
   assign mmu_bad_accs_we = mmu_bad_addr_we;
   assign mmu_bad_accs_new = { 29'b0, bus_we, bus_size[1:0] };
 
+  // link register
+  link link_1(clk, link_we, link_next, link);
+
   // ctrl
   ctrl ctrl_1(clk, rst,
               opcode, alu_equ, alu_ult, alu_slt,
@@ -209,7 +218,8 @@ module cpu_core(clk, rst,
               tlb_kmissed, tlb_umissed,
               tlb_invalid, tlb_wrtprot,
               tlb_index_we, tlb_entry_hi_we,
-              tlb_entry_lo_we, mmu_bad_addr_we);
+              tlb_entry_lo_we, mmu_bad_addr_we,
+              link, link_we, link_next);
 
 endmodule
 
@@ -234,7 +244,8 @@ module ctrl(clk, rst,
             tlb_kmissed, tlb_umissed,
             tlb_invalid, tlb_wrtprot,
             tlb_index_we, tlb_entry_hi_we,
-            tlb_entry_lo_we, mmu_bad_addr_we);
+            tlb_entry_lo_we, mmu_bad_addr_we,
+            link, link_we, link_next);
     input clk;
     input rst;
     input [5:0] opcode;
@@ -279,6 +290,9 @@ module ctrl(clk, rst,
     output reg tlb_entry_hi_we;
     output reg tlb_entry_lo_we;
     output reg mmu_bad_addr_we;
+    input link;
+    output reg link_we;
+    output reg link_next;
 
   wire type_rrr;		// instr type is RRR
   wire type_rrs;		// instr type is RRS
@@ -300,7 +314,10 @@ module ctrl(clk, rst,
   wire type_rfx;		// instr is rfx
   wire type_trap;		// instr is trap
   wire type_tb;			// instr is a TLB instr
-  reg [4:0] state;		// cpu internal state
+  wire type_cctl;		// instr is cctl
+  wire type_ldlw;		// instr is ldlw
+  wire type_stcw;		// instr is stcw
+  reg [5:0] state;		// cpu internal state
 				//  0: reset
 				//  1: fetch instr (addr xlat)
 				//  2: decode instr
@@ -316,7 +333,7 @@ module ctrl(clk, rst,
 				// 10: execute JR-type instr
 				// 11: execute LDST-type instr (1)
 				// 12: execute LD-type instr (addr xlat)
-				// 13: execute LD-type instr (3)
+				// 13: execute LD-type instr (4)
 				// 14: execute ST-type instr (addr xlat)
 				// 15: interrupt
 				// 16: extra state for RRR shift instr
@@ -334,6 +351,13 @@ module ctrl(clk, rst,
 				// 28: fetch instr (bus cycle)
 				// 29: execute LD-type instr (bus cycle)
 				// 30: execute ST-type instr (bus cycle)
+				// 31: execute cctl instr
+				// 32: execute ldlw/stcw instr (1)
+				// 33: execute ldlw instr (addr xlat)
+				// 34: execute ldlw instr (bus cycle)
+				// 35: execute ldlw instr (4)
+				// 36: execute stcw instr (addr xlat)
+				// 37: execute stcw instr (bus cycle)
 				// all other: unused
   reg branch;			// take the branch iff true
   wire [15:0] irq_pending;	// the vector of pending unmasked irqs
@@ -365,12 +389,12 @@ module ctrl(clk, rst,
                         (opcode == 6'h16) ||
                         (opcode == 6'h18) ||
                         (opcode == 6'h1A) ||
-                        (opcode == 6'h1C)) ? 1 : 0;
+                        (opcode == 6'h1C)) ? 1'b1 : 1'b0;
   assign type_rrs    = ((opcode == 6'h01) ||
                         (opcode == 6'h03) ||
                         (opcode == 6'h05) ||
                         (opcode == 6'h09) ||
-                        (opcode == 6'h0D)) ? 1 : 0;
+                        (opcode == 6'h0D)) ? 1'b1 : 1'b0;
   assign type_rrh    = ((opcode == 6'h07) ||
                         (opcode == 6'h0B) ||
                         (opcode == 6'h0F) ||
@@ -380,8 +404,8 @@ module ctrl(clk, rst,
                         (opcode == 6'h17) ||
                         (opcode == 6'h19) ||
                         (opcode == 6'h1B) ||
-                        (opcode == 6'h1D)) ? 1 : 0;
-  assign type_rhh    = (opcode == 6'h1F) ? 1 : 0;
+                        (opcode == 6'h1D)) ? 1'b1 : 1'b0;
+  assign type_rhh    = (opcode == 6'h1F) ? 1'b1 : 1'b0;
   assign type_rrb    = ((opcode == 6'h20) ||
                         (opcode == 6'h21) ||
                         (opcode == 6'h22) ||
@@ -391,21 +415,21 @@ module ctrl(clk, rst,
                         (opcode == 6'h26) ||
                         (opcode == 6'h27) ||
                         (opcode == 6'h28) ||
-                        (opcode == 6'h29)) ? 1 : 0;
+                        (opcode == 6'h29)) ? 1'b1 : 1'b0;
   assign type_j      = ((opcode == 6'h2A) ||
-                        (opcode == 6'h2C)) ? 1 : 0;
+                        (opcode == 6'h2C)) ? 1'b1 : 1'b0;
   assign type_jr     = ((opcode == 6'h2B) ||
-                        (opcode == 6'h2D)) ? 1 : 0;
+                        (opcode == 6'h2D)) ? 1'b1 : 1'b0;
   assign type_link   = ((opcode == 6'h2C) ||
-                        (opcode == 6'h2D)) ? 1 : 0;
+                        (opcode == 6'h2D)) ? 1'b1 : 1'b0;
   assign type_ld     = ((opcode == 6'h30) ||
                         (opcode == 6'h31) ||
                         (opcode == 6'h32) ||
                         (opcode == 6'h33) ||
-                        (opcode == 6'h34)) ? 1 : 0;
+                        (opcode == 6'h34)) ? 1'b1 : 1'b0;
   assign type_st     = ((opcode == 6'h35) ||
                         (opcode == 6'h36) ||
-                        (opcode == 6'h37)) ? 1 : 0;
+                        (opcode == 6'h37)) ? 1'b1 : 1'b0;
   assign type_ldst   = type_ld | type_st;
   assign ldst_size   = ((opcode == 6'h30) ||
                         (opcode == 6'h35)) ? 2'b10 :
@@ -421,7 +445,7 @@ module ctrl(clk, rst,
                         (opcode == 6'h1A) ||
                         (opcode == 6'h1B) ||
                         (opcode == 6'h1C) ||
-                        (opcode == 6'h1D)) ? 1 : 0;
+                        (opcode == 6'h1D)) ? 1'b1 : 1'b0;
   assign type_muldiv = ((opcode == 6'h04) ||
                         (opcode == 6'h05) ||
                         (opcode == 6'h06) ||
@@ -433,438 +457,557 @@ module ctrl(clk, rst,
                         (opcode == 6'h0C) ||
                         (opcode == 6'h0D) ||
                         (opcode == 6'h0E) ||
-                        (opcode == 6'h0F)) ? 1 : 0;
+                        (opcode == 6'h0F)) ? 1'b1 : 1'b0;
   assign type_fast   = ~(type_shift | type_muldiv);
-  assign type_mvfs   = (opcode == 6'h38) ? 1 : 0;
-  assign type_mvts   = (opcode == 6'h39) ? 1 : 0;
-  assign type_rfx    = (opcode == 6'h2F) ? 1 : 0;
-  assign type_trap   = (opcode == 6'h2E) ? 1 : 0;
+  assign type_mvfs   = (opcode == 6'h38) ? 1'b1 : 1'b0;
+  assign type_mvts   = (opcode == 6'h39) ? 1'b1 : 1'b0;
+  assign type_rfx    = (opcode == 6'h2F) ? 1'b1 : 1'b0;
+  assign type_trap   = (opcode == 6'h2E) ? 1'b1 : 1'b0;
   assign type_tb     = ((opcode == 6'h3A) ||
                         (opcode == 6'h3B) ||
                         (opcode == 6'h3C) ||
-                        (opcode == 6'h3D)) ? 1 : 0;
+                        (opcode == 6'h3D)) ? 1'b1 : 1'b0;
+  assign type_cctl   = (opcode == 6'h1E) ? 1'b1 : 1'b0;
+  assign type_ldlw   = (opcode == 6'h3E) ? 1'b1 : 1'b0;
+  assign type_stcw   = (opcode == 6'h3F) ? 1'b1 : 1'b0;
 
   // state machine
   always @(posedge clk) begin
-    if (rst == 1) begin
-      state <= 0;
+    if (rst) begin
+      state <= 6'd0;
     end else begin
       case (state)
-        5'd0:  // reset
+        6'd0:  // reset
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd1:  // fetch instr (addr xlat)
+        6'd1:  // fetch instr (addr xlat)
           begin
             if (exc_prv_addr) begin
-              state <= 26;
+              state <= 6'd26;
               exc_priority <= 4'd9;
             end else
             if (exc_ill_addr) begin
-              state <= 26;
+              state <= 6'd26;
               exc_priority <= 4'd8;
             end else begin
-              state <= 5'd28;
+              state <= 6'd28;
             end
           end
-        5'd2:  // decode instr
+        6'd2:  // decode instr
                // increment pc by 4
                // possibly store pc+4 in $31
           begin
             if (type_rrr) begin
-              // RRR-type instruction
-              state <= 5'd3;
+              // RRR-type instr
+              state <= 6'd3;
             end else
             if (type_rrs) begin
-              // RRS-type instruction
-              state <= 5'd4;
+              // RRS-type instr
+              state <= 6'd4;
             end else
             if (type_rrh) begin
-              // RRH-type instruction
-              state <= 5'd5;
+              // RRH-type instr
+              state <= 6'd5;
             end else
             if (type_rhh) begin
-              // RHH-type instruction
-              state <= 5'd6;
+              // RHH-type instr
+              state <= 6'd6;
             end else
             if (type_rrb) begin
               // RRB-type instr
-              state <= 5'd7;
+              state <= 6'd7;
             end else
             if (type_j) begin
               // J-type instr
-              state <= 5'd9;
+              state <= 6'd9;
             end else
             if (type_jr) begin
               // JR-type instr
-              state <= 5'd10;
+              state <= 6'd10;
             end else
             if (type_ldst) begin
               // LDST-type instr
-              state <= 5'd11;
+              state <= 6'd11;
             end else
             if (type_mvfs) begin
               // mvfs instr
-              state <= 5'd21;
+              state <= 6'd21;
             end else
             if (type_mvts) begin
               // mvts instr
               if (psw[26] == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd2;
               end else begin
-                state <= 5'd22;
+                state <= 6'd22;
               end
             end else
             if (type_rfx) begin
               // rfx instr
               if (psw[26] == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd2;
               end else begin
-                state <= 5'd23;
+                state <= 6'd23;
               end
             end else
             if (type_trap) begin
               // trap instr
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd4;
             end else
             if (type_tb) begin
               // TLB instr
               if (psw[26] == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd2;
               end else begin
-                state <= 5'd27;
+                state <= 6'd27;
               end
+            end else
+            if (type_cctl) begin
+              // cctl instr
+              state <= 6'd31;
+            end else
+            if (type_ldlw | type_stcw) begin
+              // ldlw/stcw instr
+              state <= 6'd32;
             end else begin
-              // illegal instruction
-              state <= 5'd25;
+              // illegal instr
+              state <= 6'd25;
               exc_priority <= 4'd1;
             end
           end
-        5'd3:  // execute RRR-type instr
+        6'd3:  // execute RRR-type instr
           begin
             if (type_muldiv) begin
-              state <= 5'd18;
+              state <= 6'd18;
             end else
             if (type_shift) begin
-              state <= 5'd16;
+              state <= 6'd16;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd4:  // execute RRS-type instr
+        6'd4:  // execute RRS-type instr
           begin
             if (type_muldiv) begin
-              state <= 5'd19;
+              state <= 6'd19;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd5:  // execute RRH-type instr
+        6'd5:  // execute RRH-type instr
           begin
             if (type_muldiv) begin
-              state <= 5'd20;
+              state <= 6'd20;
             end else
             if (type_shift) begin
-              state <= 5'd17;
+              state <= 6'd17;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd6:  // execute RHH-type instr
+        6'd6:  // execute RHH-type instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd7:  // execute RRB-type instr (1)
+        6'd7:  // execute RRB-type instr (1)
           begin
             if (branch) begin
-              state <= 5'd8;
+              state <= 6'd8;
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end
           end
-        5'd8:  // execute RRB-type instr (2)
+        6'd8:  // execute RRB-type instr (2)
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd9:  // execute J-type instr
+        6'd9:  // execute J-type instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd10:  // execute JR-type instr
+        6'd10:  // execute JR-type instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd11:  // execute LDST-type instr (1)
+        6'd11:  // execute LDST-type instr (1)
           begin
             if (type_ld) begin
-              state <= 5'd12;
+              state <= 6'd12;
             end else begin
-              state <= 5'd14;
+              state <= 6'd14;
             end
           end
-        5'd12:  // execute LD-type instr (addr xlat)
+        6'd12:  // execute LD-type instr (addr xlat)
           begin
             if (exc_prv_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd9;
             end else
             if (exc_ill_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd8;
             end else begin
-              state <= 5'd29;
+              state <= 6'd29;
             end
           end
-        5'd13:  // execute LD-type instr (3)
+        6'd13:  // execute LD-type instr (4)
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd14:  // execute ST-type instr (addr xlat)
+        6'd14:  // execute ST-type instr (addr xlat)
           begin
             if (exc_prv_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd9;
             end else
             if (exc_ill_addr) begin
-              state <= 25;
+              state <= 6'd25;
               exc_priority <= 4'd8;
             end else begin
-              state <= 5'd30;
+              state <= 6'd30;
             end
           end
-        5'd15:  // interrupt
+        6'd15:  // interrupt
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd16:  // extra state for RRR shift instr
-          begin
-            if (irq_trigger) begin
-              state <= 5'd15;
-            end else begin
-              state <= 5'd1;
-            end
-          end
-        5'd17:  // extra state for RRH shift instr
+        6'd16:  // extra state for RRR shift instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd18:  // extra state for RRR muldiv instr
+        6'd17:  // extra state for RRH shift instr
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
+            end
+          end
+        6'd18:  // extra state for RRR muldiv instr
           begin
             if (muldiv_done) begin
               if (muldiv_error) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd3;
               end else
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end else begin
-              state <= 5'd18;
+              state <= 6'd18;
             end
           end
-        5'd19:  // extra state for RRS muldiv instr
+        6'd19:  // extra state for RRS muldiv instr
           begin
             if (muldiv_done) begin
               if (muldiv_error) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd3;
               end else
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end else begin
-              state <= 5'd19;
+              state <= 6'd19;
             end
           end
-        5'd20:  // extra state for RRH muldiv instr
+        6'd20:  // extra state for RRH muldiv instr
           begin
             if (muldiv_done) begin
               if (muldiv_error) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd3;
               end else
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
             end else begin
-              state <= 5'd20;
+              state <= 6'd20;
             end
           end
-        5'd21:  // execute mvfs instr
+        6'd21:  // execute mvfs instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd22:  // execute mvts instr
+        6'd22:  // execute mvts instr
           begin
-            state <= 5'd24;
+            state <= 6'd24;
           end
-        5'd23:  // execute rfx instr
+        6'd23:  // execute rfx instr
           begin
-            state <= 5'd24;
+            state <= 6'd24;
           end
-        5'd24:  // irq_trigger check for mvts and rfx
+        6'd24:  // irq_trigger check for mvts and rfx
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd25:  // exception (locus is PC-4)
+        6'd25:  // exception (locus is PC-4)
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd26:  // exception (locus is PC)
+        6'd26:  // exception (locus is PC)
           begin
-            state <= 5'd1;
+            state <= 6'd1;
           end
-        5'd27:  // execute TLB instr
+        6'd27:  // execute TLB instr
           begin
             if (irq_trigger) begin
-              state <= 5'd15;
+              state <= 6'd15;
             end else begin
-              state <= 5'd1;
+              state <= 6'd1;
             end
           end
-        5'd28:  // fetch instr (bus cycle)
+        6'd28:  // fetch instr (bus cycle)
           begin
             if (tlb_kmissed == 1 || tlb_umissed == 1) begin
-              state <= 5'd26;
+              state <= 6'd26;
               exc_priority <= 4'd5;
             end else
             if (tlb_invalid == 1) begin
-              state <= 5'd26;
+              state <= 6'd26;
               exc_priority <= 4'd7;
             end else
             if (bus_ack == 0) begin
               if (bus_timeout == 1) begin
-                state <= 5'd26;
+                state <= 6'd26;
                 exc_priority <= 4'd0;
               end else begin
-                state <= 5'd28;
+                state <= 6'd28;
               end
             end else begin
-              state <= 5'd2;
+              state <= 6'd2;
             end
           end
-        5'd29:  // execute LD-type instr (bus cycle)
+        6'd29:  // execute LD-type instr (bus cycle)
           begin
             if (tlb_kmissed == 1 || tlb_umissed == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd5;
             end else
             if (tlb_invalid == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd7;
             end else
             if (bus_ack == 0) begin
               if (bus_timeout == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd0;
               end else begin
-                state <= 5'd29;
+                state <= 6'd29;
               end
             end else begin
-              state <= 5'd13;
+              state <= 6'd13;
             end
           end
-        5'd30:  // execute ST-type instr (bus cycle)
+        6'd30:  // execute ST-type instr (bus cycle)
           begin
             if (tlb_kmissed == 1 || tlb_umissed == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd5;
             end else
             if (tlb_invalid == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd7;
             end else
             if (tlb_wrtprot == 1) begin
-              state <= 5'd25;
+              state <= 6'd25;
               exc_priority <= 4'd6;
             end else
             if (bus_ack == 0) begin
               if (bus_timeout == 1) begin
-                state <= 5'd25;
+                state <= 6'd25;
                 exc_priority <= 4'd0;
               end else begin
-                state <= 5'd30;
+                state <= 6'd30;
               end
             end else begin
               if (irq_trigger) begin
-                state <= 5'd15;
+                state <= 6'd15;
               end else begin
-                state <= 5'd1;
+                state <= 6'd1;
               end
+            end
+          end
+        6'd31:  // execute cctl instr
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
+            end
+          end
+        6'd32:  // execute ldlw/stcw instr (1)
+          begin
+            if (type_ldlw) begin
+              state <= 6'd33;
+            end else begin
+              state <= 6'd36;
+            end
+          end
+        6'd33:  // execute ldlw instr (addr xlat)
+          begin
+            if (exc_prv_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd9;
+            end else
+            if (exc_ill_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd8;
+            end else begin
+              state <= 6'd34;
+            end
+          end
+        6'd34:  // execute ldlw instr (bus cycle)
+          begin
+            if (tlb_kmissed == 1 || tlb_umissed == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd5;
+            end else
+            if (tlb_invalid == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd7;
+            end else
+            if (bus_ack == 0) begin
+              if (bus_timeout == 1) begin
+                state <= 6'd25;
+                exc_priority <= 4'd0;
+              end else begin
+                state <= 6'd34;
+              end
+            end else begin
+              state <= 6'd35;
+            end
+          end
+        6'd35:  // execute ldlw instr (4)
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
+            end
+          end
+        6'd36:  // execute stcw instr (addr xlat)
+          begin
+            if (exc_prv_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd9;
+            end else
+            if (exc_ill_addr) begin
+              state <= 6'd25;
+              exc_priority <= 4'd8;
+            end else begin
+              if (link) begin
+                state <= 6'd37;
+              end else begin
+                state <= 6'd38;
+              end
+            end
+          end
+        6'd37:  // execute stcw instr (bus cycle)
+          begin
+            if (tlb_kmissed == 1 || tlb_umissed == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd5;
+            end else
+            if (tlb_invalid == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd7;
+            end else
+            if (tlb_wrtprot == 1) begin
+              state <= 6'd25;
+              exc_priority <= 4'd6;
+            end else
+            if (bus_ack == 0) begin
+              if (bus_timeout == 1) begin
+                state <= 6'd25;
+                exc_priority <= 4'd0;
+              end else begin
+                state <= 6'd37;
+              end
+            end else begin
+              state <= 6'd38;
+            end
+          end
+        6'd38:  // execute stcw instr (4)
+          begin
+            if (irq_trigger) begin
+              state <= 6'd15;
+            end else begin
+              state <= 6'd1;
             end
           end
         default:  // all other states: unused
           begin
-            state <= 5'd0;
+            state <= 6'd0;
           end
       endcase
     end
   end
 
   // bus timeout detector
-  assign bus_timeout = (bus_count == 8'h00) ? 1 : 0;
+  assign bus_timeout = (bus_count == 8'h00) ? 1'b1 : 1'b0;
   always @(posedge clk) begin
     if (bus_stb == 1 && bus_ack == 0) begin
       // bus is waiting
-      bus_count <= bus_count - 1;
+      bus_count <= bus_count - 8'h1;
     end else begin
       // bus is not waiting
       bus_count <= 8'hFF;
@@ -874,7 +1017,7 @@ module ctrl(clk, rst,
   // output logic
   always @(*) begin
     case (state)
-      5'd0:  // reset
+      6'd0:  // reset
         begin
           pc_src = 3'b001;
           pc_we = 1'b1;
@@ -904,8 +1047,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
-      5'd1:  // fetch instr (addr xlat)
+      6'd1:  // fetch instr (addr xlat)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -935,8 +1080,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd2:  // decode instr
+      6'd2:  // decode instr
              // increment pc by 4
              // possibly store pc+4 in $31
         begin
@@ -970,8 +1117,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd3:  // execute RRR-type instr
+      6'd3:  // execute RRR-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1001,8 +1150,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd4:  // execute RRS-type instr
+      6'd4:  // execute RRS-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1032,8 +1183,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd5:  // execute RRH-type instr
+      6'd5:  // execute RRH-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1063,8 +1216,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd6:  // execute RHH-type instr
+      6'd6:  // execute RHH-type instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1094,8 +1249,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd7:  // execute RRB-type instr (1)
+      6'd7:  // execute RRB-type instr (1)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1125,8 +1282,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd8:  // execute RRB-type instr (2)
+      6'd8:  // execute RRB-type instr (2)
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1156,8 +1315,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd9:  // execute J-type instr
+      6'd9:  // execute J-type instr
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1187,8 +1348,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd10:  // execute JR-type instr
+      6'd10:  // execute JR-type instr
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1218,8 +1381,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd11:  // execute LDST-type instr (1)
+      6'd11:  // execute LDST-type instr (1)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1249,8 +1414,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd12:  // execute LD-type instr (addr xlat)
+      6'd12:  // execute LD-type instr (addr xlat)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1280,8 +1447,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd13:  // execute LD-type instr (3)
+      6'd13:  // execute LD-type instr (4)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1311,8 +1480,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd14:  // execute ST-type instr (addr xlat)
+      6'd14:  // execute ST-type instr (addr xlat)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1342,8 +1513,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd15:  // interrupt
+      6'd15:  // interrupt
         begin
           pc_src = (psw[27] == 0) ? 3'b010 : 3'b011;
           pc_we = 1'b1;
@@ -1380,8 +1553,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
-      5'd16:  // extra state for RRR shift instr
+      6'd16:  // extra state for RRR shift instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1411,8 +1586,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd17:  // extra state for RRH shift instr
+      6'd17:  // extra state for RRH shift instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1442,8 +1619,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd18:  // extra state for RRR muldiv instr
+      6'd18:  // extra state for RRR muldiv instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1473,8 +1652,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd19:  // extra state for RRS muldiv instr
+      6'd19:  // extra state for RRS muldiv instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1504,8 +1685,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd20:  // extra state for RRH muldiv instr
+      6'd20:  // extra state for RRH muldiv instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1535,8 +1718,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd21:  // execute mvfs instr
+      6'd21:  // execute mvfs instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1566,8 +1751,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd22:  // execute mvts instr
+      6'd22:  // execute mvts instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1597,8 +1784,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd23:  // execute rfx instr
+      6'd23:  // execute rfx instr
         begin
           pc_src = 3'b000;
           pc_we = 1'b1;
@@ -1635,8 +1824,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd24:  // irq_trigger check for mvts and rfx
+      6'd24:  // irq_trigger check for mvts and rfx
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1666,8 +1857,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd25:  // exception (locus is PC-4)
+      6'd25:  // exception (locus is PC-4)
         begin
           pc_src = (psw[27] != 0) ?
                      ((tlb_umissed != 0) ? 3'b101 : 3'b011) :
@@ -1706,8 +1899,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
-      5'd26:  // exception (locus is PC)
+      6'd26:  // exception (locus is PC)
         begin
           pc_src = (psw[27] != 0) ?
                      ((tlb_umissed != 0) ? 3'b101 : 3'b011) :
@@ -1746,8 +1941,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'b0;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
-      5'd27:  // execute TLB instr
+      6'd27:  // execute TLB instr
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1773,12 +1970,14 @@ module ctrl(clk, rst,
           sreg_we = 1'b0;
           psw_we = 1'b0;
           psw_new = 32'hxxxxxxxx;
-          tlb_index_we = (opcode[2:0] == 3'b010) ? 1 : 0;
-          tlb_entry_hi_we = (opcode[2:0] == 3'b100) ? 1 : 0;
-          tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1 : 0;
+          tlb_index_we = (opcode[2:0] == 3'b010) ? 1'b1 : 1'b0;
+          tlb_entry_hi_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
+          tlb_entry_lo_we = (opcode[2:0] == 3'b100) ? 1'b1 : 1'b0;
           mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd28:  // fetch instr (bus cycle)
+      6'd28:  // fetch instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1808,8 +2007,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd29:  // execute LD-type instr (bus cycle)
+      6'd29:  // execute LD-type instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1839,8 +2040,10 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_but_wrtprot;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_but_wrtprot;
+          link_we = 1'b0;
+          link_next = 1'bx;
         end
-      5'd30:  // execute ST-type instr (bus cycle)
+      6'd30:  // execute ST-type instr (bus cycle)
         begin
           pc_src = 3'bxxx;
           pc_we = 1'b0;
@@ -1870,6 +2073,272 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = exc_tlb_any;
           tlb_entry_lo_we = 1'b0;
           mmu_bad_addr_we = exc_tlb_any;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd31:  // execute cctl instr
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'bxx;
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd32:  // execute ldlw/stcw instr (1)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b1;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b1;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'bxx;
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'b1;
+          alu_src2 = 3'b010;
+          alu_fnc = 3'b000;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd33:  // execute ldlw instr (addr xlat)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;
+          mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'b0;         // get bad_accs right in case of exc
+          bus_size = 2'b10;      // enable illegal address detection
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd34:  // execute ldlw instr (bus cycle)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;	// hold vaddr for latching in bad addr reg
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = ~exc_tlb_but_wrtprot;
+          bus_we = 1'b0;
+          bus_size = 2'b10;
+          mdir_we = 1'b1;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = exc_tlb_but_wrtprot;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_but_wrtprot;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd35:  // execute ldlw instr (4)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'b10;
+          mdir_we = 1'b0;
+          mdir_sx = 1'b0;
+          ir_we = 1'b0;
+          reg_src2 = 2'b00;
+          reg_di2_src = 3'b011;
+          reg_we2 = 1'b1;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b1;
+        end
+      6'd36:  // execute stcw instr (addr xlat)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;
+          mmu_fnc = (exc_prv_addr | exc_ill_addr) ? 3'b000 : 3'b001;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'b1;         // get bad_accs right in case of exc
+          bus_size = 2'b10;      // enable illegal address detection
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_prv_addr | exc_ill_addr;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd37:  // execute stcw instr (bus cycle)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'b1;	// hold vaddr for latching in bad addr reg
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = ~exc_tlb_any;
+          bus_we = 1'b1;
+          bus_size = 2'b10;
+          mdir_we = 1'b0;
+          mdir_sx = 1'bx;
+          ir_we = 1'b0;
+          reg_src2 = 2'bxx;
+          reg_di2_src = 3'bxxx;
+          reg_we2 = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = exc_tlb_any;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = exc_tlb_any;
+          link_we = 1'b0;
+          link_next = 1'bx;
+        end
+      6'd38:  // execute stcw instr (4)
+        begin
+          pc_src = 3'bxxx;
+          pc_we = 1'b0;
+          mar_we = 1'b0;
+          ma_src = 1'bx;
+          mmu_fnc = 3'b000;
+          mdor_we = 1'b0;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_size = 2'b10;
+          mdir_we = 1'b0;
+          mdir_sx = 1'b0;
+          ir_we = 1'b0;
+          reg_src2 = 2'b00;
+          reg_di2_src = 3'b101;
+          reg_we2 = 1'b1;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 3'bxxx;
+          shift_fnc = 2'bxx;
+          muldiv_fnc = 3'bxxx;
+          muldiv_start = 1'b0;
+          sreg_we = 1'b0;
+          psw_we = 1'b0;
+          psw_new = 32'hxxxxxxxx;
+          tlb_index_we = 1'b0;
+          tlb_entry_hi_we = 1'b0;
+          tlb_entry_lo_we = 1'b0;
+          mmu_bad_addr_we = 1'b0;
+          link_we = 1'b1;
+          link_next = 1'b0;
         end
       default:  // all other states: unused
         begin
@@ -1901,6 +2370,8 @@ module ctrl(clk, rst,
           tlb_entry_hi_we = 1'bx;
           tlb_entry_lo_we = 1'bx;
           mmu_bad_addr_we = 1'bx;
+          link_we = 1'bx;
+          link_next = 1'bx;
         end
     endcase
   end
@@ -1909,39 +2380,43 @@ module ctrl(clk, rst,
   always @(*) begin
     casex ( { opcode[3:0], alu_equ, alu_ult, alu_slt } )
       // eq
-      7'b00000xx:  branch = 0;
-      7'b00001xx:  branch = 1;
+      7'b00000xx:  branch = 1'b0;
+      7'b00001xx:  branch = 1'b1;
       // ne
-      7'b00010xx:  branch = 1;
-      7'b00011xx:  branch = 0;
+      7'b00010xx:  branch = 1'b1;
+      7'b00011xx:  branch = 1'b0;
       // le
-      7'b00100x0:  branch = 0;
-      7'b00101xx:  branch = 1;
-      7'b0010xx1:  branch = 1;
+      7'b00100x0:  branch = 1'b0;
+      7'b00101x0:  branch = 1'b1;
+      7'b00100x1:  branch = 1'b1;
+      7'b00101x1:  branch = 1'b1;
       // leu
-      7'b001100x:  branch = 0;
-      7'b00111xx:  branch = 1;
-      7'b0011x1x:  branch = 1;
+      7'b001100x:  branch = 1'b0;
+      7'b001110x:  branch = 1'b1;
+      7'b001101x:  branch = 1'b1;
+      7'b001111x:  branch = 1'b1;
       // lt
-      7'b0100xx0:  branch = 0;
-      7'b0100xx1:  branch = 1;
+      7'b0100xx0:  branch = 1'b0;
+      7'b0100xx1:  branch = 1'b1;
       // ltu
-      7'b0101x0x:  branch = 0;
-      7'b0101x1x:  branch = 1;
+      7'b0101x0x:  branch = 1'b0;
+      7'b0101x1x:  branch = 1'b1;
       // ge
-      7'b0110xx0:  branch = 1;
-      7'b0110xx1:  branch = 0;
+      7'b0110xx0:  branch = 1'b1;
+      7'b0110xx1:  branch = 1'b0;
       // geu
-      7'b0111x0x:  branch = 1;
-      7'b0111x1x:  branch = 0;
+      7'b0111x0x:  branch = 1'b1;
+      7'b0111x1x:  branch = 1'b0;
       // gt
-      7'b10000x0:  branch = 1;
-      7'b10001xx:  branch = 0;
-      7'b1000xx1:  branch = 0;
+      7'b10000x0:  branch = 1'b1;
+      7'b10001x0:  branch = 1'b0;
+      7'b10000x1:  branch = 1'b0;
+      7'b10001x1:  branch = 1'b0;
       // gtu
-      7'b100100x:  branch = 1;
-      7'b10011xx:  branch = 0;
-      7'b1001x1x:  branch = 0;
+      7'b100100x:  branch = 1'b1;
+      7'b100110x:  branch = 1'b0;
+      7'b100101x:  branch = 1'b0;
+      7'b100111x:  branch = 1'b0;
       // other
       default:     branch = 1'bx;
     endcase
@@ -2287,7 +2762,7 @@ module alu(a, b, fnc,
       3'b101:  res1 = a1 | b1;
       3'b110:  res1 = a1 ^ b1;
       3'b111:  res1 = a1 ~^ b1;
-      default: res1 = 33'hxxxxxxxx;
+      default: res1 = 33'hxxxxxxxxx;
     endcase
   end
 
@@ -2442,7 +2917,7 @@ module muldiv(clk, a, b, fnc, start, done, error, res);
             end
           end else begin
             // all other steps
-            count <= count + 1;
+            count <= count + 6'd1;
             if (q[0] == 1) begin
               q <= { 1'b0, s[64:1] };
             end else begin
@@ -2473,7 +2948,7 @@ module muldiv(clk, a, b, fnc, start, done, error, res);
             end
           end else begin
             // all other steps
-            count <= count + 1;
+            count <= count + 6'd1;
             if (d[64] == 0) begin
               q <= { d[63:0], 1'b1 };
             end else begin
@@ -2546,7 +3021,7 @@ module sregs(clk, rst,
   assign mmu_bad_accs = sr[5];
 
   always @(posedge clk) begin
-    if (rst == 1) begin
+    if (rst) begin
       sr[0] <= 32'h00000000;
     end else begin
       if (we == 1) begin
@@ -2650,11 +3125,11 @@ module mmu(clk, rst, fnc, virt, phys,
   reg tlb_miss_delayed;
 
   // decode function
-  assign map = (fnc == 3'b001) ? 1 : 0;
-  assign tbs = (fnc == 3'b010) ? 1 : 0;
-  assign tbwr = (fnc == 3'b011) ? 1 : 0;
-  assign tbri = (fnc == 3'b100) ? 1 : 0;
-  assign tbwi = (fnc == 3'b101) ? 1 : 0;
+  assign map = (fnc == 3'b001) ? 1'b1 : 1'b0;
+  assign tbs = (fnc == 3'b010) ? 1'b1 : 1'b0;
+  assign tbwr = (fnc == 3'b011) ? 1'b1 : 1'b0;
+  assign tbri = (fnc == 3'b100) ? 1'b1 : 1'b0;
+  assign tbwi = (fnc == 3'b101) ? 1'b1 : 1'b0;
 
   // latch virtual address
   always @(posedge clk) begin
@@ -2684,13 +3159,13 @@ module mmu(clk, rst, fnc, virt, phys,
             w_enable, w_page, w_frame);
 
   // construct physical address
-  assign direct = (page[19:18] == 2'b11) ? 1 : 0;
+  assign direct = (page[19:18] == 2'b11) ? 1'b1 : 1'b0;
   assign frame = (direct == 1) ? page[17:0] : tlb_frame[19:2];
   assign phys = { 2'b00, frame, offset };
 
   // generate "random" index
   always @(posedge clk) begin
-    if (rst == 1) begin
+    if (rst) begin
       // the index register is counting down
       // so we must start at topmost index
       random_index <= 5'd31;
@@ -2702,7 +3177,7 @@ module mmu(clk, rst, fnc, virt, phys,
         if (random_index == 5'd4) begin
           random_index <= 5'd31;
         end else begin
-          random_index <= random_index - 1;
+          random_index <= random_index - 5'd1;
         end
       end
     end
@@ -2790,38 +3265,38 @@ module tlb(page_in, miss, found,
   assign p30 = page[30];
   assign p31 = page[31];
 
-  assign match[ 0] = (page_in == p00) ? 1 : 0;
-  assign match[ 1] = (page_in == p01) ? 1 : 0;
-  assign match[ 2] = (page_in == p02) ? 1 : 0;
-  assign match[ 3] = (page_in == p03) ? 1 : 0;
-  assign match[ 4] = (page_in == p04) ? 1 : 0;
-  assign match[ 5] = (page_in == p05) ? 1 : 0;
-  assign match[ 6] = (page_in == p06) ? 1 : 0;
-  assign match[ 7] = (page_in == p07) ? 1 : 0;
-  assign match[ 8] = (page_in == p08) ? 1 : 0;
-  assign match[ 9] = (page_in == p09) ? 1 : 0;
-  assign match[10] = (page_in == p10) ? 1 : 0;
-  assign match[11] = (page_in == p11) ? 1 : 0;
-  assign match[12] = (page_in == p12) ? 1 : 0;
-  assign match[13] = (page_in == p13) ? 1 : 0;
-  assign match[14] = (page_in == p14) ? 1 : 0;
-  assign match[15] = (page_in == p15) ? 1 : 0;
-  assign match[16] = (page_in == p16) ? 1 : 0;
-  assign match[17] = (page_in == p17) ? 1 : 0;
-  assign match[18] = (page_in == p18) ? 1 : 0;
-  assign match[19] = (page_in == p19) ? 1 : 0;
-  assign match[20] = (page_in == p20) ? 1 : 0;
-  assign match[21] = (page_in == p21) ? 1 : 0;
-  assign match[22] = (page_in == p22) ? 1 : 0;
-  assign match[23] = (page_in == p23) ? 1 : 0;
-  assign match[24] = (page_in == p24) ? 1 : 0;
-  assign match[25] = (page_in == p25) ? 1 : 0;
-  assign match[26] = (page_in == p26) ? 1 : 0;
-  assign match[27] = (page_in == p27) ? 1 : 0;
-  assign match[28] = (page_in == p28) ? 1 : 0;
-  assign match[29] = (page_in == p29) ? 1 : 0;
-  assign match[30] = (page_in == p30) ? 1 : 0;
-  assign match[31] = (page_in == p31) ? 1 : 0;
+  assign match[ 0] = (page_in == p00) ? 1'b1 : 1'b0;
+  assign match[ 1] = (page_in == p01) ? 1'b1 : 1'b0;
+  assign match[ 2] = (page_in == p02) ? 1'b1 : 1'b0;
+  assign match[ 3] = (page_in == p03) ? 1'b1 : 1'b0;
+  assign match[ 4] = (page_in == p04) ? 1'b1 : 1'b0;
+  assign match[ 5] = (page_in == p05) ? 1'b1 : 1'b0;
+  assign match[ 6] = (page_in == p06) ? 1'b1 : 1'b0;
+  assign match[ 7] = (page_in == p07) ? 1'b1 : 1'b0;
+  assign match[ 8] = (page_in == p08) ? 1'b1 : 1'b0;
+  assign match[ 9] = (page_in == p09) ? 1'b1 : 1'b0;
+  assign match[10] = (page_in == p10) ? 1'b1 : 1'b0;
+  assign match[11] = (page_in == p11) ? 1'b1 : 1'b0;
+  assign match[12] = (page_in == p12) ? 1'b1 : 1'b0;
+  assign match[13] = (page_in == p13) ? 1'b1 : 1'b0;
+  assign match[14] = (page_in == p14) ? 1'b1 : 1'b0;
+  assign match[15] = (page_in == p15) ? 1'b1 : 1'b0;
+  assign match[16] = (page_in == p16) ? 1'b1 : 1'b0;
+  assign match[17] = (page_in == p17) ? 1'b1 : 1'b0;
+  assign match[18] = (page_in == p18) ? 1'b1 : 1'b0;
+  assign match[19] = (page_in == p19) ? 1'b1 : 1'b0;
+  assign match[20] = (page_in == p20) ? 1'b1 : 1'b0;
+  assign match[21] = (page_in == p21) ? 1'b1 : 1'b0;
+  assign match[22] = (page_in == p22) ? 1'b1 : 1'b0;
+  assign match[23] = (page_in == p23) ? 1'b1 : 1'b0;
+  assign match[24] = (page_in == p24) ? 1'b1 : 1'b0;
+  assign match[25] = (page_in == p25) ? 1'b1 : 1'b0;
+  assign match[26] = (page_in == p26) ? 1'b1 : 1'b0;
+  assign match[27] = (page_in == p27) ? 1'b1 : 1'b0;
+  assign match[28] = (page_in == p28) ? 1'b1 : 1'b0;
+  assign match[29] = (page_in == p29) ? 1'b1 : 1'b0;
+  assign match[30] = (page_in == p30) ? 1'b1 : 1'b0;
+  assign match[31] = (page_in == p31) ? 1'b1 : 1'b0;
 
   assign miss = ~(| match[31:0]);
 
@@ -2927,6 +3402,26 @@ module tlb(page_in, miss, found,
     frame[29] = 20'h6B6B3;
     frame[30] = 20'h8E714;
     frame[31] = 20'hDBA8C;
+  end
+
+endmodule
+
+
+//--------------------------------------------------------------
+// link -- the link register
+//--------------------------------------------------------------
+
+
+module link(clk, link_we, link_next, link);
+    input clk;
+    input link_we;
+    input link_next;
+    output reg link;
+
+  always @(posedge clk) begin
+    if (link_we == 1) begin
+      link <= link_next;
+    end
   end
 
 endmodule
