@@ -212,6 +212,12 @@ static void help20(void) {
 }
 
 
+static void syncCaches(void) {
+  icacheInvalidate();
+  dcacheFlush();
+}
+
+
 static Bool getHexNumber(char *str, Word *valptr) {
   char *end;
 
@@ -359,6 +365,7 @@ static void doAssemble(char *tokens[], int n) {
       cPrintf("%s\n", msg);
     } else {
       mmuWriteWord(addr, instr, psw & PSW_UM);
+      syncCaches();
       addr += 4;
     }
   }
@@ -700,6 +707,7 @@ static void doMemoryWord(char *tokens[], int n) {
     }
     data = tmpData;
     mmuWriteWord(addr, data, psw & PSW_UM);
+    syncCaches();
   } else {
     help11();
   }
@@ -735,6 +743,7 @@ static void doMemoryHalf(char *tokens[], int n) {
     }
     data = (Half) tmpData;
     mmuWriteHalf(addr, data, psw & PSW_UM);
+    syncCaches();
   } else {
     help12();
   }
@@ -770,6 +779,7 @@ static void doMemoryByte(char *tokens[], int n) {
     }
     data = (Byte) tmpData;
     mmuWriteByte(addr, data, psw & PSW_UM);
+    syncCaches();
   } else {
     help13();
   }
