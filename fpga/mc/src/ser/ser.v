@@ -52,8 +52,8 @@ module ser(clk, rst,
 
   always @(posedge clk) begin
     if (rst) begin
-      rcv_ien <= 0;
-      xmt_ien <= 0;
+      rcv_ien <= 1'b0;
+      xmt_ien <= 1'b0;
     end else begin
       if (wr_rcv_ctrl) begin
         rcv_ien <= data_in[1];
@@ -68,18 +68,18 @@ module ser(clk, rst,
     case (addr[3:2])
       2'b00:
         // rcv ctrl
-        data_out = { 6'b000000, rcv_ien, rcv_rdy };
+        data_out[7:0] = { 6'b000000, rcv_ien, rcv_rdy };
       2'b01:
         // rcv data
-        data_out = rcv_data;
+        data_out[7:0] = rcv_data[7:0];
       2'b10:
         // xmt ctrl
-        data_out = { 6'b000000, xmt_ien, xmt_rdy };
+        data_out[7:0] = { 6'b000000, xmt_ien, xmt_rdy };
       2'b11:
         // xmt data (cannot be read)
-        data_out = 8'hxx;
+        data_out[7:0] = 8'hxx;
       default:
-        data_out = 8'hxx;
+        data_out[7:0] = 8'hxx;
     endcase
   end
 
