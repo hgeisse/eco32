@@ -32,7 +32,6 @@ module kbd(clk, rst,
   reg [7:0] data;
   reg rdy;
   reg ien;
-  reg [7:2] other_bits;
 
   initial begin
     $readmemh("kbd.dat", kbd_data);
@@ -44,49 +43,44 @@ module kbd(clk, rst,
 
   always @(posedge clk) begin
     if (rst) begin
-      kbd_data_index <= 0;
-      counter <= 0;
+      kbd_data_index[7:0] <= 8'd0;
+      counter[31:0] <= 32'd0;
     end else begin
-      if (counter == 0) begin
-        counter <= next_time;
+      if (counter[31:0] == 32'd0) begin
+        counter[31:0] <= next_time[31:0];
       end else
-      if (counter == 1) begin
-        kbd_data_index <= kbd_data_index + 1;
-        counter <= counter - 1;
+      if (counter[31:0] == 32'd1) begin
+        kbd_data_index[7:0] <= kbd_data_index[7:0] + 8'd1;
+        counter[31:0] <= counter[31:0] - 32'd1;
       end else begin
-        if (counter != 32'hFFFFFFFF) begin
-          counter <= counter - 1;
+        if (counter[31:0] != 32'hFFFFFFFF) begin
+          counter[31:0] <= counter[31:0] - 32'd1;
         end
       end
     end
   end
 
-  assign next_rdy = (counter == 1) ? 1 : 0;
+  assign next_rdy = (counter[31:0] == 32'd1) ? 1'b1 : 1'b0;
 
   always @(posedge clk) begin
     if (rst) begin
       data <= 8'h00;
-      rdy <= 0;
-      ien <= 0;
-      other_bits <= 6'b000000;
+      rdy <= 1'b0;
+      ien <= 1'b0;
     end else begin
       if (next_rdy) begin
-        data <= next_code;
+        data[7:0] <= next_code[7:0];
       end
-      if (next_rdy == 1 ||
-          (stb == 1 && we == 0 && addr == 1)) begin
+      if (next_rdy | (stb & ~we & addr)) begin
         rdy <= next_rdy;
       end
-      if (stb == 1 && we == 1 && addr == 0) begin
-        rdy <= data_in[0];
+      if (stb & we & ~addr) begin
         ien <= data_in[1];
-        other_bits <= data_in[7:2];
       end
     end
   end
 
-  assign data_out =
-    (addr == 0) ? { other_bits[7:2], ien, rdy } : data[7:0];
+  assign data_out = ~addr ? { 6'h00, ien, rdy } : data[7:0];
   assign ack = stb;
   assign irq = ien & rdy;
 
