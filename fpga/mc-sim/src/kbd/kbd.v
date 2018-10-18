@@ -64,7 +64,7 @@ module kbd(clk, rst,
 
   always @(posedge clk) begin
     if (rst) begin
-      data <= 8'h00;
+      data[7:0] <= 8'h00;
       rdy <= 1'b0;
       ien <= 1'b0;
     end else begin
@@ -80,7 +80,7 @@ module kbd(clk, rst,
     end
   end
 
-  assign data_out = ~addr ? { 6'h00, ien, rdy } : data[7:0];
+  assign data_out[7:0] = ~addr ? { 6'h00, ien, rdy } : data[7:0];
   assign ack = stb;
   assign irq = ien & rdy;
 
