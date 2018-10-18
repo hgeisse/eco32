@@ -160,7 +160,7 @@ module eco32(clk_in, rst_in_n);
   );
 
   ser ser_1(
-    .i(0),
+    .i(1'b0),
     .clk(clk),
     .rst(rst),
     .stb(ser0_stb),
@@ -174,7 +174,7 @@ module eco32(clk_in, rst_in_n);
   );
 
   ser ser_2(
-    .i(1),
+    .i(1'b1),
     .clk(clk),
     .rst(rst),
     .stb(ser1_stb),
