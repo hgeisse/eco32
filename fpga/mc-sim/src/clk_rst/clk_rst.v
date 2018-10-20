@@ -24,14 +24,14 @@ module clk_rst(clk_in, rst_in_n,
     rst_p_n <= rst_in_n;
     rst_s_n <= rst_p_n;
     if (~rst_s_n) begin
-      cnt <= 4'h0;
+      cnt[3:0] <= 4'h0;
     end else begin
-      if (cnt != 4'hF) begin
-        cnt <= cnt + 4'h1;
+      if (cnt[3:0] != 4'hF) begin
+        cnt[3:0] <= cnt[3:0] + 4'h1;
       end
     end
   end
 
-  assign rst = (cnt == 4'hF) ? 1'b0 : 1'b1;
+  assign rst = (cnt[3:0] == 4'hF) ? 1'b0 : 1'b1;
 
 endmodule
