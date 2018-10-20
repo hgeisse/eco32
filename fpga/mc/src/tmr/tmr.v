@@ -30,14 +30,14 @@ module tmr(clk, rst,
 
   always @(posedge clk) begin
     if (divisor_loaded) begin
-      counter <= divisor;
+      counter[31:0] <= divisor[31:0];
       expired <= 1'b0;
     end else begin
-      if (counter == 32'h00000001) begin
-        counter <= divisor;
+      if (counter[31:0] == 32'h00000001) begin
+        counter[31:0] <= divisor[31:0];
         expired <= 1'b1;
       end else begin
-        counter <= counter - 32'h00000001;
+        counter[31:0] <= counter[31:0] - 32'h00000001;
         expired <= 1'b0;
       end
     end
@@ -45,7 +45,7 @@ module tmr(clk, rst,
 
   always @(posedge clk) begin
     if (rst) begin
-      divisor <= 32'hFFFFFFFF;
+      divisor[31:0] <= 32'hFFFFFFFF;
       divisor_loaded <= 1'b1;
       exp <= 1'b0;
       ien <= 1'b0;
@@ -63,7 +63,7 @@ module tmr(clk, rst,
         end
         if (stb == 1'b1 && we == 1'b1 && addr[3:2] == 2'b01) begin
           // write divisor
-          divisor <= data_in;
+          divisor[31:0] <= data_in[31:0];
           divisor_loaded <= 1'b1;
         end else begin
           divisor_loaded <= 1'b0;
@@ -76,18 +76,18 @@ module tmr(clk, rst,
     case (addr[3:2])
       2'b00:
         // ctrl
-        data_out = { 28'h0000000, 2'b00, ien, exp };
+        data_out[31:0] = { 30'h00000000, ien, exp };
       2'b01:
         // divisor
-        data_out = divisor;
+        data_out[31:0] = divisor[31:0];
       2'b10:
         // counter
-        data_out = counter;
+        data_out[31:0] = counter[31:0];
       2'b11:
         // not used
-        data_out = 32'hxxxxxxxx;
+        data_out[31:0] = 32'hxxxxxxxx;
       default:
-        data_out = 32'hxxxxxxxx;
+        data_out[31:0] = 32'hxxxxxxxx;
     endcase
   end
 
