@@ -67,8 +67,11 @@ different experiments to explore implementation alternatives
     sim
     experiments using a simulator only
 
-        icache
-        instruction cache demo
+        icache-dm
+        direct-mapped instruction cache demo
+
+        icache-2w
+        2-way associative instruction cache demo
 
 mc
 multicycle implementations of ECO32
