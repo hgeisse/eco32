@@ -1,0 +1,10 @@
+Simulator
+---------
+Microseconds for one run through Dhrystone: 33084 * 1000000 / (1000 * 100000)
+Dhrystones per Second:                      1000 * 100000 / 33084
+
+
+FPGA, multi-cycle CPU, no caches
+--------------------------------
+Microseconds for one run through Dhrystone: 17182 * 1000000 / (1000 * 100000)
+Dhrystones per Second:                      1000 * 100000 / 17182
