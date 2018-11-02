@@ -7,13 +7,34 @@
 `default_nettype none
 
 
-`define HOLDOFF		8'd80		// up to 255
+//
+// define the time to pass before the first request takes place
+// (in clock cycles, up to 255)
+//
+`define HOLDOFF		8'd80
 
-`define DISTANCE	4'd6		// range: 0..15
-//`define DISTANCE	4'd1		// range: 0..15
-//`define DISTANCE	4'd0		// range: 0..15
+//
+// define the time to pass between two consecutive requests
+// (in clock cycles, range: 0..15)
+//
+`define DISTANCE	4'd6
+//`define DISTANCE	4'd1
+//`define DISTANCE	4'd0
 
+//
+// define the total number of requests
+//
 `define NUM_TESTS	20'd1000
+
+//
+// define an address pattern for the optional LRU test
+// (the tests are disabled if no pattern is defined)
+//
+// LRU_0: 0x100, 0x200, 0x100, 0x200, 0x100, 0x500
+// LRU_1: 0x100, 0x200, 0x100, 0x200, 0x500, 0x500
+//
+//`define LRU_0
+//`define LRU_1
 
 
 module cachetest(clk, rst,
@@ -97,6 +118,70 @@ module cachetest(clk, rst,
       if (ready_in & distance_restart & ~holdoff_counting) begin
         gen_state[19:0] <= gen_state[19:0] + 20'h1;
         case (gen_state[19:0])
+`ifdef LRU_0
+          20'h00005:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0100;
+            end
+          20'h00006:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0200;
+            end
+          20'h00007:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0100;
+            end
+          20'h00008:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0200;
+            end
+          20'h00009:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0100;
+            end
+          20'h0000A:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0500;
+            end
+`endif
+`ifdef LRU_1
+          20'h00005:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0100;
+            end
+          20'h00006:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0200;
+            end
+          20'h00007:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0100;
+            end
+          20'h00008:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0200;
+            end
+          20'h00009:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0500;
+            end
+          20'h0000A:
+            begin
+              jump <= 1'b1;
+              target[15:0] <= 16'h0500;
+            end
+`endif
           20'h0003F:
             begin
               jump <= 1'b1;
