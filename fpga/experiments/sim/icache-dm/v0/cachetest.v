@@ -234,7 +234,7 @@ module cachetest(clk, rst,
 
   always @(posedge clk) begin
     if (rst) begin
-      addr_out[15:0] = 16'hFFFF;
+      addr_out[15:0] <= 16'hFFFF;
     end else begin
       if (ready_in & distance_restart & ~holdoff_counting) begin
         if (jump) begin
