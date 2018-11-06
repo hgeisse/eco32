@@ -39,3 +39,7 @@ clean:
 		rm -f src/clk_rst/*~
 		rm -f src/cpu/*~
 		rm -f src/cpu/if/*~
+		rm -f src/cpu/of/*~
+		rm -f src/cpu/ex/*~
+		rm -f src/cpu/ma/*~
+		rm -f src/cpu/wb/*~
