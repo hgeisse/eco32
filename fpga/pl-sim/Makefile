@@ -8,7 +8,7 @@ SRCS = eco32test.v \
        src/toplevel/eco32.v \
        src/clk_rst/clk_rst.v \
        src/cpu/cpu.v \
-       src/cpu/if/if1a.v src/cpu/if/if1b.v #src/cpu/if/if2.v
+       src/cpu/if/if1a.v src/cpu/if/if1b.v src/cpu/if/if2.v
 BIN = eco32test
 
 .PHONY:		all install run show clean

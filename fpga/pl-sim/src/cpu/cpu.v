@@ -20,6 +20,10 @@ module cpu(clk, rst,
   wire if1b_valid;
   wire [31:0] if1b_vaddr;
 
+  wire if2_ready;
+  wire if2_valid;
+  wire [29:0] if2_paddr;
+
   //--------------------------------------
   // module instances
   //--------------------------------------
@@ -38,9 +42,20 @@ module cpu(clk, rst,
     .if1b_ready_out(if1b_ready),
     .if1b_valid_in(if1a_valid),
     .if1b_counter_in(if1a_counter[9:0]),
-    .if1b_ready_in(1'b1),
+    .if1b_ready_in(if2_ready),
     .if1b_valid_out(if1b_valid),
     .if1b_vaddr_out(if1b_vaddr[31:0])
+  );
+
+  if2 if2_1(
+    .clk(clk),
+    .rst(rst),
+    .if2_ready_out(if2_ready),
+    .if2_valid_in(if1b_valid),
+    .if2_vaddr_in(if1b_vaddr[31:0]),
+    .if2_ready_in(1'b1),
+    .if2_valid_out(if2_valid),
+    .if2_paddr_out(if2_paddr[29:0])
   );
 
   //--------------------------------------
