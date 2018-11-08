@@ -8,11 +8,12 @@
 
 
 module cpu(clk, rst,
-           temp_out, temp_trg);
+           test_step, test_good, test_ended);
     input clk;				// system clock
     input rst;				// system reset
-    output [31:0] temp_out;		// temporary output
-    output temp_trg;			// temporary trigger
+    output test_step;			// test step completed
+    output test_good;			// test step good
+    output test_ended;			// test ended
 
   wire if1b_ready;
   wire if1a_valid;
@@ -59,24 +60,24 @@ module cpu(clk, rst,
   );
 
   //--------------------------------------
-  // temporary output and trigger
+  // test signals
   //--------------------------------------
 
   wire trigger;
-  reg trigger_buf;
-
-  assign temp_out = if1b_vaddr[31:0];
+  reg delayed_trigger;
 
   assign trigger = if1a_valid & (if1a_counter[9:0] == 10'h0FE);
 
   always @(posedge clk) begin
     if (rst) begin
-      trigger_buf <= 1'b0;
+      delayed_trigger <= 1'b0;
     end else begin
-      trigger_buf <= trigger;
+      delayed_trigger <= trigger;
     end
   end
 
-  assign temp_trg = trigger_buf & if1b_valid;
+  assign test_step = delayed_trigger;
+  assign test_good = if1b_valid & (if1b_vaddr[31:0] == 32'h00004038);
+  assign test_ended = if1b_valid & (if1b_vaddr[31:0] == 32'h0000603C);
 
 endmodule

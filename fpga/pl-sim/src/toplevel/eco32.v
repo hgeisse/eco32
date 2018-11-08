@@ -19,9 +19,11 @@ module eco32(clk_in,
   wire clk;				// system clock, 100 MHz
   wire rst;				// system reset, active high
   // cpu
-  wire [31:0] temp_out;			// temporary output
-  wire temp_trg;			// temporary trigger
-  // temporary indicators
+  wire test_step;			// test step completed
+  wire test_good;			// test step good
+  wire test_ended;			// test ended
+  // test indicators
+  wire [3:0] step_failed;		// first test step that failed
   wire led_g;				// test succeeded
   wire led_r;				// test failed
 
@@ -39,29 +41,51 @@ module eco32(clk_in,
   cpu cpu_1(
     .clk(clk),
     .rst(rst),
-    .temp_out(temp_out[31:0]),
-    .temp_trg(temp_trg)
+    .test_step(test_step),
+    .test_good(test_good),
+    .test_ended(test_ended)
   );
 
   //--------------------------------------
-  // temporary indicators
+  // test indicators
   //--------------------------------------
 
-  reg led_gn;				// test succeeded
-  reg led_rd;				// test failed
+  reg any_step_failed;
+  reg [3:0] first_step_failed;
+
+  always @(posedge clk) begin
+    if (rst) begin
+      any_step_failed <= 1'b0;
+      first_step_failed[3:0] <= 4'h0;
+    end else begin
+      if (test_step) begin
+        if (~test_good) begin
+          any_step_failed <= 1'b1;
+        end
+        if (~any_step_failed & test_good) begin
+          first_step_failed[3:0] <= first_step_failed[3:0] + 4'h1;
+        end
+      end
+    end
+  end
+
+  assign step_failed[3:0] = first_step_failed[3:0];
+
+  reg led_gn;
+  reg led_rd;
 
   always @(posedge clk) begin
     if (rst) begin
       led_gn <= 1'b0;
       led_rd <= 1'b0;
     end else begin
-      if (temp_trg) begin
-        if (temp_out[31:0] == 32'h00004038) begin
-          led_gn <= 1'b1;
-          led_rd <= 1'b0;
-        end else begin
+      if (test_ended & ~led_gn & ~led_rd) begin
+        if (any_step_failed) begin
           led_gn <= 1'b0;
           led_rd <= 1'b1;
+        end else begin
+          led_gn <= 1'b1;
+          led_rd <= 1'b0;
         end
       end
     end
