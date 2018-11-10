@@ -270,6 +270,7 @@ set_location_assignment PIN_AD26 -to sw[6]
 set_location_assignment PIN_AB26 -to sw[7]
 set_location_assignment PIN_AC25 -to sw[8]
 set_location_assignment PIN_AB25 -to sw[9]
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if2.v
 set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if1b.v
 set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if1a.v
 set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu.v

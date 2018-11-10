@@ -118,8 +118,8 @@ module tlb(clk,
   wire [31:0] match;
 
   initial begin
-    #0          $readmemh("src/cpu/if/page.dat", page);
-                $readmemh("src/cpu/if/frame.dat", frame);
+    #0          $readmemh("page.dat", page);
+                $readmemh("frame.dat", frame);
   end
 
   assign p00 = page[ 0];
