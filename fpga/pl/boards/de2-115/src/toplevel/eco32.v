@@ -108,7 +108,7 @@ module eco32(clk_in,
   assign led_r[1] = 1'b0;
   //assign led_r[0] = 1'b0;
   //assign hex7_n[6:0] = 7'h7F;
-  assign hex6_n[6:0] = 7'h7F;
+  //assign hex6_n[6:0] = 7'h7F;
   assign hex5_n[6:0] = 7'h7F;
   assign hex4_n[6:0] = 7'h7F;
   assign hex3_n[6:0] = 7'h7F;
@@ -133,13 +133,13 @@ module eco32(clk_in,
   //--------------------------------------
 
   reg any_step_failed;
-  reg [3:0] first_step_failed;
+  reg [7:0] first_step_failed;
   reg test_end_seen;
 
   always @(posedge clk) begin
     if (rst) begin
       any_step_failed <= 1'b0;
-      first_step_failed[3:0] <= 4'h0;
+      first_step_failed[7:0] <= 8'h00;
       test_end_seen <= 1'b0;
     end else begin
       if (test_step & ~test_end_seen) begin
@@ -147,7 +147,7 @@ module eco32(clk_in,
           any_step_failed <= 1'b1;
         end
         if (~any_step_failed & test_good) begin
-          first_step_failed[3:0] <= first_step_failed[3:0] + 4'h1;
+          first_step_failed[7:0] <= first_step_failed[7:0] + 8'h01;
         end
       end
       if (test_ended) begin
@@ -157,8 +157,13 @@ module eco32(clk_in,
   end
 
   hexdrv hexdrv_7(
-    .in(first_step_failed[3:0]),
+    .in(first_step_failed[7:4]),
     .out(hex7_n[6:0])
+  );
+
+  hexdrv hexdrv_6(
+    .in(first_step_failed[3:0]),
+    .out(hex6_n[6:0])
   );
 
   assign led_g[7] = test_end_seen & ~any_step_failed;
