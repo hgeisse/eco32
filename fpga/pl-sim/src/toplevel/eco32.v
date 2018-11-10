@@ -23,7 +23,7 @@ module eco32(clk_in,
   wire test_good;			// test step good
   wire test_ended;			// test ended
   // test indicators
-  wire [3:0] first_fail;		// first test step that failed
+  wire [7:0] first_fail;		// first test step that failed
   wire led_g;				// test succeeded
   wire led_r;				// test failed
 
@@ -51,13 +51,13 @@ module eco32(clk_in,
   //--------------------------------------
 
   reg any_step_failed;
-  reg [3:0] first_step_failed;
+  reg [7:0] first_step_failed;
   reg test_end_seen;
 
   always @(posedge clk) begin
     if (rst) begin
       any_step_failed <= 1'b0;
-      first_step_failed[3:0] <= 4'h0;
+      first_step_failed[7:0] <= 8'h00;
       test_end_seen <= 1'b0;
     end else begin
       if (test_step & ~test_end_seen) begin
@@ -65,7 +65,7 @@ module eco32(clk_in,
           any_step_failed <= 1'b1;
         end
         if (~any_step_failed & test_good) begin
-          first_step_failed[3:0] <= first_step_failed[3:0] + 4'h1;
+          first_step_failed[7:0] <= first_step_failed[7:0] + 8'h01;
         end
       end
       if (test_ended) begin
@@ -74,7 +74,7 @@ module eco32(clk_in,
     end
   end
 
-  assign first_fail[3:0] = first_step_failed[3:0];
+  assign first_fail[7:0] = first_step_failed[7:0];
   assign led_g = test_end_seen & ~any_step_failed;
   assign led_r = test_end_seen & any_step_failed;
 

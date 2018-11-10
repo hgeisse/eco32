@@ -66,7 +66,7 @@ module cpu(clk, rst,
   wire trigger;
   reg delayed_trigger;
 
-  assign trigger = if1a_valid & (if1a_counter[9:0] == 10'h0FE);
+  assign trigger = if1b_valid & (if1b_vaddr[31:0] == 32'h6034);
 
   always @(posedge clk) begin
     if (rst) begin
@@ -77,7 +77,7 @@ module cpu(clk, rst,
   end
 
   assign test_step = delayed_trigger;
-  assign test_good = if1b_valid & (if1b_vaddr[31:0] == 32'h00004038);
+  assign test_good = if2_valid & (if2_paddr[29:0] == 32'h00005034);
   assign test_ended = if1b_valid & (if1b_vaddr[31:0] == 32'h0000603C);
 
 endmodule
