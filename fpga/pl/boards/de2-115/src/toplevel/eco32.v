@@ -49,8 +49,9 @@ module eco32(clk_in,
   wire clk;				// system clock, 100 MHz
   wire rst;				// system reset, active high
   // cpu
-  wire [31:0] temp_out;			// temporary output
-  wire temp_trg;			// temporary trigger
+  wire test_step;			// test step completed
+  wire test_good;			// test step good
+  wire test_ended;			// test ended
 
   //--------------------------------------
   // module instances
@@ -69,8 +70,9 @@ module eco32(clk_in,
   cpu cpu_1(
     .clk(clk),
     .rst(rst),
-    .temp_out(temp_out[31:0]),
-    .temp_trg(temp_trg)
+    .test_step(test_step),
+    .test_good(test_good),
+    .test_ended(test_ended)
   );
 
   //--------------------------------------
@@ -105,7 +107,7 @@ module eco32(clk_in,
   assign led_r[2] = 1'b0;
   assign led_r[1] = 1'b0;
   //assign led_r[0] = 1'b0;
-  assign hex7_n[6:0] = 7'h7F;
+  //assign hex7_n[6:0] = 7'h7F;
   assign hex6_n[6:0] = 7'h7F;
   assign hex5_n[6:0] = 7'h7F;
   assign hex4_n[6:0] = 7'h7F;
@@ -115,7 +117,7 @@ module eco32(clk_in,
   assign hex0_n[6:0] = 7'h7F;
 
   //--------------------------------------
-  // temporary indicators
+  // test indicators
   //--------------------------------------
 
   reg [25:0] heartbeat;
@@ -130,27 +132,65 @@ module eco32(clk_in,
 
   //--------------------------------------
 
-  reg led_gn;				// test succeeded
-  reg led_rd;				// test failed
+  reg any_step_failed;
+  reg [3:0] first_step_failed;
+  reg test_end_seen;
 
   always @(posedge clk) begin
     if (rst) begin
-      led_gn <= 1'b0;
-      led_rd <= 1'b0;
+      any_step_failed <= 1'b0;
+      first_step_failed[3:0] <= 4'h0;
+      test_end_seen <= 1'b0;
     end else begin
-      if (temp_trg) begin
-        if (temp_out[31:0] == 32'h00004038) begin
-          led_gn <= 1'b1;
-          led_rd <= 1'b0;
-        end else begin
-          led_gn <= 1'b0;
-          led_rd <= 1'b1;
+      if (test_step & ~test_end_seen) begin
+        if (~test_good) begin
+          any_step_failed <= 1'b1;
         end
+        if (~any_step_failed & test_good) begin
+          first_step_failed[3:0] <= first_step_failed[3:0] + 4'h1;
+        end
+      end
+      if (test_ended) begin
+        test_end_seen <= 1'b1;
       end
     end
   end
 
-  assign led_g[7] = led_gn;
-  assign led_r[0] = led_rd;
+  hexdrv hexdrv_7(
+    .in(first_step_failed[3:0]),
+    .out(hex7_n[6:0])
+  );
+
+  assign led_g[7] = test_end_seen & ~any_step_failed;
+  assign led_r[0] = test_end_seen & any_step_failed;
+
+endmodule
+
+
+module hexdrv(in, out);
+    input [3:0] in;
+    output reg [6:0] out;
+
+  always @(*) begin
+    case (in[3:0])
+                        // 6543210
+      4'h0: out[6:0] = ~7'b0111111;
+      4'h1: out[6:0] = ~7'b0000110;
+      4'h2: out[6:0] = ~7'b1011011;
+      4'h3: out[6:0] = ~7'b1001111;
+      4'h4: out[6:0] = ~7'b1100110;
+      4'h5: out[6:0] = ~7'b1101101;
+      4'h6: out[6:0] = ~7'b1111101;
+      4'h7: out[6:0] = ~7'b0000111;
+      4'h8: out[6:0] = ~7'b1111111;
+      4'h9: out[6:0] = ~7'b1100111;
+      4'hA: out[6:0] = ~7'b1110111;
+      4'hB: out[6:0] = ~7'b1111100;
+      4'hC: out[6:0] = ~7'b0111001;
+      4'hD: out[6:0] = ~7'b1011110;
+      4'hE: out[6:0] = ~7'b1111001;
+      4'hF: out[6:0] = ~7'b1110001;
+    endcase
+  end
 
 endmodule
