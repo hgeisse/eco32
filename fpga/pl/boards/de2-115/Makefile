@@ -21,9 +21,9 @@ clean:
 		if [ -f build/eco32.qsf ] ; then \
 		  mv build/eco32.qsf . ; \
 		fi
-		if [ -f build/eco32.qws ] ; then \
-		  mv build/eco32.qws . ; \
-		fi
+		#if [ -f build/eco32.qws ] ; then \
+		#  mv build/eco32.qws . ; \
+		#fi
 		if [ -f build/eco32.srf ] ; then \
 		  mv build/eco32.srf . ; \
 		fi
@@ -48,9 +48,9 @@ clean:
 		if [ -f eco32.qsf ] ; then \
 		  mv eco32.qsf build ; \
 		fi
-		if [ -f eco32.qws ] ; then \
-		  mv eco32.qws build ; \
-		fi
+		#if [ -f eco32.qws ] ; then \
+		#  mv eco32.qws build ; \
+		#fi
 		if [ -f eco32.srf ] ; then \
 		  mv eco32.srf build ; \
 		fi
