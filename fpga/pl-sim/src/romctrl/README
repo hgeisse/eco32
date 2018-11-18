@@ -1,0 +1,31 @@
+Intended Use
+------------
+
+This memory controller offers a complete simulation of the ROM
+subsystem, if the given (simplistic) ROM implementation is used.
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^24 * 128 bit = 256 MB
+strobe/acknowledge/timeout handshake
+
+data read:
+2^24 * 128 bit = 256 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to ROM)
+---------------------------
+
+2^23 * 8 bit = 8 MB
+strobe/acknowledge handshake
+
+
+ROM
+---
+
+The ROM has got an adjustable access time for read operations
+(minimum is two clock cycles).
