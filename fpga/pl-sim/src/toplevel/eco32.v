@@ -22,6 +22,19 @@ module eco32(clk_in,
   wire test_step;			// test step completed
   wire test_good;			// test step good
   wire test_ended;			// test ended
+  wire test_crc_ok;			// test if CRC value is good
+  // ramctrl
+  wire ram_inst_stb;			// RAM inst strobe
+  wire [24:0] ram_inst_addr;		// RAM inst address (cache line)
+  wire [127:0] ram_inst_dout;		// RAM inst data out (cache line)
+  wire ram_inst_ack;			// RAM inst acknowledge
+  wire ram_inst_timeout;		// RAM inst timeout
+  // romctrl
+  wire rom_inst_stb;			// ROM inst strobe
+  wire [23:0] rom_inst_addr;		// ROM inst address (cache line)
+  wire [127:0] rom_inst_dout;		// ROM inst data out (cache line)
+  wire rom_inst_ack;			// ROM inst acknowledge
+  wire rom_inst_timeout;		// ROM inst timeout
   // test indicators
   wire [7:0] first_fail;		// first test step that failed
   wire led_g;				// test succeeded
@@ -41,9 +54,55 @@ module eco32(clk_in,
   cpu cpu_1(
     .clk(clk),
     .rst(rst),
+    //----------------
+    .ram_inst_stb(ram_inst_stb),
+    .ram_inst_addr(ram_inst_addr[24:0]),
+    .ram_inst_dout(ram_inst_dout[127:0]),
+    .ram_inst_ack(ram_inst_ack),
+    .ram_inst_timeout(ram_inst_timeout),
+    //----------------
+    .rom_inst_stb(rom_inst_stb),
+    .rom_inst_addr(rom_inst_addr[23:0]),
+    .rom_inst_dout(rom_inst_dout[127:0]),
+    .rom_inst_ack(rom_inst_ack),
+    .rom_inst_timeout(rom_inst_timeout),
+    //----------------
     .test_step(test_step),
     .test_good(test_good),
-    .test_ended(test_ended)
+    .test_ended(test_ended),
+    .test_crc_ok(test_crc_ok)
+  );
+
+  ramctrl ramctrl_1(
+    .clk(clk),
+    .rst(rst),
+    .inst_stb(ram_inst_stb),
+    .inst_addr(ram_inst_addr[24:0]),
+    .inst_dout(ram_inst_dout[127:0]),
+    .inst_ack(ram_inst_ack),
+    .inst_timeout(ram_inst_timeout),
+    .data_stb(1'b0),
+    .data_we(1'b0),
+    .data_addr(25'h0),
+    .data_din(128'h0),
+    .data_dout(),
+    .data_ack(),
+    .data_timeout()
+  );
+
+  romctrl romctrl_1(
+    .clk(clk),
+    .rst(rst),
+    .inst_stb(rom_inst_stb),
+    .inst_addr(rom_inst_addr[23:0]),
+    .inst_dout(rom_inst_dout[127:0]),
+    .inst_ack(rom_inst_ack),
+    .inst_timeout(rom_inst_timeout),
+    .data_stb(1'b0),
+    .data_addr(24'h0),
+    .data_dout(),
+    .data_ack(),
+    .data_timeout()
   );
 
   //--------------------------------------
@@ -75,7 +134,7 @@ module eco32(clk_in,
   end
 
   assign first_fail[7:0] = first_step_failed[7:0];
-  assign led_g = test_end_seen & ~any_step_failed;
-  assign led_r = test_end_seen & any_step_failed;
+  assign led_g = (test_end_seen & ~any_step_failed) | ~test_crc_ok;
+  assign led_r = (test_end_seen & any_step_failed) | ~test_crc_ok;
 
 endmodule

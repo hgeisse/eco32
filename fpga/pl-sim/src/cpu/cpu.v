@@ -8,12 +8,32 @@
 
 
 module cpu(clk, rst,
-           test_step, test_good, test_ended);
+           ram_inst_stb, ram_inst_addr,
+           ram_inst_dout, ram_inst_ack,
+           ram_inst_timeout,
+           rom_inst_stb, rom_inst_addr,
+           rom_inst_dout, rom_inst_ack,
+           rom_inst_timeout,
+           test_step, test_good, test_ended, test_crc_ok);
     input clk;				// system clock
     input rst;				// system reset
+    //----------------
+    output ram_inst_stb;
+    output [24:0] ram_inst_addr;
+    input [127:0] ram_inst_dout;
+    input ram_inst_ack;
+    input ram_inst_timeout;
+    //----------------
+    output rom_inst_stb;
+    output [23:0] rom_inst_addr;
+    input [127:0] rom_inst_dout;
+    input rom_inst_ack;
+    input rom_inst_timeout;
+    //----------------
     output test_step;			// test step completed
     output test_good;			// test step good
     output test_ended;			// test ended
+    output test_crc_ok;			// test if CRC value is good
 
   wire if1b_ready;
   wire if1a_valid;
@@ -57,6 +77,25 @@ module cpu(clk, rst,
     .if2_ready_in(1'b1),
     .if2_valid_out(if2_valid),
     .if2_paddr_out(if2_paddr[29:0])
+  );
+
+  if3 if3_1(
+    .clk(clk),
+    .rst(rst),
+    //----------------
+    .test_crc_ok(test_crc_ok),
+    //----------------
+    .ram_inst_stb(ram_inst_stb),
+    .ram_inst_addr(ram_inst_addr[24:0]),
+    .ram_inst_dout(ram_inst_dout[127:0]),
+    .ram_inst_ack(ram_inst_ack),
+    .ram_inst_timeout(ram_inst_timeout),
+    //----------------
+    .rom_inst_stb(rom_inst_stb),
+    .rom_inst_addr(rom_inst_addr[23:0]),
+    .rom_inst_dout(rom_inst_dout[127:0]),
+    .rom_inst_ack(rom_inst_ack),
+    .rom_inst_timeout(rom_inst_timeout)
   );
 
   //--------------------------------------
