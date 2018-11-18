@@ -1,0 +1,31 @@
+Intended Use
+------------
+
+This memory controller offers a complete simulation of the RAM
+subsystem, if the given (simplistic) RAM implementation is used.
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^25 * 128 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+data read/write:
+2^25 * 128 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to RAM)
+---------------------------
+
+2^25 * 16 bit * 2 = 128 MB
+strobe/acknowledge handshake
+
+
+RAM
+---
+
+The RAM has got separately adjustable access times for read and
+write operations (minimum is two clock cycles each).
