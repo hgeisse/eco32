@@ -4,11 +4,16 @@
 
 BUILD = ../../build
 
+DEF_DURATION = defdata/duration00.dat
+DEF_ROM = defdata/rom00.dat
+
 SRCS = eco32test.v \
        src/toplevel/eco32.v \
        src/clk_rst/clk_rst.v \
        src/cpu/cpu.v \
-       src/cpu/if/if1a.v src/cpu/if/if1b.v src/cpu/if/if2.v
+       src/cpu/if/if1a.v src/cpu/if/if1b.v src/cpu/if/if2.v src/cpu/if/if3.v \
+       src/ramctrl/ramctrl.v src/ramctrl/ram.v \
+       src/romctrl/romctrl.v src/romctrl/rom.v
 BIN = eco32test
 
 .PHONY:		all install run show clean
@@ -22,8 +27,12 @@ $(BIN):		$(SRCS)
 
 run:		$(BIN)
 		@if [ ! -r duration.dat ] ; then \
-		  echo "cp defdata/duration.dat ." ; \
-		  cp defdata/duration.dat . ; \
+		  echo "cp $(DEF_DURATION) duration.dat" ; \
+		  cp $(DEF_DURATION) duration.dat ; \
+		fi
+		@if [ ! -r rom.dat ] ; then \
+		  echo "cp $(DEF_ROM) rom.dat" ; \
+		  cp $(DEF_ROM) rom.dat ; \
 		fi
 		./$(BIN)
 
@@ -32,7 +41,7 @@ show:		run
 
 clean:
 		rm -f *~ $(BIN) dump.vcd
-		rm -f duration.dat
+		rm -f duration.dat rom.dat
 		rm -f defdata/*~
 		rm -f src/*~
 		rm -f src/toplevel/*~
@@ -43,3 +52,5 @@ clean:
 		rm -f src/cpu/ex/*~
 		rm -f src/cpu/ma/*~
 		rm -f src/cpu/wb/*~
+		rm -f src/ramctrl/*~
+		rm -f src/romctrl/*~
