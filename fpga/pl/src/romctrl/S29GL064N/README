@@ -1,0 +1,24 @@
+Intended Use
+------------
+
+This memory controller is to be used on a real FPGA. It runs
+itself at 100 MHz and controls a ROM with 90 ns access time.
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^24 * 128 bit = 256 MB
+strobe/acknowledge/timeout handshake
+
+data read:
+2^24 * 128 bit = 256 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to ROM)
+---------------------------
+
+2^23 * 8 bit = 8 MB
+standard Flash ROM interface
