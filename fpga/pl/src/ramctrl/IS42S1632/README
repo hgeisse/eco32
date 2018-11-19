@@ -1,0 +1,25 @@
+Intended Use
+------------
+
+This memory controller is to be used on a real FPGA. It runs
+itself at 100 MHz, as does the SDRAM. The circuit which uses
+the controller is expected to run at this clock rate too.
+
+
+Front-End (interface to caches)
+-------------------------------
+
+instruction read:
+2^25 * 128 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+data read/write:
+2^25 * 128 bit = 512 MB
+strobe/acknowledge/timeout handshake
+
+
+Back-End (interface to RAM)
+---------------------------
+
+2^25 * 16 bit * 2 = 128 MB
+standard SDRAM interface
