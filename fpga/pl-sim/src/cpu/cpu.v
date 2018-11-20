@@ -14,7 +14,7 @@ module cpu(clk, rst,
            rom_inst_stb, rom_inst_addr,
            rom_inst_dout, rom_inst_ack,
            rom_inst_timeout,
-           test_step, test_good, test_ended, test_crc_ok);
+           test_step, test_good, test_ended);
     input clk;				// system clock
     input rst;				// system reset
     //----------------
@@ -33,7 +33,6 @@ module cpu(clk, rst,
     output test_step;			// test step completed
     output test_good;			// test step good
     output test_ended;			// test ended
-    output test_crc_ok;			// test if CRC value is good
 
   wire if1b_ready;
   wire if1a_valid;
@@ -83,7 +82,6 @@ module cpu(clk, rst,
     .clk(clk),
     .rst(rst),
     //----------------
-    .test_crc_ok(test_crc_ok),
     //----------------
     .ram_inst_stb(ram_inst_stb),
     .ram_inst_addr(ram_inst_addr[24:0]),
