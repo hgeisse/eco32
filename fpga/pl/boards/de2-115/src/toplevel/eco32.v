@@ -9,6 +9,23 @@
 
 module eco32(clk_in,
              rst_in_n,
+             sdram_clk,
+             sdram_cke,
+             sdram_cs_n,
+             sdram_ras_n,
+             sdram_cas_n,
+             sdram_we_n,
+             sdram_ba,
+             sdram_a,
+             sdram_dqm,
+             sdram_dq,
+             fl_ce_n,
+             fl_oe_n,
+             fl_we_n,
+             fl_wp_n,
+             fl_rst_n,
+             fl_addr,
+             fl_dq,
              led_g,
              led_r,
              hex7_n,
@@ -28,6 +45,25 @@ module eco32(clk_in,
     // clock and reset
     input clk_in;			// clock input, 50 MHz
     input rst_in_n;			// reset input, active low
+    // SDRAM
+    output sdram_clk;
+    output sdram_cke;
+    output sdram_cs_n;
+    output sdram_ras_n;
+    output sdram_cas_n;
+    output sdram_we_n;
+    output [1:0] sdram_ba;
+    output [12:0] sdram_a;
+    output [3:0] sdram_dqm;
+    inout [31:0] sdram_dq;
+    // Flash ROM
+    output fl_ce_n;
+    output fl_oe_n;
+    output fl_we_n;
+    output fl_wp_n;
+    output fl_rst_n;
+    output [22:0] fl_addr;
+    input [7:0] fl_dq;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -52,6 +88,19 @@ module eco32(clk_in,
   wire test_step;			// test step completed
   wire test_good;			// test step good
   wire test_ended;			// test ended
+  wire test_crc_ok;			// test if CRC value is good
+  // ramctrl
+  wire ram_inst_stb;			// RAM inst strobe
+  wire [24:0] ram_inst_addr;		// RAM inst address (cache line)
+  wire [127:0] ram_inst_dout;		// RAM inst data out (cache line)
+  wire ram_inst_ack;			// RAM inst acknowledge
+  wire ram_inst_timeout;		// RAM inst timeout
+  // romctrl
+  wire rom_inst_stb;			// ROM inst strobe
+  wire [23:0] rom_inst_addr;		// ROM inst address (cache line)
+  wire [127:0] rom_inst_dout;		// ROM inst data out (cache line)
+  wire rom_inst_ack;			// ROM inst acknowledge
+  wire rom_inst_timeout;		// ROM inst timeout
 
   //--------------------------------------
   // module instances
@@ -61,7 +110,7 @@ module eco32(clk_in,
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
     .clk_ok(clk_ok),
-    .clk_100_ps(),
+    .clk_100_ps(sdram_clk),
     .clk_100(clk),
     .clk_50(),
     .rst(rst)
@@ -70,9 +119,73 @@ module eco32(clk_in,
   cpu cpu_1(
     .clk(clk),
     .rst(rst),
+    //----------------
+    .ram_inst_stb(ram_inst_stb),
+    .ram_inst_addr(ram_inst_addr[24:0]),
+    .ram_inst_dout(ram_inst_dout[127:0]),
+    .ram_inst_ack(ram_inst_ack),
+    .ram_inst_timeout(ram_inst_timeout),
+    //----------------
+    .rom_inst_stb(rom_inst_stb),
+    .rom_inst_addr(rom_inst_addr[23:0]),
+    .rom_inst_dout(rom_inst_dout[127:0]),
+    .rom_inst_ack(rom_inst_ack),
+    .rom_inst_timeout(rom_inst_timeout),
+    //----------------
     .test_step(test_step),
     .test_good(test_good),
-    .test_ended(test_ended)
+    .test_ended(test_ended),
+    .test_crc_ok(test_crc_ok)
+  );
+
+  ramctrl ramctrl_1(
+    .clk_ok(clk_ok),
+    .clk(clk),
+    .inst_stb(ram_inst_stb),
+    .inst_addr(ram_inst_addr[24:0]),
+    .inst_dout(ram_inst_dout[127:0]),
+    .inst_ack(ram_inst_ack),
+    .inst_timeout(ram_inst_timeout),
+    .data_stb(1'b0),
+    .data_we(1'b0),
+    .data_addr(25'h0),
+    .data_din(128'h0),
+    .data_dout(),
+    .data_ack(),
+    .data_timeout(),
+    //----------------
+    .sdram_cke(sdram_cke),
+    .sdram_cs_n(sdram_cs_n),
+    .sdram_ras_n(sdram_ras_n),
+    .sdram_cas_n(sdram_cas_n),
+    .sdram_we_n(sdram_we_n),
+    .sdram_ba(sdram_ba[1:0]),
+    .sdram_a(sdram_a[12:0]),
+    .sdram_dqm(sdram_dqm[3:0]),
+    .sdram_dq(sdram_dq[31:0])
+  );
+
+  romctrl romctrl_1(
+    .clk(clk),
+    .rst(rst),
+    .inst_stb(rom_inst_stb),
+    .inst_addr(rom_inst_addr[23:0]),
+    .inst_dout(rom_inst_dout[127:0]),
+    .inst_ack(rom_inst_ack),
+    .inst_timeout(rom_inst_timeout),
+    .data_stb(1'b0),
+    .data_addr(24'h0),
+    .data_dout(),
+    .data_ack(),
+    .data_timeout(),
+    //----------------
+    .fl_ce_n(fl_ce_n),
+    .fl_oe_n(fl_oe_n),
+    .fl_we_n(fl_we_n),
+    .fl_wp_n(fl_wp_n),
+    .fl_rst_n(fl_rst_n),
+    .fl_a(fl_addr[22:0]),
+    .fl_d(fl_dq[7:0])
   );
 
   //--------------------------------------
@@ -166,8 +279,8 @@ module eco32(clk_in,
     .out(hex6_n[6:0])
   );
 
-  assign led_g[7] = test_end_seen & ~any_step_failed;
-  assign led_r[0] = test_end_seen & any_step_failed;
+  assign led_g[7] = (test_end_seen & ~any_step_failed) | ~test_crc_ok;
+  assign led_r[0] = (test_end_seen & any_step_failed) | ~test_crc_ok;
 
 endmodule
 
