@@ -88,7 +88,6 @@ module eco32(clk_in,
   wire test_step;			// test step completed
   wire test_good;			// test step good
   wire test_ended;			// test ended
-  wire test_crc_ok;			// test if CRC value is good
   // ramctrl
   wire ram_inst_stb;			// RAM inst strobe
   wire [24:0] ram_inst_addr;		// RAM inst address (cache line)
@@ -134,8 +133,7 @@ module eco32(clk_in,
     //----------------
     .test_step(test_step),
     .test_good(test_good),
-    .test_ended(test_ended),
-    .test_crc_ok(test_crc_ok)
+    .test_ended(test_ended)
   );
 
   ramctrl ramctrl_1(
@@ -279,8 +277,8 @@ module eco32(clk_in,
     .out(hex6_n[6:0])
   );
 
-  assign led_g[7] = (test_end_seen & ~any_step_failed) | ~test_crc_ok;
-  assign led_r[0] = (test_end_seen & any_step_failed) | ~test_crc_ok;
+  assign led_g[7] = test_end_seen & ~any_step_failed;
+  assign led_r[0] = test_end_seen & any_step_failed;
 
 endmodule
 
