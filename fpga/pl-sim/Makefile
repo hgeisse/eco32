@@ -5,7 +5,7 @@
 BUILD = ../../build
 
 DEF_DURATION = defdata/duration00.dat
-DEF_ROM = defdata/rom00.dat
+DEF_ROM = defdata/romrand.dat
 
 SRCS = eco32test.v \
        src/toplevel/eco32.v \
@@ -16,16 +16,19 @@ SRCS = eco32test.v \
        src/romctrl/romctrl.v src/romctrl/rom.v
 BIN = eco32test
 
-.PHONY:		all install run show clean
+.PHONY:		all install makedef run show clean
 
 all:		show
 
 install:	$(BIN)
 
+makedef:
+		$(MAKE) -C defdata all
+
 $(BIN):		$(SRCS)
 		iverilog -Wall -o $(BIN) $(SRCS)
 
-run:		$(BIN)
+run:		makedef $(BIN)
 		@if [ ! -r duration.dat ] ; then \
 		  echo "cp $(DEF_DURATION) duration.dat" ; \
 		  cp $(DEF_DURATION) duration.dat ; \
@@ -40,9 +43,9 @@ show:		run
 		gtkwave dump.vcd eco32test.cfg
 
 clean:
+		$(MAKE) -C defdata clean
 		rm -f *~ $(BIN) dump.vcd
 		rm -f duration.dat rom.dat
-		rm -f defdata/*~
 		rm -f src/*~
 		rm -f src/toplevel/*~
 		rm -f src/clk_rst/*~
