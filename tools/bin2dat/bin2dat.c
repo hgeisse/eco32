@@ -35,9 +35,9 @@ int main(int argc, char *argv[]) {
   unsigned char lineData[16];
   int width;
 
-  if (argc != 5) {
-    printf("Usage: %s [-w|-h|-b] <input file> "
-           "<output file> <memory size in KB>\n",
+  if (argc != 4 && argc != 5) {
+    printf("Usage: %s -w|-h|-b <input file> "
+           "<output file> [<memory size in KB>]\n",
            argv[0]);
     exit(1);
   }
@@ -60,14 +60,19 @@ int main(int argc, char *argv[]) {
   if (outfile == NULL) {
     error("cannot open output file %s", argv[3]);
   }
-  memSize = strtol(argv[4], &endptr, 0);
-  if (*endptr != '\0') {
-    error("cannot read memory size");
+  if (argc == 4) {
+    /* choose memory size just big enough */
+    memSize = 0;
+  } else {
+    memSize = strtol(argv[4], &endptr, 0);
+    if (*endptr != '\0') {
+      error("cannot read memory size");
+    }
+    if (memSize <= 0) {
+      error("illegal memory size %d", memSize);
+    }
+    memSize *= WORDS_PER_KB;
   }
-  if (memSize <= 0) {
-    error("illegal memory size %d", memSize);
-  }
-  memSize *= WORDS_PER_KB;
   totalWords = 0;
   fprintf(outfile, "@0\n");
   while (1) {
@@ -116,26 +121,28 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-  if (totalWords > memSize) {
-    error("number of words exceeds memory size (%d words)", memSize);
-  }
-  while (totalWords < memSize) {
-    switch (width) {
-      case 1:
-        fprintf(outfile, "00\n");
-        fprintf(outfile, "00\n");
-        fprintf(outfile, "00\n");
-        fprintf(outfile, "00\n");
-        break;
-      case 2:
-        fprintf(outfile, "0000\n");
-        fprintf(outfile, "0000\n");
-        break;
-      case 4:
-        fprintf(outfile, "00000000\n");
-        break;
+  if (memSize != 0) {
+    if (totalWords > memSize) {
+      error("number of words exceeds memory size (%d words)", memSize);
     }
-    totalWords++;
+    while (totalWords < memSize) {
+      switch (width) {
+        case 1:
+          fprintf(outfile, "00\n");
+          fprintf(outfile, "00\n");
+          fprintf(outfile, "00\n");
+          fprintf(outfile, "00\n");
+          break;
+        case 2:
+          fprintf(outfile, "0000\n");
+          fprintf(outfile, "0000\n");
+          break;
+        case 4:
+          fprintf(outfile, "00000000\n");
+          break;
+      }
+      totalWords++;
+    }
   }
   fclose(infile);
   fclose(outfile);
