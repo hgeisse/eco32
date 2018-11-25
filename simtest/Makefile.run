@@ -26,6 +26,7 @@ all:
 		@echo "    run-rom09 (string output with timing loop)"
 		@echo "    run-rom10 (console character attributes)"
 		@echo "    run-romboot (ROM bootstrapping disk)"
+		@echo "    run-romrand (64 KB / 16 KW random values)"
 		@echo "    clean"
 
 $(DSKNAME):
@@ -67,6 +68,9 @@ run-rom10:
 
 run-romboot:	$(DSKNAME)
 		$(BUILD)/bin/sim -i -r romboot.bin -s 1 -t 0 -d $(DSKNAME)
+
+run-romrand:
+		$(BUILD)/bin/sim -i -r romrand.bin
 
 clean:
 		rm -f *~ $(LOGFILE) $(DSKNAME)

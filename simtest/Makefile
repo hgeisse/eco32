@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = rom disk
+DIRS = rom disk rand
 
 .PHONY:		all install clean
 
