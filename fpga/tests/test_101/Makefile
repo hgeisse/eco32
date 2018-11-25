@@ -17,7 +17,7 @@ run:		$(BIN)
 		$(BUILD)/bin/sim -i -s 1 -t 0 -r $(BIN)
 
 $(DAT):		$(BIN)
-		$(BUILD)/bin/bin2dat $(BIN) $(DAT) $(ROM_SIZE_KB)
+		$(BUILD)/bin/bin2dat -w $(BIN) $(DAT) $(ROM_SIZE_KB)
 
 $(BIN):		copy/copy.bin dhry/dhry.bin
 		cat copy/copy.bin dhry/dhry.bin >$(BIN)

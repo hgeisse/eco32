@@ -30,24 +30,37 @@ int main(int argc, char *argv[]) {
   char *endptr;
   int memSize;
   int totalWords;
-  int numBytes, i;
+  int numBytes;
   int c;
   unsigned char lineData[16];
+  int width;
 
-  if (argc != 4) {
-    printf("Usage: %s <input file> <output file> <memory size in KB>\n",
+  if (argc != 5) {
+    printf("Usage: %s [-w|-h|-b] <input file> "
+           "<output file> <memory size in KB>\n",
            argv[0]);
     exit(1);
   }
-  infile = fopen(argv[1], "rb");
+  if (strcmp(argv[1], "-w") == 0) {
+    width = 4;
+  } else
+  if (strcmp(argv[1], "-h") == 0) {
+    width = 2;
+  } else
+  if (strcmp(argv[1], "-b") == 0) {
+    width = 1;
+  } else {
+    error("output width is not one of -w, -h, or -b");
+  }
+  infile = fopen(argv[2], "rb");
   if (infile == NULL) {
-    error("cannot open input file %s", argv[1]);
+    error("cannot open input file %s", argv[2]);
   }
-  outfile = fopen(argv[2], "wt");
+  outfile = fopen(argv[3], "wt");
   if (outfile == NULL) {
-    error("cannot open output file %s", argv[2]);
+    error("cannot open output file %s", argv[3]);
   }
-  memSize = strtol(argv[3], &endptr, 0);
+  memSize = strtol(argv[4], &endptr, 0);
   if (*endptr != '\0') {
     error("cannot read memory size");
   }
@@ -56,6 +69,7 @@ int main(int argc, char *argv[]) {
   }
   memSize *= WORDS_PER_KB;
   totalWords = 0;
+  fprintf(outfile, "@0\n");
   while (1) {
     for (numBytes = 0; numBytes < 4; numBytes++) {
       c = fgetc(infile);
@@ -70,10 +84,33 @@ int main(int argc, char *argv[]) {
     for (; numBytes < 4; numBytes++) {
       lineData[numBytes] = 0;
     }
-    for (i = 0; i < numBytes; i++) {
-      fprintf(outfile, "%02X", lineData[i]);
+    switch (width) {
+      case 1:
+        fprintf(outfile, "%02X", lineData[0]);
+        fprintf(outfile, "\n");
+        fprintf(outfile, "%02X", lineData[1]);
+        fprintf(outfile, "\n");
+        fprintf(outfile, "%02X", lineData[2]);
+        fprintf(outfile, "\n");
+        fprintf(outfile, "%02X", lineData[3]);
+        fprintf(outfile, "\n");
+        break;
+      case 2:
+        fprintf(outfile, "%02X", lineData[0]);
+        fprintf(outfile, "%02X", lineData[1]);
+        fprintf(outfile, "\n");
+        fprintf(outfile, "%02X", lineData[2]);
+        fprintf(outfile, "%02X", lineData[3]);
+        fprintf(outfile, "\n");
+        break;
+      case 4:
+        fprintf(outfile, "%02X", lineData[0]);
+        fprintf(outfile, "%02X", lineData[1]);
+        fprintf(outfile, "%02X", lineData[2]);
+        fprintf(outfile, "%02X", lineData[3]);
+        fprintf(outfile, "\n");
+        break;
     }
-    fprintf(outfile, "\n");
     totalWords++;
     if (c == EOF) {
       break;
@@ -83,7 +120,21 @@ int main(int argc, char *argv[]) {
     error("number of words exceeds memory size (%d words)", memSize);
   }
   while (totalWords < memSize) {
-    fprintf(outfile, "00000000\n");
+    switch (width) {
+      case 1:
+        fprintf(outfile, "00\n");
+        fprintf(outfile, "00\n");
+        fprintf(outfile, "00\n");
+        fprintf(outfile, "00\n");
+        break;
+      case 2:
+        fprintf(outfile, "0000\n");
+        fprintf(outfile, "0000\n");
+        break;
+      case 4:
+        fprintf(outfile, "00000000\n");
+        break;
+    }
     totalWords++;
   }
   fclose(infile);

@@ -16,7 +16,7 @@ all:		$(DAT)
 install:	$(DAT)
 
 $(DAT):		$(BIN)
-		$(BUILD)/bin/bin2dat $(BIN) $(DAT) $(ROM_SIZE_KB)
+		$(BUILD)/bin/bin2dat -w $(BIN) $(DAT) $(ROM_SIZE_KB)
 
 $(BIN):		$(OBJ)
 		$(BUILD)/bin/ld -s rom.lnk -o tmp $(OBJ)

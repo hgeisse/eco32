@@ -14,7 +14,7 @@ all:		$(DAT)
 install:	$(DAT)
 
 $(DAT):		$(BIN)
-		$(BUILD)/bin/bin2dat $(BIN) $(DAT) $(ROM_SIZE_KB)
+		$(BUILD)/bin/bin2dat -w $(BIN) $(DAT) $(ROM_SIZE_KB)
 
 $(BIN):		copy/copy.bin hellodsp/hellodsp.bin
 		cat copy/copy.bin hellodsp/hellodsp.bin >$(BIN)
