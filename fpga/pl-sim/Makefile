@@ -12,6 +12,7 @@ SRCS = eco32test.v \
        src/clk_rst/clk_rst.v \
        src/cpu/cpu.v \
        src/cpu/if/if1a.v src/cpu/if/if1b.v src/cpu/if/if2.v src/cpu/if/if3.v \
+       src/cpu/test/if/test.v \
        src/ramctrl/ramctrl.v src/ramctrl/ram.v \
        src/romctrl/romctrl.v src/romctrl/rom.v
 BIN = eco32test
@@ -55,5 +56,7 @@ clean:
 		rm -f src/cpu/ex/*~
 		rm -f src/cpu/ma/*~
 		rm -f src/cpu/wb/*~
+		rm -f src/cpu/test/*~
+		rm -f src/cpu/test/if/*~
 		rm -f src/ramctrl/*~
 		rm -f src/romctrl/*~

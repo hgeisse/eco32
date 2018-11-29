@@ -48,6 +48,8 @@ module cpu(clk, rst,
   wire if3_valid;
   wire [31:0] if3_inst;
 
+  wire test_ready;
+
   //--------------------------------------
   // module instances
   //--------------------------------------
@@ -89,7 +91,7 @@ module cpu(clk, rst,
     .if3_ready_out(if3_ready),
     .if3_valid_in(if2_valid),
     .if3_paddr_in(if2_paddr[29:0]),
-    .if3_ready_in(1'b1),
+    .if3_ready_in(test_ready),
     .if3_valid_out(if3_valid),
     .if3_inst_out(if3_inst[31:0]),
     //----------------
@@ -110,21 +112,17 @@ module cpu(clk, rst,
   // test signals
   //--------------------------------------
 
-  wire trigger;
-  reg delayed_trigger;
-
-  assign trigger = if1b_valid & (if1b_vaddr[31:0] == 32'h6034);
-
-  always @(posedge clk) begin
-    if (rst) begin
-      delayed_trigger <= 1'b0;
-    end else begin
-      delayed_trigger <= trigger;
-    end
-  end
-
-  assign test_step = delayed_trigger;
-  assign test_good = if2_valid & (if2_paddr[29:0] == 32'h00005034);
-  assign test_ended = if1b_valid & (if1b_vaddr[31:0] == 32'h0000603C);
+  test test_1(
+    .clk(clk),
+    .rst(rst),
+    //----------------
+    .test_ready_out(test_ready),
+    .test_valid_in(if3_valid),
+    .test_data_in(if3_inst[31:0]),
+    //----------------
+    .test_step(test_step),
+    .test_good(test_good),
+    .test_ended(test_ended)
+  );
 
 endmodule
