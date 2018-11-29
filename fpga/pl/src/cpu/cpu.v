@@ -44,6 +44,10 @@ module cpu(clk, rst,
   wire if2_valid;
   wire [29:0] if2_paddr;
 
+  wire if3_ready;
+  wire if3_valid;
+  wire [31:0] if3_inst;
+
   //--------------------------------------
   // module instances
   //--------------------------------------
@@ -73,7 +77,7 @@ module cpu(clk, rst,
     .if2_ready_out(if2_ready),
     .if2_valid_in(if1b_valid),
     .if2_vaddr_in(if1b_vaddr[31:0]),
-    .if2_ready_in(1'b1),
+    .if2_ready_in(if3_ready),
     .if2_valid_out(if2_valid),
     .if2_paddr_out(if2_paddr[29:0])
   );
@@ -82,6 +86,12 @@ module cpu(clk, rst,
     .clk(clk),
     .rst(rst),
     //----------------
+    .if3_ready_out(if3_ready),
+    .if3_valid_in(if2_valid),
+    .if3_paddr_in(if2_paddr[29:0]),
+    .if3_ready_in(1'b1),
+    .if3_valid_out(if3_valid),
+    .if3_inst_out(if3_inst[31:0]),
     //----------------
     .ram_inst_stb(ram_inst_stb),
     .ram_inst_addr(ram_inst_addr[24:0]),
