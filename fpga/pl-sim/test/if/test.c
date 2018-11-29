@@ -1,5 +1,5 @@
 /*
- * test-if.c -- test the IF pipeline stage
+ * test.c -- test the IF pipeline stage
  */
 
 
