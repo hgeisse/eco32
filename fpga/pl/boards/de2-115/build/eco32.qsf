@@ -384,17 +384,6 @@ set_location_assignment PIN_W2 -to sdram_dq[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdram_dq[1]
 set_location_assignment PIN_W3 -to sdram_dq[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdram_dq[0]
-set_global_assignment -name VERILOG_FILE ../../../src/romctrl/S29GL064N/romctrl.v
-set_global_assignment -name VERILOG_FILE ../../../src/ramctrl/IS42S1632/ramctrl.v
-set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if3.v
-set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if2.v
-set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if1b.v
-set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if1a.v
-set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu.v
-set_global_assignment -name VERILOG_FILE ../src/clk_rst/clk_rst.v
-set_global_assignment -name VERILOG_FILE ../src/toplevel/eco32.v
-set_global_assignment -name SDC_FILE ../src/toplevel/eco32.sdc
-set_global_assignment -name CDF_FILE output_files/eco32.cdf
 set_location_assignment PIN_AG7 -to fl_ce_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to fl_ce_n
 set_location_assignment PIN_AG8 -to fl_oe_n
@@ -467,4 +456,16 @@ set_location_assignment PIN_AF10 -to fl_dq[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to fl_dq[1]
 set_location_assignment PIN_AH8 -to fl_dq[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to fl_dq[0]
+set_global_assignment -name VERILOG_FILE ../../../src/romctrl/S29GL064N/romctrl.v
+set_global_assignment -name VERILOG_FILE ../../../src/ramctrl/IS42S1632/ramctrl.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/test/if/test.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if3.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if2.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if1b.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/if/if1a.v
+set_global_assignment -name VERILOG_FILE ../../../src/cpu/cpu.v
+set_global_assignment -name VERILOG_FILE ../src/clk_rst/clk_rst.v
+set_global_assignment -name VERILOG_FILE ../src/toplevel/eco32.v
+set_global_assignment -name SDC_FILE ../src/toplevel/eco32.sdc
+set_global_assignment -name CDF_FILE output_files/eco32.cdf
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

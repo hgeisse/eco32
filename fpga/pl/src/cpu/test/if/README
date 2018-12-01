@@ -1,0 +1,24 @@
+1. What does it do?
+-------------------
+
+This circuit tests the IF pipeline stage. An address generator
+(if1a/if1b) generates a sequence of virtual addresses which
+are translated to physical addresses (if2), which in turn are
+used to access main memory (using the icache, if3). The addresses
+are located in ROM, which must be filled with a given random
+pattern. It computes a CRC fingerprint from the values read, and
+verifies the fingerprint at two points in the address sequence.
+
+
+2. How do I use it?
+-------------------
+
+a) Load the FPGA with the Flash-ROM programmer and program the
+   Flash-ROM with the file "eco32/build/simtest/romrand.bin".
+
+b) Load the FPGA with "eco32.bit".
+
+c) Press and release the reset button (the rightmost pushbutton).
+   After a fraction of a second, the green LEDG7 should light up,
+   and the digits "02" should appear on the leftmost 7-segment
+   display.
