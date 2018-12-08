@@ -1,0 +1,16 @@
+The different parameters which influence the test pattern
+generator are explored here.
+
+1. In which gen_states is valid_out != 0 ?
+   1a: state = 1
+   1b: state = 1, 2, 3
+
+2. What is the value of DISTANCE ?
+   2a: DISTANCE = 6
+   2b: DISTANCE = 1
+   2c: DISTANCE = 0
+
+3. What is the behavior of ready_in ?
+   3a: ready_in = 1 always
+   3b: ready_in = 0 starting directly after valid_out
+   3c: ready_in = 0 starting asynchronously during valid_out
