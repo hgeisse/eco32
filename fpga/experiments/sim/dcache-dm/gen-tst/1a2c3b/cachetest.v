@@ -43,7 +43,7 @@ module cachetest(clk, rst,
 
   //--------------------------------------------
 
-  assign holdoff_counting = (holdoff[7:0] != 8'd0) ? 1'b1 : 1'b0;
+  assign holdoff_counting = (holdoff[7:0] != 8'd0);
 
   always @(posedge clk) begin
     if (rst) begin
@@ -55,7 +55,7 @@ module cachetest(clk, rst,
     end
   end
 
-  assign distance_restart = (distance[3:0] == `DISTANCE) ? 1'b1 : 1'b0;
+  assign distance_restart = (distance[3:0] == `DISTANCE);
 
   always @(posedge clk) begin
     if (holdoff_counting) begin
@@ -85,7 +85,7 @@ module cachetest(clk, rst,
     end
   end
 
-  assign possibly_valid = (distance[3:0] == 4'd0) ? 1'b1 : 1'b0;
+  assign possibly_valid = (distance[3:0] == 4'd0);
 
   always @(*) begin
     case (gen_state[4:0])
