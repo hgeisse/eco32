@@ -44,6 +44,6 @@ module memory(clk, rst,
   assign data[31:0] =
     (counter[3:0] == 4'h1) ? fake_data[31:0] : 32'hxxxxxxxx;
   assign ack =
-    (counter[3:0] == 4'h1) ? 1'b1 : 1'b0;
+    (counter[3:0] == 4'h1);
 
 endmodule
