@@ -1,0 +1,3 @@
+v0: fake cache
+    every access is a hit (read and write)
+    no errors until end of test
