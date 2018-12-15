@@ -8,8 +8,8 @@
 
 
 module cachectrl(clk, rst,
-                 cache_ready_out, cache_valid_in,
-                 cache_rd_in, cache_wr_in, cache_addr_in, cache_data_in,
+                 cache_ready_out, cache_valid_in, cache_rd_in,
+                 cache_wr_in, cache_addr_in, cache_data_in,
                  cache_ready_in, cache_valid_out, cache_data_out,
                  memory_stb, memory_we, memory_addr,
                  memory_din, memory_dout, memory_ack);
