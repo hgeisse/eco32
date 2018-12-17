@@ -33,6 +33,10 @@ module cachectrl(clk, rst,
   wire [5:0] index;
   wire [1:0] offset;
 
+  reg [7:0] tag_buf;
+  reg [5:0] index_buf;
+  reg [1:0] offset_buf;
+
   wire [1:0] sel_index;
   reg [5:0] cur_index;
 
@@ -42,10 +46,6 @@ module cachectrl(clk, rst,
   reg [7:0] line_tag_out;
   reg [31:0] line_data[0:63];
   reg [31:0] line_data_out;
-
-  reg [7:0] tag_buf;
-  reg [5:0] index_buf;
-  reg [1:0] offset_buf;
 
   wire hit;
 
@@ -74,6 +74,14 @@ module cachectrl(clk, rst,
   assign index[5:0] = cache_addr_in[7:2];
   assign offset[1:0] = cache_addr_in[1:0];
 
+  always @(posedge clk) begin
+    if (cache_ready_out) begin
+      tag_buf[7:0] <= tag[7:0];
+      index_buf[5:0] <= index[5:0];
+      offset_buf[1:0] <= offset[1:0];
+    end
+  end
+
   always @(*) begin
     case (sel_index[1:0])
       2'b00: cur_index[5:0] = index[5:0];
@@ -93,14 +101,6 @@ module cachectrl(clk, rst,
       line_valid[cur_index] <= ~invalidate;
       line_tag[cur_index] <= tag_buf;
       line_data[cur_index] <= memory_data;
-    end
-  end
-
-  always @(posedge clk) begin
-    if (cache_ready_out) begin
-      tag_buf[7:0] <= tag[7:0];
-      index_buf[5:0] <= index[5:0];
-      offset_buf[1:0] <= offset[1:0];
     end
   end
 
