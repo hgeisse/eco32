@@ -1,3 +1,10 @@
 v0: fake cache
     every access is a hit (read and write)
     no errors until end of test
+
+v1: basic cache read and write
+    multiplexing read data from cache line to output
+    demultiplexing write data from input to cache line
+    pretend to get a cache hit with every access
+    fails when reading loc 0x1160 for the first time
+    (18900 ns, gen_state = 0x03, wrong data 0x60 instead of 0x00)
