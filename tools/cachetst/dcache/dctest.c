@@ -8,6 +8,8 @@
 #include <string.h>
 
 
+/* #define DEBUG */
+
 #define INDEX(i, j)	((i) * 16 + (j))
 
 
@@ -53,6 +55,9 @@ unsigned char readByte(unsigned int addr) {
       data = (line >>  0) & 0xFF;
       break;
   }
+#ifdef DEBUG
+  printf("R 0x%04x 0x%02x\n", addr, data);
+#endif
   return data;
 }
 
@@ -60,6 +65,9 @@ unsigned char readByte(unsigned int addr) {
 void writeByte(unsigned int addr, unsigned char data) {
   unsigned int line;
 
+#ifdef DEBUG
+  printf("W 0x%04x 0x%02x\n", addr, data);
+#endif
   line = readLine(addr >> 2);
   switch (addr & 3) {
     case 0:
@@ -89,15 +97,16 @@ void writeByte(unsigned int addr, unsigned char data) {
 unsigned int map(unsigned int addr) {
   if (addr >= 0x0100) {
     printf("Error: address out of range\n");
+    exit(1);
   }
   if (addr < 0x0020) {
-    addr += 0x1100;
+    addr += 0x1160;
   } else
   if (addr >= 0x0020 && addr < 0x0040) {
-    addr += 0x2100;
+    addr += 0x2140;
   } else
   if (addr >= 0x0040 && addr < 0x0060) {
-    addr += 0x3100;
+    addr += 0x3120;
   } else
   if (addr >= 0x0060 && addr < 0x0080) {
     addr += 0x4100;
@@ -106,34 +115,30 @@ unsigned int map(unsigned int addr) {
     addr += 0x5100;
   } else
   if (addr >= 0x00A0 && addr < 0x00C0) {
-    addr += 0x6100;
+    addr += 0x61E0;
   } else
   if (addr >= 0x00C0 && addr < 0x00E0) {
     addr += 0x7100;
   } else
   if (addr >= 0x00E0) {
-    addr += 0x8100;
+    addr += 0x81E0;
   }
   return addr;
 }
 
 
 int main(int argc, char *argv[]) {
-  unsigned int testCount;
   unsigned int addr;
   unsigned char data;
   unsigned char sum;
   int i, j;
   int n, m;
 
-  testCount = 0;
   for (i = 0; i < 16; i++) {
     for (j = 0; j < 16; j++) {
       addr = map(INDEX(i, j));
       data = INDEX(i, j);
       writeByte(addr, data);
-      printf("test 0x%05X: acc = W, addr = 0x%04X, data = 0x%02X\n",
-             testCount++, addr, data);
     }
   }
   for (i = 1; i <= 14; i++) {
@@ -143,34 +148,30 @@ int main(int argc, char *argv[]) {
         for (m = 0; m < 3; m++) {
           addr = map(INDEX(i - 1 + n, j - 1 + m));
           data = readByte(addr);
-          printf("test 0x%05X: acc = R, addr = 0x%04X, data = 0x%02X\n",
-                 testCount++, addr, data);
           sum ^= data;
         }
       }
       addr = map(INDEX(i, j));
       data = sum;
       writeByte(addr, data);
-      printf("test 0x%05X: acc = W, addr = 0x%04X, data = 0x%02X\n",
-             testCount++, addr, data);
     }
   }
   for (i = 0; i < 16; i++) {
     for (j = 0; j < 16; j++) {
       addr = map(INDEX(i, j));
       data = readByte(addr);
-      printf("test 0x%05X: acc = R, addr = 0x%04X, data = 0x%02X\n",
-             testCount++, addr, data);
     }
   }
-  printf("\ndata matrix at end of test:\n");
+#ifndef DEBUG
+  printf("data matrix at end of test:\n");
   for (i = 0; i < 16; i++) {
     for (j = 0; j < 16; j++) {
       addr = map(INDEX(i, j));
       data = readByte(addr);
-      printf("0x%02X ", data);
+      printf("0x%02x ", data);
     }
     printf("\n");
   }
+#endif
   return 0;
 }
