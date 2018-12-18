@@ -8,3 +8,10 @@ v1: basic cache read and write
     pretend to get a cache hit with every access
     fails when reading loc 0x1160 for the first time
     (18900 ns, gen_state = 0x03, wrong data 0x60 instead of 0x00)
+
+v2: basic cache read and write
+    multiplexing read data from cache line to output
+    demultiplexing write data from input to cache line
+    hit detection, pipeline control, startup
+    stalls when writing loc 0x1160 for the first time
+    (900 ns, gen_state = 0x01, data = 0x00)
