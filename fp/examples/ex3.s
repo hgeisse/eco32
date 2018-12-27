@@ -1,2 +1,0 @@
-	.code
-	.export	main
