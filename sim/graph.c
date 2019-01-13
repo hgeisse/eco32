@@ -46,6 +46,11 @@ static Bool volatile installed = false;
 				 C2B(g, vga.green) | \
 				 C2B(b, vga.blue))
 
+#define B2C(b,ch)		(((((b) / ch.factor) << 8) / ch.scale) & 0xFF)
+#define PIXEL2R(p)		B2C(p, vga.red)
+#define PIXEL2G(p)		B2C(p, vga.green)
+#define PIXEL2B(p)		B2C(p, vga.blue)
+
 
 typedef struct {
   unsigned long scale;
@@ -349,6 +354,16 @@ static void vgaWrite(int x, int y, int r, int g, int b) {
 }
 
 
+static void vgaRead(int x, int y, int *r, int *g, int *b) {
+  unsigned long pixel;
+
+  pixel = XGetPixel(vga.image, x, y);
+  *r = PIXEL2R(pixel);
+  *g = PIXEL2G(pixel);
+  *b = PIXEL2B(pixel);
+}
+
+
 /**************************************************************/
 /**************************************************************/
 
@@ -407,6 +422,7 @@ static void loadSplashScreen(void) {
 
 
 Word graphRead(Word addr) {
+  int r, g, b;
   Word data;
 
   if (debug) {
@@ -418,8 +434,11 @@ Word graphRead(Word addr) {
   if (addr >= WINDOW_SIZE_X * WINDOW_SIZE_Y * 4) {
     throwException(EXC_BUS_TIMEOUT);
   }
-  /* the frame buffer memory yields 0 on every read */
-  data = 0;
+  /* read from frame buffer memory */
+  vgaRead((addr >> 2) % WINDOW_SIZE_X,
+          (addr >> 2) / WINDOW_SIZE_X,
+          &r, &g, &b);
+  data = (r << 16) | (g << 8) | (b << 0);
   if (debug) {
     cPrintf(", data = 0x%08X ****\n", data);
   }
