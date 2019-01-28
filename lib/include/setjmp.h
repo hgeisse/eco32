@@ -1,11 +1,10 @@
-#ifndef __SETJMP
-#define __SETJMP
+/*
+ * setjmp.h -- non-local jumps
+ */
 
 
+#ifndef _SETJMP_H_
+#define _SETJMP_H_
 
 
-typedef int jmp_buf[28];
-int setjmp(jmp_buf);
-void longjmp(jmp_buf, int);
-
-#endif /* __SETJMP */
+#endif /* _SETJMP_H_ */

@@ -1,38 +1,44 @@
-#ifndef __STRING
-#define __STRING
+/*
+ * string.h -- string functions
+ */
+
+
+#ifndef _STRING_H_
+#define _STRING_H_
+
 
 #ifndef NULL
-#define NULL ((void*)0)
+#define NULL		((void*)0)
 #endif
 
-#if !defined(_SIZE_T) && !defined(_SIZE_T_) && !defined(_SIZE_T_DEFINED)
-#define _SIZE_T
-#define _SIZE_T_
-#define _SIZE_T_DEFINED
+
+#ifndef _SIZE_T_DEFINED_
+#define _SIZE_T_DEFINED_
 typedef unsigned long size_t;
 #endif
 
-void *memcpy(void *, const void *, size_t);
-void *memmove(void *, const void *, size_t);
-char *strcpy(char *, const char *);
-char *strncpy(char *, const char *, size_t);
-char *strcat(char *, const char *);
-char *strncat(char *, const char *, size_t);
-int memcmp(const void *, const void *, size_t);
-int strcmp(const char *, const char *);
-int strcoll(const char *, const char *);
-int strncmp(const char *, const char *, size_t);
-size_t strxfrm(char *, const char *, size_t);
-void *memchr(const void *, int, size_t);
-char *strchr(const char *, int);
-size_t strcspn(const char *, const char *);
-char *strpbrk(const char *, const char *);
-char *strrchr(const char *, int);
-size_t strspn(const char *, const char *);
-char *strstr(const char *, const char *);
-char *strtok(char *, const char *);
-void *memset(void *, int, size_t);
-char *strerror(int);
-size_t strlen(const char *);
 
-#endif /* __STRING */
+char *strcpy(char *s, const char *ct);
+char *strncpy(char *s, const char *ct, size_t n);
+char *strcat(char *s, const char *ct);
+char *strncat(char *s, const char *ct, size_t n);
+int strcmp(const char *cs, const char *ct);
+int strncmp(const char *cs, const char *ct, size_t n);
+char *strchr(const char *cs, int c);
+char *strrchr(const char *cs, int c);
+size_t strspn(const char *cs, const char *ct);
+size_t strcspn(const char *cs, const char *ct);
+char *strpbrk(const char *cs, const char *ct);
+char *strstr(const char *cs, const char *ct);
+size_t strlen(const char *cs);
+char *strerror(int n);
+char *strtok(char *s, const char *ct);
+
+void *memcpy(void *s, const void *ct, size_t n);
+void *memmove(void *s, const void *ct, size_t n);
+int memcmp(const void *cs, const void *ct, size_t n);
+void *memchr(const void *cs, int c, size_t n);
+void *memset(void *s, int c, size_t n);
+
+
+#endif /* _STRING_H_ */

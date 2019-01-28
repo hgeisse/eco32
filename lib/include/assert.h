@@ -1,14 +1,10 @@
-#ifndef __ASSERT
-#define __ASSERT
+/*
+ * assert.h -- diagnostics
+ */
 
-void assert(int);
 
-#endif /* __ASSERT */
+#ifndef _ASSERT_H_
+#define _ASSERT_H_
 
-#undef assert
-#ifdef NDEBUG
-#define assert(ignore) ((void)0)
-#else
-extern int _assert(char *, char *, unsigned);
-#define assert(e) ((void)((e)||_assert(#e, __FILE__, __LINE__)))
-#endif /* NDEBUG */
+
+#endif /* _ASSERT_H_ */

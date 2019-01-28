@@ -1,8 +1,17 @@
-#ifndef __ERRNO
-#define __ERRNO
+/*
+ * errno.h -- error indicator
+ */
 
-#define EDOM	33
-#define ERANGE	34
+
+#ifndef _ERRNO_H_
+#define _ERRNO_H_
+
+
+#define EDOM		33
+#define ERANGE		34
+
+
 extern int errno;
 
-#endif /* __ERRNO */
+
+#endif /* _ERRNO_H_ */

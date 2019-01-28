@@ -1,29 +1,37 @@
-#ifndef __MATH
-#define __MATH
+/*
+ * math.h -- mathematical functions
+ */
 
-#define HUGE_VAL 1.79769313486231570000e+308
 
-extern double acos(double);
-extern double asin(double);
-extern double atan(double);
-extern double atan2(double, double);
-extern double cos(double);
-extern double sin(double);
-extern double tan(double);
-extern double cosh(double);
-extern double sinh(double);
-extern double tanh(double);
-extern double exp(double);
-extern double frexp(double, int *);
-extern double ldexp(double, int);
-extern double log(double);
-extern double log10(double);
-extern double modf(double, double *);
-extern double pow(double, double);
-extern double sqrt(double);
-extern double ceil(double);
-extern double fabs(double);
-extern double floor(double);
-extern double fmod(double, double);
+#ifndef _MATH_H_
+#define _MATH_H_
 
-#endif /* __MATH */
+
+#define HUGE_VAL	1.0e999
+
+
+double sin(double x);
+double cos(double x);
+double tan(double x);
+double asin(double x);
+double acos(double x);
+double atan(double x);
+double atan2(double y, double x);
+double sinh(double x);
+double cosh(double x);
+double tanh(double x);
+double exp(double x);
+double log(double x);
+double log10(double x);
+double pow(double x, double y);
+double sqrt(double x);
+double ceil(double x);
+double floor(double x);
+double fabs(double x);
+double ldexp(double x, int n);
+double frexp(double x, int *exp);
+double modf(double x, double *ip);
+double fmod(double x, double y);
+
+
+#endif /* _MATH_H_ */

@@ -1,33 +1,30 @@
-#ifndef __STDDEF
-#define __STDDEF
+/*
+ * stddef.h -- common definitions
+ */
+
+
+#ifndef _STDDEF_H_
+#define _STDDEF_H_
+
 
 #ifndef NULL
-#define NULL ((void*)0)
+#define NULL		((void*)0)
 #endif
-#define offsetof(ty,mem) ((size_t)((char*)&((ty*)0)->mem - (char*)0))
 
-typedef long ptrdiff_t;
+#ifndef offsetof
+#define offsetof(t,m)	((size_t)((char*)&((t*)0)->m - (char*)0))
+#endif
 
-#if !defined(_SIZE_T) && !defined(_SIZE_T_) && !defined(_SIZE_T_DEFINED)
-#define _SIZE_T
-#define _SIZE_T_
-#define _SIZE_T_DEFINED
+
+#ifndef _SIZE_T_DEFINED_
+#define _SIZE_T_DEFINED_
 typedef unsigned long size_t;
 #endif
 
-#if !defined(_WCHAR_T) && !defined(_WCHAR_T_) && !defined(_WCHAR_T_DEFINED)
-#define _WCHAR_T
-#define _WCHAR_T_
-#define _WCHAR_T_DEFINED
-#if   (_WCHAR_T_SIZE + 0) == 1
-typedef unsigned char wchar_t;
-#elif (_WCHAR_T_SIZE + 0) == 2
-typedef unsigned short wchar_t;
-#elif (_WCHAR_T_SIZE + 0) == 4
-typedef unsigned int wchar_t;
-#else
-typedef unsigned short wchar_t;
-#endif
+#ifndef _PTRDIFF_T_DEFINED_
+#define _PTRDIFF_T_DEFINED_
+typedef long ptrdiff_t;
 #endif
 
-#endif /* __STDDEF */
+
+#endif /* _STDDEF_H_ */
