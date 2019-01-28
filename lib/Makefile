@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = include scripts src startup
+DIRS = include libc libm scripts startup
 
 .PHONY:		all install clean
 

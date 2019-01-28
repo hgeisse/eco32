@@ -1,0 +1,17 @@
+		h-file	c-file(s)	tested
+
+assert		no	no		no
+ctype		no	no		no
+errno		no	no		no
+float		no	no		no
+limits		no	no		no
+locale		no	no		no
+math		no	no		no
+setjmp		no	no		no
+signal		no	no		no
+stdarg		no	no		no
+stddef		no	no		no
+stdio		no	no		no
+stdlib		no	no		no
+string		no	no		no
+time		no	no		no
