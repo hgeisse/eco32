@@ -1,0 +1,18 @@
+#
+# Makefile to run library tests
+#
+
+BUILD = ..
+
+.PHONY:		all clean
+
+all:
+		@echo "Please choose one of the following targets:"
+		@echo "    run-crt0test (test runtime startup)"
+		@echo "    clean"
+
+run-crt0test:
+		$(BUILD)/bin/sim -i -s 1 -t 0 -l crt0test.bin
+
+clean:
+		rm -f *~

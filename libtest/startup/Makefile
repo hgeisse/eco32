@@ -11,6 +11,8 @@ BIN = crt0test.bin
 all:		$(BIN)
 
 install:	$(BIN)
+		mkdir -p $(BUILD)/libtest
+		cp $(BIN) $(BUILD)/libtest
 
 run:		$(BIN)
 		$(BUILD)/bin/sim -i -s 1 -t 0 -l $(BIN)

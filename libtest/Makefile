@@ -17,8 +17,8 @@ install:
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i install ; \
 		done
-		#mkdir -p $(BUILD)/libtest
-		#cp Makefile.run $(BUILD)/libtest/Makefile
+		mkdir -p $(BUILD)/libtest
+		cp Makefile.run $(BUILD)/libtest/Makefile
 
 clean:
 		for i in $(DIRS) ; do \
