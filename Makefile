@@ -4,7 +4,8 @@
 
 VERSION = 0.29
 
-DIRS = binutils lib tools sim simtest fpga hwtests monitor disk stdalone
+DIRS = binutils lib libtest tools sim simtest \
+       fpga hwtests monitor disk stdalone
 BUILD = `pwd`/build
 
 .PHONY:		all doc compiler builddir clean dist
