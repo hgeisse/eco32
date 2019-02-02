@@ -7,11 +7,13 @@
 #define _STDLIB_H_
 
 
+#define RAND_MAX	32767
+
 #define EXIT_SUCCESS	0
 #define EXIT_FAILURE	1
 
 #ifndef NULL
-#define NULL		((void*)0)
+#define NULL		((void *) 0)
 #endif
 
 

@@ -8,11 +8,11 @@
 
 
 #ifndef NULL
-#define NULL		((void*)0)
+#define NULL		((void *) 0)
 #endif
 
 #ifndef offsetof
-#define offsetof(t,m)	((size_t)((char*)&((t*)0)->m - (char*)0))
+#define offsetof(t,m)	((size_t) ((char *) &((t *) 0)->m - (char *) 0))
 #endif
 
 

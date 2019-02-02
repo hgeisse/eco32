@@ -8,7 +8,7 @@
 
 
 #ifndef NULL
-#define NULL		((void*)0)
+#define NULL		((void *) 0)
 #endif
 
 #define FILENAME_MAX	20
