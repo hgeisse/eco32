@@ -11,6 +11,8 @@ all:
 install:
 		mkdir -p $(BUILD)/include
 		cp *.h $(BUILD)/include
+		mkdir -p $(BUILD)/include/sys
+		cp sys/*.h $(BUILD)/include/sys
 
 clean:
-		rm -f *~
+		rm -f *~ sys/*~
