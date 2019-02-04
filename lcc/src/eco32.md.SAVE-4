@@ -40,7 +40,7 @@
  * callee-save registers are preserved across procedure calls
  *
  * tree grammar terminals produced by:
- *   ops c=1 s=2 i=4 l=4 h=4 f=4 d=4 x=4 p=4
+ *   ops c=1 s=2 i=4 l=4 h=4 f=4 d=8 x=8 p=4
  */
 
 #include "c.h"
@@ -92,33 +92,33 @@ static int tmpregs[] = { 3, 9, 10 };
 
 %start stmt
 
-%term CNSTF4=4113
+%term CNSTF4=4113 CNSTF8=8209
 %term CNSTI1=1045 CNSTI2=2069 CNSTI4=4117
 %term CNSTP4=4119
 %term CNSTU1=1046 CNSTU2=2070 CNSTU4=4118
 
 %term ARGB=41
-%term ARGF4=4129
+%term ARGF4=4129 ARGF8=8225
 %term ARGI4=4133
 %term ARGP4=4135
 %term ARGU4=4134
 
 %term ASGNB=57
-%term ASGNF4=4145
+%term ASGNF4=4145 ASGNF8=8241
 %term ASGNI1=1077 ASGNI2=2101 ASGNI4=4149
 %term ASGNP4=4151
 %term ASGNU1=1078 ASGNU2=2102 ASGNU4=4150
 
 %term INDIRB=73
-%term INDIRF4=4161
+%term INDIRF4=4161 INDIRF8=8257
 %term INDIRI1=1093 INDIRI2=2117 INDIRI4=4165
 %term INDIRP4=4167
 %term INDIRU1=1094 INDIRU2=2118 INDIRU4=4166
 
-%term CVFF4=4209
+%term CVFF4=4209 CVFF8=8305
 %term CVFI4=4213
 
-%term CVIF4=4225
+%term CVIF4=4225 CVIF8=8321
 %term CVII1=1157 CVII2=2181 CVII4=4229
 %term CVIU1=1158 CVIU2=2182 CVIU4=4230
 
@@ -128,17 +128,17 @@ static int tmpregs[] = { 3, 9, 10 };
 %term CVUP4=4279
 %term CVUU1=1206 CVUU2=2230 CVUU4=4278
 
-%term NEGF4=4289
+%term NEGF4=4289 NEGF8=8385
 %term NEGI4=4293
 
 %term CALLB=217
-%term CALLF4=4305
+%term CALLF4=4305 CALLF8=8401
 %term CALLI4=4309
 %term CALLP4=4311
 %term CALLU4=4310
 %term CALLV=216
 
-%term RETF4=4337
+%term RETF4=4337 RETF8=8433
 %term RETI4=4341
 %term RETP4=4343
 %term RETU4=4342
@@ -150,12 +150,12 @@ static int tmpregs[] = { 3, 9, 10 };
 
 %term ADDRLP4=4391
 
-%term ADDF4=4401
+%term ADDF4=4401 ADDF8=8497
 %term ADDI4=4405
 %term ADDP4=4407
 %term ADDU4=4406
 
-%term SUBF4=4417
+%term SUBF4=4417 SUBF8=8513
 %term SUBI4=4421
 %term SUBP4=4423
 %term SUBU4=4422
@@ -181,35 +181,35 @@ static int tmpregs[] = { 3, 9, 10 };
 %term BXORI4=4533
 %term BXORU4=4534
 
-%term DIVF4=4545
+%term DIVF4=4545 DIVF8=8641
 %term DIVI4=4549
 %term DIVU4=4550
 
-%term MULF4=4561
+%term MULF4=4561 MULF8=8657
 %term MULI4=4565
 %term MULU4=4566
 
-%term EQF4=4577
+%term EQF4=4577 EQF8=8673
 %term EQI4=4581
 %term EQU4=4582
 
-%term GEF4=4593
+%term GEF4=4593 GEF8=8689
 %term GEI4=4597
 %term GEU4=4598
 
-%term GTF4=4609
+%term GTF4=4609 GTF8=8705
 %term GTI4=4613
 %term GTU4=4614
 
-%term LEF4=4625
+%term LEF4=4625 LEF8=8721
 %term LEI4=4629
 %term LEU4=4630
 
-%term LTF4=4641
+%term LTF4=4641 LTF8=8737
 %term LTI4=4645
 %term LTU4=4646
 
-%term NEF4=4657
+%term NEF4=4657 NEF8=8753
 %term NEI4=4661
 %term NEU4=4662
 
@@ -218,7 +218,7 @@ static int tmpregs[] = { 3, 9, 10 };
 %term LABELV=600
 
 %term LOADB=233
-%term LOADF4=4321
+%term LOADF4=4321 LOADF8=8417
 %term LOADI1=1253 LOADI2=2277 LOADI4=4325
 %term LOADP4=4327
 %term LOADU1=1254 LOADU2=2278 LOADU4=4326
@@ -396,8 +396,8 @@ reg:	DIVF4(reg,reg)		";FP: div.s $f%c,$f%0,$f%1\n"	1
 reg:	LOADF4(reg)		";FP: mov.s $f%c,$f%0\n"	1
 reg:	NEGF4(reg)		";FP: neg.s $f%c,$f%0\n"	1
 reg:	CVFF4(reg)		";FP: cvt.s.d $f%c,$f%0\n"	1
-reg:	CVIF4(reg)		";FP: mtc1 $%0,$f%c; cvt.s.w $f%c,$f%c\n"     1
-reg:	CVFI4(reg)		";FP: trunc.w.s $f2,$f%0,$%c; mfc1 $%c,$f2\n" 1
+reg:	CVIF4(reg)		";FP: mtc1 $%0,$f%c; cvt.s.w $f%c,$f%c\n"      1
+reg:	CVFI4(reg)		";FP: trunc.w.s $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i == 4 ? 1 : LBURG_MAX)
 stmt:	EQF4(reg,reg)		";FP: c.eq.s $f%0,$f%1; bc1t %a\n"	1
 stmt:	LEF4(reg,reg)		";FP: c.ule.s $f%0,$f%1; bc1t %a\n"	1
 stmt:	LTF4(reg,reg)		";FP: c.ult.s $f%0,$f%1; bc1t %a\n"	1
@@ -407,6 +407,29 @@ stmt:	NEF4(reg,reg)		";FP: c.eq.s $f%0,$f%1; bc1f %a\n"	1
 reg:	CALLF4(ar)		"\tjal\t%0\n"			1
 stmt:	RETF4(reg)		"# ret\n"			1
 stmt:	ARGF4(reg)		"# arg\n"			1
+
+reg:	INDIRF8(VREGP)		"# read register\n"
+stmt:	ASGNF8(VREGP,reg)	"# write register\n"
+reg:	INDIRF8(addr)		";FP: l.d $f%c,%0\n"		1
+stmt:	ASGNF8(addr,reg)	";FP: s.d $f%1,%0\n"		1
+reg:	ADDF8(reg,reg)		";FP: add.d $f%c,$f%0,$f%1\n"	1
+reg:	SUBF8(reg,reg)		";FP: sub.d $f%c,$f%0,$f%1\n"	1
+reg:	MULF8(reg,reg)		";FP: mul.d $f%c,$f%0,$f%1\n"	1
+reg:	DIVF8(reg,reg)		";FP: div.d $f%c,$f%0,$f%1\n"	1
+reg:	LOADF8(reg)		";FP: mov.d $f%c,$f%0\n"	1
+reg:	NEGF8(reg)		";FP: neg.d $f%c,$f%0\n"	1
+reg:	CVFF8(reg)		";FP: cvt.d.s $f%c,$f%0\n"	1
+reg:	CVIF8(reg)		";FP: mtc1 $%0,$f%c; cvt.d.w $f%c,$f%c\n"      1
+reg:	CVFI4(reg)		";FP: trunc.w.d $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i == 8 ? 1 : LBURG_MAX)
+stmt:	EQF8(reg,reg)		";FP: c.eq.d $f%0,$f%1; bc1t %a\n"	1
+stmt:	LEF8(reg,reg)		";FP: c.ule.d $f%0,$f%1; bc1t %a\n"	1
+stmt:	LTF8(reg,reg)		";FP: c.ult.d $f%0,$f%1; bc1t %a\n"	1
+stmt:	GEF8(reg,reg)		";FP: c.lt.d $f%0,$f%1; bc1f %a\n"	1
+stmt:	GTF8(reg,reg)		";FP: c.le.d $f%0,$f%1; bc1f %a\n"	1
+stmt:	NEF8(reg,reg)		";FP: c.eq.d $f%0,$f%1; bc1f %a\n"	1
+reg:	CALLF8(ar)		"\tjal\t%0\n"			1
+stmt:	RETF8(reg)		"# ret\n"			1
+stmt:	ARGF8(reg)		"# arg\n"			1
 
 
 %%
@@ -941,8 +964,8 @@ Interface eco32IR = {
   4, 4, 0,  /* long */
   4, 4, 0,  /* long long */
   4, 4, 1,  /* float */
-  4, 4, 1,  /* double */
-  4, 4, 1,  /* long double */
+  8, 4, 1,  /* double */
+  8, 4, 1,  /* long double */
   4, 4, 0,  /* T * */
   0, 1, 0,  /* struct */
   0,        /* little_endian */
