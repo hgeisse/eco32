@@ -4,18 +4,11 @@
 
 
 #include "math.h"
-
-
-typedef unsigned int Word;
-
-typedef union {
-  float f;
-  Word w;
-} FP_Word;
+#include "sys/fp.h"
 
 
 double fabs(double x) {
-  FP_Word X;
+  _FP_Union X;
 
   X.f = x;
   X.w &= ~0x80000000;
