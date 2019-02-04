@@ -13,4 +13,15 @@ typedef char *va_list;
 #endif
 
 
+#define va_start(list,last)	((void) ((list) = ( \
+				    sizeof(last) < 4 ? \
+				      (char *) ((int *) &(last) + 1) : \
+				      (char *) (&(last) + 1) \
+				  )))
+
+#define va_arg(list,type)	()
+
+#define va_end(list)		((void) 0)
+
+
 #endif /* _STDARG_H_ */
