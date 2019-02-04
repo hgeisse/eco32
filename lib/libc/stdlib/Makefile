@@ -4,7 +4,7 @@
 
 BUILD = ../../../build
 
-SRCS = stdlib.c
+SRCS = strtol.c rand.c malloc.c getenv.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 
 .PHONY:		all install clean

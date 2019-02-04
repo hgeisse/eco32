@@ -1,5 +1,5 @@
 /*
- * stdlib -- utility functions
+ * strtol.c -- convert string to long
  */
 
 
@@ -7,10 +7,6 @@
 
 
 long strtol(const char *s, char **endp, int base) {
+  /* !!!!! */
   return 0;
-}
-
-
-char *getenv(const char *name) {
-  return NULL;
 }
