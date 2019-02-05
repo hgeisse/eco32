@@ -1,0 +1,24 @@
+		c-file(s)	tested
+
+sin		no		no
+cos		no		no
+tan		no		no
+asin		no		no
+acos		no		no
+atan		no		no
+atan2		no		no
+sinh		no		no
+cosh		no		no
+tanh		no		no
+exp		no		no
+log		no		no
+log10		no		no
+pow		no		no
+sqrt		no		no
+ceil		no		no
+floor		no		no
+fabs		yes		no
+ldexp		no		no
+frexp		no		no
+modf		no		no
+fmod		no		no
