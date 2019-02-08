@@ -3,6 +3,9 @@
  */
 
 
+#include "../include/limits.h"
+
+
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
@@ -232,45 +235,6 @@ void getLine(char *prompt, char *line, int max) {
 
 /*
  * Count the number of characters needed to represent
- * a given number in base 10.
- */
-int countPrintn(long n) {
-  long a;
-  int res;
-
-  res = 0;
-  if (n < 0) {
-    res++;
-    n = -n;
-  }
-  a = n / 10;
-  if (a != 0) {
-    res += countPrintn(a);
-  }
-  return res + 1;
-}
-
-
-/*
- * Output a number in base 10.
- */
-void printn(long n) {
-  long a;
-
-  if (n < 0) {
-    putchar('-');
-    n = -n;
-  }
-  a = n / 10;
-  if (a != 0) {
-    printn(a);
-  }
-  putchar(n % 10 + '0');
-}
-
-
-/*
- * Count the number of characters needed to represent
  * a given number in a given base.
  */
 int countPrintu(unsigned long n, unsigned long b) {
@@ -301,6 +265,53 @@ void printu(unsigned long n, unsigned long b, Bool upperCase) {
   } else {
     putchar("0123456789abcdef"[n % b]);
   }
+}
+
+
+/*
+ * Count the number of characters needed to represent
+ * a given number in base 10.
+ */
+int countPrintn(long n) {
+  long a;
+  int res;
+
+  res = 0;
+  if (n < 0) {
+    res++;
+    if (n == LONG_MIN) {
+      res += countPrintu((ULONG_MAX - 1) / 2 + 1, 10);
+      return res;
+    }
+    n = -n;
+  }
+  a = n / 10;
+  if (a != 0) {
+    res += countPrintn(a);
+  }
+  return res + 1;
+}
+
+
+/*
+ * Output a number in base 10.
+ */
+void printn(long n) {
+  long a;
+
+  if (n < 0) {
+    putchar('-');
+    if (n == LONG_MIN) {
+      printu((ULONG_MAX - 1) / 2 + 1, 10, 0);
+      return;
+    }
+    n = -n;
+  }
+  a = n / 10;
+  if (a != 0) {
+    printn(a);
+  }
+  putchar(n % 10 + '0');
 }
 
 
