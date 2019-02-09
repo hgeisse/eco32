@@ -1,18 +1,16 @@
 #
-# Makefile for crt0 test
+# Makefile for library test
 #
 
-BUILD = ../../build
+BUILD = ../../../build
 
-SRC = crt0test.c
-EXE = crt0test
-BIN = crt0test.bin
+SRC = locale.c
+EXE = locale
+BIN = locale.bin
 
 all:		$(BIN)
 
 install:	$(BIN)
-		mkdir -p $(BUILD)/libtest
-		cp $(BIN) $(BUILD)/libtest
 
 run:		$(BIN)
 		$(BUILD)/bin/sim -i -s 1 -t 0 -l $(BIN)

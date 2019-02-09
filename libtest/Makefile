@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = startup libc libm
+DIRS = abi libc libm
 
 .PHONY:		all install clean
 
