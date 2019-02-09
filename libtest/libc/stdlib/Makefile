@@ -2,10 +2,9 @@
 # Makefile for building library tests
 #
 
-BUILD = ../../build
+BUILD = ../../../build
 
-#DIRS = ctype float limits locale stdarg stdlib string
-DIRS =
+DIRS = rand
 
 .PHONY:		all install clean
 

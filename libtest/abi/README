@@ -1,0 +1,58 @@
+1. Register Usage
+-----------------
+
+$0   always zero
+$1   reserved for assembler
+$2   func return value
+$3   func return value
+$4   proc/func argument
+$5   proc/func argument
+$6   proc/func argument
+$7   proc/func argument
+$8   temporary register (caller-save)
+$9   temporary register (caller-save)
+$10  temporary register (caller-save)
+$11  temporary register (caller-save)
+$12  temporary register (caller-save)
+$13  temporary register (caller-save)
+$14  temporary register (caller-save)
+$15  temporary register (caller-save)
+$16  register variable  (callee-save)
+$17  register variable  (callee-save)
+$18  register variable  (callee-save)
+$19  register variable  (callee-save)
+$20  register variable  (callee-save)
+$21  register variable  (callee-save)
+$22  register variable  (callee-save)
+$23  register variable  (callee-save)
+$24  temporary register (caller-save)
+$25  temporary register (caller-save)
+$26  reserved for OS kernel
+$27  reserved for OS kernel
+$28  reserved for OS kernel
+$29  stack pointer
+$30  interrupt return address
+$31  proc/func return address
+
+caller-save registers are not preserved across procedure calls
+callee-save registers are preserved across procedure calls
+
+
+2. Data Type Storage Layout, Alignment, Padding
+-----------------------------------------------
+
+char         : 1 byte, no restrictions
+short        : 2 bytes, aligned on 2-byte boundary
+int          : 4 bytes, aligned on 4-byte boundary
+long         : 4 bytes, aligned on 4-byte boundary
+long long    : 4 bytes, aligned on 4-byte boundary
+float        : 4 bytes, aligned on 4-byte boundary
+double       : 4 bytes, aligned on 4-byte boundary
+long double  : 4 bytes, aligned on 4-byte boundary
+Type *       : 4 bytes, aligned on 4-byte boundary
+struct       : as many bytes as needed,
+               aligned for most restrictive component
+
+
+3. Stack Frame Layout, Calling Conventions
+------------------------------------------
