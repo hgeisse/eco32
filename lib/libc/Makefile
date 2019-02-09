@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = ctype errno stdio stdlib string
+DIRS = ctype errno stdio stdlib string syscall
 OBJS = $(wildcard $(patsubst %,%/*.o,$(DIRS)))
 LIB = libc.a
 

@@ -4,7 +4,7 @@
 
 
 #include "stdlib.h"
-#include "sys/sc.h"
+#include "sys/syscall.h"
 
 
 #define MIN_ALLOC	1024	/* minimum number of units to request */
