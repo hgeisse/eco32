@@ -1270,3 +1270,32 @@ the simulator, which sets the bit (and clears the bit if a matching
 entry is found). In this way the MSB was never cleared automatically,
 which led to strange behavior in the NetBSD kernel. Solved in favor
 of the simulator.
+
+----------------------------------------------------------------
+
+In the meantime...
+
+  - ECO32 running on Terasic/Altera DE2-115 board
+  - SD card interface completed (no interrupts yet)
+  - HW/SW race conditions on I/O registers eliminated
+  - Martin Hofmann's Linux port to ECO32 is running!
+  - still no pipelined version of ECO32
+  - lcc toolchain: script-controlled linking
+  - lcc toolchain: static libraries
+
+----------------------------------------------------------------
+
+11-Feb-2019
+And now for something completely different... ;-)
+My next goal is to add floating-point hardware to the processor. In
+the interest of a small and elegant implementation, it will be only
+single-precision (32-bit) floating-point, without a special register
+file (so that the integer registers are used also for fp operations).
+This also spares us the trouble of defining data transfer instructions,
+from integer to fp registers as well as from fp registers to memory.
+A robust design needs quite a bit of experimentation, so the first
+task is to integrate basic fp arithmetic into the simulator and the
+tool chain. First step: Re-generate tree grammar terminal symbols in
+the ECO32 machine description for lcc, so that no double-precision fp
+operations are present any longer, and delete all productions using
+them.
