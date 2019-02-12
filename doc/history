@@ -1298,4 +1298,35 @@ task is to integrate basic fp arithmetic into the simulator and the
 tool chain. First step: Re-generate tree grammar terminal symbols in
 the ECO32 machine description for lcc, so that no double-precision fp
 operations are present any longer, and delete all productions using
-them.
+them. Done.
+
+12-Feb-2019
+We don't have any opcodes left for fp operations. So we must scan all
+opcodes looking for redundancies. Four areas are promising:
+ - conditional branching instructions
+ - TLB instructions
+ - integer remainder instructions
+Let us inspect one after the other.
+
+1) Conditional branching instructions:
+The following propositions hold, for signed and for unsigned comparisons:
+   a >= b    <==>    b <= a
+   a > b     <==>    b < a
+This enables us to substitute four of the conditional branches:
+   bge  r1,r2,lbl   -->   ble  r2,r1,lbl
+   bgeu r1,r2,lbl   -->   bleu r2,r1,lbl
+   bgt  r1,r2,lbl   -->   blt  r2,r1,lbl
+   bgtu r1,r2,lbl   -->   bltu r2,r1,lbl
+The substituted branch instructions need not be present as machine
+instructions, so their opcodes are free now. Two remarks:
+a) It would be nice to be able to use the eliminated instructions in
+assembler programs (although in machine code they would disappear).
+This is easy to achieve: perform the substitution in the assembler.
+Note that the compiler may then issue these instructions unmodified.
+b) As a consequence, a disassembler is no longer able to decide
+which source form it should output and will choose the one which is
+really present in the hardware. I think this is tolerable.
+Compiler  : nothing to be done
+Assembler : !! FIXME !!
+Linker    : nothing to be done
+Simulator : finished

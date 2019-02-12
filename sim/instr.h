@@ -78,10 +78,6 @@
 #define OP_BLEU		0x23
 #define OP_BLT		0x24
 #define OP_BLTU		0x25
-#define OP_BGE		0x26
-#define OP_BGEU		0x27
-#define OP_BGT		0x28
-#define OP_BGTU		0x29
 
 #define OP_J		0x2A
 #define OP_JR		0x2B

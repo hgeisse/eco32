@@ -347,26 +347,6 @@ static void execNextInstruction(void) {
         next += SEXT16(immed) << 2;
       }
       break;
-    case OP_BGE:
-      if ((signed int) RR(reg1) >= (signed int) RR(reg2)) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
-    case OP_BGEU:
-      if (RR(reg1) >= RR(reg2)) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
-    case OP_BGT:
-      if ((signed int) RR(reg1) > (signed int) RR(reg2)) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
-    case OP_BGTU:
-      if (RR(reg1) > RR(reg2)) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
     case OP_J:
       next += SEXT26(offset) << 2;
       break;
