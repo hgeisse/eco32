@@ -23,7 +23,7 @@ Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
 Monitor   : !! FIXME !!
-Simulator : !! FIXME !!
+Simulator : done
 Hardware  : !! FIXME !!
 
 2) TLB instructions:
@@ -44,7 +44,7 @@ Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
 Monitor   : !! FIXME !!
-Simulator : !! FIXME !!
+Simulator : done
 Hardware  : !! FIXME !!
 
 3) Integer remainder instructions:

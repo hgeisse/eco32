@@ -484,29 +484,27 @@ static void execNextInstruction(void) {
           break;
       }
       break;
-    case OP_TBS:
+    case OP_TCTL:
       if (UM != 0) {
         throwException(EXC_PRV_INSTRCT);
       }
-      mmuTbs();
-      break;
-    case OP_TBWR:
-      if (UM != 0) {
-        throwException(EXC_PRV_INSTRCT);
+      switch (immed) {
+        case 2:
+          mmuTbs();
+          break;
+        case 3:
+          mmuTbwr();
+          break;
+        case 4:
+          mmuTbri();
+          break;
+        case 5:
+          mmuTbwi();
+          break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
+          break;
       }
-      mmuTbwr();
-      break;
-    case OP_TBRI:
-      if (UM != 0) {
-        throwException(EXC_PRV_INSTRCT);
-      }
-      mmuTbri();
-      break;
-    case OP_TBWI:
-      if (UM != 0) {
-        throwException(EXC_PRV_INSTRCT);
-      }
-      mmuTbwi();
       break;
     case OP_LDLW:
       addr = RR(reg1) + SEXT16(immed);

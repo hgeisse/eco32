@@ -58,10 +58,7 @@ Instr instrTbl[] = {
   { "stb",   FORMAT_RRS, OP_STB  },
   { "mvfs",  FORMAT_RH,  OP_MVFS },
   { "mvts",  FORMAT_RH,  OP_MVTS },
-  { "tbs",   FORMAT_N,   OP_TBS  },
-  { "tbwr",  FORMAT_N,   OP_TBWR },
-  { "tbri",  FORMAT_N,   OP_TBRI },
-  { "tbwi",  FORMAT_N,   OP_TBWI },
+  { "tctl",  FORMAT_N,   OP_TCTL },
   { "ldlw",  FORMAT_RRS, OP_LDLW },
   { "stcw",  FORMAT_RRS, OP_STCW },
 };
