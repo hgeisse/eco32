@@ -501,9 +501,6 @@ static void execNextInstruction(void) {
         case 5:
           mmuTbwi();
           break;
-        default:
-          throwException(EXC_ILL_INSTRCT);
-          break;
       }
       break;
     case OP_LDLW:
