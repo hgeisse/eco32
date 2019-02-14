@@ -16,7 +16,7 @@ a) It would be nice to be able to use the eliminated instructions in
 assembler programs (although in machine code they would disappear).
 This is easy to achieve: perform the substitution in the assembler.
 Note that the compiler may then issue these instructions unmodified.
-b) As a consequence, a disassembler is no longer able to decide
+b) As a consequence, the disassembler is no longer able to decide
 which source form it should output and will choose the one which is
 really present in the hardware. I think this is tolerable.
 Compiler  : !! FIXME !!
@@ -40,11 +40,15 @@ the original mnemonics to be used as aliases for "tctl <n>":
   tctl 3    tbwr    (translation buffer write random)
   tctl 4    tbri    (translation buffer read indexed)
   tctl 5    tbwi    (translation buffer write indexed)
+But wait: It is even better to drop "tctl <n>" altogether, in the
+assembler as well as the disassembler, and to request using the
+"aliases" (which then are no longer aliases, but acquire the status
+of first-class instructions, albeit with a different encoding).
 Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
 Monitor   : !! FIXME !!
-Simulator : done
+Simulator : not yet done
 Hardware  : !! FIXME !!
 
 3) Cache control instructions:
@@ -56,11 +60,13 @@ assembler mnemonics for the various cache control operations:
   cctl 4    ici     (instruction cache invalidate)
   cctl 6    cci     (combined caches invalidate)
   cctl 7    ccs     (combined caches synchronize)
+Again, we should drop the bare hardware instruction "cctl <n>" in
+the assembler/disassembler, and request using the "aliases" only.
 Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
 Monitor   : !! FIXME !!
-Simulator : done
+Simulator : not yet done
 Hardware  : !! FIXME !!
 
 4) Integer remainder instructions:
