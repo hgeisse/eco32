@@ -36,10 +36,10 @@ pattern of the cctl instruction: reserve a single opcode for
 "translation control" (named tctl, say) and specify the actual
 TLB operation in the remaining bits. The assembler should allow
 the original mnemonics to be used as aliases for "tctl <n>":
-  tbs     tctl 2    (translation buffer search)
-  tbwr    tctl 3    (translation buffer write random)
-  tbri    tctl 4    (translation buffer read indexed)
-  tbwi    tctl 5    (translation buffer write indexed)
+  tctl 2    tbs     (translation buffer search)
+  tctl 3    tbwr    (translation buffer write random)
+  tctl 4    tbri    (translation buffer read indexed)
+  tctl 5    tbwi    (translation buffer write indexed)
 Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
@@ -47,7 +47,23 @@ Monitor   : !! FIXME !!
 Simulator : done
 Hardware  : !! FIXME !!
 
-3) Integer remainder instructions:
+3) Cache control instructions:
+Here we cannot save any opcode, as there is already only a single
+one used. But in the interest of being consistent, we should supply
+assembler mnemonics for the various cache control operations:
+  cctl 2    dci     (data cache invalidate)
+  cctl 3    dcf     (data cache flush)
+  cctl 4    ici     (instruction cache invalidate)
+  cctl 6    cci     (combined caches invalidate)
+  cctl 7    ccs     (combined caches synchronize)
+Compiler  : !! FIXME !!
+Assembler : !! FIXME !!
+Linker    : !! FIXME !!
+Monitor   : !! FIXME !!
+Simulator : done
+Hardware  : !! FIXME !!
+
+4) Integer remainder instructions:
 The four remainder instructions are used to compute the remainder
 of an integer division operation. The hardware unavoidably produces
 these remainders together with the quotient when executing a division
@@ -60,22 +76,6 @@ where the software can read it, and thus the four remainder instructions
 are no longer needed. Of course they should be available as synthesized
 instructions in the assembler (and the compiler can output them without
 any changes).
-Compiler  : !! FIXME !!
-Assembler : !! FIXME !!
-Linker    : !! FIXME !!
-Monitor   : !! FIXME !!
-Simulator : !! FIXME !!
-Hardware  : !! FIXME !!
-
-4) Cache control instructions:
-Here we cannot save any opcode, as there is already only a single
-one used. But in the interest of being consistent, we should supply
-assembler mnemonics for the various cache control operations:
-  dci     cctl 2    (data cache invalidate)
-  dcf     cctl 3    (data cache flush)
-  ici     cctl 4    (instruction cache invalidate)
-  cci     cctl 6    (combined caches invalidate)
-  ccs     cctl 7    (combined caches synchronize)
 Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
