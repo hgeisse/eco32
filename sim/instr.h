@@ -21,6 +21,7 @@
 #define FORMAT_J	9	/* no registers and a 26 bit signed
 				   offset operand */
 #define FORMAT_JR	10	/* one register operand */
+#define FORMAT_XN	11	/* extended, no operands */
 
 
 #define MASK(n)		((((Word) 1) << n) - 1)
@@ -69,6 +70,11 @@
 #define OP_SARI		0x1D
 
 #define OP_CCTL		0x1E
+#define XOP_DCI		0x02
+#define XOP_DCF		0x03
+#define XOP_ICI		0x04
+#define XOP_CCI		0x06
+#define XOP_CCS		0x07
 
 #define OP_LDHI		0x1F
 
@@ -101,15 +107,21 @@
 #define OP_MVTS		0x39
 
 #define OP_TCTL		0x3A
+#define XOP_TBS		0x02
+#define XOP_TBWR	0x03
+#define XOP_TBRI	0x04
+#define XOP_TBWI	0x05
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
 
 
-typedef struct {
-  char *name;
-  int format;
-  Byte opcode;
+typedef struct instr {
+  char *name;		/* mnemonic */
+  int format;		/* format */
+  Byte opcode;		/* main opcode */
+  Byte xopcode;		/* extended opcode */
+  struct instr *alt;	/* alternatives with same main opcode */
 } Instr;
 
 

@@ -365,6 +365,17 @@ char *asmInstr(char *line, Word addr, Word *instrPtr) {
       result = ((Word) instr->opcode << 26) |
                (r1 << 21);
       break;
+    case FORMAT_XN:
+      /* extended, no operands */
+      if (n > 1) {
+        return msgs[4];
+      }
+      if (n < 1) {
+        return msgs[5];
+      }
+      result = ((Word) instr->opcode << 26) |
+               ((Word) instr->xopcode);
+      break;
     default:
       return msgs[3];
   }

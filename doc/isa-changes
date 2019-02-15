@@ -48,7 +48,7 @@ Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
 Monitor   : !! FIXME !!
-Simulator : not yet done
+Simulator : done
 Hardware  : !! FIXME !!
 
 3) Cache control instructions:
@@ -60,13 +60,13 @@ assembler mnemonics for the various cache control operations:
   cctl 4    ici     (instruction cache invalidate)
   cctl 6    cci     (combined caches invalidate)
   cctl 7    ccs     (combined caches synchronize)
-Again, we should drop the bare hardware instruction "cctl <n>" in
-the assembler/disassembler, and request using the "aliases" only.
+As with the TLB instructions, it is better to drop "cctl <n>" and
+use the "alias" instructions dci..ccs exclusively.
 Compiler  : !! FIXME !!
 Assembler : !! FIXME !!
 Linker    : !! FIXME !!
 Monitor   : !! FIXME !!
-Simulator : not yet done
+Simulator : done
 Hardware  : !! FIXME !!
 
 4) Integer remainder instructions:

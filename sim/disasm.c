@@ -70,6 +70,18 @@ static void disasmJR(char *opName, int r1) {
 }
 
 
+static void disasmXN(Instr *ip, Byte xopcode) {
+  while (ip != NULL && ip->xopcode != xopcode) {
+    ip = ip->alt;
+  }
+  if (ip == NULL) {
+    disasmN("???", 0);
+  } else {
+    sprintf(instrBuffer, "%-7s", ip->name);
+  }
+}
+
+
 char *disasm(Word instr, Word locus) {
   Byte opcode;
   Instr *ip;
@@ -132,6 +144,9 @@ char *disasm(Word instr, Word locus) {
         break;
       case FORMAT_JR:
         disasmJR(ip->name, (instr >> 21) & 0x1F);
+        break;
+      case FORMAT_XN:
+        disasmXN(ip, instr & 0x000000FF);
         break;
       default:
         error("illegal entry in instruction table");
