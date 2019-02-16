@@ -69,6 +69,14 @@ Monitor   : !! FIXME !!
 Simulator : done
 Hardware  : !! FIXME !!
 
+The following changes are more involved, because they all use
+an additional special register. This register holds user data,
+so that it must be saved (and restored) on interrupts. On top of
+that, change 6) requires a special register which can be written
+in user mode, an operation that isn't currently allowed.
+
+PLEASE NOTE: THE FOLLOWING CHANGES ARE NOT IMPLEMENTED YET!
+
 4) Integer remainder instructions:
 The four remainder instructions are used to compute the remainder
 of an integer division operation. The hardware unavoidably produces
