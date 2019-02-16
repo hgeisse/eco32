@@ -376,6 +376,29 @@ char *asmInstr(char *line, Word addr, Word *instrPtr) {
       result = ((Word) instr->opcode << 26) |
                ((Word) instr->xopcode);
       break;
+    case FORMAT_XRRR:
+      /* extended, three register operands */
+      if (n > 4) {
+        return msgs[4];
+      }
+      if (n < 4) {
+        return msgs[5];
+      }
+      if (!asmReg(tokens[1], &r1)) {
+        return msgs[6];
+      }
+      if (!asmReg(tokens[2], &r2)) {
+        return msgs[6];
+      }
+      if (!asmReg(tokens[3], &r3)) {
+        return msgs[6];
+      }
+      result = ((Word) instr->opcode << 26) |
+               ((Word) instr->xopcode) |
+               (r2 << 21) |
+               (r3 << 16) |
+               (r1 << 11);
+      break;
     default:
       return msgs[3];
   }

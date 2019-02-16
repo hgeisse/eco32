@@ -22,6 +22,7 @@
 				   offset operand */
 #define FORMAT_JR	10	/* one register operand */
 #define FORMAT_XN	11	/* extended, no operands */
+#define FORMAT_XRRR	12	/* extended, three register operands */
 
 
 #define MASK(n)		((((Word) 1) << n) - 1)
@@ -111,6 +112,12 @@
 #define XOP_TBWR	0x03
 #define XOP_TBRI	0x04
 #define XOP_TBWI	0x05
+
+#define OP_FPAR		0x3B
+#define XOP_FADD	0x00
+#define XOP_FSUB	0x01
+#define XOP_FMUL	0x02
+#define XOP_FDIV	0x03
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
