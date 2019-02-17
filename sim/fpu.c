@@ -35,9 +35,3 @@ Word fpDiv(Word x, Word y) {
   /* !!!!! FIXME !!!!! */
   return 0;
 }
-
-
-Word fpSqrt(Word x) {
-  /* !!!!! FIXME !!!!! */
-  return 0;
-}

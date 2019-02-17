@@ -14,6 +14,7 @@
 #include "except.h"
 #include "instr.h"
 #include "cpu.h"
+#include "fpu.h"
 #include "trace.h"
 #include "mmu.h"
 #include "icache.h"
@@ -154,7 +155,7 @@ static void handleInterrupts(void) {
 static void execNextInstruction(void) {
   Word instr;
   Word next;
-  int op, reg1, reg2, reg3;
+  int op, xop, reg1, reg2, reg3;
   Half immed;
   Word offset;
   int scnt;
@@ -170,6 +171,7 @@ static void execNextInstruction(void) {
   traceExec(instr, pc);
   /* decode the instruction */
   op = (instr >> 26) & 0x3F;
+  xop = instr & 0x000000FF;
   reg1 = (instr >> 21) & 0x1F;
   reg2 = (instr >> 16) & 0x1F;
   reg3 = (instr >> 11) & 0x1F;
@@ -301,13 +303,13 @@ static void execNextInstruction(void) {
       WR(reg2, smsk | (RR(reg1) >> scnt));
       break;
     case OP_CCTL:
-      if (immed & 0x04) {
+      if (xop & 0x04) {
         /* icache ctrl */
         icacheInvalidate();
       }
-      if (immed & 0x02) {
+      if (xop & 0x02) {
         /* dcache ctrl */
-        if (immed & 0x01) {
+        if (xop & 0x01) {
           dcacheFlush();
         } else {
           dcacheInvalidate();
@@ -488,18 +490,34 @@ static void execNextInstruction(void) {
       if (UM != 0) {
         throwException(EXC_PRV_INSTRCT);
       }
-      switch (immed) {
-        case 2:
+      switch (xop) {
+        case XOP_TBS:
           mmuTbs();
           break;
-        case 3:
+        case XOP_TBWR:
           mmuTbwr();
           break;
-        case 4:
+        case XOP_TBRI:
           mmuTbri();
           break;
-        case 5:
+        case XOP_TBWI:
           mmuTbwi();
+          break;
+      }
+      break;
+    case OP_FPAR:
+      switch (xop) {
+        case XOP_FADD:
+          WR(reg3, fpAdd(RR(reg1), RR(reg2)));
+          break;
+        case XOP_FSUB:
+          WR(reg3, fpSub(RR(reg1), RR(reg2)));
+          break;
+        case XOP_FMUL:
+          WR(reg3, fpMul(RR(reg1), RR(reg2)));
+          break;
+        case XOP_FDIV:
+          WR(reg3, fpDiv(RR(reg1), RR(reg2)));
           break;
       }
       break;
