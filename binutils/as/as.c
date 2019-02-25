@@ -133,6 +133,12 @@
 #define XOP_TBRI	0x04
 #define XOP_TBWI	0x05
 
+#define OP_FPAR		0x3B
+#define XOP_FADD	0x00
+#define XOP_FSUB	0x01
+#define XOP_FMUL	0x02
+#define XOP_FDIV	0x03
+
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
 
@@ -1507,7 +1513,7 @@ void formatRRR(unsigned int code, unsigned int xopcode) {
   src2 = tokenvalNumber;
   getToken();
   emitHalf(code << 10 | src1 << 5 | src2);
-  emitHalf(dst << 11);
+  emitHalf(dst << 11 | xopcode);
 }
 
 
@@ -1833,6 +1839,12 @@ Instr instrTable[] = {
   { "tbwr",    formatN,   OP_TCTL, XOP_TBWR },
   { "tbri",    formatN,   OP_TCTL, XOP_TBRI },
   { "tbwi",    formatN,   OP_TCTL, XOP_TBWI },
+
+  /* floating point instructions */
+  { "fadd",    formatRRR, OP_FPAR, XOP_FADD },
+  { "fsub",    formatRRR, OP_FPAR, XOP_FSUB },
+  { "fmul",    formatRRR, OP_FPAR, XOP_FMUL },
+  { "fdiv",    formatRRR, OP_FPAR, XOP_FDIV },
 
   /* synchronization instructions */
   { "ldlw",    formatRRS, OP_LDLW, 0        },

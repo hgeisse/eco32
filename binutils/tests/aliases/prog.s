@@ -22,4 +22,8 @@ lbl:
 
   trap
 
+  fadd $1, $2, $3
+  fsub $1, $2, $3
+  fmul $1, $2, $3
+  fdiv $1, $2, $3
 
