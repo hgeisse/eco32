@@ -43,8 +43,9 @@ void dump(float x) {
   FP_Word X;
 
   X.f = x;
-  printf("%e = 0x%08X = (%c,%d,0x%06X)",
-         X.f, X.w, SGN(X.w) ? '-' : '+', EXP(X.w), FRC(X.w));
+  printf("%e = 0x%08X = [%c%02X.%06X]",
+         X.f, X.w, SGN(X.w) ? '-' : '+',
+         EXP(X.w), FRC(X.w));
 }
 
 

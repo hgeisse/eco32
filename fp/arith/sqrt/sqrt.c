@@ -18,7 +18,7 @@ void dump(float x) {
   _FP_Union X;
 
   X.f = x;
-  printf("%e = 0x%08X = (%c,%d,0x%06X)",
+  printf("%e = 0x%08X = [%c%02X.%06X]",
          X.f, X.w, _FP_SGN(X.w) ? '-' : '+',
          _FP_EXP(X.w), _FP_FRC(X.w));
 }
