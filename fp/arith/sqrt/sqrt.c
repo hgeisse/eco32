@@ -129,7 +129,7 @@ _FP_Word fp_sqrt(_FP_Word X) {
 
   if (debug) {
     fprintf(stderr,
-            "fp_sqrt(0x%08X [%e])\n",
+            "fp_sqrt(0x%08X = %e)\n",
             X, *(float *)&X);
   }
   Xm1 = X - 1;
@@ -183,7 +183,7 @@ _FP_Word fp_sqrt(_FP_Word X) {
   Z = (Dm1 << 23) + ((Q >> 1) + (Q & 1));
   if (debug) {
     fprintf(stderr,
-            "fp_sqrt = 0x%08X [%e]\n",
+            "fp_sqrt = 0x%08X = %e\n",
             Z, *(float *)&Z);
   }
   return Z;
