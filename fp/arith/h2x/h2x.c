@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   flt = sign | (exp << 23) | frac;
-  printf("0x%08X = %e\n", flt, *(float *)&flt);
+  printf("[%s] = 0x%08X = %e\n",
+         argv[1], flt, *(float *)&flt);
   return 0;
 }
