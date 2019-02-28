@@ -22,13 +22,15 @@ run-simple:	$(EXE)
 run-special:	$(EXE)
 		cat spec2.dat | \
 		./div -s | \
-		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver f32_div
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore f32_div
 
 run-full:	$(EXE)
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
 		  -n $(NUM) -level $(LVL) f32 2 | \
 		./div -s | \
-		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver f32_div
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore f32_div
 
 $(EXE):		$(SRC)
 		gcc -g -Wall -o $(EXE) $(SRC) -lm
