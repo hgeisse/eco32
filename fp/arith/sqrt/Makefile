@@ -20,7 +20,7 @@ run-simple:	$(EXE)
 		./$(EXE)
 
 run-special:	$(EXE)
-		cat spec1.dat | \
+		cat special1.dat | \
 		./sqrt -s | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_sqrt

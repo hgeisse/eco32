@@ -20,7 +20,7 @@ run-simple:	$(EXE)
 		./$(EXE)
 
 run-special:	$(EXE)
-		cat spec2.dat | \
+		cat special2.dat | \
 		./mul -s | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_mul
