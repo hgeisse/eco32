@@ -13,31 +13,47 @@
 #include "fpu.h"
 
 
+typedef union {
+  Word w;
+  float f;
+} FP_Union;
+
+
 Word fpAdd(Word x, Word y) {
-  /* !!!!! FIXME !!!!! */
-  return 0;
+  FP_Union X, Y, Z;
+
+  X.w = x;
+  Y.w = y;
+  Z.f = X.f + Y.f;
+  return Z.w;
 }
 
 
 Word fpSub(Word x, Word y) {
-  /* !!!!! FIXME !!!!! */
-  return 0;
+  FP_Union X, Y, Z;
+
+  X.w = x;
+  Y.w = y;
+  Z.f = X.f - Y.f;
+  return Z.w;
 }
 
 
 Word fpMul(Word x, Word y) {
-  /* !!!!! FIXME !!!!! */
-  return 0;
+  FP_Union X, Y, Z;
+
+  X.w = x;
+  Y.w = y;
+  Z.f = X.f * Y.f;
+  return Z.w;
 }
 
 
 Word fpDiv(Word x, Word y) {
-  /* !!!!! FIXME !!!!! */
-  return 0;
-}
+  FP_Union X, Y, Z;
 
-
-Word fpSqrt(Word x) {
-  /* !!!!! FIXME !!!!! */
-  return 0;
+  X.w = x;
+  Y.w = y;
+  Z.f = X.f / Y.f;
+  return Z.w;
 }
