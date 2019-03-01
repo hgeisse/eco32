@@ -7,11 +7,11 @@
 #define _FP_H_
 
 
-#define _FP_V_FLAG	0x10
-#define _FP_I_FLAG	0x08
-#define _FP_O_FLAG	0x04
-#define _FP_U_FLAG	0x02
-#define _FP_X_FLAG	0x01
+#define _FP_V_FLAG	0x10		/* invalid */
+#define _FP_I_FLAG	0x08		/* infinite */
+#define _FP_O_FLAG	0x04		/* overflow */
+#define _FP_U_FLAG	0x02		/* underflow */
+#define _FP_X_FLAG	0x01		/* inexact */
 
 
 #define _FP_SGN(x)	((x) & 0x80000000)
