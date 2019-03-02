@@ -213,7 +213,9 @@ void test_single(float x) {
   dump(z);
   printf("\n");
   r = sqrt(x);
-  printf("sqrt(x) = %e (ref = %e)\n", z, r);
+  printf("r = ");
+  dump(r);
+  printf("\n");
 }
 
 
