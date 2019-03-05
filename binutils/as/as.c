@@ -104,7 +104,6 @@
 #define OP_BLEU		0x23
 #define OP_BLT		0x24
 #define OP_BLTU		0x25
-#define XOP_BG		0x01
 
 #define OP_J		0x2A
 #define OP_JR		0x2B
@@ -1319,17 +1318,21 @@ void formatN(unsigned int code, unsigned int xopcode) {
     }
     immed = v.con;
   } else {
-    if (xopcode != 0) {
-      /* tbs, tbwr, tbri, tbwi, dci, dcf, ici, cci, ccs */
-      immed = xopcode;
-    } else {
-      /* trap */
-      immed = 0;
-    }
+    immed = 0;
   }
   emitWord(code << 26 | (immed & 0x03FFFFFF));
 }
 
+void formatXN(unsigned int code, unsigned int xopcode) {
+
+  /* opcode with no operands */
+  if (token != TOK_EOL) {
+    error("no operand allowed, line %d", lineno);
+  }
+  else {
+    emitWord(code << 26 | (xopcode & 0x03FFFFFF));
+  }
+}
 
 void formatRH(unsigned int code, unsigned int xopcode) {
   int reg;
@@ -1495,7 +1498,7 @@ void formatRRS(unsigned int code, unsigned int xopcode) {
 }
 
 
-void formatRRR(unsigned int code, unsigned int xopcode) {
+void formatXRRR(unsigned int code, unsigned int xopcode) {
   int dst, src1, src2;
 
   /* opcode with three register operands */
@@ -1666,29 +1669,42 @@ void formatRRB(unsigned int code, unsigned int xopcode) {
   unsigned int immed;
 
   /* opcode with two registers and a 16 bit signed offset operand */
-  if (xopcode == 0) {
-    /* emitting code for BL* */
-    expect(TOK_REGISTER);
-    src1 = tokenvalNumber;
-    getToken();
-    expect(TOK_COMMA);
-    getToken();
-    expect(TOK_REGISTER);
-    src2 = tokenvalNumber;
-  } else if (xopcode == XOP_BG) {
-    /* emitting code for BG*-aliases */
-    expect(TOK_REGISTER);
-    src2 = tokenvalNumber;
-    getToken();
-    expect(TOK_COMMA);
-    getToken();
-    expect(TOK_REGISTER);
-    src1 = tokenvalNumber;
+  expect(TOK_REGISTER);
+  src1 = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  src2 = tokenvalNumber;
+
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  v = parseExpression();
+  if (v.sym == NULL) {
+    immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
   } else {
-    /* TODO bfranken This should never happen, because xopcode is always taken from instrTable.
-     * Do we need an error message? */
-    error("illegal xopcode 0x%02x\n", xopcode);
+    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
+    immed = 0;
   }
+  emitHalf(code << 10 | src1 << 5 | src2);
+  emitHalf(immed);
+}
+
+void aliasRRB(unsigned int code, unsigned int xopcode) {
+  int src1, src2;
+  Value v;
+  unsigned int immed;
+
+  /* opcode with two registers and a 16 bit signed offset operand
+   * reversing operands to implement bg* using bl* */
+  expect(TOK_REGISTER);
+  src2 = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  src1 = tokenvalNumber;
 
   getToken();
   expect(TOK_COMMA);
@@ -1751,104 +1767,104 @@ typedef struct instr {
 Instr instrTable[] = {
 
   /* pseudo instructions */
-  { ".syn",    dotSyn,    0,       0        },
-  { ".nosyn",  dotNosyn,  0,       0        },
-  { ".code",   dotCode,   0,       0        },
-  { ".data",   dotData,   0,       0        },
-  { ".bss",    dotBss,    0,       0        },
-  { ".export", dotExport, 0,       0        },
-  { ".import", dotImport, 0,       0        },
-  { ".align",  dotAlign,  0,       0        },
-  { ".space",  dotSpace,  0,       0        },
-  { ".locate", dotLocate, 0,       0        },
-  { ".byte",   dotByte,   0,       0        },
-  { ".half",   dotHalf,   0,       0        },
-  { ".word",   dotWord,   0,       0        },
-  { ".set",    dotSet,    0,       0        },
+  { ".syn",    dotSyn,     0,       0        },
+  { ".nosyn",  dotNosyn,   0,       0        },
+  { ".code",   dotCode,    0,       0        },
+  { ".data",   dotData,    0,       0        },
+  { ".bss",    dotBss,     0,       0        },
+  { ".export", dotExport,  0,       0        },
+  { ".import", dotImport,  0,       0        },
+  { ".align",  dotAlign,   0,       0        },
+  { ".space",  dotSpace,   0,       0        },
+  { ".locate", dotLocate,  0,       0        },
+  { ".byte",   dotByte,    0,       0        },
+  { ".half",   dotHalf,    0,       0        },
+  { ".word",   dotWord,    0,       0        },
+  { ".set",    dotSet,     0,       0        },
 
   /* arithmetical instructions */
-  { "add",     formatRRY, OP_ADD,  0        },
-  { "sub",     formatRRY, OP_SUB,  0        },
+  { "add",     formatRRY,  OP_ADD,  0        },
+  { "sub",     formatRRY,  OP_SUB,  0        },
 
-  { "mul",     formatRRY, OP_MUL,  0        },
-  { "mulu",    formatRRX, OP_MULU, 0        },
-  { "div",     formatRRY, OP_DIV,  0        },
-  { "divu",    formatRRX, OP_DIVU, 0        },
-  { "rem",     formatRRY, OP_REM,  0        },
-  { "remu",    formatRRX, OP_REMU, 0        },
+  { "mul",     formatRRY,  OP_MUL,  0        },
+  { "mulu",    formatRRX,  OP_MULU, 0        },
+  { "div",     formatRRY,  OP_DIV,  0        },
+  { "divu",    formatRRX,  OP_DIVU, 0        },
+  { "rem",     formatRRY,  OP_REM,  0        },
+  { "remu",    formatRRX,  OP_REMU, 0        },
 
   /* logical instructions */
-  { "and",     formatRRX, OP_AND,  0        },
-  { "or",      formatRRX, OP_OR,   0        },
-  { "xor",     formatRRX, OP_XOR,  0        },
-  { "xnor",    formatRRX, OP_XNOR, 0        },
+  { "and",     formatRRX,  OP_AND,  0        },
+  { "or",      formatRRX,  OP_OR,   0        },
+  { "xor",     formatRRX,  OP_XOR,  0        },
+  { "xnor",    formatRRX,  OP_XNOR, 0        },
 
   /* shift instructions */
-  { "sll",     formatRRX, OP_SLL,  0        },
-  { "slr",     formatRRX, OP_SLR,  0        },
-  { "sar",     formatRRX, OP_SAR,  0        },
+  { "sll",     formatRRX,  OP_SLL,  0        },
+  { "slr",     formatRRX,  OP_SLR,  0        },
+  { "sar",     formatRRX,  OP_SAR,  0        },
 
   /* cache control instructions */
-  { "dci",     formatN,   OP_CCTL, XOP_DCI  },
-  { "dcf",     formatN,   OP_CCTL, XOP_DCF  },
-  { "ici",     formatN,   OP_CCTL, XOP_ICI  },
-  { "cci",     formatN,   OP_CCTL, XOP_CCI  },
-  { "ccs",     formatN,   OP_CCTL, XOP_CCS  },
+  { "dci",     formatXN,   OP_CCTL, XOP_DCI  },
+  { "dcf",     formatXN,   OP_CCTL, XOP_DCF  },
+  { "ici",     formatXN,   OP_CCTL, XOP_ICI  },
+  { "cci",     formatXN,   OP_CCTL, XOP_CCI  },
+  { "ccs",     formatXN,   OP_CCTL, XOP_CCS  },
 
   /* load immediate instructions */
-  { "ldhi",    formatRHH, OP_LDHI, 0        },
+  { "ldhi",    formatRHH,  OP_LDHI, 0        },
 
   /* branch instructions */
-  { "beq",     formatRRB, OP_BEQ,  0        },
-  { "bne",     formatRRB, OP_BNE,  0        },
-  { "ble",     formatRRB, OP_BLE,  0        },
-  { "bleu",    formatRRB, OP_BLEU, 0        },
-  { "blt",     formatRRB, OP_BLT,  0        },
-  { "bltu",    formatRRB, OP_BLTU, 0        },
-  { "bge",     formatRRB, OP_BLE,  XOP_BG   },
-  { "bgeu",    formatRRB, OP_BLEU, XOP_BG   },
-  { "bgt",     formatRRB, OP_BLT,  XOP_BG   },
-  { "bgtu",    formatRRB, OP_BLTU, XOP_BG   },
+  { "beq",     formatRRB,  OP_BEQ,  0        },
+  { "bne",     formatRRB,  OP_BNE,  0        },
+  { "ble",     formatRRB,  OP_BLE,  0        },
+  { "bleu",    formatRRB,  OP_BLEU, 0        },
+  { "blt",     formatRRB,  OP_BLT,  0        },
+  { "bltu",    formatRRB,  OP_BLTU, 0        },
+  { "bge",     aliasRRB,   OP_BLE,  0        },
+  { "bgeu",    aliasRRB,   OP_BLEU, 0        },
+  { "bgt",     aliasRRB,   OP_BLT,  0        },
+  { "bgtu",    aliasRRB,   OP_BLTU, 0        },
 
   /* jump, call & return instructions */
-  { "j",       formatJ,   OP_J,    0        },
-  { "jr",      formatJR,  OP_JR,   0        },
-  { "jal",     formatJ,   OP_JAL,  0        },
-  { "jalr",    formatJR,  OP_JALR, 0        },
+  { "j",       formatJ,    OP_J,    0        },
+  { "jr",      formatJR,   OP_JR,   0        },
+  { "jal",     formatJ,    OP_JAL,  0        },
+  { "jalr",    formatJR,   OP_JALR, 0        },
 
   /* interrupt related instructions */
-  { "trap",    formatN,   OP_TRAP, 0        },
-  { "rfx",     formatN,   OP_RFX,  0        },
+  { "trap",    formatN,    OP_TRAP, 0        },
+  { "rfx",     formatN,    OP_RFX,  0        },
 
   /* load instructions */
-  { "ldw",     formatRRS, OP_LDW,  0        },
-  { "ldh",     formatRRS, OP_LDH,  0        },
-  { "ldhu",    formatRRS, OP_LDHU, 0        },
-  { "ldb",     formatRRS, OP_LDB,  0        },
-  { "ldbu",    formatRRS, OP_LDBU, 0        },
+  { "ldw",     formatRRS,  OP_LDW,  0        },
+  { "ldh",     formatRRS,  OP_LDH,  0        },
+  { "ldhu",    formatRRS,  OP_LDHU, 0        },
+  { "ldb",     formatRRS,  OP_LDB,  0        },
+  { "ldbu",    formatRRS,  OP_LDBU, 0        },
 
   /* store instructions */
-  { "stw",     formatRRS, OP_STW,  0        },
-  { "sth",     formatRRS, OP_STH,  0        },
-  { "stb",     formatRRS, OP_STB,  0        },
+  { "stw",     formatRRS,  OP_STW,  0        },
+  { "sth",     formatRRS,  OP_STH,  0        },
+  { "stb",     formatRRS,  OP_STB,  0        },
 
   /* processor control instructions */
-  { "mvfs",    formatRH,  OP_MVFS, 0        },
-  { "mvts",    formatRH,  OP_MVTS, 0        },
-  { "tbs",     formatN,   OP_TCTL, XOP_TBS  },
-  { "tbwr",    formatN,   OP_TCTL, XOP_TBWR },
-  { "tbri",    formatN,   OP_TCTL, XOP_TBRI },
-  { "tbwi",    formatN,   OP_TCTL, XOP_TBWI },
+  { "mvfs",    formatRH,   OP_MVFS, 0        },
+  { "mvts",    formatRH,   OP_MVTS, 0        },
+  { "tbs",     formatXN,   OP_TCTL, XOP_TBS  },
+  { "tbwr",    formatXN,   OP_TCTL, XOP_TBWR },
+  { "tbri",    formatXN,   OP_TCTL, XOP_TBRI },
+  { "tbwi",    formatXN,   OP_TCTL, XOP_TBWI },
 
   /* floating point instructions */
-  { "fadd",    formatRRR, OP_FPAR, XOP_FADD },
-  { "fsub",    formatRRR, OP_FPAR, XOP_FSUB },
-  { "fmul",    formatRRR, OP_FPAR, XOP_FMUL },
-  { "fdiv",    formatRRR, OP_FPAR, XOP_FDIV },
+  { "fadd",    formatXRRR, OP_FPAR, XOP_FADD },
+  { "fsub",    formatXRRR, OP_FPAR, XOP_FSUB },
+  { "fmul",    formatXRRR, OP_FPAR, XOP_FMUL },
+  { "fdiv",    formatXRRR, OP_FPAR, XOP_FDIV },
 
   /* synchronization instructions */
-  { "ldlw",    formatRRS, OP_LDLW, 0        },
-  { "stcw",    formatRRS, OP_STCW, 0        },
+  { "ldlw",    formatRRS,  OP_LDLW, 0        },
+  { "stcw",    formatRRS,  OP_STCW, 0        },
 
 };
 
