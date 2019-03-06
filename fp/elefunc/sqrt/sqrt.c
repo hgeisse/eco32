@@ -218,6 +218,12 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
 
 int main(void) {
   printf("------------------------------------------------\n");
+  test_single(0.0);
+  printf("------------------------------------------------\n");
+  test_single(-0.0);
+  printf("------------------------------------------------\n");
+  test_single(-4.0);
+  printf("------------------------------------------------\n");
   test_single(1.0);
   printf("------------------------------------------------\n");
   test_single(0.5);
