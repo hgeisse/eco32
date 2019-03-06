@@ -1,5 +1,5 @@
 /*
- * sqrt.c -- implementation and test of square root
+ * sqrt.c -- implementation and test of floating-point square root
  */
 
 
@@ -8,23 +8,10 @@
 #include <string.h>
 #include <math.h>
 
-
-#define SGN(x)		((x) & 0x80000000)
-#define EXP(x)		(((x) << 1) >> 24)
-#define FRC(x)		((x) & 0x7FFFFF)
-#define FLOAT(s,e,f)	(s | (e << 23) | f)
-
-#define ABS(x)		((x) < 0 ? -(x) : (x))
-#define DELTA(Z,R)	((int) (Z.w & 0x7FFFFFFF) - (int) (R.w & 0x7FFFFFFF))
+#include "../include/fp.h"
 
 
-typedef unsigned int Word;
-
-
-typedef union {
-  float f;
-  Word w;
-} FP_Word;
+#define REQ_ULP		2	/* requested accuracy in ulp */
 
 
 /**************************************************************/
@@ -40,26 +27,31 @@ int errno = 0;
 
 
 void dump(float x) {
-  FP_Word X;
+  _FP_Union X;
 
   X.f = x;
   printf("%e = 0x%08X = [%c%02X.%06X]",
-         X.f, X.w, SGN(X.w) ? '-' : '+',
-         EXP(X.w), FRC(X.w));
+         X.f, X.w, _FP_SGN(X.w) ? '-' : '+',
+         _FP_EXP(X.w), _FP_FRC(X.w));
 }
 
 
 /**************************************************************/
 
 
-int debug_sqrt = 0;
+#define CONST_1		0.59466991411
+#define CONST_2		0.41421356237
+#define CONST_3		0.70710678119	/* 1/sqrt(2) */
+
+
+int debug = 0;
 
 
 float fp_sqrt(float x) {
-  FP_Word X, Z;
-  Word expX, expZ;
-  Word frcX, frcZ;
-  FP_Word A1, A2;
+  _FP_Union X, Z;
+  _FP_Word expX, expZ;
+  _FP_Word frcX, frcZ;
+  _FP_Union A1, A2;
 
   X.f = x;
   if ((X.w & 0x7FFFFFFF) == 0) {
@@ -70,46 +62,66 @@ float fp_sqrt(float x) {
     X.w = 0xFFC00000;
     return X.f;
   }
-  expX = EXP(X.w);
-  frcX = FRC(X.w);
-  A1.w = FLOAT(0, 127, frcX);
-  if (debug_sqrt) {
+  expX = _FP_EXP(X.w);
+  frcX = _FP_FRC(X.w);
+  A1.w = _FP_FLT(0, 127, frcX);
+  if (debug) {
     printf("f=");
     dump(A1.f);
     printf("\n");
   }
-  A2.f = 0.59467 + 0.41421 * A1.f;
-  if (debug_sqrt) {
+  A2.f = CONST_1 + CONST_2 * A1.f;
+  if (debug) {
     printf("y0=");
     dump(A2.f);
     printf("\n");
   }
   A2.f = 0.5 * (A2.f + A1.f / A2.f);
-  if (debug_sqrt) {
+  if (debug) {
     printf("y1=");
     dump(A2.f);
     printf("\n");
   }
   A2.f = 0.5 * (A2.f + A1.f / A2.f);
-  if (debug_sqrt) {
+  if (debug) {
     printf("y2=");
     dump(A2.f);
     printf("\n");
   }
   expZ = expX - 127;
   if (expZ & 1) {
-    A2.f *= 1.0/sqrt(2.0);
-    if (debug_sqrt) {
+    A2.f *= CONST_3;
+    if (debug) {
       printf("corrected y2=");
       dump(A2.f);
       printf("\n");
     }
     expZ++;
   }
-  expZ = EXP(A2.w) + expZ / 2;
-  frcZ = FRC(A2.w);
-  Z.w = FLOAT(0, expZ, frcZ);
+  expZ = _FP_EXP(A2.w) + expZ / 2;
+  frcZ = _FP_FRC(A2.w);
+  Z.w = _FP_FLT(0, expZ, frcZ);
   return Z.f;
+}
+
+
+/**************************************************************/
+
+
+void test_single(float x) {
+  float z, r;
+
+  printf("x = ");
+  dump(x);
+  printf("\n");
+  z = fp_sqrt(x);
+  printf("z = ");
+  dump(z);
+  printf("\n");
+  r = sqrt(x);
+  printf("r = ");
+  dump(r);
+  printf("\n");
 }
 
 
@@ -138,56 +150,30 @@ float randl(float x) {
 /**************************************************************/
 
 
-void test_representation(float x) {
-  printf("x = ");
-  dump(x);
-  printf("\n");
-  printf("(representation should be 0x3E200000)\n");
-}
-
-
-/**************************************************************/
-
-
-void test_sqrt_single(float x) {
-  float z, r;
-
-  printf("x = ");
-  dump(x);
-  printf("\n");
-  z = fp_sqrt(x);
-  printf("z = ");
-  dump(z);
-  printf("\n");
-  r = sqrt(x);
-  printf("r = ");
-  dump(r);
-  printf("\n");
-}
-
-
-/**************************************************************/
-
-
-void test_sqrt_many(int count, float lbound, float ubound) {
+void test_many(int count, float lbound, float ubound, int maybeNeg) {
   int i;
+  int below, equal, above, within, ulp;
   float x, z, r;
-  int below, equal, above, within;
-  int ulp;
-  FP_Word Z, R;
+  _FP_Union Z, R;
 
-  printf("operand interval: (%e,%e)\n", lbound, ubound);
+  printf("absolute operand interval: (%e,%e)\n", lbound, ubound);
+  printf("operands may%sbe negative\n", maybeNeg ? " " : " not ");
   below = 0;
   equal = 0;
   above = 0;
   within = 0;
-  ulp = 2;
+  ulp = REQ_ULP;
   for (i = 1; i <= count; i++) {
     if (i % 100 == 0) {
-      printf("\rnumber of square roots: %d", i);
+      printf("\rnumber of tests: %d", i);
       fflush(stdout);
     }
     x = lbound * randl(log(ubound / lbound));
+    if (maybeNeg) {
+      if (rand() & 0x400) {
+        x = -x;
+      }
+    }
     z = fp_sqrt(x);
     r = sqrt(x);
     if (z < r) {
@@ -200,23 +186,23 @@ void test_sqrt_many(int count, float lbound, float ubound) {
     }
     Z.f = z;
     R.f = r;
-    if (ABS(DELTA(Z, R)) <= ulp) {
+    if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
       within++;
     } else {
-      printf("+++++++++++++++++++\n");
+      printf("++++++++++++++++++++\n");
       printf("x=");
       dump(x);
       printf("\n");
-      debug_sqrt = 1;
+      debug = 1;
       z = fp_sqrt(x);
-      debug_sqrt = 0;
+      debug = 0;
       printf("z=");
       dump(z);
       printf("\n");
       printf("r=");
       dump(r);
       printf("\n");
-      printf("+++++++++++++++++++\n");
+      printf("++++++++++++++++++++\n");
     }
   }
   printf("\n");
@@ -232,29 +218,27 @@ void test_sqrt_many(int count, float lbound, float ubound) {
 
 int main(void) {
   printf("------------------------------------------------\n");
-  test_representation(0.15625);
+  test_single(1.0);
   printf("------------------------------------------------\n");
-  test_sqrt_single(-1.0);
+  test_single(0.5);
   printf("------------------------------------------------\n");
-  test_sqrt_single(-0.0);
+  test_single(2.0);
   printf("------------------------------------------------\n");
-  test_sqrt_single(0.0);
+  test_single(4.0);
   printf("------------------------------------------------\n");
-  test_sqrt_single(1.0);
+  test_single(8.0);
   printf("------------------------------------------------\n");
-  test_sqrt_single(16.0);
+  test_single(1.234e2);
   printf("------------------------------------------------\n");
-  test_sqrt_single(32.0);
+  test_single(1.234e-3);
   printf("------------------------------------------------\n");
-  test_sqrt_single(1.875);
+  test_many(10000000, 0.5, 2.0, 0);
   printf("------------------------------------------------\n");
-  test_sqrt_single(1.234e2);
+  test_many(10000000, 1.0e-15, 1.0, 0);
   printf("------------------------------------------------\n");
-  test_sqrt_many(10000000, 0.25, 4.0);
+  test_many(10000000, 1.0, 1.0e15, 0);
   printf("------------------------------------------------\n");
-  test_sqrt_many(10000000, 1.0e-15, 1.0);
-  printf("------------------------------------------------\n");
-  test_sqrt_many(10000000, 1.0, 1.0e15);
+  test_many(10000000, 1.0e-15, 1.0e15, 0);
   printf("------------------------------------------------\n");
   return 0;
 }
