@@ -1,5 +1,5 @@
 /*
- * sqrt.c -- implementation and test of floating-point square root
+ * sqrt.c -- implementation and test of square root
  */
 
 
