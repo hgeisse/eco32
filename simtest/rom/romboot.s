@@ -107,7 +107,7 @@ dskcp:
 	ldbu	$9,$8,512-1
 	sub	$9,$9,0xAA
 	bne	$9,$0,nosig
-	cctl	7			; invalidate icache, flush dcache
+	ccs				; invalidate icache, flush dcache
 	jalr	$8			; finally... lift off
 	j	cmdlp			; in case we ever return to here
 

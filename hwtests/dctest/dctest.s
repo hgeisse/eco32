@@ -14,5 +14,5 @@ l2:	ldw	$12,$10,0
 	bne	$9,$0,l2
 	sub	$8,$8,1
 	bne	$8,$0,l1
-	cctl	3
+	dcf
 halt:	j	halt
