@@ -40,9 +40,9 @@ void dump(float x) {
 /**************************************************************/
 
 
-#define C1	0.41731		/* y0 = C1 + C2 * f */
-#define C2	0.59016		/* Cody & Waite, p. 23 */
-#define C3	0.70710678119	/* sqrt(1/2) */
+#define C1	0.41731			/* y0 = C1 + C2 * f */
+#define C2	0.59016			/* Cody & Waite, p. 23 */
+#define C3	0.70710678119		/* sqrt(1/2) */
 
 
 int debug = 0;
