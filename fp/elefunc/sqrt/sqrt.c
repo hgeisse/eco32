@@ -49,10 +49,13 @@ int debug = 0;
 
 
 float fp_sqrt(float x) {
-  _FP_Union X, Z;
-  _FP_Word expX, expZ;
-  _FP_Word frcX, frcZ;
-  _FP_Union A1, A2;
+  _FP_Union X;
+  int expX;
+  _FP_Word frcX;
+  _FP_Union F1, F2;
+  int expZ;
+  _FP_Word frcZ;
+  _FP_Union Z;
 
   X.f = x;
   if ((X.w & 0x7FFFFFFF) == 0) {
@@ -63,44 +66,44 @@ float fp_sqrt(float x) {
     X.w = 0xFFC00000;
     return X.f;
   }
-  expX = _FP_EXP(X.w);
+  expX = ((int) _FP_EXP(X.w)) - 126;
   frcX = _FP_FRC(X.w);
-  A1.w = _FP_FLT(0, 126, frcX);
+  F1.w = _FP_FLT(0, 126, frcX);
   if (debug) {
-    printf("f=");
-    dump(A1.f);
+    printf("f = ");
+    dump(F1.f);
     printf("\n");
   }
-  A2.f = C1 + C2 * A1.f;
+  F2.f = C1 + C2 * F1.f;
   if (debug) {
-    printf("y0=");
-    dump(A2.f);
+    printf("y0 = ");
+    dump(F2.f);
     printf("\n");
   }
-  A2.f = 0.5 * (A2.f + A1.f / A2.f);
+  F2.f = 0.5 * (F2.f + F1.f / F2.f);
   if (debug) {
-    printf("y1=");
-    dump(A2.f);
+    printf("y1 = ");
+    dump(F2.f);
     printf("\n");
   }
-  A2.f = 0.5 * (A2.f + A1.f / A2.f);
+  F2.f = 0.5 * (F2.f + F1.f / F2.f);
   if (debug) {
-    printf("y2=");
-    dump(A2.f);
+    printf("y2 = ");
+    dump(F2.f);
     printf("\n");
   }
-  expZ = expX - 126;
+  expZ = expX;
   if (expZ & 1) {
-    A2.f *= C3;
+    F2.f *= C3;
     if (debug) {
-      printf("corrected y2=");
-      dump(A2.f);
+      printf("corrected y2 = ");
+      dump(F2.f);
       printf("\n");
     }
     expZ++;
   }
-  expZ = _FP_EXP(A2.w) + expZ / 2;
-  frcZ = _FP_FRC(A2.w);
+  expZ = _FP_EXP(F2.w) + expZ / 2;
+  frcZ = _FP_FRC(F2.w);
   Z.w = _FP_FLT(0, expZ, frcZ);
   return Z.f;
 }
@@ -191,16 +194,16 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
       within++;
     } else {
       printf("++++++++++++++++++++\n");
-      printf("x=");
+      printf("x = ");
       dump(x);
       printf("\n");
       debug = 1;
       z = fp_sqrt(x);
       debug = 0;
-      printf("z=");
+      printf("z = ");
       dump(z);
       printf("\n");
-      printf("r=");
+      printf("r = ");
       dump(r);
       printf("\n");
       printf("++++++++++++++++++++\n");
@@ -239,13 +242,11 @@ int main(void) {
   printf("------------------------------------------------\n");
   test_single(1.234e-3);
   printf("------------------------------------------------\n");
-  test_many(10000000, 0.5, 2.0, 0);
+  test_many(10000000, 0.25, 4.0, 0);
   printf("------------------------------------------------\n");
   test_many(10000000, 1.0e-15, 1.0, 0);
   printf("------------------------------------------------\n");
   test_many(10000000, 1.0, 1.0e15, 0);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 1.0e-15, 1.0e15, 0);
   printf("------------------------------------------------\n");
   return 0;
 }
