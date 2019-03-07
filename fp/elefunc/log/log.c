@@ -8,29 +8,17 @@
 #include <string.h>
 #include <math.h>
 
-
-#define SGN(x)		((x) & 0x80000000)
-#define EXP(x)		(((x) << 1) >> 24)
-#define FRC(x)		((x) & 0x7FFFFF)
-#define FLOAT(s,e,f)	(s | (e << 23) | f)
-
-#define ABS(x)		((x) < 0 ? -(x) : (x))
-#define DELTA(Z,R)	((int) (Z.w & 0x7FFFFFFF) - (int) (R.w & 0x7FFFFFFF))
+#include "../include/fp.h"
 
 
-typedef unsigned int Word;
-
-
-typedef union {
-  float f;
-  Word w;
-} FP_Word;
+#define REQ_ULP		4	/* requested accuracy in ulp */
 
 
 /**************************************************************/
 
 
 #define EDOM		33
+#define ERANGE		34
 
 
 int errno = 0;
@@ -40,23 +28,37 @@ int errno = 0;
 
 
 void dump(float x) {
-  FP_Word X;
+  _FP_Union X;
 
   X.f = x;
   printf("%e = 0x%08X = [%c%02X.%06X]",
-         X.f, X.w, SGN(X.w) ? '-' : '+',
-         EXP(X.w), FRC(X.w));
+         X.f, X.w, _FP_SGN(X.w) ? '-' : '+',
+         _FP_EXP(X.w), _FP_FRC(X.w));
 }
 
 
 /**************************************************************/
 
 
-int debug_log = 0;
+#define A0	-0.5527074855e+0	/* rational approximation */
+#define B0	-0.6632718214e+1	/* Cody & Waite, p. 44 */
+#define C0	0.70710678119		/* sqrt(1/2) */
+#define C1	0.69335937500		/* 355/512 */
+#define C2	-2.1219444005e-4	/* C1 + C2 = ln(2) */
+#define C3	0.43429448190		/* log(e) */
+
+
+int debug = 0;
 
 
 float fp_log(float x) {
-  FP_Word X;
+  _FP_Union X;
+  int expX;
+  _FP_Word frcX;
+  _FP_Union F;
+  float znum, zden;
+  float z, w, r, s;
+  float v;
 
   X.f = x;
   if ((X.w & 0x7FFFFFFF) == 0) {
@@ -69,13 +71,83 @@ float fp_log(float x) {
     X.w = 0x7FC00000;
     return X.f;
   }
-  /* !!!!! */
-  return 0.125;
+  expX = ((int) _FP_EXP(X.w)) - 126;
+  frcX = _FP_FRC(X.w);
+  F.w = _FP_FLT(0, 126, frcX);
+  if (debug) {
+    printf("f = ");
+    dump(F.f);
+    printf("\n");
+  }
+  if (F.f > C0) {
+    znum = (F.f - 0.5) - 0.5;
+    zden = F.f * 0.5 + 0.5;
+    if (debug) {
+      printf("f > C0 : znum = %e, zden = %e\n", znum, zden);
+    }
+  } else {
+    expX--;
+    znum = F.f - 0.5;
+    zden = znum * 0.5 + 0.5;
+    if (debug) {
+      printf("f <= C0 : znum = %e, zden = %e\n", znum, zden);
+    }
+  }
+  z = znum / zden;
+  w = z * z;
+  if (debug) {
+    printf("z = %e, w = %e\n", z, w);
+  }
+  r = w * A0 / (w + B0);
+  s = z + z * r;
+  if (debug) {
+    printf("r = %e, s = %e\n", r, s);
+  }
+  v = (float) expX;
+  v = (v * C2 + s) + v * C1;
+  return v;
 }
 
 
 float fp_log10(float x) {
-  return fp_log(x) * 0.4342944819;
+  return fp_log(x) * C3;
+}
+
+
+/**************************************************************/
+
+
+void test_single_1(float x) {
+  float z, r;
+
+  printf("x = ");
+  dump(x);
+  printf("\n");
+  z = fp_log(x);
+  printf("z = ");
+  dump(z);
+  printf("\n");
+  r = log(x);
+  printf("r = ");
+  dump(r);
+  printf("\n");
+}
+
+
+void test_single_2(float x) {
+  float z, r;
+
+  printf("x = ");
+  dump(x);
+  printf("\n");
+  z = fp_log10(x);
+  printf("z = ");
+  dump(z);
+  printf("\n");
+  r = log10(x);
+  printf("r = ");
+  dump(r);
+  printf("\n");
 }
 
 
@@ -104,76 +176,30 @@ float randl(float x) {
 /**************************************************************/
 
 
-void test_representation(float x) {
-  printf("x = ");
-  dump(x);
-  printf("\n");
-  printf("(representation should be 0x3E200000)\n");
-}
-
-
-/**************************************************************/
-
-
-void test_log_single(float x) {
-  float z, r;
-
-  printf("x = ");
-  dump(x);
-  printf("\n");
-  z = fp_log(x);
-  printf("z = ");
-  dump(z);
-  printf("\n");
-  r = log(x);
-  printf("r = ");
-  dump(r);
-  printf("\n");
-}
-
-
-/**************************************************************/
-
-
-void test_log10_single(float x) {
-  float z, r;
-
-  printf("x = ");
-  dump(x);
-  printf("\n");
-  z = fp_log10(x);
-  printf("z = ");
-  dump(z);
-  printf("\n");
-  r = log10(x);
-  printf("r = ");
-  dump(r);
-  printf("\n");
-}
-
-
-/**************************************************************/
-
-
-void test_log_many(int count, float lbound, float ubound) {
+void test_many_1(int count, float lbound, float ubound, int maybeNeg) {
   int i;
+  int below, equal, above, within, ulp;
   float x, z, r;
-  int below, equal, above, within;
-  int ulp;
-  FP_Word Z, R;
+  _FP_Union Z, R;
 
-  printf("operand interval: (%e,%e)\n", lbound, ubound);
+  printf("absolute operand interval: (%e,%e)\n", lbound, ubound);
+  printf("operands may%sbe negative\n", maybeNeg ? " " : " not ");
   below = 0;
   equal = 0;
   above = 0;
   within = 0;
-  ulp = 2;
+  ulp = REQ_ULP;
   for (i = 1; i <= count; i++) {
     if (i % 100 == 0) {
-      printf("\rnumber of natural logarithms: %d", i);
+      printf("\rnumber of tests: %d", i);
       fflush(stdout);
     }
     x = lbound * randl(log(ubound / lbound));
+    if (maybeNeg) {
+      if (rand() & 0x400) {
+        x = -x;
+      }
+    }
     z = fp_log(x);
     r = log(x);
     if (z < r) {
@@ -186,23 +212,23 @@ void test_log_many(int count, float lbound, float ubound) {
     }
     Z.f = z;
     R.f = r;
-    if (ABS(DELTA(Z, R)) <= ulp) {
+    if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
       within++;
     } else {
-      printf("+++++++++++++++++++\n");
-      printf("x=");
+      printf("++++++++++++++++++++\n");
+      printf("x = ");
       dump(x);
       printf("\n");
-      debug_log = 1;
+      debug = 1;
       z = fp_log(x);
-      debug_log = 0;
-      printf("z=");
+      debug = 0;
+      printf("z = ");
       dump(z);
       printf("\n");
-      printf("r=");
+      printf("r = ");
       dump(r);
       printf("\n");
-      printf("+++++++++++++++++++\n");
+      printf("++++++++++++++++++++\n");
     }
   }
   printf("\n");
@@ -213,28 +239,30 @@ void test_log_many(int count, float lbound, float ubound) {
 }
 
 
-/**************************************************************/
-
-
-void test_log10_many(int count, float lbound, float ubound) {
+void test_many_2(int count, float lbound, float ubound, int maybeNeg) {
   int i;
+  int below, equal, above, within, ulp;
   float x, z, r;
-  int below, equal, above, within;
-  int ulp;
-  FP_Word Z, R;
+  _FP_Union Z, R;
 
-  printf("operand interval: (%e,%e)\n", lbound, ubound);
+  printf("absolute operand interval: (%e,%e)\n", lbound, ubound);
+  printf("operands may%sbe negative\n", maybeNeg ? " " : " not ");
   below = 0;
   equal = 0;
   above = 0;
   within = 0;
-  ulp = 2;
+  ulp = REQ_ULP;
   for (i = 1; i <= count; i++) {
     if (i % 100 == 0) {
-      printf("\rnumber of common logarithms: %d", i);
+      printf("\rnumber of tests: %d", i);
       fflush(stdout);
     }
     x = lbound * randl(log(ubound / lbound));
+    if (maybeNeg) {
+      if (rand() & 0x400) {
+        x = -x;
+      }
+    }
     z = fp_log10(x);
     r = log10(x);
     if (z < r) {
@@ -247,23 +275,23 @@ void test_log10_many(int count, float lbound, float ubound) {
     }
     Z.f = z;
     R.f = r;
-    if (ABS(DELTA(Z, R)) <= ulp) {
+    if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
       within++;
     } else {
-      printf("+++++++++++++++++++\n");
-      printf("x=");
+      printf("++++++++++++++++++++\n");
+      printf("x = ");
       dump(x);
       printf("\n");
-      debug_log = 1;
+      debug = 1;
       z = fp_log10(x);
-      debug_log = 0;
-      printf("z=");
+      debug = 0;
+      printf("z = ");
       dump(z);
       printf("\n");
-      printf("r=");
+      printf("r = ");
       dump(r);
       printf("\n");
-      printf("+++++++++++++++++++\n");
+      printf("++++++++++++++++++++\n");
     }
   }
   printf("\n");
@@ -279,48 +307,50 @@ void test_log10_many(int count, float lbound, float ubound) {
 
 int main(void) {
   printf("------------------------------------------------\n");
-  test_representation(0.15625);
+  test_single_1(0.0);
   printf("------------------------------------------------\n");
-  test_log_single(-1.0);
+  test_single_1(-0.0);
   printf("------------------------------------------------\n");
-  test_log_single(-0.0);
+  test_single_1(-4.0);
   printf("------------------------------------------------\n");
-  test_log_single(0.0);
+  test_single_1(1.0);
   printf("------------------------------------------------\n");
-  test_log_single(1.0);
+  test_single_1(0.5);
   printf("------------------------------------------------\n");
-  test_log_single(0.5);
+  test_single_1(2.0);
   printf("------------------------------------------------\n");
-  test_log_single(2.0);
+  test_single_1(10.0);
   printf("------------------------------------------------\n");
-#if 0
-  test_log_many(10000000, 0.25, 4.0);
+  test_single_1(100.0);
   printf("------------------------------------------------\n");
-  test_log_many(10000000, 1.0e-15, 1.0);
+  test_many_1(10000000, 0.25, 4.0, 0);
   printf("------------------------------------------------\n");
-  test_log_many(10000000, 1.0, 1.0e15);
+  test_many_1(10000000, 1.0e-15, 1.0, 0);
   printf("------------------------------------------------\n");
-#endif
+  test_many_1(10000000, 1.0, 1.0e15, 0);
   printf("------------------------------------------------\n");
-  test_log10_single(-1.0);
   printf("------------------------------------------------\n");
-  test_log10_single(-0.0);
+  test_single_2(0.0);
   printf("------------------------------------------------\n");
-  test_log10_single(0.0);
+  test_single_2(-0.0);
   printf("------------------------------------------------\n");
-  test_log10_single(1.0);
+  test_single_2(-4.0);
   printf("------------------------------------------------\n");
-  test_log10_single(0.5);
+  test_single_2(1.0);
   printf("------------------------------------------------\n");
-  test_log10_single(2.0);
+  test_single_2(0.5);
   printf("------------------------------------------------\n");
-#if 0
-  test_log10_many(10000000, 0.25, 4.0);
+  test_single_2(2.0);
   printf("------------------------------------------------\n");
-  test_log10_many(10000000, 1.0e-15, 1.0);
+  test_single_2(10.0);
   printf("------------------------------------------------\n");
-  test_log10_many(10000000, 1.0, 1.0e15);
+  test_single_2(100.0);
   printf("------------------------------------------------\n");
-#endif
+  test_many_2(10000000, 0.25, 4.0, 0);
+  printf("------------------------------------------------\n");
+  test_many_2(10000000, 1.0e-15, 1.0, 0);
+  printf("------------------------------------------------\n");
+  test_many_2(10000000, 1.0, 1.0e15, 0);
+  printf("------------------------------------------------\n");
   return 0;
 }
