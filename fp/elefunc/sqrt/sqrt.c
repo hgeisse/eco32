@@ -11,13 +11,14 @@
 #include "../include/fp.h"
 
 
-#define REQ_ULP		2	/* requested accuracy in ulp */
+#define REQ_ULP		1	/* requested accuracy in ulp */
 
 
 /**************************************************************/
 
 
 #define EDOM		33
+#define ERANGE		34
 
 
 int errno = 0;
@@ -39,9 +40,9 @@ void dump(float x) {
 /**************************************************************/
 
 
-#define CONST_1		0.59466991411
-#define CONST_2		0.41421356237
-#define CONST_3		0.70710678119	/* 1/sqrt(2) */
+#define C1	0.41731		/* y0 = C1 + C2 * f */
+#define C2	0.59016		/* Cody & Waite, p. 23 */
+#define C3	0.70710678119	/* sqrt(1/2) */
 
 
 int debug = 0;
@@ -64,13 +65,13 @@ float fp_sqrt(float x) {
   }
   expX = _FP_EXP(X.w);
   frcX = _FP_FRC(X.w);
-  A1.w = _FP_FLT(0, 127, frcX);
+  A1.w = _FP_FLT(0, 126, frcX);
   if (debug) {
     printf("f=");
     dump(A1.f);
     printf("\n");
   }
-  A2.f = CONST_1 + CONST_2 * A1.f;
+  A2.f = C1 + C2 * A1.f;
   if (debug) {
     printf("y0=");
     dump(A2.f);
@@ -88,9 +89,9 @@ float fp_sqrt(float x) {
     dump(A2.f);
     printf("\n");
   }
-  expZ = expX - 127;
+  expZ = expX - 126;
   if (expZ & 1) {
-    A2.f *= CONST_3;
+    A2.f *= C3;
     if (debug) {
       printf("corrected y2=");
       dump(A2.f);
