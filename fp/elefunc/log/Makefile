@@ -4,8 +4,11 @@
 
 all:		log
 
-run:		log
-		./log
+run-few:	log
+		./log -few
+
+run-many:	log
+		./log -many
 
 log:		log.c
 		gcc -g -Wall -o log log.c -lm
