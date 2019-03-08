@@ -163,7 +163,7 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
 /**************************************************************/
 
 
-int main(void) {
+void testFew(void) {
   printf("------------------------------------------------\n");
   test_single(0.0);
   printf("------------------------------------------------\n");
@@ -185,11 +185,78 @@ int main(void) {
   printf("------------------------------------------------\n");
   test_single(-1.234e-3);
   printf("------------------------------------------------\n");
+}
+
+
+/**************************************************************/
+
+
+void testMany(void) {
+  printf("------------------------------------------------\n");
   test_many(10000000, 0.25, 4.0, 1);
   printf("------------------------------------------------\n");
   test_many(10000000, 1.0e-15, 1.0, 1);
   printf("------------------------------------------------\n");
   test_many(10000000, 1.0, 1.0e15, 1);
   printf("------------------------------------------------\n");
+}
+
+
+/**************************************************************/
+
+
+void testAll(void) {
+  int ulp;
+  unsigned int errors, i;
+  _FP_Union X, Z, R;
+
+  ulp = REQ_ULP;
+  errors = 0;
+  i = 0;
+  do {
+    if ((i & 0x0FFFFFFF) == 0) {
+      printf("reached test 0x%08X\n", i);
+    }
+    X.w = i;
+    Z.f = fp_fabs(X.f);
+    R.f = fabs(X.f);
+    if (_FP_ABS(_FP_DELTA(Z, R)) > ulp) {
+      if (errors == 0) {
+        printf("first error at X = 0x%08X: Z = 0x%08X, R = 0x%08X\n",
+               X.w, Z.w, R.w);
+      }
+      errors++;
+    }
+    i++;
+  } while (i != 0);
+  printf("done, %u errors (not within %d ulp of reference)\n",
+         errors, ulp);
+}
+
+
+/**************************************************************/
+
+
+void usage(char *myself) {
+  printf("usage: %s -few|-many|-all\n", myself);
+  exit(1);
+}
+
+
+int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[1], "-few") == 0) {
+    testFew();
+  } else
+  if (strcmp(argv[1], "-many") == 0) {
+    testMany();
+  } else
+  if (strcmp(argv[1], "-all") == 0) {
+    testAll();
+  } else {
+    usage(argv[0]);
+  }
   return 0;
 }

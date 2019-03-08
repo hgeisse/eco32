@@ -4,8 +4,14 @@
 
 all:		fabs
 
-run:		fabs
-		./fabs
+run-few:	fabs
+		./fabs -few
+
+run-many:	fabs
+		./fabs -many
+
+run-all:	fabs
+		./fabs -all
 
 fabs:		fabs.c
 		gcc -g -Wall -o fabs fabs.c -lm
