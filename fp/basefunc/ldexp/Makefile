@@ -13,6 +13,9 @@ run-many:	ldexp
 run-most:	ldexp
 		./ldexp -most
 
+run-all:	ldexp
+		./ldexp -all
+
 ldexp:		ldexp.c
 		gcc -g -Wall -o ldexp ldexp.c -lm
 

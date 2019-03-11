@@ -243,7 +243,7 @@ void testMany(void) {
 /**************************************************************/
 
 
-void testMost(void) {
+void testAll(int skipSome) {
   int ulp;
   unsigned int errors, i;
   int n;
@@ -256,9 +256,11 @@ void testMost(void) {
     if ((i & 0x0FFFFFFF) == 0) {
       printf("reached test 0x%08X\n", i);
     }
-    while ((i & 0x0003FFC0) != 0x00000000 &&
-           (i & 0x0003FFC0) != 0x0003FFC0) {
-      i += 0x00000040;
+    if (skipSome) {
+      while ((i & 0x0003FFC0) != 0x00000000 &&
+             (i & 0x0003FFC0) != 0x0003FFC0) {
+        i += 0x00000040;
+      }
     }
     X.w = i;
     for (n = -300; n <= 300; n++) {
@@ -283,7 +285,7 @@ void testMost(void) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -few|-many|-most\n", myself);
+  printf("usage: %s -few|-many|-most|-all\n", myself);
   exit(1);
 }
 
@@ -299,7 +301,10 @@ int main(int argc, char *argv[]) {
     testMany();
   } else
   if (strcmp(argv[1], "-most") == 0) {
-    testMost();
+    testAll(1);
+  } else
+  if (strcmp(argv[1], "-all") == 0) {
+    testAll(0);
   } else {
     usage(argv[0]);
   }

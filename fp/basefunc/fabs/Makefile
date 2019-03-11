@@ -10,6 +10,9 @@ run-few:	fabs
 run-many:	fabs
 		./fabs -many
 
+run-most:	fabs
+		./fabs -most
+
 run-all:	fabs
 		./fabs -all
 

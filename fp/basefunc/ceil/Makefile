@@ -10,6 +10,9 @@ run-few:	ceil
 run-many:	ceil
 		./ceil -many
 
+run-most:	ceil
+		./ceil -most
+
 run-all:	ceil
 		./ceil -all
 
