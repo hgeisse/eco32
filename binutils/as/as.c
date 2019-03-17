@@ -90,6 +90,11 @@
 #define OP_SARI		0x1D
 
 #define OP_CCTL		0x1E
+#define XOP_DCI		0x02
+#define XOP_DCF		0x03
+#define XOP_ICI		0x04
+#define XOP_CCI		0x06
+#define XOP_CCS		0x07
 
 #define OP_LDHI		0x1F
 
@@ -99,10 +104,6 @@
 #define OP_BLEU		0x23
 #define OP_BLT		0x24
 #define OP_BLTU		0x25
-#define OP_BGE		0x26
-#define OP_BGEU		0x27
-#define OP_BGT		0x28
-#define OP_BGTU		0x29
 
 #define OP_J		0x2A
 #define OP_JR		0x2B
@@ -125,10 +126,17 @@
 #define OP_MVFS		0x38
 #define OP_MVTS		0x39
 
-#define OP_TBS		0x3A
-#define OP_TBWR		0x3B
-#define OP_TBRI		0x3C
-#define OP_TBWI		0x3D
+#define OP_TCTL		0x3A
+#define XOP_TBS		0x02
+#define XOP_TBWR	0x03
+#define XOP_TBRI	0x04
+#define XOP_TBWI	0x05
+
+#define OP_FPAR		0x3B
+#define XOP_FADD	0x00
+#define XOP_FSUB	0x01
+#define XOP_FMUL	0x02
+#define XOP_FDIV	0x03
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
@@ -1060,32 +1068,32 @@ Value parseExpression(void) {
 /**************************************************************/
 
 
-void dotSyn(unsigned int code) {
+void dotSyn(unsigned int code, unsigned int xopcode) {
   allowSyn = 1;
 }
 
 
-void dotNosyn(unsigned int code) {
+void dotNosyn(unsigned int code, unsigned int xopcode) {
   allowSyn = 0;
 }
 
 
-void dotCode(unsigned int code) {
+void dotCode(unsigned int code, unsigned int xopcode) {
   currSeg = SEGMENT_CODE;
 }
 
 
-void dotData(unsigned int code) {
+void dotData(unsigned int code, unsigned int xopcode) {
   currSeg = SEGMENT_DATA;
 }
 
 
-void dotBss(unsigned int code) {
+void dotBss(unsigned int code, unsigned int xopcode) {
   currSeg = SEGMENT_BSS;
 }
 
 
-void dotExport(unsigned int code) {
+void dotExport(unsigned int code, unsigned int xopcode) {
   Symbol *global;
   Symbol *local;
   Fixup *f;
@@ -1122,7 +1130,7 @@ void dotExport(unsigned int code) {
 }
 
 
-void dotImport(unsigned int code) {
+void dotImport(unsigned int code, unsigned int xopcode) {
   Symbol *global;
   Symbol *local;
   Fixup *f;
@@ -1164,7 +1172,7 @@ int countBits(unsigned int x) {
 }
 
 
-void dotAlign(unsigned int code) {
+void dotAlign(unsigned int code, unsigned int xopcode) {
   Value v;
   unsigned int mask;
 
@@ -1182,7 +1190,7 @@ void dotAlign(unsigned int code) {
 }
 
 
-void dotSpace(unsigned int code) {
+void dotSpace(unsigned int code, unsigned int xopcode) {
   Value v;
   int i;
 
@@ -1196,7 +1204,7 @@ void dotSpace(unsigned int code) {
 }
 
 
-void dotLocate(unsigned int code) {
+void dotLocate(unsigned int code, unsigned int xopcode) {
   Value v;
 
   v = parseExpression();
@@ -1209,7 +1217,7 @@ void dotLocate(unsigned int code) {
 }
 
 
-void dotByte(unsigned int code) {
+void dotByte(unsigned int code, unsigned int xopcode) {
   Value v;
   char *p;
 
@@ -1236,7 +1244,7 @@ void dotByte(unsigned int code) {
 }
 
 
-void dotHalf(unsigned int code) {
+void dotHalf(unsigned int code, unsigned int xopcode) {
   Value v;
 
   while (1) {
@@ -1253,7 +1261,7 @@ void dotHalf(unsigned int code) {
 }
 
 
-void dotWord(unsigned int code) {
+void dotWord(unsigned int code, unsigned int xopcode) {
   Value v;
 
   while (1) {
@@ -1272,7 +1280,7 @@ void dotWord(unsigned int code) {
 }
 
 
-void dotSet(unsigned int code) {
+void dotSet(unsigned int code, unsigned int xopcode) {
   Value v;
   Symbol *symbol;
 
@@ -1297,7 +1305,7 @@ void dotSet(unsigned int code) {
 }
 
 
-void formatN(unsigned int code) {
+void formatN(unsigned int code, unsigned int xopcode) {
   Value v;
   unsigned int immed;
 
@@ -1315,8 +1323,18 @@ void formatN(unsigned int code) {
   emitWord(code << 26 | (immed & 0x03FFFFFF));
 }
 
+void formatXN(unsigned int code, unsigned int xopcode) {
 
-void formatRH(unsigned int code) {
+  /* opcode with no operands */
+  if (token != TOK_EOL) {
+    error("no operand allowed, line %d", lineno);
+  }
+  else {
+    emitWord(code << 26 | (xopcode & 0x03FFFFFF));
+  }
+}
+
+void formatRH(unsigned int code, unsigned int xopcode) {
   int reg;
   Value v;
 
@@ -1338,7 +1356,7 @@ void formatRH(unsigned int code) {
 }
 
 
-void formatRHH(unsigned int code) {
+void formatRHH(unsigned int code, unsigned int xopcode) {
   int reg;
   Value v;
 
@@ -1361,7 +1379,7 @@ void formatRHH(unsigned int code) {
 }
 
 
-void formatRRH(unsigned int code) {
+void formatRRH(unsigned int code, unsigned int xopcode) {
   int dst, src;
   Value v;
 
@@ -1420,7 +1438,7 @@ void formatRRH(unsigned int code) {
 }
 
 
-void formatRRS(unsigned int code) {
+void formatRRS(unsigned int code, unsigned int xopcode) {
   int dst, src;
   Value v;
 
@@ -1480,7 +1498,7 @@ void formatRRS(unsigned int code) {
 }
 
 
-void formatRRR(unsigned int code) {
+void formatXRRR(unsigned int code, unsigned int xopcode) {
   int dst, src1, src2;
 
   /* opcode with three register operands */
@@ -1498,11 +1516,11 @@ void formatRRR(unsigned int code) {
   src2 = tokenvalNumber;
   getToken();
   emitHalf(code << 10 | src1 << 5 | src2);
-  emitHalf(dst << 11);
+  emitHalf(dst << 11 | xopcode);
 }
 
 
-void formatRRX(unsigned int code) {
+void formatRRX(unsigned int code, unsigned int xopcode) {
   int dst, src1, src2;
   Value v;
 
@@ -1573,7 +1591,7 @@ void formatRRX(unsigned int code) {
 }
 
 
-void formatRRY(unsigned int code) {
+void formatRRY(unsigned int code, unsigned int xopcode) {
   int dst, src1, src2;
   Value v;
 
@@ -1645,7 +1663,7 @@ void formatRRY(unsigned int code) {
 }
 
 
-void formatRRB(unsigned int code) {
+void formatRRB(unsigned int code, unsigned int xopcode) {
   int src1, src2;
   Value v;
   unsigned int immed;
@@ -1658,6 +1676,36 @@ void formatRRB(unsigned int code) {
   getToken();
   expect(TOK_REGISTER);
   src2 = tokenvalNumber;
+
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  v = parseExpression();
+  if (v.sym == NULL) {
+    immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
+  } else {
+    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
+    immed = 0;
+  }
+  emitHalf(code << 10 | src1 << 5 | src2);
+  emitHalf(immed);
+}
+
+void aliasRRB(unsigned int code, unsigned int xopcode) {
+  int src1, src2;
+  Value v;
+  unsigned int immed;
+
+  /* opcode with two registers and a 16 bit signed offset operand
+   * reversing operands to implement bg* using bl* */
+  expect(TOK_REGISTER);
+  src2 = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  src1 = tokenvalNumber;
+
   getToken();
   expect(TOK_COMMA);
   getToken();
@@ -1673,7 +1721,7 @@ void formatRRB(unsigned int code) {
 }
 
 
-void formatJ(unsigned int code) {
+void formatJ(unsigned int code, unsigned int xopcode) {
   Value v;
   unsigned int immed;
   int target;
@@ -1697,7 +1745,7 @@ void formatJ(unsigned int code) {
 }
 
 
-void formatJR(unsigned int code) {
+void formatJR(unsigned int code, unsigned int xopcode) {
   int target;
 
   /* opcode with one register operand */
@@ -1710,102 +1758,113 @@ void formatJR(unsigned int code) {
 
 typedef struct instr {
   char *name;
-  void (*func)(unsigned int code);
+  void (*func)(unsigned int code, unsigned int xopcode);
   unsigned int code;
+  unsigned int xopcode;
 } Instr;
 
 
 Instr instrTable[] = {
 
   /* pseudo instructions */
-  { ".syn",    dotSyn,    0 },
-  { ".nosyn",  dotNosyn,  0 },
-  { ".code",   dotCode,   0 },
-  { ".data",   dotData,   0 },
-  { ".bss",    dotBss,    0 },
-  { ".export", dotExport, 0 },
-  { ".import", dotImport, 0 },
-  { ".align",  dotAlign,  0 },
-  { ".space",  dotSpace,  0 },
-  { ".locate", dotLocate, 0 },
-  { ".byte",   dotByte,   0 },
-  { ".half",   dotHalf,   0 },
-  { ".word",   dotWord,   0 },
-  { ".set",    dotSet,    0 },
+  { ".syn",    dotSyn,     0,       0        },
+  { ".nosyn",  dotNosyn,   0,       0        },
+  { ".code",   dotCode,    0,       0        },
+  { ".data",   dotData,    0,       0        },
+  { ".bss",    dotBss,     0,       0        },
+  { ".export", dotExport,  0,       0        },
+  { ".import", dotImport,  0,       0        },
+  { ".align",  dotAlign,   0,       0        },
+  { ".space",  dotSpace,   0,       0        },
+  { ".locate", dotLocate,  0,       0        },
+  { ".byte",   dotByte,    0,       0        },
+  { ".half",   dotHalf,    0,       0        },
+  { ".word",   dotWord,    0,       0        },
+  { ".set",    dotSet,     0,       0        },
 
   /* arithmetical instructions */
-  { "add",     formatRRY, OP_ADD  },
-  { "sub",     formatRRY, OP_SUB  },
+  { "add",     formatRRY,  OP_ADD,  0        },
+  { "sub",     formatRRY,  OP_SUB,  0        },
 
-  { "mul",     formatRRY, OP_MUL  },
-  { "mulu",    formatRRX, OP_MULU },
-  { "div",     formatRRY, OP_DIV  },
-  { "divu",    formatRRX, OP_DIVU },
-  { "rem",     formatRRY, OP_REM  },
-  { "remu",    formatRRX, OP_REMU },
+  { "mul",     formatRRY,  OP_MUL,  0        },
+  { "mulu",    formatRRX,  OP_MULU, 0        },
+  { "div",     formatRRY,  OP_DIV,  0        },
+  { "divu",    formatRRX,  OP_DIVU, 0        },
+  { "rem",     formatRRY,  OP_REM,  0        },
+  { "remu",    formatRRX,  OP_REMU, 0        },
 
   /* logical instructions */
-  { "and",     formatRRX, OP_AND  },
-  { "or",      formatRRX, OP_OR   },
-  { "xor",     formatRRX, OP_XOR  },
-  { "xnor",    formatRRX, OP_XNOR },
+  { "and",     formatRRX,  OP_AND,  0        },
+  { "or",      formatRRX,  OP_OR,   0        },
+  { "xor",     formatRRX,  OP_XOR,  0        },
+  { "xnor",    formatRRX,  OP_XNOR, 0        },
 
   /* shift instructions */
-  { "sll",     formatRRX, OP_SLL  },
-  { "slr",     formatRRX, OP_SLR  },
-  { "sar",     formatRRX, OP_SAR  },
+  { "sll",     formatRRX,  OP_SLL,  0        },
+  { "slr",     formatRRX,  OP_SLR,  0        },
+  { "sar",     formatRRX,  OP_SAR,  0        },
 
   /* cache control instructions */
-  { "cctl",    formatN,   OP_CCTL },
+  { "dci",     formatXN,   OP_CCTL, XOP_DCI  },
+  { "dcf",     formatXN,   OP_CCTL, XOP_DCF  },
+  { "ici",     formatXN,   OP_CCTL, XOP_ICI  },
+  { "cci",     formatXN,   OP_CCTL, XOP_CCI  },
+  { "ccs",     formatXN,   OP_CCTL, XOP_CCS  },
 
   /* load immediate instructions */
-  { "ldhi",    formatRHH, OP_LDHI },
+  { "ldhi",    formatRHH,  OP_LDHI, 0        },
 
   /* branch instructions */
-  { "beq",     formatRRB, OP_BEQ  },
-  { "bne",     formatRRB, OP_BNE  },
-  { "ble",     formatRRB, OP_BLE  },
-  { "bleu",    formatRRB, OP_BLEU },
-  { "blt",     formatRRB, OP_BLT  },
-  { "bltu",    formatRRB, OP_BLTU },
-  { "bge",     formatRRB, OP_BGE  },
-  { "bgeu",    formatRRB, OP_BGEU },
-  { "bgt",     formatRRB, OP_BGT  },
-  { "bgtu",    formatRRB, OP_BGTU },
+  { "beq",     formatRRB,  OP_BEQ,  0        },
+  { "bne",     formatRRB,  OP_BNE,  0        },
+  { "ble",     formatRRB,  OP_BLE,  0        },
+  { "bleu",    formatRRB,  OP_BLEU, 0        },
+  { "blt",     formatRRB,  OP_BLT,  0        },
+  { "bltu",    formatRRB,  OP_BLTU, 0        },
+  { "bge",     aliasRRB,   OP_BLE,  0        },
+  { "bgeu",    aliasRRB,   OP_BLEU, 0        },
+  { "bgt",     aliasRRB,   OP_BLT,  0        },
+  { "bgtu",    aliasRRB,   OP_BLTU, 0        },
 
   /* jump, call & return instructions */
-  { "j",       formatJ,   OP_J    },
-  { "jr",      formatJR,  OP_JR   },
-  { "jal",     formatJ,   OP_JAL  },
-  { "jalr",    formatJR,  OP_JALR },
+  { "j",       formatJ,    OP_J,    0        },
+  { "jr",      formatJR,   OP_JR,   0        },
+  { "jal",     formatJ,    OP_JAL,  0        },
+  { "jalr",    formatJR,   OP_JALR, 0        },
 
   /* interrupt related instructions */
-  { "trap",    formatN,   OP_TRAP },
-  { "rfx",     formatN,   OP_RFX  },
+  { "trap",    formatN,    OP_TRAP, 0        },
+  { "rfx",     formatN,    OP_RFX,  0        },
 
   /* load instructions */
-  { "ldw",     formatRRS, OP_LDW  },
-  { "ldh",     formatRRS, OP_LDH  },
-  { "ldhu",    formatRRS, OP_LDHU },
-  { "ldb",     formatRRS, OP_LDB  },
-  { "ldbu",    formatRRS, OP_LDBU },
+  { "ldw",     formatRRS,  OP_LDW,  0        },
+  { "ldh",     formatRRS,  OP_LDH,  0        },
+  { "ldhu",    formatRRS,  OP_LDHU, 0        },
+  { "ldb",     formatRRS,  OP_LDB,  0        },
+  { "ldbu",    formatRRS,  OP_LDBU, 0        },
 
   /* store instructions */
-  { "stw",     formatRRS, OP_STW  },
-  { "sth",     formatRRS, OP_STH  },
-  { "stb",     formatRRS, OP_STB  },
+  { "stw",     formatRRS,  OP_STW,  0        },
+  { "sth",     formatRRS,  OP_STH,  0        },
+  { "stb",     formatRRS,  OP_STB,  0        },
 
   /* processor control instructions */
-  { "mvfs",    formatRH,  OP_MVFS },
-  { "mvts",    formatRH,  OP_MVTS },
-  { "tbs",     formatN,   OP_TBS  },
-  { "tbwr",    formatN,   OP_TBWR },
-  { "tbri",    formatN,   OP_TBRI },
-  { "tbwi",    formatN,   OP_TBWI },
+  { "mvfs",    formatRH,   OP_MVFS, 0        },
+  { "mvts",    formatRH,   OP_MVTS, 0        },
+  { "tbs",     formatXN,   OP_TCTL, XOP_TBS  },
+  { "tbwr",    formatXN,   OP_TCTL, XOP_TBWR },
+  { "tbri",    formatXN,   OP_TCTL, XOP_TBRI },
+  { "tbwi",    formatXN,   OP_TCTL, XOP_TBWI },
+
+  /* floating point instructions */
+  { "fadd",    formatXRRR, OP_FPAR, XOP_FADD },
+  { "fsub",    formatXRRR, OP_FPAR, XOP_FSUB },
+  { "fmul",    formatXRRR, OP_FPAR, XOP_FMUL },
+  { "fdiv",    formatXRRR, OP_FPAR, XOP_FDIV },
 
   /* synchronization instructions */
-  { "ldlw",    formatRRS, OP_LDLW },
-  { "stcw",    formatRRS, OP_STCW },
+  { "ldlw",    formatRRS,  OP_LDLW, 0        },
+  { "stcw",    formatRRS,  OP_STCW, 0        },
 
 };
 
@@ -1875,7 +1934,7 @@ void asmModule(void) {
               tokenvalString, lineno);
       }
       getToken();
-      (*instr->func)(instr->code);
+      (*instr->func)(instr->code, instr->xopcode);
     }
     if (token != TOK_EOL) {
       error("garbage in line %d", lineno);

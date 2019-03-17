@@ -36,7 +36,7 @@
 	sar	$5,$2,$13
 	sar	$5,$2,13
 
-	cctl	3
+	dcf
 
 	ldhi	$5,L1
 

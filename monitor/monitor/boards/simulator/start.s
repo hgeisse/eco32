@@ -248,7 +248,7 @@ setTLB:
 
 	; void syncCaches(void)
 syncCaches:
-	cctl	7
+	ccs
 	jr	$31
 
 ;***************************************************************

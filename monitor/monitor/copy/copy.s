@@ -27,7 +27,7 @@ loop:
 	add	$8,$8,4			; bump pointers
 	add	$9,$9,4
 	bltu	$9,$10,loop		; more?
-	cctl	7			; invalidate icache, flush dcache
+	ccs				; invalidate icache, flush dcache
 	add	$8,$0,dst		; start execution
 	jr	$8
 

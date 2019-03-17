@@ -28,7 +28,7 @@ loop:
 	add	$8,$8,4			; bump pointers
 	add	$9,$9,4
 	bltu	$9,$10,loop		; more?
-	cctl	3			; flush dcache
+	dcf				; flush dcache
 	; compare
 	add	$8,$0,src
 	add	$9,$0,dst
