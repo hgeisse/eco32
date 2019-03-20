@@ -7,9 +7,6 @@ all:		ceil
 run-few:	ceil
 		./ceil -few
 
-run-many:	ceil
-		./ceil -many
-
 run-most:	ceil
 		./ceil -most
 

@@ -112,105 +112,6 @@ void test_single(float x) {
 /**************************************************************/
 
 
-/*
- * This function returns pseudo random numbers uniformly
- * distributed over (0,1).
- */
-float ran(void) {
-  return (float) rand() / (float) RAND_MAX;
-}
-
-
-/*
- * This function returns pseudo random numbers logarithmically
- * distributed over (1,exp(x)). Thus a*randl(ln(b/a)) is
- * logarithmically distributed in (a,b).
- */
-float randl(float x) {
-  return exp(x * ran());
-}
-
-
-/**************************************************************/
-
-
-void test_many(int count, float lbound, float ubound, int maybeNeg) {
-  int i;
-  int below, equal, above, within, ulp, expErr;
-  float x, z, r;
-  int ze, re;
-  _FP_Union Z, R;
-
-  printf("absolute operand interval: (%e,%e)\n", lbound, ubound);
-  printf("operands may%sbe negative\n", maybeNeg ? " " : " not ");
-  below = 0;
-  equal = 0;
-  above = 0;
-  within = 0;
-  ulp = REQ_ULP;
-  expErr = 0;
-  for (i = 1; i <= count; i++) {
-    if (i % 100 == 0) {
-      printf("\rnumber of tests: %d", i);
-      fflush(stdout);
-    }
-    x = lbound * randl(log(ubound / lbound));
-    if (maybeNeg) {
-      if (rand() & 0x400) {
-        x = -x;
-      }
-    }
-    ze = 0;
-    z = fp_frexp(x, &ze);
-    re = 0;
-    r = frexp(x, &re);
-    if (z < r) {
-      below++;
-    } else
-    if (z > r) {
-      above++;
-    } else {
-      equal++;
-    }
-    if (ze != re) {
-      expErr++;
-    }
-    Z.f = z;
-    R.f = r;
-    if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp && ze == re) {
-      within++;
-    } else {
-      printf("++++++++++++++++++++\n");
-      printf("x = ");
-      dump(x);
-      printf("\n");
-      debug = 1;
-      ze = 0;
-      z = fp_frexp(x, &ze);
-      debug = 0;
-      printf("z = ");
-      dump(z);
-      printf(", exp = %d", ze);
-      printf("\n");
-      printf("r = ");
-      dump(r);
-      printf(", exp = %d", re);
-      printf("\n");
-      printf("++++++++++++++++++++\n");
-    }
-  }
-  printf("\n");
-  printf("below: %d\n", below);
-  printf("equal: %d\n", equal);
-  printf("above: %d\n", above);
-  printf("exponent errors: %d\n", expErr);
-  printf("within error of %d ulp: %d\n", ulp, within);
-}
-
-
-/**************************************************************/
-
-
 void testFew(void) {
   printf("------------------------------------------------\n");
   test_single(0.0);
@@ -232,20 +133,6 @@ void testFew(void) {
   test_single(1.234e-3);
   printf("------------------------------------------------\n");
   test_single(-1.234e-3);
-  printf("------------------------------------------------\n");
-}
-
-
-/**************************************************************/
-
-
-void testMany(void) {
-  printf("------------------------------------------------\n");
-  test_many(10000000, 0.25, 4.0, 1);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 1.0e-15, 1.0, 1);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 1.0, 1.0e15, 1);
   printf("------------------------------------------------\n");
 }
 
@@ -297,7 +184,7 @@ void testAll(int skipSome) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -few|-many|-most|-all\n", myself);
+  printf("usage: %s -few|-most|-all\n", myself);
   exit(1);
 }
 
@@ -308,9 +195,6 @@ int main(int argc, char *argv[]) {
   }
   if (strcmp(argv[1], "-few") == 0) {
     testFew();
-  } else
-  if (strcmp(argv[1], "-many") == 0) {
-    testMany();
   } else
   if (strcmp(argv[1], "-most") == 0) {
     testAll(1);

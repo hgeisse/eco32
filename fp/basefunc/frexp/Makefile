@@ -7,9 +7,6 @@ all:		frexp
 run-few:	frexp
 		./frexp -few
 
-run-many:	frexp
-		./frexp -many
-
 run-most:	frexp
 		./frexp -most
 

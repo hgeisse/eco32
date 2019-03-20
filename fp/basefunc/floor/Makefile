@@ -7,9 +7,6 @@ all:		floor
 run-few:	floor
 		./floor -few
 
-run-many:	floor
-		./floor -many
-
 run-most:	floor
 		./floor -most
 

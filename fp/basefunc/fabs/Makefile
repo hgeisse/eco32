@@ -7,9 +7,6 @@ all:		fabs
 run-few:	fabs
 		./fabs -few
 
-run-many:	fabs
-		./fabs -many
-
 run-most:	fabs
 		./fabs -most
 

@@ -7,9 +7,6 @@ all:		ldexp
 run-few:	ldexp
 		./ldexp -few
 
-run-many:	ldexp
-		./ldexp -many
-
 run-most:	ldexp
 		./ldexp -most
 
