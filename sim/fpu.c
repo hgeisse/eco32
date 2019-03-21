@@ -13,6 +13,11 @@
 #include "fpu.h"
 
 
+#define FP_SGN(x)	((x) & 0x80000000)
+#define FP_EXP(x)	(((x) << 1) >> 24)
+#define FP_FRC(x)	((x) & 0x7FFFFF)
+
+
 typedef union {
   Word w;
   float f;
@@ -56,4 +61,23 @@ Word fpDiv(Word x, Word y) {
   Y.w = y;
   Z.f = X.f / Y.f;
   return Z.w;
+}
+
+
+int fpCmp(Word x, Word y) {
+  FP_Union X, Y;
+
+  if ((FP_EXP(x) == 0xFF && FP_FRC(x) != 0) ||
+      (FP_EXP(y) == 0xFF && FP_FRC(y) != 0)) {
+    return FP_CMP_UO;
+  }
+  X.w = x;
+  Y.w = y;
+  if (X.f < Y.f) {
+    return FP_CMP_LT;
+  }
+  if (X.f > Y.f) {
+    return FP_CMP_GT;
+  }
+  return FP_CMP_EQ;
 }
