@@ -162,6 +162,7 @@ static void execNextInstruction(void) {
   Word smsk;
   Word aux;
   Word addr;
+  int cmp;
 
   /* count the instruction */
   total++;
@@ -346,6 +347,30 @@ static void execNextInstruction(void) {
       break;
     case OP_BLTU:
       if (RR(reg1) < RR(reg2)) {
+        next += SEXT16(immed) << 2;
+      }
+      break;
+    case OP_BEQF:
+      cmp = fpCmp(RR(reg1), RR(reg2));
+      if (cmp == FP_CMP_EQ) {
+        next += SEXT16(immed) << 2;
+      }
+      break;
+    case OP_BNEF:
+      cmp = fpCmp(RR(reg1), RR(reg2));
+      if (cmp == FP_CMP_LT || cmp == FP_CMP_GT || cmp == FP_CMP_UO) {
+        next += SEXT16(immed) << 2;
+      }
+      break;
+    case OP_BLEF:
+      cmp = fpCmp(RR(reg1), RR(reg2));
+      if (cmp == FP_CMP_LT || cmp == FP_CMP_EQ) {
+        next += SEXT16(immed) << 2;
+      }
+      break;
+    case OP_BLTF:
+      cmp = fpCmp(RR(reg1), RR(reg2));
+      if (cmp == FP_CMP_LT) {
         next += SEXT16(immed) << 2;
       }
       break;
