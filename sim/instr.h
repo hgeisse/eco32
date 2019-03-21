@@ -114,10 +114,10 @@
 #define XOP_TBWI	0x05
 
 #define OP_FPAR		0x3B
-#define XOP_FADD	0x00
-#define XOP_FSUB	0x01
-#define XOP_FMUL	0x02
-#define XOP_FDIV	0x03
+#define XOP_ADDF	0x00
+#define XOP_SUBF	0x01
+#define XOP_MULF	0x02
+#define XOP_DIVF	0x03
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F

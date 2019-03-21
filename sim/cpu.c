@@ -507,16 +507,16 @@ static void execNextInstruction(void) {
       break;
     case OP_FPAR:
       switch (xop) {
-        case XOP_FADD:
+        case XOP_ADDF:
           WR(reg3, fpAdd(RR(reg1), RR(reg2)));
           break;
-        case XOP_FSUB:
+        case XOP_SUBF:
           WR(reg3, fpSub(RR(reg1), RR(reg2)));
           break;
-        case XOP_FMUL:
+        case XOP_MULF:
           WR(reg3, fpMul(RR(reg1), RR(reg2)));
           break;
-        case XOP_FDIV:
+        case XOP_DIVF:
           WR(reg3, fpDiv(RR(reg1), RR(reg2)));
           break;
       }
