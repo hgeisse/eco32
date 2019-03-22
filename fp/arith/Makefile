@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = h2x rep add sub mul div sqrt
+DIRS = h2x x2h rep cmp add sub mul div sqrt
 
 all:		hauser
 		for i in $(DIRS) ; do \
