@@ -557,6 +557,12 @@ static void execNextInstruction(void) {
         case XOP_DIVF:
           WR(reg3, fpDiv(RR(reg1), RR(reg2)));
           break;
+        case XOP_CF2I:
+          WR(reg2, fpCnvF2I(RR(reg1)));
+          break;
+        case XOP_CI2F:
+          WR(reg2, fpCnvI2F(RR(reg1)));
+          break;
         default:
           throwException(EXC_ILL_INSTRCT);
           break;
