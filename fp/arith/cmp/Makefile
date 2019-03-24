@@ -16,7 +16,7 @@ all:		$(EXE)
 
 install:	$(EXE)
 
-run-simple:	$(EXE)
+run-few:	$(EXE)
 		./$(EXE)
 
 run-special:	$(EXE)
@@ -33,7 +33,7 @@ run-special:	$(EXE)
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_lt
 
-run-full:	$(EXE)
+run-many:	$(EXE)
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
 		  -n $(NUM) -level $(LVL) f32 2 | \
 		./cmp -s_eq | \
