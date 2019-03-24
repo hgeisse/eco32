@@ -18,6 +18,9 @@ Word fpSub(Word x, Word y);
 Word fpMul(Word x, Word y);
 Word fpDiv(Word x, Word y);
 
+Word fpCnvF2I(Word x);
+Word fpCnvI2F(Word x);
+
 int fpCmp(Word x, Word y);
 
 

@@ -64,6 +64,24 @@ Word fpDiv(Word x, Word y) {
 }
 
 
+Word fpCnvF2I(Word x) {
+  FP_Union X;
+  Word z;
+
+  X.w = x;
+  z = (Word) (int) X.f;
+  return z;
+}
+
+
+Word fpCnvI2F(Word x) {
+  FP_Union Z;
+
+  Z.f = (float) (int) x;
+  return Z.w;
+}
+
+
 int fpCmp(Word x, Word y) {
   FP_Union X, Y;
 
