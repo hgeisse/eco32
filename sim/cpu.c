@@ -304,17 +304,27 @@ static void execNextInstruction(void) {
       WR(reg2, smsk | (RR(reg1) >> scnt));
       break;
     case OP_CCTL:
-      if (xop & 0x04) {
-        /* icache ctrl */
-        icacheInvalidate();
-      }
-      if (xop & 0x02) {
-        /* dcache ctrl */
-        if (xop & 0x01) {
-          dcacheFlush();
-        } else {
+      switch (xop) {
+        case XOP_DCI:
           dcacheInvalidate();
-        }
+          break;
+        case XOP_DCF:
+          dcacheFlush();
+          break;
+        case XOP_ICI:
+          icacheInvalidate();
+          break;
+        case XOP_CCI:
+          icacheInvalidate();
+          dcacheInvalidate();
+          break;
+        case XOP_CCS:
+          icacheInvalidate();
+          dcacheFlush();
+          break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
+          break;
       }
       break;
     case OP_LDHI:
@@ -528,6 +538,9 @@ static void execNextInstruction(void) {
         case XOP_TBWI:
           mmuTbwi();
           break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
+          break;
       }
       break;
     case OP_FPAR:
@@ -543,6 +556,9 @@ static void execNextInstruction(void) {
           break;
         case XOP_DIVF:
           WR(reg3, fpDiv(RR(reg1), RR(reg2)));
+          break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
           break;
       }
       break;
