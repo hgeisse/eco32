@@ -74,6 +74,8 @@ Instr instrTbl[] = {
   { "subf",  FORMAT_XRRR, OP_FPAR, XOP_SUBF, NULL },
   { "mulf",  FORMAT_XRRR, OP_FPAR, XOP_MULF, NULL },
   { "divf",  FORMAT_XRRR, OP_FPAR, XOP_DIVF, NULL },
+  { "cf2i",  FORMAT_XRR,  OP_FPAR, XOP_CF2I, NULL },
+  { "ci2f",  FORMAT_XRR,  OP_FPAR, XOP_CI2F, NULL },
   { "ldlw",  FORMAT_RRS,  OP_LDLW, 0,        NULL },
   { "stcw",  FORMAT_RRS,  OP_STCW, 0,        NULL },
 };
@@ -98,8 +100,9 @@ void initInstrTable(void) {
     instrCodeTbl[i] = NULL;
   }
   for (i = 0; i < sizeof(instrTbl)/sizeof(instrTbl[0]); i++) {
-    /* link alternative instruction variants for the same opcode */
+    /* build link to other extended instrs with same main opcode */
     instrTbl[i].alt = instrCodeTbl[instrTbl[i].opcode];
+    /* let instr code table entry point to instr table entry */
     instrCodeTbl[instrTbl[i].opcode] = &instrTbl[i];
     if (instrTbl[i].format == FORMAT_RRX ||
         instrTbl[i].format == FORMAT_RRY) {

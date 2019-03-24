@@ -22,7 +22,8 @@
 				   offset operand */
 #define FORMAT_JR	10	/* one register operand */
 #define FORMAT_XN	11	/* extended, no operands */
-#define FORMAT_XRRR	12	/* extended, three register operands */
+#define FORMAT_XRR	12	/* extended, two register operands */
+#define FORMAT_XRRR	13	/* extended, three register operands */
 
 
 #define MASK(n)		((((Word) 1) << n) - 1)
@@ -122,6 +123,8 @@
 #define XOP_SUBF	0x01
 #define XOP_MULF	0x02
 #define XOP_DIVF	0x03
+#define XOP_CF2I	0x06
+#define XOP_CI2F	0x07
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
@@ -132,7 +135,7 @@ typedef struct instr {
   int format;		/* format */
   Byte opcode;		/* main opcode */
   Byte xopcode;		/* extended opcode */
-  struct instr *alt;	/* alternatives with same main opcode */
+  struct instr *alt;	/* other extended instrs with same main opcode */
 } Instr;
 
 

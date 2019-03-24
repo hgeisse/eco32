@@ -70,26 +70,46 @@ static void disasmJR(char *opName, int r1) {
 }
 
 
-static void disasmXN(Instr *ip, Byte xopcode) {
-  while (ip != NULL && ip->xopcode != xopcode) {
-    ip = ip->alt;
-  }
-  if (ip == NULL) {
-    disasmN("???", 0);
-  } else {
-    sprintf(instrBuffer, "%-7s", ip->name);
-  }
+static void disasmXN(char *opName) {
+  sprintf(instrBuffer, "%-7s", opName);
 }
 
 
-static void disasmXRRR(Instr *ip, Byte xopcode, int r1, int r2, int r3) {
+static void disasmXRR(char *opName, int r1, int r2) {
+  sprintf(instrBuffer, "%-7s $%d,$%d", opName, r1, r2);
+}
+
+
+static void disasmXRRR(char *opName, int r1, int r2, int r3) {
+  sprintf(instrBuffer, "%-7s $%d,$%d,$%d", opName, r1, r2, r3);
+}
+
+
+static void disasmExtended(Instr *ip, Word instr) {
+  Byte xopcode;
+
+  xopcode = instr & 0x000000FF;
   while (ip != NULL && ip->xopcode != xopcode) {
     ip = ip->alt;
   }
   if (ip == NULL) {
     disasmN("???", 0);
   } else {
-    sprintf(instrBuffer, "%-7s $%d,$%d,$%d", ip->name, r1, r2, r3);
+    switch (ip->format) {
+      case FORMAT_XN:
+        disasmXN(ip->name);
+        break;
+      case FORMAT_XRR:
+        disasmXRR(ip->name, (instr >> 16) & 0x1F,
+                  (instr >> 21) & 0x1F);
+        break;
+      case FORMAT_XRRR:
+        disasmXRRR(ip->name, (instr >> 11) & 0x1F,
+                   (instr >> 21) & 0x1F, (instr >> 16) & 0x1F);
+        break;
+      default:
+        error("illegal extended entry in instruction table");
+    }
   }
 }
 
@@ -158,11 +178,9 @@ char *disasm(Word instr, Word locus) {
         disasmJR(ip->name, (instr >> 21) & 0x1F);
         break;
       case FORMAT_XN:
-        disasmXN(ip, instr & 0x000000FF);
-        break;
+      case FORMAT_XRR:
       case FORMAT_XRRR:
-        disasmXRRR(ip, instr & 0x000000FF, (instr >> 11) & 0x1F,
-                   (instr >> 21) & 0x1F, (instr >> 16) & 0x1F);
+        disasmExtended(ip, instr);
         break;
       default:
         error("illegal entry in instruction table");
