@@ -21,32 +21,32 @@ run-few:	$(EXE)
 
 run-special:	$(EXE)
 		cat special2.dat | \
-		./cmp -s_eq | \
+		./$(EXE) -s_eq | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_eq
 		cat special2.dat | \
-		./cmp -s_le | \
+		./$(EXE) -s_le | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_le
 		cat special2.dat | \
-		./cmp -s_lt | \
+		./$(EXE) -s_lt | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_lt
 
 run-many:	$(EXE)
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
 		  -n $(NUM) -level $(LVL) f32 2 | \
-		./cmp -s_eq | \
+		./$(EXE) -s_eq | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_eq
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
 		  -n $(NUM) -level $(LVL) f32 2 | \
-		./cmp -s_le | \
+		./$(EXE) -s_le | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_le
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
 		  -n $(NUM) -level $(LVL) f32 2 | \
-		./cmp -s_lt | \
+		./$(EXE) -s_lt | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_lt
 
