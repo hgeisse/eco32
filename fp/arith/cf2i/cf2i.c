@@ -11,19 +11,6 @@
 #include "../include/fp.h"
 
 
-#define REQ_ULP		0	/* requested accuracy in ulp */
-
-
-/**************************************************************/
-
-
-#define EDOM		33
-#define ERANGE		34
-
-
-int errno = 0;
-
-
 /**************************************************************/
 
 
@@ -40,43 +27,45 @@ void dump(float x) {
 /**************************************************************/
 
 
+_FP_Word Flags = 0;
 int debug = 0;
 
 
-int fp_cf2i(float x) {
-  _FP_Union X;
+int fp_cf2i(_FP_Word x) {
   int expX;
   _FP_Word frcX;
   int z;
 
-  X.f = x;
-  expX = (int) _FP_EXP(X.w) - 127;
+  expX = (int) _FP_EXP(x) - 127;
   if (expX < 0) {
     return 0;
   }
   if (debug) {
     printf("expX = %d\n", expX);
   }
-  frcX = _FP_FRC(X.w) | 0x00800000;
+  frcX = _FP_FRC(x) | 0x00800000;
   if (expX <= 23) {
     z = frcX >> (23 - expX);
   } else
   if (expX <= 30) {
     z = frcX << (expX - 23);
   } else {
+    if (x != 0xCF000000) {
+      Flags |= _FP_V_FLAG;
+    }
     return 0x80000000;
   }
-  return _FP_SGN(X.w) ? -z : z;
+  return _FP_SGN(x) ? -z : z;
 }
 
 
-/**************************************************************/
+int float_cf2i(float x) {
+  _FP_Union X;
+  int z;
 
-/* reference */
-
-
-int cf2i(float x) {
-  return (int) x;
+  X.f = x;
+  z = fp_cf2i(X.w);
+  return z;
 }
 
 
@@ -89,9 +78,9 @@ void test_single(float x) {
   printf("x = ");
   dump(x);
   printf("\n");
-  z = fp_cf2i(x);
+  z = float_cf2i(x);
   printf("z = 0x%08X\n", z);
-  r = cf2i(x);
+  r = (int) x;
   printf("r = 0x%08X\n", r);
 }
 
@@ -99,7 +88,7 @@ void test_single(float x) {
 /**************************************************************/
 
 
-void testFew(void) {
+void tests(void) {
   printf("------------------------------------------------\n");
   test_single(0.0);
   printf("------------------------------------------------\n");
@@ -135,38 +124,23 @@ void testFew(void) {
 /**************************************************************/
 
 
-void testAll(int skipSome) {
-  int ulp;
-  unsigned int errors, i;
-  _FP_Union X, Z, R;
+#define LINE_SIZE	200
 
-  ulp = REQ_ULP;
-  errors = 0;
-  i = 0;
-  do {
-    if ((i & 0x0FFFFFFF) == 0) {
-      printf("reached test 0x%08X\n", i);
-    }
-    if (skipSome) {
-      while ((i & 0x0003FFC0) != 0x00000000 &&
-             (i & 0x0003FFC0) != 0x0003FFC0) {
-        i += 0x00000040;
-      }
-    }
-    X.w = i;
-    Z.w = fp_cf2i(X.f);
-    R.w = cf2i(X.f);
-    if (_FP_ABS((int) Z.w - (int) R.w) > ulp) {
-      if (errors == 0) {
-        printf("first error at X = 0x%08X: Z = 0x%08X, R = 0x%08X\n",
-               X.w, Z.w, R.w);
-      }
-      errors++;
-    }
-    i++;
-  } while (i != 0);
-  printf("done, %u errors (not within %d ulp of reference)\n",
-         errors, ulp);
+
+void server(void) {
+  char line[LINE_SIZE];
+  char *endptr;
+  _FP_Word X;
+  int z;
+
+  while (fgets(line, LINE_SIZE, stdin) != NULL) {
+    if (line[0] == '#') continue;
+    endptr = line;
+    X = strtoul(endptr, &endptr, 16);
+    Flags = 0;
+    z = fp_cf2i(X);
+    printf("%08X %08X %02X\n", X, z, Flags);
+  }
 }
 
 
@@ -174,25 +148,23 @@ void testAll(int skipSome) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -few|-most|-all\n", myself);
-  exit(1);
+  printf("usage: %s [-s]\n", myself);
 }
 
 
 int main(int argc, char *argv[]) {
+  if (argc == 1) {
+    tests();
+    return 0;
+  }
   if (argc != 2) {
     usage(argv[0]);
+    return 1;
   }
-  if (strcmp(argv[1], "-few") == 0) {
-    testFew();
-  } else
-  if (strcmp(argv[1], "-most") == 0) {
-    testAll(1);
-  } else
-  if (strcmp(argv[1], "-all") == 0) {
-    testAll(0);
-  } else {
-    usage(argv[0]);
+  if (strcmp(argv[1], "-s") == 0) {
+    server();
+    return 0;
   }
-  return 0;
+  usage(argv[0]);
+  return 1;
 }

@@ -1,20 +1,57 @@
 #
-# Makefile for implementation and test of a base function
+# Makefile for implementation and test of floating-point arithmetic
 #
 
-all:		cf2i
+BUILD = ../../../build
 
-run-few:	cf2i
-		./cf2i -few
+# number of test cases
+NUM = 10000000
+# test level (1 or 2)
+LVL = 2
 
-run-most:	cf2i
-		./cf2i -most
+SRC = cf2i.c
+EXE = cf2i
 
-run-all:	cf2i
-		./cf2i -all
+GENSRC = gen1.c
+GENEXE = gen1
 
-cf2i:		cf2i.c
-		gcc -g -Wall -o cf2i cf2i.c -lm
+all:		$(EXE) $(GENEXE)
+
+install:	$(EXE) $(GENEXE)
+
+run-few:	$(EXE)
+		./$(EXE)
+
+run-special:	$(EXE)
+		cat special1.dat | \
+		./$(EXE) -s | \
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore -rminMag f32_to_i32
+
+run-many:	$(EXE)
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
+		  -n $(NUM) -level $(LVL) f32 1 | \
+		./$(EXE) -s | \
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore -rminMag f32_to_i32
+
+run-most:	$(EXE) $(GENEXE)
+		./$(GENEXE) -most | \
+		./$(EXE) -s | \
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore -rminMag f32_to_i32
+
+run-all:	$(EXE) $(GENEXE)
+		./$(GENEXE) -all | \
+		./$(EXE) -s | \
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore -rminMag f32_to_i32
+
+$(EXE):		$(SRC)
+		gcc -g -Wall -o $(EXE) $(SRC) -lm
+
+$(GENEXE):	$(GENSRC)
+		gcc -g -Wall -o $(GENEXE) $(GENSRC)
 
 clean:
-		rm -f *~ cf2i
+		rm -f *~ $(EXE) $(GENEXE)
