@@ -104,6 +104,10 @@
 #define OP_BLEU		0x23
 #define OP_BLT		0x24
 #define OP_BLTU		0x25
+#define OP_BEQF		0x26
+#define OP_BNEF		0x27
+#define OP_BLEF		0x28
+#define OP_BLTF		0x29
 
 #define OP_J		0x2A
 #define OP_JR		0x2B
@@ -133,10 +137,12 @@
 #define XOP_TBWI	0x05
 
 #define OP_FPAR		0x3B
-#define XOP_FADD	0x00
-#define XOP_FSUB	0x01
-#define XOP_FMUL	0x02
-#define XOP_FDIV	0x03
+#define XOP_ADDF	0x00
+#define XOP_SUBF	0x01
+#define XOP_MULF	0x02
+#define XOP_DIVF	0x03
+#define XOP_CF2I	0x06
+#define XOP_CI2F	0x07
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
@@ -1519,6 +1525,22 @@ void formatXRRR(unsigned int code, unsigned int xopcode) {
   emitHalf(dst << 11 | xopcode);
 }
 
+void formatXRR(unsigned int code, unsigned int xopcode) {
+  int dst, src;
+
+  /* extended opcode with two register operands */
+  expect(TOK_REGISTER);
+  dst = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  src = tokenvalNumber;
+  getToken();
+  emitHalf(code << 10 | src << 5 | dst );
+  emitHalf(xopcode);
+}
+
 
 void formatRRX(unsigned int code, unsigned int xopcode) {
   int dst, src1, src2;
@@ -1825,6 +1847,10 @@ Instr instrTable[] = {
   { "bgeu",    aliasRRB,   OP_BLEU, 0        },
   { "bgt",     aliasRRB,   OP_BLT,  0        },
   { "bgtu",    aliasRRB,   OP_BLTU, 0        },
+  { "beqf",    formatRRB,  OP_BEQF, 0        },
+  { "bnef",    formatRRB,  OP_BNEF, 0        },
+  { "blef",    formatRRB,  OP_BLEF, 0        },
+  { "bltf",    formatRRB,  OP_BLTF, 0        },
 
   /* jump, call & return instructions */
   { "j",       formatJ,    OP_J,    0        },
@@ -1857,10 +1883,12 @@ Instr instrTable[] = {
   { "tbwi",    formatXN,   OP_TCTL, XOP_TBWI },
 
   /* floating point instructions */
-  { "fadd",    formatXRRR, OP_FPAR, XOP_FADD },
-  { "fsub",    formatXRRR, OP_FPAR, XOP_FSUB },
-  { "fmul",    formatXRRR, OP_FPAR, XOP_FMUL },
-  { "fdiv",    formatXRRR, OP_FPAR, XOP_FDIV },
+  { "addf",    formatXRRR, OP_FPAR, XOP_ADDF },
+  { "subf",    formatXRRR, OP_FPAR, XOP_SUBF },
+  { "mulf",    formatXRRR, OP_FPAR, XOP_MULF },
+  { "divf",    formatXRRR, OP_FPAR, XOP_DIVF },
+  { "cf2i",    formatXRR,  OP_FPAR, XOP_CF2I },
+  { "ci2f",    formatXRR,  OP_FPAR, XOP_CI2F },
 
   /* synchronization instructions */
   { "ldlw",    formatRRS,  OP_LDLW, 0        },
