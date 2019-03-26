@@ -12,6 +12,7 @@
 #include "console.h"
 #include "error.h"
 #include "cpu.h"
+#include "fpu.h"
 #include "trace.h"
 #include "mmu.h"
 #include "icache.h"
@@ -33,6 +34,7 @@ void error(char *fmt, ...) {
   va_list ap;
 
   cpuExit();
+  fpuExit();
   traceExit();
   mmuExit();
   icacheExit();

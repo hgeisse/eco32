@@ -7,27 +7,31 @@
 #define _FPU_H_
 
 
-#define FP_CMP_LT	0		/* less than */
-#define FP_CMP_EQ	1		/* equal */
-#define FP_CMP_GT	2		/* greater than */
-#define FP_CMP_UO	3		/* unordered */
+#define FPU_CMP_LT	0		/* less than */
+#define FPU_CMP_EQ	1		/* equal */
+#define FPU_CMP_GT	2		/* greater than */
+#define FPU_CMP_UO	3		/* unordered */
 
-#define FP_V_FLAG	0x10		/* invalid */
-#define FP_I_FLAG	0x08		/* infinite */
-#define FP_O_FLAG	0x04		/* overflow */
-#define FP_U_FLAG	0x02		/* underflow */
-#define FP_X_FLAG	0x01		/* inexact */
+#define FPU_V_FLAG	0x10		/* invalid */
+#define FPU_I_FLAG	0x08		/* infinite */
+#define FPU_O_FLAG	0x04		/* overflow */
+#define FPU_U_FLAG	0x02		/* underflow */
+#define FPU_X_FLAG	0x01		/* inexact */
 
 
-Word fpAdd(Word x, Word y);
-Word fpSub(Word x, Word y);
-Word fpMul(Word x, Word y);
-Word fpDiv(Word x, Word y);
+Word fpuAdd(Word x, Word y);
+Word fpuSub(Word x, Word y);
+Word fpuMul(Word x, Word y);
+Word fpuDiv(Word x, Word y);
 
-Word fpCnvF2I(Word x);
-Word fpCnvI2F(Word x);
+Word fpuCnvF2I(Word x);
+Word fpuCnvI2F(Word x);
 
-int fpCmp(Word x, Word y, Bool invalidIfUnordered);
+int fpuCmp(Word x, Word y, Bool invalidIfUnordered);
+
+void fpuReset(void);
+void fpuInit(void);
+void fpuExit(void);
 
 
 #endif /* _FPU_H_ */

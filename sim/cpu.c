@@ -361,26 +361,26 @@ static void execNextInstruction(void) {
       }
       break;
     case OP_BEQF:
-      cmp = fpCmp(RR(reg1), RR(reg2), false);
-      if (cmp == FP_CMP_EQ) {
+      cmp = fpuCmp(RR(reg1), RR(reg2), false);
+      if (cmp == FPU_CMP_EQ) {
         next += SEXT16(immed) << 2;
       }
       break;
     case OP_BNEF:
-      cmp = fpCmp(RR(reg1), RR(reg2), false);
-      if (cmp == FP_CMP_LT || cmp == FP_CMP_GT || cmp == FP_CMP_UO) {
+      cmp = fpuCmp(RR(reg1), RR(reg2), false);
+      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_GT || cmp == FPU_CMP_UO) {
         next += SEXT16(immed) << 2;
       }
       break;
     case OP_BLEF:
-      cmp = fpCmp(RR(reg1), RR(reg2), true);
-      if (cmp == FP_CMP_LT || cmp == FP_CMP_EQ) {
+      cmp = fpuCmp(RR(reg1), RR(reg2), true);
+      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_EQ) {
         next += SEXT16(immed) << 2;
       }
       break;
     case OP_BLTF:
-      cmp = fpCmp(RR(reg1), RR(reg2), true);
-      if (cmp == FP_CMP_LT) {
+      cmp = fpuCmp(RR(reg1), RR(reg2), true);
+      if (cmp == FPU_CMP_LT) {
         next += SEXT16(immed) << 2;
       }
       break;
@@ -546,22 +546,22 @@ static void execNextInstruction(void) {
     case OP_FPAR:
       switch (xop) {
         case XOP_ADDF:
-          WR(reg3, fpAdd(RR(reg1), RR(reg2)));
+          WR(reg3, fpuAdd(RR(reg1), RR(reg2)));
           break;
         case XOP_SUBF:
-          WR(reg3, fpSub(RR(reg1), RR(reg2)));
+          WR(reg3, fpuSub(RR(reg1), RR(reg2)));
           break;
         case XOP_MULF:
-          WR(reg3, fpMul(RR(reg1), RR(reg2)));
+          WR(reg3, fpuMul(RR(reg1), RR(reg2)));
           break;
         case XOP_DIVF:
-          WR(reg3, fpDiv(RR(reg1), RR(reg2)));
+          WR(reg3, fpuDiv(RR(reg1), RR(reg2)));
           break;
         case XOP_CF2I:
-          WR(reg2, fpCnvF2I(RR(reg1)));
+          WR(reg2, fpuCnvF2I(RR(reg1)));
           break;
         case XOP_CI2F:
-          WR(reg2, fpCnvI2F(RR(reg1)));
+          WR(reg2, fpuCnvI2F(RR(reg1)));
           break;
         default:
           throwException(EXC_ILL_INSTRCT);

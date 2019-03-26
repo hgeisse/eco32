@@ -11,6 +11,7 @@
 #include "console.h"
 #include "error.h"
 #include "cpu.h"
+#include "fpu.h"
 #include "trace.h"
 #include "mmu.h"
 #include "icache.h"
@@ -37,6 +38,7 @@ Word shutdownRead(Word addr) {
 void shutdownWrite(Word addr, Word data) {
   /* the device supports a single function: exiting the simulator */
   cpuExit();
+  fpuExit();
   traceExit();
   mmuExit();
   icacheExit();

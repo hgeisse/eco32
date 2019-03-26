@@ -16,6 +16,7 @@
 #include "asm.h"
 #include "disasm.h"
 #include "cpu.h"
+#include "fpu.h"
 #include "trace.h"
 #include "mmu.h"
 #include "icache.h"
@@ -912,6 +913,7 @@ static void doInit(char *tokens[], int n) {
     dcacheReset();
     mmuReset();
     traceReset();
+    fpuReset();
     cpuReset();
   } else {
     help16();

@@ -13,6 +13,7 @@
 #include "command.h"
 #include "instr.h"
 #include "cpu.h"
+#include "fpu.h"
 #include "trace.h"
 #include "mmu.h"
 #include "icache.h"
@@ -321,6 +322,7 @@ int main(int argc, char *argv[]) {
   dcacheInit(dcacheTotalSize, dcacheLineSize, dcacheAssoc);
   mmuInit();
   traceInit();
+  fpuInit();
   if (progName != NULL) {
     initialPC = 0xC0000000 | loadAddr;
   } else {
@@ -344,6 +346,7 @@ int main(int argc, char *argv[]) {
     }
   }
   cpuExit();
+  fpuExit();
   traceExit();
   mmuExit();
   icacheExit();
