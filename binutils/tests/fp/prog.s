@@ -8,6 +8,11 @@ lbl:
   bgeu $1, $2, lbl
   bgt $1, $2, lbl
   bgtu $1, $2, lbl
+  
+  beqf $1, $2, lbl
+  bnef $1, $2, lbl
+  blef $1, $2, lbl
+  bltf $1, $2, lbl
 
   dci
   dcf
@@ -22,8 +27,11 @@ lbl:
 
   trap
 
-  fadd $1, $2, $3
-  fsub $1, $2, $3
-  fmul $1, $2, $3
-  fdiv $1, $2, $3
+  addf $1, $2, $3
+  subf $1, $2, $3
+  mulf $1, $2, $3
+  divf $1, $2, $3
+
+  ci2f $20, $21
+  cf2i $20, $21
 

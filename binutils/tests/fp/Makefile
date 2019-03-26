@@ -1,5 +1,5 @@
 #
-# Makefile for as aliases test
+# Makefile for tests related to as aliases and floating point
 #
 
 BUILD = ../../../build
