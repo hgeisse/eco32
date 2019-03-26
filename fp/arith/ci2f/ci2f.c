@@ -11,19 +11,6 @@
 #include "../include/fp.h"
 
 
-#define REQ_ULP		0	/* requested accuracy in ulp */
-
-
-/**************************************************************/
-
-
-#define EDOM		33
-#define ERANGE		34
-
-
-int errno = 0;
-
-
 /**************************************************************/
 
 
@@ -73,25 +60,23 @@ _FP_Word nlz32(_FP_Word X) {
 /**************************************************************/
 
 
+_FP_Word Flags = 0;
 int debug = 0;
 
 
-float fp_ci2f(int x) {
-  _FP_Union Z;
-  _FP_Word signZ;
+_FP_Word fp_ci2f(_FP_Word x) {
+  _FP_Word signX;
   int n;
   _FP_Word frcZ;
   int r, s;
+  _FP_Word z;
 
   if (x == 0x00000000) {
-    Z.w = 0x00000000;
-    return Z.f;
+    return 0x00000000;
   }
-  if (x < 0) {
+  signX = x & 0x80000000;
+  if (signX) {
     x = -x;
-    signZ = 0x80000000;
-  } else {
-    signZ = 0x00000000;
   }
   n = nlz32(x);
   if (debug) {
@@ -109,18 +94,21 @@ float fp_ci2f(int x) {
   if (debug) {
     printf("frcZ = 0x%08X, r = %d, s = %d\n", frcZ, r, s);
   }
-  Z.w = _FP_FLT(signZ, 158 - n, frcZ & 0x007FFFFF) + (r & (frcZ | s));
-  return Z.f;
+  if (r | s) {
+    Flags |= _FP_X_FLAG;
+  }
+  z = _FP_FLT(signX, 158 - n, frcZ & 0x007FFFFF) + (r & (frcZ | s));
+  return z;
 }
 
 
-/**************************************************************/
+float float_ci2f(int x) {
+  _FP_Union Z;
+  float z;
 
-/* reference */
-
-
-float ci2f(int x) {
-  return (float) x;
+  Z.w = fp_ci2f((_FP_Word) x);
+  z = Z.f;
+  return z;
 }
 
 
@@ -132,11 +120,11 @@ void test_single(int x) {
 
   printf("x = 0x%08X", x);
   printf("\n");
-  z = fp_ci2f(x);
+  z = float_ci2f(x);
   printf("z = ");
   dump(z);
   printf("\n");
-  r = ci2f(x);
+  r = (float) x;
   printf("r = ");
   dump(r);
   printf("\n");
@@ -146,7 +134,7 @@ void test_single(int x) {
 /**************************************************************/
 
 
-void testFew(void) {
+void tests(void) {
   printf("------------------------------------------------\n");
   test_single(0);
   printf("------------------------------------------------\n");
@@ -186,44 +174,32 @@ void testFew(void) {
   printf("------------------------------------------------\n");
   test_single(0x01000003);
   printf("------------------------------------------------\n");
+  test_single(0x3E7F7F7F);
+  printf("------------------------------------------------\n");
+  test_single(-0x3E7F7F7F);
+  printf("------------------------------------------------\n");
 }
 
 
 /**************************************************************/
 
 
-void testAll(int skipSome) {
-  int ulp;
-  unsigned int errors, i;
-  _FP_Union X, Z, R;
+#define LINE_SIZE	200
 
-  ulp = REQ_ULP;
-  errors = 0;
-  i = 0;
-  do {
-    if ((i & 0x0FFFFFFF) == 0) {
-      printf("reached test 0x%08X\n", i);
-    }
-    if (skipSome) {
-      while ((i & 0x0003FFC0) != 0x00000000 &&
-             (i & 0x0003FFC0) != 0x0003FFC0) {
-        i += 0x00000040;
-      }
-    }
-    X.w = i;
-    Z.f = fp_ci2f(X.w);
-    R.f = ci2f(X.w);
-    if (_FP_ABS(_FP_DELTA(Z, R)) > ulp) {
-      if (errors == 0) {
-        printf("first error at X = 0x%08X: Z = 0x%08X, R = 0x%08X\n",
-               X.w, Z.w, R.w);
-      }
-      errors++;
-    }
-    i++;
-  } while (i != 0);
-  printf("done, %u errors (not within %d ulp of reference)\n",
-         errors, ulp);
+
+void server(void) {
+  char line[LINE_SIZE];
+  char *endptr;
+  _FP_Word X, Z;
+
+  while (fgets(line, LINE_SIZE, stdin) != NULL) {
+    if (line[0] == '#') continue;
+    endptr = line;
+    X = strtoul(endptr, &endptr, 16);
+    Flags = 0;
+    Z = fp_ci2f(X);
+    printf("%08X %08X %02X\n", X, Z, Flags);
+  }
 }
 
 
@@ -231,25 +207,23 @@ void testAll(int skipSome) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -few|-most|-all\n", myself);
-  exit(1);
+  printf("usage: %s [-s]\n", myself);
 }
 
 
 int main(int argc, char *argv[]) {
+  if (argc == 1) {
+    tests();
+    return 0;
+  }
   if (argc != 2) {
     usage(argv[0]);
+    return 1;
   }
-  if (strcmp(argv[1], "-few") == 0) {
-    testFew();
-  } else
-  if (strcmp(argv[1], "-most") == 0) {
-    testAll(1);
-  } else
-  if (strcmp(argv[1], "-all") == 0) {
-    testAll(0);
-  } else {
-    usage(argv[0]);
+  if (strcmp(argv[1], "-s") == 0) {
+    server();
+    return 0;
   }
-  return 0;
+  usage(argv[0]);
+  return 1;
 }
