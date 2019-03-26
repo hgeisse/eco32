@@ -31,14 +31,14 @@ _FP_Word Flags = 0;
 int debug = 0;
 
 
-int fp_cf2i(_FP_Word x) {
+_FP_Word fp_cf2i(_FP_Word x) {
   int expX;
   _FP_Word frcX;
-  int z;
+  _FP_Word z;
 
   expX = (int) _FP_EXP(x) - 127;
   if (expX < 0) {
-    return 0;
+    return 0x00000000;
   }
   if (debug) {
     printf("expX = %d\n", expX);
@@ -64,7 +64,7 @@ int float_cf2i(float x) {
   int z;
 
   X.f = x;
-  z = fp_cf2i(X.w);
+  z = (int) fp_cf2i(X.w);
   return z;
 }
 
@@ -130,16 +130,15 @@ void tests(void) {
 void server(void) {
   char line[LINE_SIZE];
   char *endptr;
-  _FP_Word X;
-  int z;
+  _FP_Word X, Z;
 
   while (fgets(line, LINE_SIZE, stdin) != NULL) {
     if (line[0] == '#') continue;
     endptr = line;
     X = strtoul(endptr, &endptr, 16);
     Flags = 0;
-    z = fp_cf2i(X);
-    printf("%08X %08X %02X\n", X, z, Flags);
+    Z = fp_cf2i(X);
+    printf("%08X %08X %02X\n", X, Z, Flags);
   }
 }
 
