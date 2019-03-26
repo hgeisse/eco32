@@ -1,0 +1,7 @@
+Makefile targets for running the programs:
+
+run-few		just some examples, or sometimes difficult cases
+run-special	all (combinations of) special values
+run-many	NUM (combinations of) values (for NUM see Makefile)
+run-most	all (combinations of) values, but skip many unimportant ones
+run-all		all (combinations of) values
