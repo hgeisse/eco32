@@ -77,12 +77,27 @@ Word fpuDiv(Word x, Word y) {
 
 
 Word fpuCnvF2I(Word x) {
-  FP_Union X;
+  int expX;
+  Word frcX;
   Word z;
 
-  X.w = x;
-  z = (Word) (int) X.f;
-  return z;
+  expX = (int) FP_EXP(x) - 127;
+  if (expX < 0) {
+    return 0x00000000;
+  }
+  frcX = FP_FRC(x) | 0x00800000;
+  if (expX <= 23) {
+    z = frcX >> (23 - expX);
+  } else
+  if (expX <= 30) {
+    z = frcX << (expX - 23);
+  } else {
+    if (x != 0xCF000000) {
+      fpuFlags |= FPU_V_FLAG;
+    }
+    return 0x80000000;
+  }
+  return FP_SGN(x) ? -z : z;
 }
 
 
