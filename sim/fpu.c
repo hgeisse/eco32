@@ -19,6 +19,7 @@
 #define FP_SGN(x)	((x) & 0x80000000)
 #define FP_EXP(x)	(((x) << 1) >> 24)
 #define FP_FRC(x)	((x) & 0x7FFFFF)
+#define FP_FLT(s,e,f)	((s) | ((e) << 23) | (f))
 
 
 typedef union {
@@ -28,6 +29,39 @@ typedef union {
 
 
 static Word fpuFlags;
+
+
+/**************************************************************/
+
+
+static Word nlz32(Word x) {
+  Word z;
+
+  z = 0;
+  if (x == 0) {
+    return 32;
+  }
+  if (x <= 0x0000FFFF) {
+    z += 16;
+    x <<= 16;
+  }
+  if (x <= 0x00FFFFFF) {
+    z += 8;
+    x <<= 8;
+  }
+  if (x <= 0x0FFFFFFF) {
+    z += 4;
+    x <<= 4;
+  }
+  if (x <= 0x3FFFFFFF) {
+    z += 2;
+    x <<= 2;
+  }
+  if (x <= 0x7FFFFFFF) {
+    z += 1;
+  }
+  return z;
+}
 
 
 /**************************************************************/
@@ -102,10 +136,34 @@ Word fpuCnvF2I(Word x) {
 
 
 Word fpuCnvI2F(Word x) {
-  FP_Union Z;
+  Word signX;
+  int n;
+  Word frcZ;
+  int r, s;
+  Word z;
 
-  Z.f = (float) (int) x;
-  return Z.w;
+  if (x == 0x00000000) {
+    return 0x00000000;
+  }
+  signX = x & 0x80000000;
+  if (signX) {
+    x = -x;
+  }
+  n = nlz32(x);
+  if (n >= 8) {
+    frcZ = x << (n - 8);
+    r = 0;
+    s = 0;
+  } else {
+    frcZ = x >> (8 - n);
+    r = (x & (0x00000001 << (7 - n))) != 0;
+    s = (x & ((0x00000001 << (7 - n)) - 1)) != 0;
+  }
+  if (r | s) {
+    fpuFlags |= FPU_X_FLAG;
+  }
+  z = FP_FLT(signX, 158 - n, frcZ & 0x007FFFFF) + (r & (frcZ | s));
+  return z;
 }
 
 
