@@ -40,7 +40,7 @@ _FP_Word minu(_FP_Word A, _FP_Word B) {
 /**************************************************************/
 
 
-static _FP_Word nlz32(_FP_Word X) {
+_FP_Word nlz32(_FP_Word X) {
   _FP_Word Z;
 
   Z = 0;
@@ -70,7 +70,7 @@ static _FP_Word nlz32(_FP_Word X) {
 }
 
 
-static _FP_Word nlz32_ref(_FP_Word X) {
+_FP_Word nlz32_ref(_FP_Word X) {
   int n;
 
   n = 0;
@@ -120,7 +120,7 @@ void nlz32_test(void) {
 /**************************************************************/
 
 
-static void mul32(_FP_Word a, _FP_Word b, _FP_Word *hp, _FP_Word *lp) {
+void mul32(_FP_Word a, _FP_Word b, _FP_Word *hp, _FP_Word *lp) {
   _FP_Word hi, lo;
   _FP_Word aux;
 
@@ -149,7 +149,7 @@ static void mul32(_FP_Word a, _FP_Word b, _FP_Word *hp, _FP_Word *lp) {
 }
 
 
-static void mul32_ref(_FP_Word a, _FP_Word b, _FP_Word *hp, _FP_Word *lp) {
+void mul32_ref(_FP_Word a, _FP_Word b, _FP_Word *hp, _FP_Word *lp) {
   unsigned long res;
 
   res = (unsigned long) a * (unsigned long) b;

@@ -35,7 +35,7 @@ _FP_Word maxu(_FP_Word A, _FP_Word B) {
 /**************************************************************/
 
 
-static _FP_Word nlz32(_FP_Word X) {
+_FP_Word nlz32(_FP_Word X) {
   _FP_Word Z;
 
   Z = 0;
@@ -65,7 +65,7 @@ static _FP_Word nlz32(_FP_Word X) {
 }
 
 
-static _FP_Word nlz32_ref(_FP_Word X) {
+_FP_Word nlz32_ref(_FP_Word X) {
   int n;
 
   n = 0;
