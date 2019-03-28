@@ -35,7 +35,7 @@ _FP_Word maxu(_FP_Word A, _FP_Word B) {
 /**************************************************************/
 
 
-static _FP_Word nlz32(_FP_Word X) {
+_FP_Word nlz32(_FP_Word X) {
   _FP_Word Z;
 
   Z = 0;
@@ -65,7 +65,7 @@ static _FP_Word nlz32(_FP_Word X) {
 }
 
 
-static _FP_Word nlz32_ref(_FP_Word X) {
+_FP_Word nlz32_ref(_FP_Word X) {
   int n;
 
   n = 0;
@@ -222,97 +222,13 @@ void test_single(float x) {
 /**************************************************************/
 
 
-/*
- * This function returns pseudo random numbers uniformly
- * distributed over (0,1).
- */
-float ran(void) {
-  return (float) rand() / (float) RAND_MAX;
-}
-
-
-/*
- * This function returns pseudo random numbers logarithmically
- * distributed over (1,exp(x)). Thus a*randl(ln(b/a)) is
- * logarithmically distributed in (a,b).
- */
-float randl(float x) {
-  return exp(x * ran());
-}
-
-
-/**************************************************************/
-
-
-void test_many(int count, float lbound, float ubound, int maybeNeg) {
-  int i;
-  int below, equal, above, within, ulp;
-  float x, z, r;
-  _FP_Union Z, R;
-
-  printf("absolute operand interval: (%e,%e)\n", lbound, ubound);
-  printf("operands may%sbe negative\n", maybeNeg ? " " : " not ");
-  below = 0;
-  equal = 0;
-  above = 0;
-  within = 0;
-  ulp = 1;
-  for (i = 1; i <= count; i++) {
-    if (i % 100 == 0) {
-      printf("\rnumber of tests: %d", i);
-      fflush(stdout);
-    }
-    x = lbound * randl(log(ubound / lbound));
-    if (maybeNeg) {
-      if (rand() & 0x400) {
-        x = -x;
-      }
-    }
-    z = float_sqrt(x);
-    r = sqrt(x);
-    if (z < r) {
-      below++;
-    } else
-    if (z > r) {
-      above++;
-    } else {
-      equal++;
-    }
-    Z.f = z;
-    R.f = r;
-    if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
-      within++;
-    } else {
-      printf("++++++++++++++++++++\n");
-      printf("x=");
-      dump(x);
-      printf("\n");
-      debug = 1;
-      z = float_sqrt(x);
-      debug = 0;
-      printf("z=");
-      dump(z);
-      printf("\n");
-      printf("r=");
-      dump(r);
-      printf("\n");
-      printf("++++++++++++++++++++\n");
-    }
-  }
-  printf("\n");
-  printf("below: %d\n", below);
-  printf("equal: %d\n", equal);
-  printf("above: %d\n", above);
-  printf("within error of %d ulp: %d\n", ulp, within);
-}
-
-
-/**************************************************************/
-
-
 void tests(void) {
   printf("------------------------------------------------\n");
   nlz32_test();
+  printf("------------------------------------------------\n");
+  test_single(0.0);
+  printf("------------------------------------------------\n");
+  test_single(-0.0);
   printf("------------------------------------------------\n");
   test_single(1.0);
   printf("------------------------------------------------\n");
@@ -323,14 +239,6 @@ void tests(void) {
   test_single(1.234e2);
   printf("------------------------------------------------\n");
   test_single(1.234e-3);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 0.5, 2.0, 0);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 1.0e-15, 1.0, 0);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 1.0, 1.0e15, 0);
-  printf("------------------------------------------------\n");
-  test_many(10000000, 1.0e-15, 1.0e15, 0);
   printf("------------------------------------------------\n");
 }
 

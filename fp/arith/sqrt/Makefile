@@ -5,35 +5,53 @@
 BUILD = ../../../build
 
 # number of test cases
-NUM = 100000000
+NUM = 10000000
 # test level (1 or 2)
 LVL = 2
 
 SRC = sqrt.c
 EXE = sqrt
 
-all:		$(EXE)
+GENSRC = gen1.c
+GENEXE = gen1
 
-install:	$(EXE)
+all:		$(EXE) $(GENEXE)
 
-run-simple:	$(EXE)
+install:	$(EXE) $(GENEXE)
+
+run-few:	$(EXE)
 		./$(EXE)
 
 run-special:	$(EXE)
 		cat special1.dat | \
-		./sqrt -s | \
+		./$(EXE) -s | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_sqrt
 
-run-full:	$(EXE)
+run-many:	$(EXE)
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_gen \
 		  -n $(NUM) -level $(LVL) f32 1 | \
-		./sqrt -s | \
+		./$(EXE) -s | \
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore f32_sqrt
+
+run-most:	$(EXE) $(GENEXE)
+		./$(GENEXE) -most | \
+		./$(EXE) -s | \
+		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
+		  -tininessbefore f32_sqrt
+
+run-all:	$(EXE) $(GENEXE)
+		./$(GENEXE) -all | \
+		./$(EXE) -s | \
 		../TestFloat-3e/build/Linux-386-GCC/testfloat_ver \
 		  -tininessbefore f32_sqrt
 
 $(EXE):		$(SRC)
 		gcc -g -Wall -o $(EXE) $(SRC) -lm
 
+$(GENEXE):	$(GENSRC)
+		gcc -g -Wall -o $(GENEXE) $(GENSRC)
+
 clean:
-		rm -f *~ $(EXE)
+		rm -f *~ $(EXE) $(GENEXE)
