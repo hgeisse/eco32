@@ -11,7 +11,7 @@
 #include "../include/fp.h"
 
 
-#define REQ_ULP		2	/* requested accuracy in ulp */
+#define REQ_ULP		1	/* requested accuracy in ulp */
 
 
 /**************************************************************/
@@ -40,63 +40,28 @@ void dump(float x) {
 /**************************************************************/
 
 
-float fp_frexp(float x, int *exp) {
-  _FP_Union X;
-  int expX;
-  _FP_Union Y;
-
-  X.f = x;
-  *exp = 0;
-  if ((X.w & 0x7FFFFFFF) == 0) {
-    return X.f;
-  }
-  expX = ((int) _FP_EXP(X.w)) - 126;
-  if (expX == 129) {
-    if (_FP_FRC(X.w) != 0) {
-      X.w |= 0x00400000;
-    }
-    return X.f;
-  }
-  if (expX == -126) {
-    Y.w = 0x4C000000;
-    X.f *= Y.f;
-    *exp = -25;
-    expX = ((int) _FP_EXP(X.w)) - 126;
-  }
-  *exp += expX;
-  Y.w = _FP_FLT(_FP_SGN(X.w), 126, _FP_FRC(X.w));
-  return Y.f;
-}
-
-
-/**************************************************************/
-
-
-int debug = 0;
-
-
-float fp_sqrt(float x) {
-  float y;
+float fp_sqrt(float arg) {
+  float x;
   int exp;
   float temp;
   int i;
 
-  if (x <= 0.0) {
-    if (x < 0.0) {
+  if (arg <= 0.0) {
+    if (arg < 0.0) {
       errno = EDOM;
     }
     return 0.0;
   }
-  y = fp_frexp(x, &exp);
-  while (y < 0.5) {
-    y *= 2;
+  x = frexp(arg, &exp);
+  while (x < 0.5) {
+    x *= 2;
     exp--;
   }
   if (exp & 1) {
-    y *= 2;
+    x *= 2;
     exp--;
   }
-  temp = 0.5 * (1.0 + y);
+  temp = 0.5 * (1.0 + x);
   while (exp > 60) {
     temp *= (1 << 30);
     exp -= 60;
@@ -106,12 +71,12 @@ float fp_sqrt(float x) {
     exp += 60;
   }
   if (exp >= 0) {
-    temp *= 1 << (exp / 2);
+    temp *= (1 << (exp / 2));
   } else {
-    temp /= 1 << (-exp / 2);
+    temp /= (1 << (-exp / 2));
   }
   for (i = 0; i <= 4; i++) {
-    temp = 0.5 * (temp + x / temp);
+    temp = 0.5 * (temp + arg / temp);
   }
   return temp;
 }
@@ -134,6 +99,38 @@ void test_single(float x) {
   printf("r = ");
   dump(r);
   printf("\n");
+}
+
+
+/**************************************************************/
+
+
+void testFew(void) {
+  printf("------------------------------------------------\n");
+  test_single(0.0);
+  printf("------------------------------------------------\n");
+  test_single(1.0);
+  printf("------------------------------------------------\n");
+  test_single(2.0);
+  printf("------------------------------------------------\n");
+  test_single(0.5);
+  printf("------------------------------------------------\n");
+  test_single(4.0);
+  printf("------------------------------------------------\n");
+  test_single(0.25);
+  printf("------------------------------------------------\n");
+  test_single(8.0);
+  printf("------------------------------------------------\n");
+  test_single(0.125);
+  printf("------------------------------------------------\n");
+  test_single(3.0);
+  printf("------------------------------------------------\n");
+  test_single(9.0);
+  printf("------------------------------------------------\n");
+  test_single(1.2345e2);
+  printf("------------------------------------------------\n");
+  test_single(1.2345e-3);
+  printf("------------------------------------------------\n");
 }
 
 
@@ -200,21 +197,6 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
     R.f = r;
     if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
       within++;
-    } else {
-      printf("++++++++++++++++++++\n");
-      printf("x = ");
-      dump(x);
-      printf("\n");
-      debug = 1;
-      z = fp_sqrt(x);
-      debug = 0;
-      printf("z = ");
-      dump(z);
-      printf("\n");
-      printf("r = ");
-      dump(r);
-      printf("\n");
-      printf("++++++++++++++++++++\n");
     }
   }
   printf("\n");
@@ -222,42 +204,6 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
   printf("equal: %d\n", equal);
   printf("above: %d\n", above);
   printf("within error of %d ulp: %d\n", ulp, within);
-}
-
-
-/**************************************************************/
-
-
-void testFew(void) {
-  printf("------------------------------------------------\n");
-  test_single(0.0);
-  printf("------------------------------------------------\n");
-  test_single(-0.0);
-  printf("------------------------------------------------\n");
-  test_single(2.3);
-  printf("------------------------------------------------\n");
-  test_single(-2.3);
-  printf("------------------------------------------------\n");
-  test_single(2.5);
-  printf("------------------------------------------------\n");
-  test_single(-2.5);
-  printf("------------------------------------------------\n");
-  test_single(2.7);
-  printf("------------------------------------------------\n");
-  test_single(-2.7);
-  printf("------------------------------------------------\n");
-  test_single(3.0);
-  printf("------------------------------------------------\n");
-  test_single(-3.0);
-  printf("------------------------------------------------\n");
-  test_single(1.2345e2);
-  printf("------------------------------------------------\n");
-  test_single(-1.2345e2);
-  printf("------------------------------------------------\n");
-  test_single(1.2345e-3);
-  printf("------------------------------------------------\n");
-  test_single(-1.2345e-3);
-  printf("------------------------------------------------\n");
 }
 
 
@@ -291,9 +237,9 @@ void testAll(int skipSome) {
       printf("reached test 0x%08X\n", i);
     }
     if (skipSome) {
-      while ((i & 0x0003FFC0) != 0x00000000 &&
-             (i & 0x0003FFC0) != 0x0003FFC0) {
-        i += 0x00000040;
+      while ((i & 0x0000FF00) != 0x00000000 &&
+             (i & 0x0000FF00) != 0x0000FF00) {
+        i += 0x00000100;
       }
     }
     X.w = i;
