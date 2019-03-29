@@ -8,8 +8,8 @@ atan2
 sinh
 cosh
 tanh
-exp
-log
-log10
+exp	ok
+log	ok
+log10	ok
 pow
-sqrt
+sqrt	ok
