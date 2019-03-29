@@ -11,7 +11,7 @@
 #include "../include/fp.h"
 
 
-#define REQ_ULP		7	/* requested accuracy in ulp */
+#define REQ_ULP		3	/* requested accuracy in ulp */
 
 
 /**************************************************************/
@@ -40,74 +40,40 @@ void dump(float x) {
 /**************************************************************/
 
 
-float fp_frexp(float x, int *exp) {
-  _FP_Union X;
-  int expX;
-  _FP_Union Y;
-
-  X.f = x;
-  *exp = 0;
-  if ((X.w & 0x7FFFFFFF) == 0) {
-    return X.f;
-  }
-  expX = ((int) _FP_EXP(X.w)) - 126;
-  if (expX == 129) {
-    if (_FP_FRC(X.w) != 0) {
-      X.w |= 0x00400000;
-    }
-    return X.f;
-  }
-  if (expX == -126) {
-    Y.w = 0x4C000000;
-    X.f *= Y.f;
-    *exp = -25;
-    expX = ((int) _FP_EXP(X.w)) - 126;
-  }
-  *exp += expX;
-  Y.w = _FP_FLT(_FP_SGN(X.w), 126, _FP_FRC(X.w));
-  return Y.f;
-}
+static float	ln2	= 0.693147180559945309e0;
+static float	ln10	= 2.302585092994045684;
+static float	sqrto2	= 0.707106781186547524e0;
+static float	p0	= -.240139179559210510e2;
+static float	p1	= 0.309572928215376501e2;
+static float	p2	= -.963769093368686593e1;
+static float	p3	= 0.421087371217979714e0;
+static float	q0	= -.120069589779605255e2;
+static float	q1	= 0.194809660700889731e2;
+static float	q2	= -.891110902798312337e1;
 
 
-/**************************************************************/
-
-
-int debug = 0;
-
-
-static float sqrto2 = 0.707106781186547524e0;
-static float p0 = -0.240139179559210510e2;
-static float p1 = 0.309572928215376501e2;
-static float p2 = -0.963769093368686593e1;
-static float p3 = 0.421087371217979714e0;
-static float q0 = -0.120069589779605255e2;
-static float q1 = 0.194809660700889731e2;
-static float q2 = -0.891110902798312337e1;
-static float ln2 = 0.693147180559945309e0;
-static float ln10 = 2.302585092994045684;
-
-
-float fp_log(float x) {
-  float y;
+float fp_log(float arg) {
+  float x;
   int exp;
-  float z, zsq;
+  float z;
+  float zsq;
   float temp;
 
-  if (x <= 0.0) {
+  if (arg <= 0.0) {
     errno = EDOM;
     return -HUGE_VAL;
   }
-  y = fp_frexp(x, &exp);
-  while (y < 0.5) {
-    y *= 2;
+  x = frexp(arg, &exp);
+  while (x < 0.5) {
+    x *= 2;
     exp--;
   }
-  if (y < sqrto2) {
-    y *= 2;
+  if (x < sqrto2) {
+    x *= 2;
     exp--;
   }
-  z = (y - 1) / (y + 1);
-  zsq = z*z;
+  z = (x - 1) / (x + 1);
+  zsq = z * z;
   temp = ((p3 * zsq + p2) * zsq + p1) * zsq + p0;
   temp = temp / (((1.0 * zsq + q2) * zsq + q1) * zsq + q0);
   temp = temp * z + exp * ln2;
@@ -115,8 +81,8 @@ float fp_log(float x) {
 }
 
 
-float fp_log10(float x) {
-  return log(x) / ln10;
+float fp_log10(float arg) {
+  return log(arg) / ln10;
 }
 
 
@@ -137,6 +103,32 @@ void test_single(float x) {
   printf("r = ");
   dump(r);
   printf("\n");
+}
+
+
+/**************************************************************/
+
+
+void testFew(void) {
+  printf("------------------------------------------------\n");
+  test_single(1.0);
+  printf("------------------------------------------------\n");
+  test_single(2.718281828);
+  printf("------------------------------------------------\n");
+  test_single(0.367879441);
+  printf("------------------------------------------------\n");
+  test_single(4.0);
+  printf("------------------------------------------------\n");
+  test_single(0.25);
+  printf("------------------------------------------------\n");
+  test_single(8.0);
+  printf("------------------------------------------------\n");
+  test_single(0.125);
+  printf("------------------------------------------------\n");
+  test_single(1.2345e2);
+  printf("------------------------------------------------\n");
+  test_single(1.2345e-3);
+  printf("------------------------------------------------\n");
 }
 
 
@@ -203,21 +195,6 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
     R.f = r;
     if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
       within++;
-    } else {
-      printf("++++++++++++++++++++\n");
-      printf("x = ");
-      dump(x);
-      printf("\n");
-      debug = 1;
-      z = fp_log(x);
-      debug = 0;
-      printf("z = ");
-      dump(z);
-      printf("\n");
-      printf("r = ");
-      dump(r);
-      printf("\n");
-      printf("++++++++++++++++++++\n");
     }
   }
   printf("\n");
@@ -225,42 +202,6 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
   printf("equal: %d\n", equal);
   printf("above: %d\n", above);
   printf("within error of %d ulp: %d\n", ulp, within);
-}
-
-
-/**************************************************************/
-
-
-void testFew(void) {
-  printf("------------------------------------------------\n");
-  test_single(0.0);
-  printf("------------------------------------------------\n");
-  test_single(-0.0);
-  printf("------------------------------------------------\n");
-  test_single(2.3);
-  printf("------------------------------------------------\n");
-  test_single(-2.3);
-  printf("------------------------------------------------\n");
-  test_single(2.5);
-  printf("------------------------------------------------\n");
-  test_single(-2.5);
-  printf("------------------------------------------------\n");
-  test_single(2.7);
-  printf("------------------------------------------------\n");
-  test_single(-2.7);
-  printf("------------------------------------------------\n");
-  test_single(3.0);
-  printf("------------------------------------------------\n");
-  test_single(-3.0);
-  printf("------------------------------------------------\n");
-  test_single(1.2345e2);
-  printf("------------------------------------------------\n");
-  test_single(-1.2345e2);
-  printf("------------------------------------------------\n");
-  test_single(1.2345e-3);
-  printf("------------------------------------------------\n");
-  test_single(-1.2345e-3);
-  printf("------------------------------------------------\n");
 }
 
 
@@ -294,9 +235,9 @@ void testAll(int skipSome) {
       printf("reached test 0x%08X\n", i);
     }
     if (skipSome) {
-      while ((i & 0x0003FFC0) != 0x00000000 &&
-             (i & 0x0003FFC0) != 0x0003FFC0) {
-        i += 0x00000040;
+      while ((i & 0x0000FF00) != 0x00000000 &&
+             (i & 0x0000FF00) != 0x0000FF00) {
+        i += 0x00000100;
       }
     }
     X.w = i;
