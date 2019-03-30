@@ -218,6 +218,9 @@ void testMany(void) {
 /**************************************************************/
 
 
+#define SKIP_MASK	0x0000FF00
+
+
 void testAll(int skipSome) {
   int ulp;
   unsigned int errors, i;
@@ -231,9 +234,9 @@ void testAll(int skipSome) {
       printf("reached test 0x%08X\n", i);
     }
     if (skipSome) {
-      while ((i & 0x0000FF00) != 0x00000000 &&
-             (i & 0x0000FF00) != 0x0000FF00) {
-        i += 0x00000100;
+      if ((i & SKIP_MASK) != 0x00000000 &&
+          (i & SKIP_MASK) != SKIP_MASK) {
+        i |= SKIP_MASK;
       }
     }
     X.w = i;

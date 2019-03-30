@@ -11,5 +11,5 @@ tanh
 exp	ok
 log	ok
 log10	ok
-pow
+pow	ok
 sqrt	ok
