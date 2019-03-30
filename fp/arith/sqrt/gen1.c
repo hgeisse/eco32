@@ -11,15 +11,18 @@
 /**************************************************************/
 
 
+#define SKIP_MASK	0x0000FF00
+
+
 void generateAll(int skipSome) {
   unsigned int i;
 
   i = 0;
   do {
     if (skipSome) {
-      while ((i & 0x0000FF00) != 0x00000000 &&
-             (i & 0x0000FF00) != 0x0000FF00) {
-        i += 0x00000100;
+      if ((i & SKIP_MASK) != 0x00000000 &&
+          (i & SKIP_MASK) != SKIP_MASK) {
+        i |= SKIP_MASK;
       }
     }
     printf("%08X\n", i);
