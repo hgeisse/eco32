@@ -1,0 +1,29 @@
+1. The stack grows downwards.
+
+2. During the execution of a function, the stack pointer
+   points to the lowest byte of its stack frame (if the
+   function allocates a stack frame at all).
+
+3. There is no explicit frame pointer.
+
+4. Registers $4..$7 are used for the first 4 arguments
+   in any call to a function.
+
+5. Additional arguments are transferred in the stack frame
+   of the caller.
+
+6. If arguments are numbered from left to right, the args
+   with higher numbers are stored at higher addresses in
+   the stack frame.
+
+7. In any non-leaf procedure there is place to store the
+   contents of the four argument registers (which at that
+   time hold arguments to the function to be called). This
+   place is located at the very bottom of the procedure's
+   stack frame, at offsets 0..15 (decimal, 4*4 = 16 bytes).
+   The actual storing is performed by the callee.
+
+8. Stack slots have a size of at least one word, i.e.,
+   4 bytes. If a data type is smaller than that, it is
+   stored in the lower bytes of the word, consistent with
+   its representation in a register.

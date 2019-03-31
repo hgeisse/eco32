@@ -19,7 +19,17 @@ typedef char *va_list;
 				      (char *) (&(last) + 1) \
 				  )))
 
-#define va_arg(list,type)	()
+#define _va_arg_size(type)	((sizeof(type) + 3) & ~3U)
+#define _va_arg_1(list,type)	(* (type *) (&(list += 4)[-1]))
+#define _va_arg_2(list,type)	(* (type *) (&(list += 4)[-2]))
+#define _va_arg_n(list,type)	(* (type *) (&(list += _va_arg_size(type)) \
+				    [- (int) _va_arg_size(type)]))
+
+#define va_arg(list,type)	(sizeof(type) == 1 ? \
+				    _va_arg_1(list, type) : \
+				 sizeof(type) == 2 ? \
+				    _va_arg_2(list, type) : \
+				    _va_arg_n(list,type))
 
 #define va_end(list)		((void) 0)
 
