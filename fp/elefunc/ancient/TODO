@@ -5,9 +5,9 @@ asin
 acos
 atan
 atan2
-sinh
-cosh
-tanh
+sinh	ok
+cosh	ok
+tanh	ok
 exp	ok
 log	ok
 log10	ok
