@@ -9,7 +9,7 @@ sinh
 cosh
 tanh
 exp
-log
-log10
+log	ok
+log10	ok
 pow
-sqrt
+sqrt	ok
