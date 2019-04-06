@@ -165,6 +165,43 @@ void testFew(void) {
 /**************************************************************/
 
 
+void testSpecial(void) {
+  _FP_Union X;
+
+  printf("------------------------------------------------\n");
+  X.w = 0x00000000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x80000000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xC0A00000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x7F800000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xFF800000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x7F800005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xFF800005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x7FC00005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xFFC00005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+}
+
+
+/**************************************************************/
+
+
 /*
  * This function returns pseudo random numbers uniformly
  * distributed over (0,1).
@@ -294,7 +331,7 @@ void testAll(int skipSome) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -few|-many|-most|-all\n", myself);
+  printf("usage: %s -few|-special|-many|-most|-all\n", myself);
   exit(1);
 }
 
@@ -305,6 +342,9 @@ int main(int argc, char *argv[]) {
   }
   if (strcmp(argv[1], "-few") == 0) {
     testFew();
+  } else
+  if (strcmp(argv[1], "-special") == 0) {
+    testSpecial();
   } else
   if (strcmp(argv[1], "-many") == 0) {
     testMany();

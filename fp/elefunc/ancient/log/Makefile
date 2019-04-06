@@ -7,6 +7,9 @@ all:		log
 run-few:	log
 		./log -few
 
+run-special:	log
+		./log -special
+
 run-many:	log
 		./log -many
 

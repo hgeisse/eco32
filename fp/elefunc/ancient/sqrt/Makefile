@@ -7,6 +7,9 @@ all:		sqrt
 run-few:	sqrt
 		./sqrt -few
 
+run-special:	sqrt
+		./sqrt -special
+
 run-many:	sqrt
 		./sqrt -many
 

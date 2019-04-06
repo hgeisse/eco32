@@ -7,6 +7,9 @@ all:		pow
 run-few:	pow
 		./pow -few
 
+run-special:	pow
+		./pow -special
+
 run-many:	pow
 		./pow -many
 

@@ -7,6 +7,9 @@ all:		tan
 run-few:	tan
 		./tan -few
 
+run-special:	tan
+		./tan -special
+
 run-many:	tan
 		./tan -many
 

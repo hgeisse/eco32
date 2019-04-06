@@ -7,6 +7,9 @@ all:		sinh
 run-few:	sinh
 		./sinh -few
 
+run-special:	sinh
+		./sinh -special
+
 run-many:	sinh
 		./sinh -many
 

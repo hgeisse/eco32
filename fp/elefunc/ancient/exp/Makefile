@@ -7,6 +7,9 @@ all:		exp
 run-few:	exp
 		./exp -few
 
+run-special:	exp
+		./exp -special
+
 run-many:	exp
 		./exp -many
 

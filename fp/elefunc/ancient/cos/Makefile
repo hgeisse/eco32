@@ -7,6 +7,9 @@ all:		cos
 run-few:	cos
 		./cos -few
 
+run-special:	cos
+		./cos -special
+
 run-many:	cos
 		./cos -many
 

@@ -7,6 +7,9 @@ all:		tanh
 run-few:	tanh
 		./tanh -few
 
+run-special:	tanh
+		./tanh -special
+
 run-many:	tanh
 		./tanh -many
 

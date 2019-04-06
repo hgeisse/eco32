@@ -7,6 +7,9 @@ all:		sin
 run-few:	sin
 		./sin -few
 
+run-special:	sin
+		./sin -special
+
 run-many:	sin
 		./sin -many
 

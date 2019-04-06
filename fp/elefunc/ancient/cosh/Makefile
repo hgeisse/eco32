@@ -7,6 +7,9 @@ all:		cosh
 run-few:	cosh
 		./cosh -few
 
+run-special:	cosh
+		./cosh -special
+
 run-many:	cosh
 		./cosh -many
 
