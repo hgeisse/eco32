@@ -40,72 +40,49 @@ void dump(float x) {
 /**************************************************************/
 
 
-#define C1	0.41731			/* y0 = C1 + C2 * f */
-#define C2	0.59016			/* Cody & Waite, p. 23 */
-#define C3	0.70710678119		/* sqrt(1/2) */
-
-
-int debug = 0;
+#define C1	0.41731				/* y0 = C1 + C2 * f */
+#define C2	0.59016				/* Cody & Waite, p. 23 */
+#define C3	0.70710678118654752440		/* sqrt(1/2) */
 
 
 float fp_sqrt(float x) {
   _FP_Union X;
-  int expX;
-  _FP_Word frcX;
-  _FP_Union F1, F2;
+  float f1, f2;
   int expZ;
-  _FP_Word frcZ;
-  _FP_Union Z;
+  float z;
 
   X.f = x;
+  if (((X.w << 1) >> 24) == 0xFF) {
+    if (X.w & 0x007FFFFF) {
+      X.w |= 0x00400000;
+      return X.f;
+    }
+    if (X.w & 0x80000000) {
+      errno = EDOM;
+      X.w = 0xFFC00000;
+      return X.f;
+    }
+    X.w = 0x7F800000;
+    return X.f;
+  }
   if ((X.w & 0x7FFFFFFF) == 0) {
     return X.f;
   }
-  if ((X.w & 0x80000000) != 0) {
+  if (X.w & 0x80000000) {
     errno = EDOM;
     X.w = 0xFFC00000;
     return X.f;
   }
-  expX = ((int) _FP_EXP(X.w)) - 126;
-  frcX = _FP_FRC(X.w);
-  F1.w = _FP_FLT(0, 126, frcX);
-  if (debug) {
-    printf("f = ");
-    dump(F1.f);
-    printf("\n");
-  }
-  F2.f = C1 + C2 * F1.f;
-  if (debug) {
-    printf("y0 = ");
-    dump(F2.f);
-    printf("\n");
-  }
-  F2.f = 0.5 * (F2.f + F1.f / F2.f);
-  if (debug) {
-    printf("y1 = ");
-    dump(F2.f);
-    printf("\n");
-  }
-  F2.f = 0.5 * (F2.f + F1.f / F2.f);
-  if (debug) {
-    printf("y2 = ");
-    dump(F2.f);
-    printf("\n");
-  }
-  expZ = expX;
+  f1 = frexp(X.f, &expZ);
+  f2 = C1 + C2 * f1;
+  f2 = 0.5 * (f2 + f1 / f2);
+  f2 = 0.5 * (f2 + f1 / f2);
   if (expZ & 1) {
-    F2.f *= C3;
-    if (debug) {
-      printf("corrected y2 = ");
-      dump(F2.f);
-      printf("\n");
-    }
+    f2 *= C3;
     expZ++;
   }
-  expZ = _FP_EXP(F2.w) + expZ / 2;
-  frcZ = _FP_FRC(F2.w);
-  Z.w = _FP_FLT(0, expZ, frcZ);
-  return Z.f;
+  z = ldexp(f2, expZ / 2);
+  return z;
 }
 
 
@@ -126,6 +103,75 @@ void test_single(float x) {
   printf("r = ");
   dump(r);
   printf("\n");
+}
+
+
+/**************************************************************/
+
+
+void testFew(void) {
+  printf("------------------------------------------------\n");
+  test_single(0.0);
+  printf("------------------------------------------------\n");
+  test_single(1.0);
+  printf("------------------------------------------------\n");
+  test_single(2.0);
+  printf("------------------------------------------------\n");
+  test_single(0.5);
+  printf("------------------------------------------------\n");
+  test_single(4.0);
+  printf("------------------------------------------------\n");
+  test_single(0.25);
+  printf("------------------------------------------------\n");
+  test_single(8.0);
+  printf("------------------------------------------------\n");
+  test_single(0.125);
+  printf("------------------------------------------------\n");
+  test_single(3.0);
+  printf("------------------------------------------------\n");
+  test_single(9.0);
+  printf("------------------------------------------------\n");
+  test_single(1.2345e2);
+  printf("------------------------------------------------\n");
+  test_single(1.2345e-3);
+  printf("------------------------------------------------\n");
+}
+
+
+/**************************************************************/
+
+
+void testSpecial(void) {
+  _FP_Union X;
+
+  printf("------------------------------------------------\n");
+  X.w = 0x00000000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x80000000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xC0A00000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x7F800000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xFF800000;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x7F800005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xFF800005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0x7FC00005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
+  X.w = 0xFFC00005;
+  test_single(X.f);
+  printf("------------------------------------------------\n");
 }
 
 
@@ -192,21 +238,6 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
     R.f = r;
     if (_FP_ABS(_FP_DELTA(Z, R)) <= ulp) {
       within++;
-    } else {
-      printf("++++++++++++++++++++\n");
-      printf("x = ");
-      dump(x);
-      printf("\n");
-      debug = 1;
-      z = fp_sqrt(x);
-      debug = 0;
-      printf("z = ");
-      dump(z);
-      printf("\n");
-      printf("r = ");
-      dump(r);
-      printf("\n");
-      printf("++++++++++++++++++++\n");
     }
   }
   printf("\n");
@@ -214,34 +245,6 @@ void test_many(int count, float lbound, float ubound, int maybeNeg) {
   printf("equal: %d\n", equal);
   printf("above: %d\n", above);
   printf("within error of %d ulp: %d\n", ulp, within);
-}
-
-
-/**************************************************************/
-
-
-void testFew(void) {
-  printf("------------------------------------------------\n");
-  test_single(0.0);
-  printf("------------------------------------------------\n");
-  test_single(-0.0);
-  printf("------------------------------------------------\n");
-  test_single(-4.0);
-  printf("------------------------------------------------\n");
-  test_single(1.0);
-  printf("------------------------------------------------\n");
-  test_single(0.5);
-  printf("------------------------------------------------\n");
-  test_single(2.0);
-  printf("------------------------------------------------\n");
-  test_single(4.0);
-  printf("------------------------------------------------\n");
-  test_single(8.0);
-  printf("------------------------------------------------\n");
-  test_single(1.234e2);
-  printf("------------------------------------------------\n");
-  test_single(1.234e-3);
-  printf("------------------------------------------------\n");
 }
 
 
@@ -262,8 +265,49 @@ void testMany(void) {
 /**************************************************************/
 
 
+#define SKIP_MASK	0x0000FF00
+
+
+void testAll(int skipSome) {
+  int ulp;
+  unsigned int errors, i;
+  _FP_Union X, Z, R;
+
+  ulp = REQ_ULP;
+  errors = 0;
+  i = 0;
+  do {
+    if ((i & 0x0FFFFFFF) == 0) {
+      printf("reached test 0x%08X\n", i);
+    }
+    if (skipSome) {
+      if ((i & SKIP_MASK) != 0x00000000 &&
+          (i & SKIP_MASK) != SKIP_MASK) {
+        i |= SKIP_MASK;
+      }
+    }
+    X.w = i;
+    Z.f = fp_sqrt(X.f);
+    R.f = sqrt(X.f);
+    if (_FP_ABS(_FP_DELTA(Z, R)) > ulp) {
+      if (errors == 0) {
+        printf("first error at X = 0x%08X: Z = 0x%08X, R = 0x%08X\n",
+               X.w, Z.w, R.w);
+      }
+      errors++;
+    }
+    i++;
+  } while (i != 0);
+  printf("done, %u errors (not within %d ulp of reference)\n",
+         errors, ulp);
+}
+
+
+/**************************************************************/
+
+
 void usage(char *myself) {
-  printf("usage: %s -few|-many\n", myself);
+  printf("usage: %s -few|-special|-many|-most|-all\n", myself);
   exit(1);
 }
 
@@ -275,8 +319,17 @@ int main(int argc, char *argv[]) {
   if (strcmp(argv[1], "-few") == 0) {
     testFew();
   } else
+  if (strcmp(argv[1], "-special") == 0) {
+    testSpecial();
+  } else
   if (strcmp(argv[1], "-many") == 0) {
     testMany();
+  } else
+  if (strcmp(argv[1], "-most") == 0) {
+    testAll(1);
+  } else
+  if (strcmp(argv[1], "-all") == 0) {
+    testAll(0);
   } else {
     usage(argv[0]);
   }
