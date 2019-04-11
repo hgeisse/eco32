@@ -3,8 +3,8 @@ cos	ok
 tan	ok
 asin
 acos
-atan
-atan2
+atan	ok
+atan2	ok
 sinh	ok
 cosh	ok
 tanh	ok
