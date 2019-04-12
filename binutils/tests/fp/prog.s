@@ -14,6 +14,12 @@ lbl:
   blef $1, $2, lbl
   bltf $1, $2, lbl
 
+  bgef $1, $2, lbl
+  bgtf $1, $2, lbl
+
+  add $0, $0, $0
+  add $0, $0, $0
+
   dci
   dcf
   ici

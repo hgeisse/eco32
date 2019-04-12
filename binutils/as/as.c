@@ -1851,6 +1851,8 @@ Instr instrTable[] = {
   { "bnef",    formatRRB,  OP_BNEF, 0        },
   { "blef",    formatRRB,  OP_BLEF, 0        },
   { "bltf",    formatRRB,  OP_BLTF, 0        },
+  { "bgef",    aliasRRB,   OP_BLEF, 0        },
+  { "bgtf",    aliasRRB,   OP_BLTF, 0        },
 
   /* jump, call & return instructions */
   { "j",       formatJ,    OP_J,    0        },
