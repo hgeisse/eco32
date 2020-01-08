@@ -26,7 +26,7 @@
 #include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
-#include "graph.h"
+#include "graph1.h"
 
 
 void error(char *fmt, ...) {
@@ -41,7 +41,7 @@ void error(char *fmt, ...) {
   romExit();
   timerExit();
   displayExit();
-  graphExit();
+  graph1Exit();
   keyboardExit();
   serialExit();
   diskExit();

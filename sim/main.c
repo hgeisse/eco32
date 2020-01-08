@@ -27,7 +27,7 @@
 #include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
-#include "graph.h"
+#include "graph1.h"
 
 
 static void usage(char *myself) {
@@ -46,7 +46,8 @@ static void usage(char *myself) {
           MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
           MAX_NSERIALS - 1);
-  fprintf(stderr, "    [-g]           install graphics controller\n");
+  fprintf(stderr, "    [-g]           install graphics card 640x480x32\n");
+  fprintf(stderr, "    [-G]           install graphics card 1024x768x1\n");
   fprintf(stderr, "    [-c]           install console\n");
   fprintf(stderr, "    [-o <file>]    bind output device to file\n");
   fprintf(stderr, "    [-x]           use simulator with DejaGnu/expect\n");
@@ -301,7 +302,7 @@ int main(int argc, char *argv[]) {
     displayInit();
   }
   if (graphics) {
-    graphInit();
+    graph1Init();
   }
   if (console || graphics) {
     keyboardInit();
@@ -352,7 +353,7 @@ int main(int argc, char *argv[]) {
   romExit();
   timerExit();
   displayExit();
-  graphExit();
+  graph1Exit();
   keyboardExit();
   serialExit();
   diskExit();

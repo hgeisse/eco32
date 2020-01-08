@@ -21,7 +21,7 @@
 #include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
-#include "graph.h"
+#include "graph1.h"
 
 
 Word ioReadWord(Word pAddr) {
@@ -59,8 +59,8 @@ Word ioReadWord(Word pAddr) {
     data = shutdownRead(pAddr & IO_REG_MASK);
     return data;
   }
-  if ((pAddr & IO_DEV_MASK) >= GRAPH_BASE) {
-    data = graphRead(pAddr & IO_GRAPH_MASK);
+  if ((pAddr & IO_DEV_MASK) >= GRAPH1_BASE) {
+    data = graph1Read(pAddr & IO_GRAPH_MASK);
     return data;
   }
   /* throw bus timeout exception */
@@ -104,8 +104,8 @@ void ioWriteWord(Word pAddr, Word data) {
     shutdownWrite(pAddr & IO_REG_MASK, data);
     return;
   }
-  if ((pAddr & IO_DEV_MASK) >= GRAPH_BASE) {
-    graphWrite(pAddr & IO_GRAPH_MASK, data);
+  if ((pAddr & IO_DEV_MASK) >= GRAPH1_BASE) {
+    graph1Write(pAddr & IO_GRAPH_MASK, data);
     return;
   }
   /* throw bus timeout exception */

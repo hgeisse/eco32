@@ -34,8 +34,8 @@
 #define SDCARD_BASE	0x30600000	/* physical SD card base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */
 #define SHUTDOWN_BASE	0x3F100000	/* physical shutdown device address */
-#define GRAPH_BASE	0x3FC00000	/* physical grahics base address */
-					/* extends to end of address space */
+#define GRAPH0_BASE	0x3F800000	/* physical grahics 0 base address */
+#define GRAPH1_BASE	0x3FC00000	/* physical grahics 1 base address */
 
 #define PAGE_SIZE	(4 * K)		/* size of a page and a page frame */
 #define OFFSET_MASK	(PAGE_SIZE - 1)	/* mask for offset within a page */

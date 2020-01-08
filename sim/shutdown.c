@@ -25,7 +25,7 @@
 #include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
-#include "graph.h"
+#include "graph1.h"
 
 
 Word shutdownRead(Word addr) {
@@ -45,7 +45,7 @@ void shutdownWrite(Word addr, Word data) {
   romExit();
   timerExit();
   displayExit();
-  graphExit();
+  graph1Exit();
   keyboardExit();
   serialExit();
   diskExit();

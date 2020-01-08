@@ -31,7 +31,7 @@
 #include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
-#include "graph.h"
+#include "graph1.h"
 
 
 #define MAX_TOKENS	10
@@ -905,7 +905,7 @@ static void doInit(char *tokens[], int n) {
     sdcardReset();
     outputReset();
     shutdownReset();
-    graphReset();
+    graph1Reset();
     ramReset();
     romReset();
     icacheReset();

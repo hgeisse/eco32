@@ -1,5 +1,5 @@
 /*
- * graph.c -- graphics controller simulation
+ * graph1.c -- graphics controller 1 simulation
  */
 
 
@@ -12,7 +12,7 @@
 #include "console.h"
 #include "error.h"
 #include "except.h"
-#include "graph.h"
+#include "graph1.h"
 #include "kbd.h"
 
 
@@ -379,7 +379,7 @@ static int colors[2] = {
 
 
 static int splashData[] = {
-#include "grsplash"
+#include "gr1splash"
 };
 
 
@@ -421,7 +421,7 @@ static void loadSplashScreen(void) {
 /**************************************************************/
 
 
-Word graphRead(Word addr) {
+Word graph1Read(Word addr) {
   int r, g, b;
   Word data;
 
@@ -446,7 +446,7 @@ Word graphRead(Word addr) {
 }
 
 
-void graphWrite(Word addr, Word data) {
+void graph1Write(Word addr, Word data) {
   if (debug) {
     cPrintf("\n**** GRAPH WRITE to 0x%08X, data = 0x%08X ****\n",
             addr, data);
@@ -466,7 +466,7 @@ void graphWrite(Word addr, Word data) {
 }
 
 
-void graphReset(void) {
+void graph1Reset(void) {
   if (!installed) {
     return;
   }
@@ -475,13 +475,13 @@ void graphReset(void) {
 }
 
 
-void graphInit(void) {
+void graph1Init(void) {
   vgaInit();
-  graphReset();
+  graph1Reset();
 }
 
 
-void graphExit(void) {
+void graph1Exit(void) {
   if (!installed) {
     return;
   }
