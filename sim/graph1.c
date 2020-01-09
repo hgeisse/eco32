@@ -426,7 +426,7 @@ Word graph1Read(Word addr) {
   Word data;
 
   if (debug) {
-    cPrintf("\n**** GRAPH READ from 0x%08X", addr);
+    cPrintf("\n**** GRAPH1 READ from 0x%08X", addr);
   }
   if (!installed) {
     throwException(EXC_BUS_TIMEOUT);
@@ -448,7 +448,7 @@ Word graph1Read(Word addr) {
 
 void graph1Write(Word addr, Word data) {
   if (debug) {
-    cPrintf("\n**** GRAPH WRITE to 0x%08X, data = 0x%08X ****\n",
+    cPrintf("\n**** GRAPH1 WRITE to 0x%08X, data = 0x%08X ****\n",
             addr, data);
   }
   if (!installed) {
@@ -470,7 +470,7 @@ void graph1Reset(void) {
   if (!installed) {
     return;
   }
-  cPrintf("Resetting Graphics...\n");
+  cPrintf("Resetting Graphics1...\n");
   loadSplashScreen();
 }
 

@@ -28,6 +28,7 @@
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
+#include "graph2.h"
 
 
 static void usage(char *myself) {
@@ -80,7 +81,8 @@ int main(int argc, char *argv[]) {
   char *sdcardName;
   int numSerials;
   Bool connectTerminals[MAX_NSERIALS];
-  Bool graphics;
+  Bool graphics1;
+  Bool graphics2;
   Bool console;
   char *outputName;
   Bool expect;
@@ -107,7 +109,8 @@ int main(int argc, char *argv[]) {
   for (j = 0; j < MAX_NSERIALS; j++) {
     connectTerminals[j] = false;
   }
-  graphics = false;
+  graphics1 = false;
+  graphics2 = false;
   console = false;
   outputName = NULL;
   expect = false;
@@ -198,7 +201,10 @@ int main(int argc, char *argv[]) {
       connectTerminals[j] = true;
     } else
     if (strcmp(argp, "-g") == 0) {
-      graphics = true;
+      graphics1 = true;
+    } else
+    if (strcmp(argp, "-G") == 0) {
+      graphics2 = true;
     } else
     if (strcmp(argp, "-c") == 0) {
       console = true;
@@ -301,10 +307,13 @@ int main(int argc, char *argv[]) {
   if (console) {
     displayInit();
   }
-  if (graphics) {
+  if (graphics1) {
     graph1Init();
   }
-  if (console || graphics) {
+  if (graphics2) {
+    graph2Init();
+  }
+  if (console || graphics1 || graphics2) {
     keyboardInit();
   }
   serialInit(numSerials, connectTerminals, expect);
@@ -354,6 +363,7 @@ int main(int argc, char *argv[]) {
   timerExit();
   displayExit();
   graph1Exit();
+  graph2Exit();
   keyboardExit();
   serialExit();
   diskExit();

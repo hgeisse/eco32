@@ -26,6 +26,7 @@
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
+#include "graph2.h"
 
 
 Word shutdownRead(Word addr) {
@@ -46,6 +47,7 @@ void shutdownWrite(Word addr, Word data) {
   timerExit();
   displayExit();
   graph1Exit();
+  graph2Exit();
   keyboardExit();
   serialExit();
   diskExit();

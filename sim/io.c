@@ -22,6 +22,7 @@
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
+#include "graph2.h"
 
 
 Word ioReadWord(Word pAddr) {
@@ -61,6 +62,10 @@ Word ioReadWord(Word pAddr) {
   }
   if ((pAddr & IO_DEV_MASK) >= GRAPH1_BASE) {
     data = graph1Read(pAddr & IO_GRAPH_MASK);
+    return data;
+  }
+  if ((pAddr & IO_DEV_MASK) >= GRAPH2_BASE) {
+    data = graph2Read(pAddr & IO_GRAPH_MASK);
     return data;
   }
   /* throw bus timeout exception */
@@ -106,6 +111,10 @@ void ioWriteWord(Word pAddr, Word data) {
   }
   if ((pAddr & IO_DEV_MASK) >= GRAPH1_BASE) {
     graph1Write(pAddr & IO_GRAPH_MASK, data);
+    return;
+  }
+  if ((pAddr & IO_DEV_MASK) >= GRAPH2_BASE) {
+    graph2Write(pAddr & IO_GRAPH_MASK, data);
     return;
   }
   /* throw bus timeout exception */
