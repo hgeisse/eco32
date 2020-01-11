@@ -101,6 +101,20 @@ static ColorChannel mask2channel(unsigned long mask) {
 }
 
 
+static Cursor makeBlankCursor(Display *display, Window win) {
+  char data[1] = { 0 };
+  Pixmap blank;
+  XColor dummy;
+  Cursor cursor;
+
+  blank = XCreateBitmapFromData(display, win, data, 1, 1);
+  cursor = XCreatePixmapCursor(display, blank, blank,
+                               &dummy, &dummy, 0, 0);
+  XFreePixmap(display, blank);
+  return cursor;
+}
+
+
 static void initMonitor(int argc, char *argv[]) {
   int screenNum;
   Window rootWin;
@@ -174,7 +188,10 @@ static void initMonitor(int argc, char *argv[]) {
   colormap = XCreateColormap(vga.display, rootWin, visual, AllocNone);
   /* create the window */
   attrib.colormap = colormap;
-  attrib.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
+  attrib.event_mask = ExposureMask |
+                      PointerMotionMask |
+                      ButtonPressMask | ButtonReleaseMask |
+                      KeyPressMask | KeyReleaseMask;
   attrib.background_pixel = RGB2PIXEL(0, 0, 0);
   attrib.border_pixel = RGB2PIXEL(0, 0, 0);
   vga.win =
@@ -210,6 +227,9 @@ static void initMonitor(int argc, char *argv[]) {
                    argv, argc, sizeHints, wmHints, classHints);
   /* create a GC */
   vga.gc = XCreateGC(vga.display, vga.win, 0, &gcValues);
+  /* create an invisible cursor (the application rolls its own) */
+  XDefineCursor(vga.display, vga.win,
+                makeBlankCursor(vga.display, vga.win));
   /* finally get the window displayed */
   XMapWindow(vga.display, vga.win);
   /* prepare expose event */
@@ -250,6 +270,11 @@ static int ioErrorHandler(Display *display) {
 }
 
 
+//static void doMouseMove(int x, int y);
+//static void doButtonPress(int b);
+//static void doButtonRelease(int b);
+
+
 static void *server(void *ignore) {
   Bool run;
   XEvent event;
@@ -271,6 +296,15 @@ static void *server(void *ignore) {
             event.xclient.format == 8) {
           run = false;
         }
+        break;
+      case MotionNotify:
+        //doMouseMove(event.xmotion.x, event.xmotion.y);
+        break;
+      case ButtonPress:
+        //doButtonPress(event.xbutton.button);
+        break;
+      case ButtonRelease:
+        //doButtonRelease(event.xbutton.button);
         break;
       case KeyPress:
         keyPressed(event.xkey.keycode);
@@ -302,7 +336,7 @@ static void *refresh(void *ignore) {
     XSendEvent(vga.display, vga.win, False, 0, (XEvent *) &vga.expose);
     XFlush(vga.display);
     delay.tv_sec = 0;
-    delay.tv_nsec = 100 * 1000 * 1000;
+    delay.tv_nsec = 20 * 1000 * 1000;
     nanosleep(&delay, &delay);
   }
   return NULL;
@@ -367,6 +401,8 @@ static void vgaRead(int x, int y, int *r, int *g, int *b) {
 /**************************************************************/
 /**************************************************************/
 
+/* loading the splash screen */
+
 
 #define BACKGROUND		0
 #define FOREGROUND		1
@@ -419,6 +455,8 @@ static void loadSplashScreen(void) {
 
 
 /**************************************************************/
+
+/* graphics device interface */
 
 
 Word graph1Read(Word addr) {

@@ -52,20 +52,20 @@ Word ioReadWord(Word pAddr) {
     data = sdcardRead(pAddr & IO_REG_MASK);
     return data;
   }
+  if ((pAddr & IO_GRDEV_MASK) == GRAPH1_BASE) {
+    data = graph1Read(pAddr & IO_GRBUF_MASK);
+    return data;
+  }
+  if ((pAddr & IO_GRDEV_MASK) == GRAPH2_BASE) {
+    data = graph2Read(pAddr & IO_GRBUF_MASK);
+    return data;
+  }
   if ((pAddr & IO_DEV_MASK) == OUTPUT_BASE) {
     data = outputRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_DEV_MASK) == SHUTDOWN_BASE) {
     data = shutdownRead(pAddr & IO_REG_MASK);
-    return data;
-  }
-  if ((pAddr & IO_DEV_MASK) >= GRAPH1_BASE) {
-    data = graph1Read(pAddr & IO_GRAPH_MASK);
-    return data;
-  }
-  if ((pAddr & IO_DEV_MASK) >= GRAPH2_BASE) {
-    data = graph2Read(pAddr & IO_GRAPH_MASK);
     return data;
   }
   /* throw bus timeout exception */
@@ -101,20 +101,20 @@ void ioWriteWord(Word pAddr, Word data) {
     sdcardWrite(pAddr & IO_REG_MASK, data);
     return;
   }
+  if ((pAddr & IO_GRDEV_MASK) == GRAPH1_BASE) {
+    graph1Write(pAddr & IO_GRBUF_MASK, data);
+    return;
+  }
+  if ((pAddr & IO_GRDEV_MASK) == GRAPH2_BASE) {
+    graph2Write(pAddr & IO_GRBUF_MASK, data);
+    return;
+  }
   if ((pAddr & IO_DEV_MASK) == OUTPUT_BASE) {
     outputWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_DEV_MASK) == SHUTDOWN_BASE) {
     shutdownWrite(pAddr & IO_REG_MASK, data);
-    return;
-  }
-  if ((pAddr & IO_DEV_MASK) >= GRAPH1_BASE) {
-    graph1Write(pAddr & IO_GRAPH_MASK, data);
-    return;
-  }
-  if ((pAddr & IO_DEV_MASK) >= GRAPH2_BASE) {
-    graph2Write(pAddr & IO_GRAPH_MASK, data);
     return;
   }
   /* throw bus timeout exception */

@@ -23,7 +23,8 @@
 
 #define IO_DEV_MASK	0x3FF00000	/* I/O device mask */
 #define IO_REG_MASK	0x000FFFFF	/* I/O register mask */
-#define IO_GRAPH_MASK	0x003FFFFF	/* I/O graphics mask */
+#define IO_GRDEV_MASK	0x3F000000	/* I/O graphics device mask */
+#define IO_GRBUF_MASK	0x00FFFFFF	/* I/O graphics buffer mask */
 
 #define TIMER_BASE	0x30000000	/* physical timer base address */
 #define DISPLAY_BASE	0x30100000	/* physical display base address */
@@ -32,10 +33,10 @@
 #define MAX_NSERIALS	2		/* max number of serial lines */
 #define DISK_BASE	0x30400000	/* physical disk base address */
 #define SDCARD_BASE	0x30600000	/* physical SD card base address */
+#define GRAPH1_BASE	0x34000000	/* physical grahics 1 base address */
+#define GRAPH2_BASE	0x35000000	/* physical grahics 2 base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */
 #define SHUTDOWN_BASE	0x3F100000	/* physical shutdown device address */
-#define GRAPH2_BASE	0x3F800000	/* physical grahics 2 base address */
-#define GRAPH1_BASE	0x3FC00000	/* physical grahics 1 base address */
 
 #define PAGE_SIZE	(4 * K)		/* size of a page and a page frame */
 #define OFFSET_MASK	(PAGE_SIZE - 1)	/* mask for offset within a page */
