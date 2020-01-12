@@ -29,6 +29,7 @@
 #include "shutdown.h"
 #include "graph1.h"
 #include "graph2.h"
+#include "mouse.h"
 
 
 static void usage(char *myself) {
@@ -316,6 +317,9 @@ int main(int argc, char *argv[]) {
   if (console || graphics1 || graphics2) {
     keyboardInit();
   }
+  if (graphics1 || graphics2) {
+    mouseInit();
+  }
   serialInit(numSerials, connectTerminals, expect);
   if (disk) {
     diskInit(diskName);
@@ -365,6 +369,7 @@ int main(int argc, char *argv[]) {
   graph1Exit();
   graph2Exit();
   keyboardExit();
+  mouseExit();
   serialExit();
   diskExit();
   sdcardExit();

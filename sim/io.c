@@ -23,6 +23,7 @@
 #include "shutdown.h"
 #include "graph1.h"
 #include "graph2.h"
+#include "mouse.h"
 
 
 Word ioReadWord(Word pAddr) {
@@ -50,6 +51,10 @@ Word ioReadWord(Word pAddr) {
   }
   if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
     data = sdcardRead(pAddr & IO_REG_MASK);
+    return data;
+  }
+  if ((pAddr & IO_DEV_MASK) == MOUSE_BASE) {
+    data = mouseRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_GRDEV_MASK) == GRAPH1_BASE) {
@@ -99,6 +104,10 @@ void ioWriteWord(Word pAddr, Word data) {
   }
   if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
     sdcardWrite(pAddr & IO_REG_MASK, data);
+    return;
+  }
+  if ((pAddr & IO_DEV_MASK) == MOUSE_BASE) {
+    mouseWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_GRDEV_MASK) == GRAPH1_BASE) {

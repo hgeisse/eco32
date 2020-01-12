@@ -10,6 +10,7 @@
 #define IRQ_TIMER_1		15	/* timer 1 interrupt */
 #define IRQ_TIMER_0		14	/* timer 0 interrupt */
 #define IRQ_DISK		8	/* disk interrupt */
+#define IRQ_MOUSE		5	/* mouse interrupt */
 #define IRQ_KEYBOARD		4	/* keyboard interrupt */
 #define IRQ_SERIAL_1_RCVR	3	/* line 1 receiver interrupt */
 #define IRQ_SERIAL_1_XMTR	2	/* line 1 transmitter interrupt */

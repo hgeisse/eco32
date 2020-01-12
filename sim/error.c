@@ -28,6 +28,7 @@
 #include "shutdown.h"
 #include "graph1.h"
 #include "graph2.h"
+#include "mouse.h"
 
 
 void error(char *fmt, ...) {
@@ -45,6 +46,7 @@ void error(char *fmt, ...) {
   graph1Exit();
   graph2Exit();
   keyboardExit();
+  mouseExit();
   serialExit();
   diskExit();
   sdcardExit();

@@ -33,6 +33,7 @@
 #include "shutdown.h"
 #include "graph1.h"
 #include "graph2.h"
+#include "mouse.h"
 
 
 #define MAX_TOKENS	10
@@ -908,6 +909,7 @@ static void doInit(char *tokens[], int n) {
     shutdownReset();
     graph1Reset();
     graph2Reset();
+    mouseReset();
     ramReset();
     romReset();
     icacheReset();
