@@ -13,6 +13,7 @@
 #include "error.h"
 #include "except.h"
 #include "graph2.h"
+#include "mouse.h"
 #include "kbd.h"
 
 
@@ -270,11 +271,6 @@ static int ioErrorHandler(Display *display) {
 }
 
 
-//static void doMouseMove(int x, int y);
-//static void doButtonPress(int b);
-//static void doButtonRelease(int b);
-
-
 static void *server(void *ignore) {
   Bool run;
   XEvent event;
@@ -298,13 +294,13 @@ static void *server(void *ignore) {
         }
         break;
       case MotionNotify:
-        //doMouseMove(event.xmotion.x, event.xmotion.y);
+        mouseMoved(event.xmotion.x, event.xmotion.y);
         break;
       case ButtonPress:
-        //doButtonPress(event.xbutton.button);
+        mouseButtonPressed(event.xbutton.button);
         break;
       case ButtonRelease:
-        //doButtonRelease(event.xbutton.button);
+        mouseButtonReleased(event.xbutton.button);
         break;
       case KeyPress:
         keyPressed(event.xkey.keycode);
