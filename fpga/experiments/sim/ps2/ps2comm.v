@@ -18,14 +18,14 @@ module ps2comm;
 
   wire [7:0] device_rcv_data;	// data received by device
   wire device_rcv_error;	// error indicator for data
-  wire device_rcv_ready;	// qualifies the two preceding signals
+  wire device_rcv_strobe;	// qualifies the two preceding signals
   wire device_xmt_ready;	// device accepts data to be transmitted
   reg [7:0] device_xmt_data;	// data to be transmitted by device
   reg device_xmt_strobe;	// start transmission
 
   wire [7:0] host_rcv_data;	// data received by host
   wire host_rcv_error;		// error indicator for data
-  wire host_rcv_ready;		// qualifies the two preceding signals
+  wire host_rcv_strobe;		// qualifies the two preceding signals
   wire host_xmt_ready;		// host accepts data to be transmitted
   reg [7:0] host_xmt_data;	// data to be transmitted by host
   reg host_xmt_strobe;		// start transmission
@@ -92,7 +92,7 @@ module ps2comm;
     .rst(rst),
     .rcv_data(device_rcv_data[7:0]),
     .rcv_error(device_rcv_error),
-    .rcv_ready(device_rcv_ready),
+    .rcv_strobe(device_rcv_strobe),
     .xmt_ready(device_xmt_ready),
     .xmt_data(device_xmt_data[7:0]),
     .xmt_strobe(device_xmt_strobe),
@@ -105,7 +105,7 @@ module ps2comm;
     .rst(rst),
     .rcv_data(host_rcv_data[7:0]),
     .rcv_error(host_rcv_error),
-    .rcv_ready(host_rcv_ready),
+    .rcv_strobe(host_rcv_strobe),
     .xmt_ready(host_xmt_ready),
     .xmt_data(host_xmt_data[7:0]),
     .xmt_strobe(host_xmt_strobe),

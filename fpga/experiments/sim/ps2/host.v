@@ -8,7 +8,7 @@
 
 
 module host(clk, rst,
-            rcv_data, rcv_error, rcv_ready,
+            rcv_data, rcv_error, rcv_strobe,
             xmt_ready, xmt_data, xmt_strobe,
             ps2_clock, ps2_data);
     input clk;
@@ -16,7 +16,7 @@ module host(clk, rst,
     // receiver interface
     output [7:0] rcv_data;
     output rcv_error;
-    output reg rcv_ready;
+    output reg rcv_strobe;
     // transmitter interface
     output reg xmt_ready;
     input [7:0] xmt_data;
@@ -214,7 +214,7 @@ module host(clk, rst,
               bc_clear = 1'b1;
               ps2_clk_out = 1'b1;
               ps2_dat_out = 1'b1;
-              rcv_ready = 1'b0;
+              rcv_strobe = 1'b0;
               xmt_ready = clk_quiet;
             end else begin
               // quiet clock and xmt_strobe: transmit a byte
@@ -225,7 +225,7 @@ module host(clk, rst,
               bc_clear = 1'b1;
               ps2_clk_out = 1'b1;
               ps2_dat_out = 1'b1;
-              rcv_ready = 1'b0;
+              rcv_strobe = 1'b0;
               xmt_ready = 1'b0;
             end
           end else begin
@@ -237,7 +237,7 @@ module host(clk, rst,
             bc_clear = 1'b0;
             ps2_clk_out = 1'b1;
             ps2_dat_out = 1'b1;
-            rcv_ready = 1'b0;
+            rcv_strobe = 1'b0;
             xmt_ready = 1'b0;
           end
         end
@@ -247,14 +247,14 @@ module host(clk, rst,
         begin
           if (~ps2_clk_lvl) begin
             next_state[2:0] = 3'h1;
-            rcv_ready = 1'b0;
+            rcv_strobe = 1'b0;
           end else begin
             if (bc[3:0] == 4'hB) begin
               next_state[2:0] = 3'h0;
-              rcv_ready = 1'b1;
+              rcv_strobe = 1'b1;
             end else begin
               next_state[2:0] = 3'h2;
-              rcv_ready = 1'b0;
+              rcv_strobe = 1'b0;
             end
           end
           sr_load = 1'b0;
@@ -280,7 +280,7 @@ module host(clk, rst,
           bc_clear = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       3'h3:
@@ -297,7 +297,7 @@ module host(clk, rst,
           bc_clear = 1'b0;
           ps2_clk_out = 1'b0;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       3'h4:
@@ -314,7 +314,7 @@ module host(clk, rst,
           bc_clear = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       3'h5:
@@ -339,7 +339,7 @@ module host(clk, rst,
           bc_clear = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       3'h6:
@@ -356,7 +356,7 @@ module host(clk, rst,
           bc_clear = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       default:
@@ -368,7 +368,7 @@ module host(clk, rst,
           bc_clear = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
     endcase

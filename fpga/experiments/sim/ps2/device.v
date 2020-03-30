@@ -8,7 +8,7 @@
 
 
 module device(clk, rst,
-              rcv_data, rcv_error, rcv_ready,
+              rcv_data, rcv_error, rcv_strobe,
               xmt_ready, xmt_data, xmt_strobe,
               ps2_clock, ps2_data);
     input clk;
@@ -16,7 +16,7 @@ module device(clk, rst,
     // receiver interface
     output [7:0] rcv_data;
     output rcv_error;
-    output reg rcv_ready;
+    output reg rcv_strobe;
     // transmitter interface
     output reg xmt_ready;
     input [7:0] xmt_data;
@@ -214,7 +214,7 @@ module device(clk, rst,
               tmr20_run = 1'b0;
               ps2_clk_out = 1'b1;
               ps2_dat_out = 1'b1;
-              rcv_ready = 1'b0;
+              rcv_strobe = 1'b0;
               xmt_ready = clk_quiet;
             end else begin
               // quiet clock and xmt_strobe: transmit a byte
@@ -226,7 +226,7 @@ module device(clk, rst,
               tmr20_run = 1'b0;
               ps2_clk_out = 1'b1;
               ps2_dat_out = 1'b1;
-              rcv_ready = 1'b0;
+              rcv_strobe = 1'b0;
               xmt_ready = 1'b0;
             end
           end else begin
@@ -238,7 +238,7 @@ module device(clk, rst,
             tmr20_run = 1'b0;
             ps2_clk_out = 1'b1;
             ps2_dat_out = 1'b1;
-            rcv_ready = 1'b0;
+            rcv_strobe = 1'b0;
             xmt_ready = 1'b0;
           end
         end
@@ -256,7 +256,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b1;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h2:
@@ -273,7 +273,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b0;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h3:
@@ -295,7 +295,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b0;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h4:
@@ -315,7 +315,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b1;
           ps2_dat_out = sr[0];
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h5:
@@ -339,7 +339,7 @@ module device(clk, rst,
           tmr20_run = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h6:
@@ -359,7 +359,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h7:
@@ -381,7 +381,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h8:
@@ -398,7 +398,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b0;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'h9:
@@ -415,7 +415,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b0;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'hA:
@@ -432,7 +432,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b0;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'hB:
@@ -449,7 +449,7 @@ module device(clk, rst,
           tmr20_run = 1'b1;
           ps2_clk_out = 1'b0;
           ps2_dat_out = 1'b0;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
       4'hC:
@@ -458,10 +458,10 @@ module device(clk, rst,
         begin
           if (~tmr20_exp) begin
             next_state[3:0] = 4'hC;
-            rcv_ready = 1'b0;
+            rcv_strobe = 1'b0;
           end else begin
             next_state[3:0] = 4'h0;
-            rcv_ready = 1'b1;
+            rcv_strobe = 1'b1;
           end
           sr_load = 1'b0;
           sr_shift = 1'b0;
@@ -481,7 +481,7 @@ module device(clk, rst,
           tmr20_run = 1'b0;
           ps2_clk_out = 1'b1;
           ps2_dat_out = 1'b1;
-          rcv_ready = 1'b0;
+          rcv_strobe = 1'b0;
           xmt_ready = 1'b0;
         end
     endcase
