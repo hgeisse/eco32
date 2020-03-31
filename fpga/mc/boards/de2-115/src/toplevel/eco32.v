@@ -34,8 +34,10 @@ module eco32(clk_in,
              vga_r,
              vga_g,
              vga_b,
-             ps2_clk,
-             ps2_data,
+             ps2_0_clk,
+             ps2_0_data,
+             ps2_1_clk,
+             ps2_1_data,
              rs232_0_rxd,
              rs232_0_txd,
              rs232_1_rxd,
@@ -93,8 +95,11 @@ module eco32(clk_in,
     output [7:0] vga_g;
     output [7:0] vga_b;
     // keyboard
-    input ps2_clk;
-    input ps2_data;
+    inout ps2_0_clk;
+    inout ps2_0_data;
+    // mouse
+    inout ps2_1_clk;
+    inout ps2_1_data;
     // serial line 0
     input rs232_0_rxd;
     output rs232_0_txd;
@@ -146,37 +151,42 @@ module eco32(clk_in,
   wire rom_ack;				// rom acknowledge
   // i/o
   wire i_o_stb;				// i/o strobe
-  // tmr0
-  wire tmr0_stb;			// tmr 0 strobe
-  wire [31:0] tmr0_dout;		// tmr 0 data output
-  wire tmr0_ack;			// tmr 0 acknowledge
-  wire tmr0_irq;			// tmr 0 interrupt request
-  // tmr1
-  wire tmr1_stb;			// tmr 1 strobe
-  wire [31:0] tmr1_dout;		// tmr 1 data output
-  wire tmr1_ack;			// tmr 1 acknowledge
-  wire tmr1_irq;			// tmr 1 interrupt request
+  // tmr 0
+  wire tmr_0_stb;			// tmr 0 strobe
+  wire [31:0] tmr_0_dout;		// tmr 0 data output
+  wire tmr_0_ack;			// tmr 0 acknowledge
+  wire tmr_0_irq;			// tmr 0 interrupt request
+  // tmr 1
+  wire tmr_1_stb;			// tmr 1 strobe
+  wire [31:0] tmr_1_dout;		// tmr 1 data output
+  wire tmr_1_ack;			// tmr 1 acknowledge
+  wire tmr_1_irq;			// tmr 1 interrupt request
   // dsp
   wire dsp_stb;				// dsp strobe
   wire [15:0] dsp_dout;			// dsp data output
   wire dsp_ack;				// dsp acknowledge
   // kbd
-  wire kbd_stb;				// kbd strobe
-  wire [7:0] kbd_dout;			// kbd data output
-  wire kbd_ack;				// kbd acknowledge
-  wire kbd_irq;				// kbd interrupt request
-  // ser0
-  wire ser0_stb;			// ser 0 strobe
-  wire [7:0] ser0_dout;			// ser 0 data output
-  wire ser0_ack;			// ser 0 acknowledge
-  wire ser0_irq_r;			// ser 0 rcv interrupt request
-  wire ser0_irq_t;			// ser 0 xmt interrupt request
-  // ser1
-  wire ser1_stb;			// ser 1 strobe
-  wire [7:0] ser1_dout;			// ser 1 data output
-  wire ser1_ack;			// ser 1 acknowledge
-  wire ser1_irq_r;			// ser 1 rcv interrupt request
-  wire ser1_irq_t;			// ser 1 xmt interrupt request
+  wire ps2_0_stb;			// kbd strobe
+  wire [7:0] ps2_0_dout;		// kbd data output
+  wire ps2_0_ack;			// kbd acknowledge
+  wire ps2_0_irq;			// kbd interrupt request
+  // mouse
+  wire ps2_1_stb;			// mouse strobe
+  wire [7:0] ps2_1_dout;		// mouse data output
+  wire ps2_1_ack;			// mouse acknowledge
+  wire ps2_1_irq;			// mouse interrupt request
+  // ser 0
+  wire ser_0_stb;			// ser 0 strobe
+  wire [7:0] ser_0_dout;		// ser 0 data output
+  wire ser_0_ack;			// ser 0 acknowledge
+  wire ser_0_irq_r;			// ser 0 rcv interrupt request
+  wire ser_0_irq_t;			// ser 0 xmt interrupt request
+  // ser 1
+  wire ser_1_stb;			// ser 1 strobe
+  wire [7:0] ser_1_dout;		// ser 1 data output
+  wire ser_1_ack;			// ser 1 acknowledge
+  wire ser_1_irq_r;			// ser 1 rcv interrupt request
+  wire ser_1_irq_t;			// ser 1 xmt interrupt request
   // sdc
   wire sdc_stb;				// sdc strobe
   wire [31:0] sdc_dout;			// sdc data output
@@ -190,7 +200,7 @@ module eco32(clk_in,
   // module instances
   //--------------------------------------
 
-  clk_rst clk_rst_1(
+  clk_rst clk_rst_0(
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
     .clk_ok(clk_ok),
@@ -200,7 +210,7 @@ module eco32(clk_in,
     .rst(rst)
   );
 
-  cpu cpu_1(
+  cpu cpu_0(
     .clk(clk),
     .rst(rst),
     .bus_stb(bus_stb),
@@ -212,7 +222,7 @@ module eco32(clk_in,
     .bus_irq(bus_irq[15:0])
   );
 
-  ram ram_1(
+  ram ram_0(
     .clk_ok(clk_ok),
     .clk2(clk2),
     .clk(clk),
@@ -234,7 +244,7 @@ module eco32(clk_in,
     .sdram_dq(sdram_dq[31:0])
   );
 
-  rom rom_1(
+  rom rom_0(
     .clk(clk),
     .rst(rst),
     .stb(rom_stb),
@@ -251,31 +261,31 @@ module eco32(clk_in,
     .d(fl_dq[7:0])
   );
 
+  tmr tmr_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(tmr_0_stb),
+    .we(bus_we),
+    .addr(bus_addr[3:2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(tmr_0_dout[31:0]),
+    .ack(tmr_0_ack),
+    .irq(tmr_0_irq)
+  );
+
   tmr tmr_1(
     .clk(clk),
     .rst(rst),
-    .stb(tmr0_stb),
+    .stb(tmr_1_stb),
     .we(bus_we),
     .addr(bus_addr[3:2]),
     .data_in(bus_dout[31:0]),
-    .data_out(tmr0_dout[31:0]),
-    .ack(tmr0_ack),
-    .irq(tmr0_irq)
+    .data_out(tmr_1_dout[31:0]),
+    .ack(tmr_1_ack),
+    .irq(tmr_1_irq)
   );
 
-  tmr tmr_2(
-    .clk(clk),
-    .rst(rst),
-    .stb(tmr1_stb),
-    .we(bus_we),
-    .addr(bus_addr[3:2]),
-    .data_in(bus_dout[31:0]),
-    .data_out(tmr1_dout[31:0]),
-    .ack(tmr1_ack),
-    .irq(tmr1_irq)
-  );
-
-  dsp dsp_1(
+  dsp dsp_0(
     .clk(clk),
     .rst(rst),
     .stb(dsp_stb),
@@ -294,51 +304,65 @@ module eco32(clk_in,
     .b(vga_b[7:0])
   );
 
-  kbd kbd_1(
+  ps2 ps2_0(
     .clk(clk),
     .rst(rst),
-    .stb(kbd_stb),
+    .stb(ps2_0_stb),
     .we(bus_we),
     .addr(bus_addr[2]),
     .data_in(bus_dout[7:0]),
-    .data_out(kbd_dout[7:0]),
-    .ack(kbd_ack),
-    .irq(kbd_irq),
-    .ps2_clk(ps2_clk),
-    .ps2_data(ps2_data)
+    .data_out(ps2_0_dout[7:0]),
+    .ack(ps2_0_ack),
+    .irq(ps2_0_irq),
+    .ps2_clk(ps2_0_clk),
+    .ps2_data(ps2_0_data)
+  );
+
+  ps2 ps2_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(ps2_1_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[7:0]),
+    .data_out(ps2_1_dout[7:0]),
+    .ack(ps2_1_ack),
+    .irq(ps2_1_irq),
+    .ps2_clk(ps2_1_clk),
+    .ps2_data(ps2_1_data)
+  );
+
+  ser ser_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(ser_0_stb),
+    .we(bus_we),
+    .addr(bus_addr[3:2]),
+    .data_in(bus_dout[7:0]),
+    .data_out(ser_0_dout[7:0]),
+    .ack(ser_0_ack),
+    .irq_r(ser_0_irq_r),
+    .irq_t(ser_0_irq_t),
+    .rxd(rs232_0_rxd),
+    .txd(rs232_0_txd)
   );
 
   ser ser_1(
     .clk(clk),
     .rst(rst),
-    .stb(ser0_stb),
+    .stb(ser_1_stb),
     .we(bus_we),
     .addr(bus_addr[3:2]),
     .data_in(bus_dout[7:0]),
-    .data_out(ser0_dout[7:0]),
-    .ack(ser0_ack),
-    .irq_r(ser0_irq_r),
-    .irq_t(ser0_irq_t),
-    .rxd(rs232_0_rxd),
-    .txd(rs232_0_txd)
-  );
-
-  ser ser_2(
-    .clk(clk),
-    .rst(rst),
-    .stb(ser1_stb),
-    .we(bus_we),
-    .addr(bus_addr[3:2]),
-    .data_in(bus_dout[7:0]),
-    .data_out(ser1_dout[7:0]),
-    .ack(ser1_ack),
-    .irq_r(ser1_irq_r),
-    .irq_t(ser1_irq_t),
+    .data_out(ser_1_dout[7:0]),
+    .ack(ser_1_ack),
+    .irq_r(ser_1_irq_r),
+    .irq_t(ser_1_irq_t),
     .rxd(rs232_1_rxd),
     .txd(rs232_1_txd)
   );
 
-  sdc sdc_1(
+  sdc sdc_0(
     .clk(clk),
     .rst(rst),
     .stb(sdc_stb),
@@ -354,7 +378,7 @@ module eco32(clk_in,
     .wp(sdcard_wp)
   );
 
-  bio bio_1(
+  bio bio_0(
     .clk(clk),
     .rst(rst),
     .stb(bio_stb),
@@ -398,20 +422,24 @@ module eco32(clk_in,
   // I/O: architectural limit  = 256 MB
   assign i_o_stb =
     (bus_stb == 1'b1 && bus_addr[31:28] == 4'b0011) ? 1'b1 : 1'b0;
-  assign tmr0_stb =
+  assign tmr_0_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h00
                      && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
-  assign tmr1_stb =
+  assign tmr_1_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h00
                      && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
   assign dsp_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h01) ? 1'b1 : 1'b0;
-  assign kbd_stb =
-    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02) ? 1'b1 : 1'b0;
-  assign ser0_stb =
+  assign ps2_0_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02
+                     && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
+  assign ps2_1_stb =
+    (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h02
+                     && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
+  assign ser_0_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
                      && bus_addr[19:12] == 8'h00) ? 1'b1 : 1'b0;
-  assign ser1_stb =
+  assign ser_1_stb =
     (i_o_stb == 1'b1 && bus_addr[27:20] == 8'h03
                      && bus_addr[19:12] == 8'h01) ? 1'b1 : 1'b0;
 //  assign dsk_stb =
@@ -431,41 +459,43 @@ module eco32(clk_in,
   //--------------------------------------
 
   assign bus_din[31:0] =
-    (ram_stb == 1'b1)  ? ram_dout[31:0] :
-    (rom_stb == 1'b1)  ? rom_dout[31:0] :
-    (tmr0_stb == 1'b1) ? tmr0_dout[31:0] :
-    (tmr1_stb == 1'b1) ? tmr1_dout[31:0] :
-    (dsp_stb == 1'b1)  ? { 16'h0000, dsp_dout[15:0] } :
-    (kbd_stb == 1'b1)  ? { 24'h000000, kbd_dout[7:0] } :
-    (ser0_stb == 1'b1) ? { 24'h000000, ser0_dout[7:0] } :
-    (ser1_stb == 1'b1) ? { 24'h000000, ser1_dout[7:0] } :
-//    (dsk_stb == 1'b1)  ? dsk_dout[31:0] :
-//    (fms_stb == 1'b1)  ? fms_dout[31:0] :
-    (sdc_stb == 1'b1)  ? sdc_dout[31:0] :
-    (bio_stb == 1'b1)  ? bio_dout[31:0] :
+    (ram_stb == 1'b1)   ? ram_dout[31:0] :
+    (rom_stb == 1'b1)   ? rom_dout[31:0] :
+    (tmr_0_stb == 1'b1) ? tmr_0_dout[31:0] :
+    (tmr_1_stb == 1'b1) ? tmr_1_dout[31:0] :
+    (dsp_stb == 1'b1)   ? { 16'h0000, dsp_dout[15:0] } :
+    (ps2_0_stb == 1'b1) ? { 24'h000000, ps2_0_dout[7:0] } :
+    (ps2_1_stb == 1'b1) ? { 24'h000000, ps2_1_dout[7:0] } :
+    (ser_0_stb == 1'b1) ? { 24'h000000, ser_0_dout[7:0] } :
+    (ser_1_stb == 1'b1) ? { 24'h000000, ser_1_dout[7:0] } :
+//    (dsk_stb == 1'b1)   ? dsk_dout[31:0] :
+//    (fms_stb == 1'b1)   ? fms_dout[31:0] :
+    (sdc_stb == 1'b1)   ? sdc_dout[31:0] :
+    (bio_stb == 1'b1)   ? bio_dout[31:0] :
     32'h00000000;
 
   assign bus_ack =
-    (ram_stb == 1'b1)  ? ram_ack :
-    (rom_stb == 1'b1)  ? rom_ack :
-    (tmr0_stb == 1'b1) ? tmr0_ack :
-    (tmr1_stb == 1'b1) ? tmr1_ack :
-    (dsp_stb == 1'b1)  ? dsp_ack :
-    (kbd_stb == 1'b1)  ? kbd_ack :
-    (ser0_stb == 1'b1) ? ser0_ack :
-    (ser1_stb == 1'b1) ? ser1_ack :
-//    (dsk_stb == 1'b1)  ? dsk_ack :
-//    (fms_stb == 1'b1)  ? fms_ack :
-    (sdc_stb == 1'b1)  ? sdc_ack :
-    (bio_stb == 1'b1)  ? bio_ack :
+    (ram_stb == 1'b1)   ? ram_ack :
+    (rom_stb == 1'b1)   ? rom_ack :
+    (tmr_0_stb == 1'b1) ? tmr_0_ack :
+    (tmr_1_stb == 1'b1) ? tmr_1_ack :
+    (dsp_stb == 1'b1)   ? dsp_ack :
+    (ps2_0_stb == 1'b1) ? ps2_0_ack :
+    (ps2_1_stb == 1'b1) ? ps2_1_ack :
+    (ser_0_stb == 1'b1) ? ser_0_ack :
+    (ser_1_stb == 1'b1) ? ser_1_ack :
+//    (dsk_stb == 1'b1)   ? dsk_ack :
+//    (fms_stb == 1'b1)   ? fms_ack :
+    (sdc_stb == 1'b1)   ? sdc_ack :
+    (bio_stb == 1'b1)   ? bio_ack :
     1'b0;
 
   //--------------------------------------
   // bus interrupt request assignments
   //--------------------------------------
 
-  assign bus_irq[15] = tmr1_irq;
-  assign bus_irq[14] = tmr0_irq;
+  assign bus_irq[15] = tmr_1_irq;
+  assign bus_irq[14] = tmr_0_irq;
   assign bus_irq[13] = 1'b0;
   assign bus_irq[12] = 1'b0;
   assign bus_irq[11] = 1'b0;
@@ -474,11 +504,11 @@ module eco32(clk_in,
   assign bus_irq[ 8] = 1'b0;
   assign bus_irq[ 7] = 1'b0;
   assign bus_irq[ 6] = 1'b0;
-  assign bus_irq[ 5] = 1'b0;
-  assign bus_irq[ 4] = kbd_irq;
-  assign bus_irq[ 3] = ser1_irq_r;
-  assign bus_irq[ 2] = ser1_irq_t;
-  assign bus_irq[ 1] = ser0_irq_r;
-  assign bus_irq[ 0] = ser0_irq_t;
+  assign bus_irq[ 5] = ps2_1_irq;
+  assign bus_irq[ 4] = ps2_0_irq;
+  assign bus_irq[ 3] = ser_1_irq_r;
+  assign bus_irq[ 2] = ser_1_irq_t;
+  assign bus_irq[ 1] = ser_0_irq_r;
+  assign bus_irq[ 0] = ser_0_irq_t;
 
 endmodule
