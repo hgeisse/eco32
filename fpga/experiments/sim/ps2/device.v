@@ -212,10 +212,6 @@ module device(clk, rst,
               sr_shift = 1'b0;
               bc_clear = 1'b1;
               tmr20_run = 1'b0;
-              ps2_clk_out = 1'b1;
-              ps2_dat_out = 1'b1;
-              rcv_strobe = 1'b0;
-              xmt_ready = clk_quiet;
             end else begin
               // quiet clock and xmt_strobe: transmit a byte
               // load shift register
@@ -224,10 +220,6 @@ module device(clk, rst,
               sr_shift = 1'b0;
               bc_clear = 1'b1;
               tmr20_run = 1'b0;
-              ps2_clk_out = 1'b1;
-              ps2_dat_out = 1'b1;
-              rcv_strobe = 1'b0;
-              xmt_ready = 1'b0;
             end
           end else begin
             // falling clock edge: clock inhibited
@@ -236,11 +228,11 @@ module device(clk, rst,
             sr_shift = 1'b0;
             bc_clear = 1'b1;
             tmr20_run = 1'b0;
-            ps2_clk_out = 1'b1;
-            ps2_dat_out = 1'b1;
-            rcv_strobe = 1'b0;
-            xmt_ready = 1'b0;
           end
+          ps2_clk_out = 1'b1;
+          ps2_dat_out = 1'b1;
+          rcv_strobe = 1'b0;
+          xmt_ready = clk_quiet;
         end
       4'h1:
         // wait 20 us
