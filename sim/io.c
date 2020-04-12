@@ -28,6 +28,7 @@
 
 Word ioReadWord(Word pAddr) {
   Word data;
+  int dev;
 
   if ((pAddr & IO_DEV_MASK) == TIMER_BASE) {
     data = timerRead(pAddr & IO_REG_MASK);
@@ -37,9 +38,19 @@ Word ioReadWord(Word pAddr) {
     data = displayRead(pAddr & IO_REG_MASK);
     return data;
   }
-  if ((pAddr & IO_DEV_MASK) == KEYBOARD_BASE) {
-    data = keyboardRead(pAddr & IO_REG_MASK);
-    return data;
+  if ((pAddr & IO_DEV_MASK) == PS2DEV_BASE) {
+    dev = (pAddr & IO_REG_MASK) >> 12;
+    if (dev == 0) {
+      data = keyboardRead(pAddr & 0x0FFF);
+      return data;
+    }
+    if (dev == 1) {
+      data = mouseRead(pAddr & 0x0FFF);
+      return data;
+    }
+    /* throw bus timeout exception */
+    throwException(EXC_BUS_TIMEOUT);
+    /* not reached */
   }
   if ((pAddr & IO_DEV_MASK) == SERIAL_BASE) {
     data = serialRead(pAddr & IO_REG_MASK);
@@ -51,10 +62,6 @@ Word ioReadWord(Word pAddr) {
   }
   if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
     data = sdcardRead(pAddr & IO_REG_MASK);
-    return data;
-  }
-  if ((pAddr & IO_DEV_MASK) == MOUSE_BASE) {
-    data = mouseRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_GRDEV_MASK) == GRAPH1_BASE) {
@@ -82,6 +89,8 @@ Word ioReadWord(Word pAddr) {
 
 
 void ioWriteWord(Word pAddr, Word data) {
+  int dev;
+
   if ((pAddr & IO_DEV_MASK) == TIMER_BASE) {
     timerWrite(pAddr & IO_REG_MASK, data);
     return;
@@ -90,9 +99,19 @@ void ioWriteWord(Word pAddr, Word data) {
     displayWrite(pAddr & IO_REG_MASK, data);
     return;
   }
-  if ((pAddr & IO_DEV_MASK) == KEYBOARD_BASE) {
-    keyboardWrite(pAddr & IO_REG_MASK, data);
-    return;
+  if ((pAddr & IO_DEV_MASK) == PS2DEV_BASE) {
+    dev = (pAddr & IO_REG_MASK) >> 12;
+    if (dev == 0) {
+      keyboardWrite(pAddr & 0x0FFF, data);
+      return;
+    }
+    if (dev == 1) {
+      mouseWrite(pAddr & 0x0FFF, data);
+      return;
+    }
+    /* throw bus timeout exception */
+    throwException(EXC_BUS_TIMEOUT);
+    /* not reached */
   }
   if ((pAddr & IO_DEV_MASK) == SERIAL_BASE) {
     serialWrite(pAddr & IO_REG_MASK, data);
@@ -104,10 +123,6 @@ void ioWriteWord(Word pAddr, Word data) {
   }
   if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
     sdcardWrite(pAddr & IO_REG_MASK, data);
-    return;
-  }
-  if ((pAddr & IO_DEV_MASK) == MOUSE_BASE) {
-    mouseWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_GRDEV_MASK) == GRAPH1_BASE) {
@@ -128,4 +143,5 @@ void ioWriteWord(Word pAddr, Word data) {
   }
   /* throw bus timeout exception */
   throwException(EXC_BUS_TIMEOUT);
+  /* not reached */
 }

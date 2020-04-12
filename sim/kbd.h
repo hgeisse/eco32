@@ -10,9 +10,14 @@
 #define KEYBOARD_CTRL		0	/* keyboard control register */
 #define KEYBOARD_DATA		4	/* keyboard data register */
 
-#define KEYBOARD_RDY		0x01	/* keyboard has a character */
-#define KEYBOARD_IEN		0x02	/* enable keyboard interrupt */
-#define KEYBOARD_USEC		2000	/* input checking interval */
+#define KEYBOARD_RCVR_RDY	0x01	/* receiver has a character */
+#define KEYBOARD_RCVR_IEN	0x02	/* enable receiver interrupt */
+#define KEYBOARD_RCVR_ERR	0x04	/* receiver detected an error */
+#define KEYBOARD_RCVR_USEC	2000	/* input checking interval */
+
+#define KEYBOARD_XMTR_RDY	0x10	/* transmitter accepts a character */
+#define KEYBOARD_XMTR_IEN	0x20	/* enable transmitter interrupt */
+#define KEYBOARD_XMTR_USEC	1042	/* output speed */
 
 
 void keyPressed(unsigned int xKeycode);

@@ -10,9 +10,14 @@
 #define MOUSE_CTRL		0	/* mouse control register */
 #define MOUSE_DATA		4	/* mouse data register */
 
-#define MOUSE_RDY		0x01	/* mouse has a byte */
-#define MOUSE_IEN		0x02	/* enable mouse interrupt */
-#define MOUSE_USEC		2000	/* input checking interval */
+#define MOUSE_RCVR_RDY		0x01	/* receiver has a byte */
+#define MOUSE_RCVR_IEN		0x02	/* enable receiver interrupt */
+#define MOUSE_RCVR_ERR		0x04	/* receiver detected an error */
+#define MOUSE_RCVR_USEC		2000	/* input checking interval */
+
+#define MOUSE_XMTR_RDY		0x10	/* transmitter accepts a byte */
+#define MOUSE_XMTR_IEN		0x20	/* enable transmitter interrupt */
+#define MOUSE_XMTR_USEC		1042	/* output speed */
 
 
 void mouseMoved(int xMotionX, int xMotionY);

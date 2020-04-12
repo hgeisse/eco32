@@ -28,12 +28,11 @@
 
 #define TIMER_BASE	0x30000000	/* physical timer base address */
 #define DISPLAY_BASE	0x30100000	/* physical display base address */
-#define KEYBOARD_BASE	0x30200000	/* physical keyboard base address */
+#define PS2DEV_BASE	0x30200000	/* physical PS/2 device base address */
 #define SERIAL_BASE	0x30300000	/* physical serial line base address */
 #define MAX_NSERIALS	2		/* max number of serial lines */
 #define DISK_BASE	0x30400000	/* physical disk base address */
 #define SDCARD_BASE	0x30600000	/* physical SD card base address */
-#define MOUSE_BASE	0x30700000	/* physical mouse base address */
 #define GRAPH1_BASE	0x34000000	/* physical grahics 1 base address */
 #define GRAPH2_BASE	0x35000000	/* physical grahics 2 base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */
