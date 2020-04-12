@@ -21,7 +21,7 @@ install:	$(BIN) $(EXO)
 		cp $(EXO) $(BUILD)/stdalone
 
 run:		$(BIN)
-		$(BUILD)/bin/sim -i -s 1 -t 0 -c -l $(BIN) -a 0x10000
+		$(BUILD)/bin/sim -i -s 1 -t 0 -g -l $(BIN) -a 0x10000
 
 $(EXO):		$(BIN)
 		$(BUILD)/bin/bin2exo -S2 0x10000 $(BIN) $(EXO)

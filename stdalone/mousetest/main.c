@@ -110,6 +110,70 @@ void mouseGetPacket(Byte *p) {
 }
 
 
+void mouseDrainInput(void) {
+  int count;
+
+  count = 0;
+  while (1) {
+    if (mouseHasByte()) {
+      (void) mouseGetByte();
+      count = 0;
+    } else {
+      count++;
+      if (count == 100000) {
+        return;
+      }
+    }
+  }
+}
+
+
+Bool mouseExpect(Byte x) {
+  int count;
+  Byte b;
+
+  count = 0;
+  while (1) {
+    if (mouseHasByte()) {
+      break;
+    }
+    count++;
+    if (count == 100000) {
+      return FALSE;
+    }
+  }
+  b = mouseGetByte();
+  //printf("received %02x, expected %02x\n", b, x);
+  return b == x;
+}
+
+
+void mouseReset(void) {
+  while (1) {
+    /* reset */
+    while (1) {
+      /* drain input */
+      mouseDrainInput();
+      /* send reset command */
+      while (((*(MOUSE_BASE + 0)) & 0x10) == 0) ;
+      *(MOUSE_BASE + 1) = (char) 0xFF;
+      /* check answer */
+      if (mouseExpect(0xFA) &&
+          mouseExpect(0xAA) &&
+          mouseExpect(0x00)) {
+        break;
+      }
+    }
+    /* enable data reporting */
+    while (((*(MOUSE_BASE + 0)) & 0x10) == 0) ;
+    *(MOUSE_BASE + 1) = (char) 0xF4;
+    if (mouseExpect(0xFA)) {
+      return;
+    }
+  }
+}
+
+
 void mouseInit(void) {
   Word mask;
   Byte b;
@@ -119,14 +183,7 @@ void mouseInit(void) {
   mask = getMask();
   setMask(mask | (1 << 5));
   enable();
-  while (((*(MOUSE_BASE + 0)) & 0x10) == 0) ;
-  *(MOUSE_BASE + 1) = (char) 0xF4;
-  while (1) {
-    b = mouseGetByte();
-    if (b == 0xFA) {
-      break;
-    }
-  }
+  mouseReset();
 }
 
 
@@ -140,11 +197,16 @@ void main(void) {
   Bool must_be_1;
   Bool mb, rb, lb;
   int dx, dy;
+  int x, y;
 
   initInterrupts();
   mouseInit();
   printf("\n");
-  printf("Please move the PS/2 mouse...\n");
+  printf("Please move the PS/2 mouse!\n");
+  printf("Press left mouse button to show\n");
+  printf("and reset accumulated dx/dy values.\n");
+  x = 0;
+  y = 0;
   while (1) {
     mouseGetPacket(b);
     oy = (b[0] & 0x80) ? TRUE : FALSE;
@@ -174,5 +236,13 @@ void main(void) {
            mb ? 'M' : '-',
            rb ? 'R' : '-');
     printf("\n");
+    x += dx;
+    y += dy;
+    if (lb) {
+      printf("total movement since last query: x = %d, y = %d\n",
+             x, y);
+      x = 0;
+      y = 0;
+    }
   }
 }
