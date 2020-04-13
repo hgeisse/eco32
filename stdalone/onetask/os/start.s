@@ -229,7 +229,7 @@ irqsrv:
 	.word	0		; 02: terminal 1 transmitter interrupt
 	.word	0		; 03: terminal 1 receiver interrupt
 	.word	0		; 04: keyboard interrupt
-	.word	0		; 05: unused
+	.word	0		; 05: mouse interrupt
 	.word	0		; 06: unused
 	.word	0		; 07: unused
 	.word	0		; 08: disk interrupt

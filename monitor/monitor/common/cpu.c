@@ -92,7 +92,7 @@ static char *cause[32] = {
   /*  2 */  "serial line 1 xmt interrupt",
   /*  3 */  "serial line 1 rcv interrupt",
   /*  4 */  "keyboard interrupt",
-  /*  5 */  "unknown interrupt",
+  /*  5 */  "mouse interrupt",
   /*  6 */  "unknown interrupt",
   /*  7 */  "unknown interrupt",
   /*  8 */  "disk interrupt",
