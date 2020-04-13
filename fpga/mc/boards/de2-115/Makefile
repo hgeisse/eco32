@@ -6,12 +6,17 @@ BUILD = ../../../../build
 
 .PHONY:		all install clean
 
-all:		build/output_files/eco32.sof build/output_files/eco32.pof
+all:		build/output_files/eco32.sof \
+		  build/output_files/eco32.pof \
+		  build/eco32.svf
 
-install:	build/output_files/eco32.sof build/output_files/eco32.pof
+install:	build/output_files/eco32.sof \
+		  build/output_files/eco32.pof \
+		  build/eco32.svf
 		mkdir -p $(BUILD)/eco32/de2-115
 		cp build/output_files/eco32.sof $(BUILD)/eco32/de2-115
 		cp build/output_files/eco32.pof $(BUILD)/eco32/de2-115
+		cp build/eco32.svf $(BUILD)/eco32/de2-115
 		cp doc/README $(BUILD)/eco32/de2-115
 
 clean:
@@ -32,6 +37,9 @@ clean:
 		if [ -f build/output_files/eco32.cdf ] ; then \
 		  mv build/output_files/eco32.cdf . ; \
 		fi
+		if [ -f build/eco32.svf ] ; then \
+		  mv build/eco32.svf . ; \
+		fi
 		rm -rf build/*
 		mkdir build/output_files
 		mv eco32.qpf build
@@ -50,5 +58,8 @@ clean:
 		fi
 		if [ -f eco32.cdf ] ; then \
 		  mv eco32.cdf build/output_files ; \
+		fi
+		if [ -f eco32.svf ] ; then \
+		  mv eco32.svf build ; \
 		fi
 		rm -f *~

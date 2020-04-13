@@ -25,7 +25,7 @@ char *exceptionCause[32] = {
   /* 02 */  "terminal 1 transmitter interrupt",
   /* 03 */  "terminal 1 receiver interrupt",
   /* 04 */  "keyboard interrupt",
-  /* 05 */  "unknown interrupt 5",
+  /* 05 */  "mouse interrupt",
   /* 06 */  "unknown interrupt 6",
   /* 07 */  "unknown interrupt 7",
   /* 08 */  "disk interrupt",

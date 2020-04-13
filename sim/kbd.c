@@ -18,6 +18,14 @@
 #include "kbd.h"
 
 
+#define COMMAND_RESET		0xFF
+#define COMMAND_ECHO		0xEE
+
+#define ANSWER_ACK		0xFA
+#define ANSWER_ECHO		0xEE
+#define ANSWER_BATOK		0xAA
+
+
 static Bool debug = false;
 static Bool debugKeycode = false;
 static Bool installed = false;
@@ -199,7 +207,8 @@ static Keycode *lookupKeycode(unsigned int xKeycode) {
 /**************************************************************/
 
 
-#define KBD_BUF_MAX		100
+#define KBD_BUF_MAX		1000
+#define KBD_BUF_MIN_FREE	((MAX_MAKE + MAX_BREAK) * 4)
 #define KBD_BUF_NEXT(p)		(((p) + 1) % KBD_BUF_MAX)
 
 
@@ -224,9 +233,25 @@ static int kbdBufFree(void) {
 }
 
 
+static void kbdBufWrite(Byte *p, int n) {
+  int i;
+
+  pthread_mutex_lock(&lock);
+  if (kbdBufFree() < KBD_BUF_MIN_FREE) {
+    /* buffer full */
+    pthread_mutex_unlock(&lock);
+    return;
+  }
+  for (i = 0; i < n; i++) {
+    kbdBuf[kbdBufWritePtr] = p[i];
+    kbdBufWritePtr = KBD_BUF_NEXT(kbdBufWritePtr);
+  }
+  pthread_mutex_unlock(&lock);
+}
+
+
 void keyPressed(unsigned int xKeycode) {
   Keycode *p;
-  int i;
 
   if (debugKeycode) {
     cPrintf("**** KEY PRESSED: 0x%08X ****\n", xKeycode);
@@ -236,26 +261,12 @@ void keyPressed(unsigned int xKeycode) {
     /* keycode not found */
     return;
   }
-
-  pthread_mutex_lock(&lock);
-
-  if (kbdBufFree() < (MAX_MAKE + MAX_BREAK) * 4) {
-    /* buffer full */
-    pthread_mutex_unlock(&lock);
-    return;
-  }
-  for (i = 0; i < p->pcNumMake; i++) {
-    kbdBuf[kbdBufWritePtr] = p->pcKeyMake[i];
-    kbdBufWritePtr = KBD_BUF_NEXT(kbdBufWritePtr);
-  }
-
-  pthread_mutex_unlock(&lock);
+  kbdBufWrite(p->pcKeyMake, p->pcNumMake);
 }
 
 
 void keyReleased(unsigned int xKeycode) {
   Keycode *p;
-  int i;
 
   if (debugKeycode) {
     cPrintf("**** KEY RELEASED: 0x%08X ****\n", xKeycode);
@@ -265,20 +276,7 @@ void keyReleased(unsigned int xKeycode) {
     /* keycode not found */
     return;
   }
-
-  pthread_mutex_lock(&lock);
-
-  if (kbdBufFree() < MAX_BREAK * 4) {
-    /* buffer full */
-    pthread_mutex_unlock(&lock);
-    return;
-  }
-  for (i = 0; i < p->pcNumBreak; i++) {
-    kbdBuf[kbdBufWritePtr] = p->pcKeyBreak[i];
-    kbdBufWritePtr = KBD_BUF_NEXT(kbdBufWritePtr);
-  }
-
-  pthread_mutex_unlock(&lock);
+  kbdBufWrite(p->pcKeyBreak, p->pcNumBreak);
 }
 
 
@@ -286,23 +284,59 @@ void keyReleased(unsigned int xKeycode) {
 
 
 static Word kbdCtrl;
-static Word kbdData;
+static Word kbdRcvrData;
+static Word kbdXmtrData;
 
 
-static void kbdCallback(int dev) {
+static void kbdRcvrCallback(int dev) {
   if (debug) {
-    cPrintf("\n**** KEYBOARD CALLBACK ****\n");
+    cPrintf("\n**** KEYBOARD RCVR CALLBACK ****\n");
   }
-  timerStart(KEYBOARD_USEC, kbdCallback, dev);
-  if (kbdBufWritePtr == kbdBufReadPtr || (kbdCtrl & KEYBOARD_RDY)) {
+  timerStart(KEYBOARD_RCVR_USEC, kbdRcvrCallback, dev);
+  if (kbdBufWritePtr == kbdBufReadPtr || (kbdCtrl & KEYBOARD_RCVR_RDY)) {
     /* no character ready, or last character not yet read */
     return;
   }
   /* any character typed */
-  kbdData = kbdBuf[kbdBufReadPtr];
+  kbdRcvrData = kbdBuf[kbdBufReadPtr];
   kbdBufReadPtr = KBD_BUF_NEXT(kbdBufReadPtr);
-  kbdCtrl |= KEYBOARD_RDY;
-  if (kbdCtrl & KEYBOARD_IEN) {
+  kbdCtrl |= KEYBOARD_RCVR_RDY;
+  if (kbdCtrl & KEYBOARD_RCVR_IEN) {
+    /* raise keyboard interrupt */
+    cpuSetInterrupt(IRQ_KEYBOARD);
+  }
+}
+
+
+static void kbdXmtrCallback(int dev) {
+  Byte b;
+
+  if (debug) {
+    cPrintf("\n**** KEYBOARD XMTR CALLBACK ****\n");
+  }
+  switch (kbdXmtrData) {
+    case COMMAND_RESET:
+      kbdBufInit();
+      b = ANSWER_ACK;
+      kbdBufWrite(&b, 1);
+      b = ANSWER_BATOK;
+      kbdBufWrite(&b, 1);
+      break;
+    case COMMAND_ECHO:
+      b = ANSWER_ECHO;
+      kbdBufWrite(&b, 1);
+      break;
+    default:
+      /*
+       * Note: Byte <kbdXmtrData> has been sent to the
+       *       keyboard and is acknowledged (but ignored).
+       */
+      b = ANSWER_ACK;
+      kbdBufWrite(&b, 1);
+      break;
+  }
+  kbdCtrl |= KEYBOARD_XMTR_RDY;
+  if (kbdCtrl & KEYBOARD_XMTR_IEN) {
     /* raise keyboard interrupt */
     cpuSetInterrupt(IRQ_KEYBOARD);
   }
@@ -322,12 +356,12 @@ Word keyboardRead(Word addr) {
     data = kbdCtrl;
   } else
   if (addr == KEYBOARD_DATA) {
-    kbdCtrl &= ~KEYBOARD_RDY;
-    if (kbdCtrl & KEYBOARD_IEN) {
+    kbdCtrl &= ~KEYBOARD_RCVR_RDY;
+    if (kbdCtrl & KEYBOARD_RCVR_IEN) {
       /* lower keyboard interrupt */
       cpuResetInterrupt(IRQ_KEYBOARD);
     }
-    data = kbdData;
+    data = kbdRcvrData;
   } else {
     /* illegal register */
     throwException(EXC_BUS_TIMEOUT);
@@ -348,13 +382,20 @@ void keyboardWrite(Word addr, Word data) {
     throwException(EXC_BUS_TIMEOUT);
   }
   if (addr == KEYBOARD_CTRL) {
-    if (data & KEYBOARD_IEN) {
-      kbdCtrl |= KEYBOARD_IEN;
+    if (data & KEYBOARD_RCVR_IEN) {
+      kbdCtrl |= KEYBOARD_RCVR_IEN;
     } else {
-      kbdCtrl &= ~KEYBOARD_IEN;
+      kbdCtrl &= ~KEYBOARD_RCVR_IEN;
     }
-    if ((kbdCtrl & KEYBOARD_IEN) != 0 &&
-        (kbdCtrl & KEYBOARD_RDY) != 0) {
+    if (data & KEYBOARD_XMTR_IEN) {
+      kbdCtrl |= KEYBOARD_XMTR_IEN;
+    } else {
+      kbdCtrl &= ~KEYBOARD_XMTR_IEN;
+    }
+    if (((kbdCtrl & KEYBOARD_RCVR_IEN) != 0 &&
+         (kbdCtrl & KEYBOARD_RCVR_RDY) != 0) ||
+        ((kbdCtrl & KEYBOARD_XMTR_IEN) != 0 &&
+         (kbdCtrl & KEYBOARD_XMTR_RDY) != 0)) {
       /* raise keyboard interrupt */
       cpuSetInterrupt(IRQ_KEYBOARD);
     } else {
@@ -363,8 +404,13 @@ void keyboardWrite(Word addr, Word data) {
     }
   } else
   if (addr == KEYBOARD_DATA) {
-    /* this register is read-only */
-    throwException(EXC_BUS_TIMEOUT);
+    kbdXmtrData = data & 0xFF;
+    kbdCtrl &= ~KEYBOARD_XMTR_RDY;
+    if (kbdCtrl & KEYBOARD_XMTR_IEN) {
+      /* lower keyboard interrupt */
+      cpuResetInterrupt(IRQ_KEYBOARD);
+    }
+    timerStart(KEYBOARD_XMTR_USEC, kbdXmtrCallback, 0);
   } else {
     /* illegal register */
     throwException(EXC_BUS_TIMEOUT);
@@ -373,14 +419,19 @@ void keyboardWrite(Word addr, Word data) {
 
 
 void keyboardReset(void) {
+  Byte b;
+
   if (!installed) {
     return;
   }
   cPrintf("Resetting Keyboard...\n");
   kbdBufInit();
-  kbdCtrl = 0;
-  kbdData = 0;
-  timerStart(KEYBOARD_USEC, kbdCallback, 0);
+  b = ANSWER_BATOK;
+  kbdBufWrite(&b, 1);
+  kbdCtrl = KEYBOARD_XMTR_RDY;
+  kbdRcvrData = 0;
+  kbdXmtrData = 0;
+  timerStart(KEYBOARD_RCVR_USEC, kbdRcvrCallback, 0);
 }
 
 

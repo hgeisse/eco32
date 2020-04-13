@@ -28,7 +28,9 @@
 #include "sdcard.h"
 #include "output.h"
 #include "shutdown.h"
-#include "graph.h"
+#include "graph1.h"
+#include "graph2.h"
+#include "mouse.h"
 
 
 static void usage(char *myself) {
@@ -47,7 +49,8 @@ static void usage(char *myself) {
           MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
           MAX_NSERIALS - 1);
-  fprintf(stderr, "    [-g]           install graphics controller\n");
+  fprintf(stderr, "    [-g]           install graphics card 640x480x32\n");
+  fprintf(stderr, "    [-G]           install graphics card 1024x768x1\n");
   fprintf(stderr, "    [-c]           install console\n");
   fprintf(stderr, "    [-o <file>]    bind output device to file\n");
   fprintf(stderr, "    [-x]           use simulator with DejaGnu/expect\n");
@@ -80,7 +83,8 @@ int main(int argc, char *argv[]) {
   char *sdcardName;
   int numSerials;
   Bool connectTerminals[MAX_NSERIALS];
-  Bool graphics;
+  Bool graphics1;
+  Bool graphics2;
   Bool console;
   char *outputName;
   Bool expect;
@@ -107,7 +111,8 @@ int main(int argc, char *argv[]) {
   for (j = 0; j < MAX_NSERIALS; j++) {
     connectTerminals[j] = false;
   }
-  graphics = false;
+  graphics1 = false;
+  graphics2 = false;
   console = false;
   outputName = NULL;
   expect = false;
@@ -198,7 +203,10 @@ int main(int argc, char *argv[]) {
       connectTerminals[j] = true;
     } else
     if (strcmp(argp, "-g") == 0) {
-      graphics = true;
+      graphics1 = true;
+    } else
+    if (strcmp(argp, "-G") == 0) {
+      graphics2 = true;
     } else
     if (strcmp(argp, "-c") == 0) {
       console = true;
@@ -301,11 +309,17 @@ int main(int argc, char *argv[]) {
   if (console) {
     displayInit();
   }
-  if (graphics) {
-    graphInit();
+  if (graphics1) {
+    graph1Init();
   }
-  if (console || graphics) {
+  if (graphics2) {
+    graph2Init();
+  }
+  if (console || graphics1 || graphics2) {
     keyboardInit();
+  }
+  if (graphics1 || graphics2) {
+    mouseInit();
   }
   serialInit(numSerials, connectTerminals, expect);
   if (disk) {
@@ -355,8 +369,10 @@ int main(int argc, char *argv[]) {
   romExit();
   timerExit();
   displayExit();
-  graphExit();
+  graph1Exit();
+  graph2Exit();
   keyboardExit();
+  mouseExit();
   serialExit();
   diskExit();
   sdcardExit();
