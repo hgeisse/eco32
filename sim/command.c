@@ -29,6 +29,7 @@
 #include "serial.h"
 #include "disk.h"
 #include "sdcard.h"
+#include "bio.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -74,6 +75,7 @@ static void help(void) {
   cPrintf("  ic      instr cache control\n");
   cPrintf("  dc      data cache control\n");
   cPrintf("  pm      show physical memory\n");
+  cPrintf("  sb      show/set board I/O\n");
   cPrintf("  q       quit simulator\n");
   cPrintf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -210,6 +212,12 @@ static void help19(void) {
 
 
 static void help20(void) {
+  cPrintf("  sb                show board LEDs, switches, and buttons\n");
+  cPrintf("  sb <3 hex>        set buttons (1 hex) and switches (2 hex)\n");
+}
+
+
+static void help21(void) {
   cPrintf("  q                 quit simulator\n");
 }
 
@@ -905,6 +913,7 @@ static void doInit(char *tokens[], int n) {
     serialReset();
     diskReset();
     sdcardReset();
+    bioReset();
     outputReset();
     shutdownReset();
     graph1Reset();
@@ -1027,11 +1036,29 @@ static void doPhysMem(char *tokens[], int n) {
 }
 
 
+static void doBoardIO(char *tokens[], int n) {
+  Word data;
+
+  if (n == 1) {
+    bioShowBoard();
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &data) ||
+        (data & ~0xFFF) != 0) {
+      cPrintf("illegal switch settings\n");
+      return;
+    }
+    bioSetSwitches(data);
+  } else {
+    help20();
+  }
+}
+
+
 static void doQuit(char *tokens[], int n) {
   if (n == 1) {
     quit = true;
   } else {
-    help20();
+    help21();
   }
 }
 
@@ -1057,7 +1084,8 @@ Command commands[] = {
   { "ic",   help17, doIcache     },
   { "dc",   help18, doDcache     },
   { "pm",   help19, doPhysMem    },
-  { "q",    help20, doQuit       },
+  { "sb",   help20, doBoardIO    },
+  { "q",    help21, doQuit       },
 };
 
 int numCommands = sizeof(commands) / sizeof(commands[0]);
