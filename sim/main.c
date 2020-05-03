@@ -26,6 +26,7 @@
 #include "serial.h"
 #include "disk.h"
 #include "sdcard.h"
+#include "bio.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -60,6 +61,7 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-dcs <n>]     dcache ld size in bytes (2-28)\n");
   fprintf(stderr, "    [-dcl <n>]     dcache ld line size in bytes (2-10)\n");
   fprintf(stderr, "    [-dca <n>]     dcache ld associativity (0-1)\n");
+  fprintf(stderr, "    [-sb <3 hex>]  set board buttons(1)/switches(2)\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
   fprintf(stderr, "Unconnected serial lines can be accessed by opening\n");
@@ -94,6 +96,7 @@ int main(int argc, char *argv[]) {
   int dcacheTotalSize;
   int dcacheLineSize;
   int dcacheAssoc;
+  Word initialSwitches;
   Word initialPC;
   char command[20];
   char *line;
@@ -122,6 +125,7 @@ int main(int argc, char *argv[]) {
   dcacheTotalSize = DC_LD_TOTAL_SIZE;
   dcacheLineSize = DC_LD_LINE_SIZE;
   dcacheAssoc = DC_LD_ASSOC;
+  initialSwitches = 0;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (strcmp(argp, "-i") == 0) {
@@ -285,6 +289,16 @@ int main(int argc, char *argv[]) {
           dcacheAssoc > 1) {
         usage(argv[0]);
       }
+    } else
+    if (strcmp(argp, "-sb") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      initialSwitches = strtoul(argv[++i], &endp, 16);
+      if (*endp != '\0' ||
+          (initialSwitches & ~0xFFF) != 0) {
+        usage(argv[0]);
+      }
     } else {
       usage(argv[0]);
     }
@@ -328,6 +342,7 @@ int main(int argc, char *argv[]) {
   if (sdcard) {
     sdcardInit(sdcardName);
   }
+  bioInit(initialSwitches);
   outputInit(outputName);
   shutdownInit();
   ramInit(memSize * M, progName, loadAddr);
@@ -376,6 +391,7 @@ int main(int argc, char *argv[]) {
   serialExit();
   diskExit();
   sdcardExit();
+  bioExit();
   outputExit();
   shutdownExit();
   cPrintf("ECO32 Simulator finished\n");

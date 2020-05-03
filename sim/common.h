@@ -33,6 +33,7 @@
 #define MAX_NSERIALS	2		/* max number of serial lines */
 #define DISK_BASE	0x30400000	/* physical disk base address */
 #define SDCARD_BASE	0x30600000	/* physical SD card base address */
+#define BIO_BASE	0x31000000	/* physical board I/O base address */
 #define GRAPH1_BASE	0x34000000	/* physical grahics 1 base address */
 #define GRAPH2_BASE	0x35000000	/* physical grahics 2 base address */
 #define OUTPUT_BASE	0x3F000000	/* physical output device address */

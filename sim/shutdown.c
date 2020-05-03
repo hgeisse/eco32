@@ -24,6 +24,7 @@
 #include "serial.h"
 #include "disk.h"
 #include "sdcard.h"
+#include "bio.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -56,6 +57,7 @@ void shutdownWrite(Word addr, Word data) {
   serialExit();
   diskExit();
   sdcardExit();
+  bioExit();
   outputExit();
   shutdownExit();
   cPrintf("ECO32 Simulator shutdown\n");
