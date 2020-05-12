@@ -1,0 +1,7 @@
+After starting the integer arithmetic server (either on
+the simulator or on an FPGA), you must run the 'iatest'
+client in another window of the host. Attach the client
+to serial line 1 of the server. The client sends a series
+of arithmetic tasks to the server, which responds with a
+result for each task. The client logs both, the questions
+and the answers.

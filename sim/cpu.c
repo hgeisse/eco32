@@ -209,13 +209,21 @@ static void execNextInstruction(void) {
       if (RR(reg2) == 0) {
         throwException(EXC_DIVIDE);
       }
-      WR(reg3, (signed int) RR(reg1) / (signed int) RR(reg2));
+      if (RR(reg1) == 0x80000000 && RR(reg2) == 0xFFFFFFFF) {
+        WR(reg3, 0x80000000);
+      } else {
+        WR(reg3, (signed int) RR(reg1) / (signed int) RR(reg2));
+      }
       break;
     case OP_DIVI:
       if (SEXT16(immed) == 0) {
         throwException(EXC_DIVIDE);
       }
-      WR(reg2, (signed int) RR(reg1) / (signed int) SEXT16(immed));
+      if (RR(reg1) == 0x80000000 && immed == 0x0000FFFF) {
+        WR(reg2, 0x80000000);
+      } else {
+        WR(reg2, (signed int) RR(reg1) / (signed int) SEXT16(immed));
+      }
       break;
     case OP_DIVU:
       if (RR(reg2) == 0) {
@@ -233,13 +241,21 @@ static void execNextInstruction(void) {
       if (RR(reg2) == 0) {
         throwException(EXC_DIVIDE);
       }
-      WR(reg3, (signed int) RR(reg1) % (signed int) RR(reg2));
+      if (RR(reg1) == 0x80000000 && RR(reg2) == 0xFFFFFFFF) {
+        WR(reg3, 0x00000000);
+      } else {
+        WR(reg3, (signed int) RR(reg1) % (signed int) RR(reg2));
+      }
       break;
     case OP_REMI:
       if (SEXT16(immed) == 0) {
         throwException(EXC_DIVIDE);
       }
-      WR(reg2, (signed int) RR(reg1) % (signed int) SEXT16(immed));
+      if (RR(reg1) == 0x80000000 && immed == 0x0000FFFF) {
+        WR(reg2, 0x00000000);
+      } else {
+        WR(reg2, (signed int) RR(reg1) % (signed int) SEXT16(immed));
+      }
       break;
     case OP_REMU:
       if (RR(reg2) == 0) {
