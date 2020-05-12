@@ -2,7 +2,7 @@
 ; iasrv.s -- integer arithmetic server
 ;
 
-	.set	tba,0xF0300000		; terminal base address
+	.set	tba,0xF0301000		; terminal base address
 	.set	tos,0xC0020000		; top of stack
 
 	; get some addresses listed in the load map
