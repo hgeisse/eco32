@@ -222,14 +222,14 @@ Word solveProblemIntern(char op, Word x, Word y) {
       break;
     case OP_DIVI:
       if (x == 0x80000000 && y == 0xFFFFFFFF) {
-        answer = 0;
+        answer = 0x80000000;
       } else {
         answer = (int) x / (int) y;
       }
       break;
     case OP_REMI:
       if (x == 0x80000000 && y == 0xFFFFFFFF) {
-        answer = 0;
+        answer = 0x00000000;
       } else {
         answer = (int) x % (int) y;
       }
