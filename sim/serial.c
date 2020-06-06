@@ -232,7 +232,9 @@ static void makeRaw(int fd) {
 }
 
 
-void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
+void serialInit(int numSerials, Bool connectTerminals[],
+                char *danglingLinesName, Bool expect) {
+  FILE *danglingLines;
   int i;
   int master;
   char slavePath[100];
@@ -241,6 +243,14 @@ void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
   char termSlave[100];
 
   nSerials = numSerials;
+  danglingLines = NULL;
+  if (danglingLinesName != NULL) {
+    danglingLines = fopen(danglingLinesName, "w");
+    if (danglingLines == NULL) {
+      error("cannot open file for unconnected serial lines '%s'",
+            danglingLinesName);
+    }
+  }
   for (i = 0; i < nSerials; i++) {
     /* open pseudo terminal */
     master = open("/dev/ptmx", O_RDWR | O_NONBLOCK);
@@ -282,6 +292,9 @@ void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
       serials[i].pid = 0;
       cPrintf("Serial line %d can be accessed by opening device '%s'.\n",
               i, slavePath);
+      if (danglingLines != NULL) {
+        fprintf(danglingLines, "%s\n", slavePath);
+      }
     }
     fcntl(master, F_SETFL, O_NONBLOCK);
     serials[i].in = fdopen(master, "r");
@@ -292,6 +305,9 @@ void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
       /* skip the window id written by xterm */
       while (fgetc(serials[i].in) != '\n') ;
     }
+  }
+  if (danglingLines != NULL) {
+    fclose(danglingLines);
   }
   controlledByExpect = expect;
   serialReset();

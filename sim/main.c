@@ -50,6 +50,7 @@ static void usage(char *myself) {
           MAX_NSERIALS);
   fprintf(stderr, "    [-t <k>]       connect terminal to line k (0-%d)\n",
           MAX_NSERIALS - 1);
+  fprintf(stderr, "    [-u <file>]    write unconnected lines to file\n");
   fprintf(stderr, "    [-g]           install graphics card 640x480x32\n");
   fprintf(stderr, "    [-G]           install graphics card 1024x768x1\n");
   fprintf(stderr, "    [-c]           install console\n");
@@ -85,6 +86,7 @@ int main(int argc, char *argv[]) {
   char *sdcardName;
   int numSerials;
   Bool connectTerminals[MAX_NSERIALS];
+  char *danglingLinesName;
   Bool graphics1;
   Bool graphics2;
   Bool console;
@@ -114,6 +116,7 @@ int main(int argc, char *argv[]) {
   for (j = 0; j < MAX_NSERIALS; j++) {
     connectTerminals[j] = false;
   }
+  danglingLinesName = NULL;
   graphics1 = false;
   graphics2 = false;
   console = false;
@@ -205,6 +208,12 @@ int main(int argc, char *argv[]) {
         usage(argv[0]);
       }
       connectTerminals[j] = true;
+    } else
+    if (strcmp(argp, "-u") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      danglingLinesName = argv[++i];
     } else
     if (strcmp(argp, "-g") == 0) {
       graphics1 = true;
@@ -335,7 +344,7 @@ int main(int argc, char *argv[]) {
   if (graphics1 || graphics2) {
     mouseInit();
   }
-  serialInit(numSerials, connectTerminals, expect);
+  serialInit(numSerials, connectTerminals, danglingLinesName, expect);
   if (disk) {
     diskInit(diskName);
   }
