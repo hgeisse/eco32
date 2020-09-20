@@ -1,0 +1,47 @@
+These changes are concerned with console switching in the machine monitor.
+See master course "Hardware for Embedded Systems".
+
+hellwig@papa2:~/hes/work/hes-ws2021/loesungen/eco32-hes$ diff -r ~/GitHub/eco32/monitor monitor
+diff -r /home/hellwig/GitHub/eco32/monitor/monitor/boards/de2-115/start.s monitor/monitor/boards/de2-115/start.s
+7c7
+<       .set    CIO_CTRL,0x00020000     ; this bit controls console I/O
+---
+>       .set    CIO_CTRL,0x00000001     ; this bit controls console I/O
+200c200
+<       bne     $8,$0,swtchset
+---
+>       beq     $8,$0,swtchset
+diff -r /home/hellwig/GitHub/eco32/monitor/monitor/boards/simulator/start.s monitor/monitor/boards/simulator/start.s
+5,6c5,10
+< ;     .set    CIO_CTL,0x00            ; set console to keyboard/display
+<       .set    CIO_CTL,0x03            ; set console to serial line 0
+---
+>       .set    BIO_BASE,0xF1000000     ; board I/O base address
+>       .set    BIO_RD,BIO_BASE+0
+>       .set    CIO_CTRL,0x00000001     ; this bit controls console I/O
+> 
+>       .set    CIO_KBD_DSP,0x00        ; set console to keyboard/display
+>       .set    CIO_SERIAL_0,0x03       ; set console to serial line 0
+193c197,202
+<       add     $4,$0,CIO_CTL           ; set console
+---
+>       ldw     $8,$0,BIO_RD            ; get switch settings
+>       and     $8,$8,CIO_CTRL
+>       add     $4,$0,CIO_SERIAL_0      ; set console to serial line
+>       beq     $8,$0,swtchset
+>       add     $4,$0,CIO_KBD_DSP       ; set console to kbd/dsp
+> swtchset:
+diff -r /home/hellwig/GitHub/eco32/monitor/monitor/common/keyboard.s monitor/monitor/common/keyboard.s
+24a25,36
+>       add     $8,$0,kbdbase
+> kbdinit0:
+>       add     $9,$0,1000000           ; set loop count
+> kbdinit1:
+>       ldw     $10,$8,0                ; is a character ready?
+>       and     $10,$10,1
+>       beq     $10,$0,kbdinit2         ; skip if not
+>       ldw     $10,$8,4                ; else get the character
+>       j       kbdinit0                ; and start all over again
+> kbdinit2:
+>       sub     $9,$9,1                 ; decrement loop count
+>       bne     $9,$0,kbdinit1          ; continue loop if not done
