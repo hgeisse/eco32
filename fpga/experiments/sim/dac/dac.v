@@ -12,8 +12,8 @@ module dac(clk, rst,
            mclk, bclk, lrck, sdti);
     input clk;
     input rst;
-    input [19:0] sample_l;
-    input [19:0] sample_r;
+    input [23:0] sample_l;
+    input [23:0] sample_r;
     output next;
     output mclk;
     output bclk;
@@ -44,10 +44,10 @@ module dac(clk, rst,
       sr <= 64'h0;
     end else begin
       if (next) begin
-        sr[63:52] <= 12'h000;
-        sr[51:32] <= sample_l[19:0];
-        sr[31:20] <= 12'h000;
-        sr[19: 0] <= sample_r[19:0];
+        sr[63:56] <= 8'h00;
+        sr[55:32] <= sample_l[23:0];
+        sr[31:24] <= 8'h00;
+        sr[23: 0] <= sample_r[23:0];
       end else begin
         if (shift) begin
           sr[63:1] <= sr[62:0];
