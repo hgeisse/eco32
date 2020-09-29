@@ -13,8 +13,8 @@ module dac_test;
   reg rst_in;                     // reset, input
   reg rst_s1;                     // reset, first synchronizer
   reg rst;                        // system reset
-  reg [19:0] sample_l;
-  reg [19:0] sample_r;
+  reg [23:0] sample_l;
+  reg [23:0] sample_r;
   wire next;
   wire mclk;
   wire bclk;
@@ -30,8 +30,8 @@ module dac_test;
   initial begin
     #0     $dumpfile("dump.vcd");
            $dumpvars(0, dac_test);
-           sample_l = 20'h0FF0F;
-           sample_r = 20'hAA55A;
+           sample_l = 24'h0FF0F6;
+           sample_r = 24'hAA55A6;
            clk = 1;
            rst_in = 1;
     #145   rst_in = 0;
