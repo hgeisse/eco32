@@ -494,6 +494,8 @@ module i2c_byte(clk, rst,
       default:
         begin
           next_state[2:0] = STATE_IDLE;
+          bitcnt_start = 1'b0;
+          bitcnt_count = 1'b0;
           bit_fnc[1:0] = 2'bxx;
           bit_start = 1'b0;
           byte_done = 1'b0;
