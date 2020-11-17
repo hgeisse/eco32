@@ -41,13 +41,6 @@
  *
  * tree grammar terminals produced by:
  *   ops c=1 s=2 i=4 l=4 h=4 f=4 d=4 x=4 p=4
- * and augmented by:
- *   %term LOADB=233
- *   %term LOADF4=4321
- *   %term LOADI1=1253 LOADI2=2277 LOADI4=4325
- *   %term LOADP4=4327
- *   %term LOADU1=1254 LOADU2=2278 LOADU4=4326
- *   %term VREGP=711
  */
 
 #include "c.h"
@@ -84,9 +77,14 @@ static void clobber(Node);
 #define INTTMP	0x0100FF00
 #define INTVAR	0x00FF0000
 #define INTRET	0x00000004
+#define FLTTMP	0x000F0FF0
+#define FLTVAR	0xFFF00000
+#define FLTRET	0x00000003
 
 static Symbol ireg[32];
 static Symbol iregw;
+static Symbol freg2[32];
+static Symbol freg2w;
 static Symbol blkreg;
 static int tmpregs[] = { 3, 9, 10 };
 
@@ -389,26 +387,26 @@ stmt:	ASGNB(reg,INDIRB(reg))	"# asgnb %0 %1\n"	1
 
 reg:	INDIRF4(VREGP)		"# read register\n"
 stmt:	ASGNF4(VREGP,reg)	"# write register\n"
-reg:	INDIRF4(addr)		"\tldw\t$%c,%0\n"	1
-stmt:	ASGNF4(addr,reg)	"\tstw\t$%1,%0\n"	1
-reg:	LOADF4(reg)		"\tadd\t$%c,$0,$%0\n"	move(a)
-reg:	ADDF4(reg,reg)		"\taddf\t$%c,$%0,$%1\n"	1
-reg:	SUBF4(reg,reg)		"\tsubf\t$%c,$%0,$%1\n"	1
-reg:	MULF4(reg,reg)		"\tmulf\t$%c,$%0,$%1\n"	1
-reg:	DIVF4(reg,reg)		"\tdivf\t$%c,$%0,$%1\n"	1
-reg:	NEGF4(reg)		"\tsubf\t$%c,$0,$%0\n"	1
-reg:	CVFF4(reg)		"# cvt d2s\n"		1
-reg:	CVIF4(reg)		"\tci2f\t$%c,$%0\n"	1
-reg:	CVFI4(reg)		"\tcf2i\t$%c,$%0\n"	1
-stmt:	EQF4(reg,reg)		"\tbeqf\t$%0,$%1,%a\n"	1
-stmt:	NEF4(reg,reg)		"\tbnef\t$%0,$%1,%a\n"	1
-stmt:	LEF4(reg,reg)		"\tblef\t$%0,$%1,%a\n"	1
-stmt:	LTF4(reg,reg)		"\tbltf\t$%0,$%1,%a\n"	1
-stmt:	GEF4(reg,reg)		"\tbgef\t$%0,$%1,%a\n"	1
-stmt:	GTF4(reg,reg)		"\tbgtf\t$%0,$%1,%a\n"	1
-reg:	CALLF4(ar)		"\tjal\t%0\n"		1
-stmt:	RETF4(reg)		"# ret\n"		1
-stmt:	ARGF4(reg)		"# arg\n"		1
+reg:	INDIRF4(addr)		";FP: l.s $f%c,%0\n"		1
+stmt:	ASGNF4(addr,reg)	";FP: s.s $f%1,%0\n"		1
+reg:	ADDF4(reg,reg)		";FP: add.s $f%c,$f%0,$f%1\n"	1
+reg:	SUBF4(reg,reg)		";FP: sub.s $f%c,$f%0,$f%1\n"	1
+reg:	MULF4(reg,reg)		";FP: mul.s $f%c,$f%0,$f%1\n"	1
+reg:	DIVF4(reg,reg)		";FP: div.s $f%c,$f%0,$f%1\n"	1
+reg:	LOADF4(reg)		";FP: mov.s $f%c,$f%0\n"	1
+reg:	NEGF4(reg)		";FP: neg.s $f%c,$f%0\n"	1
+reg:	CVFF4(reg)		";FP: cvt.s.d $f%c,$f%0\n"	1
+reg:	CVIF4(reg)		";FP: mtc1 $%0,$f%c; cvt.s.w $f%c,$f%c\n"     1
+reg:	CVFI4(reg)		";FP: trunc.w.s $f2,$f%0,$%c; mfc1 $%c,$f2\n" 1
+stmt:	EQF4(reg,reg)		";FP: c.eq.s $f%0,$f%1; bc1t %a\n"	1
+stmt:	LEF4(reg,reg)		";FP: c.ule.s $f%0,$f%1; bc1t %a\n"	1
+stmt:	LTF4(reg,reg)		";FP: c.ult.s $f%0,$f%1; bc1t %a\n"	1
+stmt:	GEF4(reg,reg)		";FP: c.lt.s $f%0,$f%1; bc1f %a\n"	1
+stmt:	GTF4(reg,reg)		";FP: c.le.s $f%0,$f%1; bc1f %a\n"	1
+stmt:	NEF4(reg,reg)		";FP: c.eq.s $f%0,$f%1; bc1f %a\n"	1
+reg:	CALLF4(ar)		"\tjal\t%0\n"			1
+stmt:	RETF4(reg)		"# ret\n"			1
+stmt:	ARGF4(reg)		"# arg\n"			1
 
 
 %%
@@ -564,6 +562,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
     usedmask[IREG] |= ((unsigned) 1) << 31;
   }
   usedmask[IREG] &= 0x80FF0000;
+  usedmask[FREG] &= 0xFFF00000;
   maxargoffset = roundup(maxargoffset, 4);
   if (ncalls != 0 && maxargoffset < 16) {
     maxargoffset = 16;
@@ -673,10 +672,14 @@ static void progbeg(int argc, char *argv[]) {
     ireg[i] = mkreg("%d", i, 1, IREG);
   }
   iregw = mkwildcard(ireg);
+  for (i = 0; i < 32; i += 2) {
+    freg2[i] = mkreg("%d", i, 3, FREG);
+  }
+  freg2w = mkwildcard(freg2);
   tmask[IREG] = INTTMP;
   vmask[IREG] = INTVAR;
-  tmask[FREG] = 0;
-  vmask[FREG] = 0;
+  tmask[FREG] = FLTTMP;
+  vmask[FREG] = FLTVAR;
   blkreg = mkreg("8", 8, 7, IREG);
 }
 
@@ -732,8 +735,9 @@ static Symbol rmap(int opk) {
     case U:
     case P:
     case B:
-    case F:
       return iregw;
+    case F:
+      return freg2w;
     default:
       return 0;
   }
@@ -796,7 +800,6 @@ static void emit2(Node p) {
     case ARG+I:
     case ARG+P:
     case ARG+U:
-    case ARG+F:
       ty = optype(p->op);
       sz = opsize(p->op);
       if (p->x.argno == 0) {
@@ -869,9 +872,12 @@ static void target(Node p) {
     case CALL+I:
     case CALL+P:
     case CALL+U:
-    case CALL+F:
       rtarget(p, 0, ireg[25]);
       setreg(p, ireg[2]);
+      break;
+    case CALL+F:
+      rtarget(p, 0, ireg[25]);
+      setreg(p, freg2[0]);
       break;
     case CALL+V:
       rtarget(p, 0, ireg[25]);
@@ -879,8 +885,10 @@ static void target(Node p) {
     case RET+I:
     case RET+P:
     case RET+U:
-    case RET+F:
       rtarget(p, 0, ireg[2]);
+      break;
+    case RET+F:
+      rtarget(p, 0, freg2[0]);
       break;
     case ARG+I:
     case ARG+P:
@@ -891,7 +899,7 @@ static void target(Node p) {
       if (p->x.argno == 0) {
         ty0 = ty;
       }
-      if (q) {
+      if (q && !(ty == F && q->x.regnode->set == IREG)) {
         rtarget(p, 0, q);
       }
       break;
@@ -908,14 +916,19 @@ static void target(Node p) {
 static void clobber(Node p) {
   assert(p);
   switch (specific(p->op)) {
+    case CALL+F:
+      spill(INTTMP | INTRET, IREG, p);
+      spill(FLTTMP, FREG, p);
+      break;
     case CALL+I:
     case CALL+P:
     case CALL+U:
-    case CALL+F:
       spill(INTTMP, IREG, p);
+      spill(FLTTMP | FLTRET, FREG, p);
       break;
     case CALL+V:
       spill(INTTMP | INTRET, IREG, p);
+      spill(FLTTMP | FLTRET, FREG, p);
       break;
   }
 }
