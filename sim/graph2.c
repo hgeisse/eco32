@@ -17,6 +17,13 @@
 #include "kbd.h"
 
 
+/*
+ * FAST_READ = 0: read display contents from frame buffer memory
+ * FAST_READ = 1: read display contents from frame buffer mirror
+ */
+#define FAST_READ		1
+
+
 static Bool debug = false;
 static Bool volatile installed = false;
 
@@ -384,6 +391,7 @@ static void vgaWrite(int x, int y, int r, int g, int b) {
 }
 
 
+#if FAST_READ == 0
 static void vgaRead(int x, int y, int *r, int *g, int *b) {
   unsigned long pixel;
 
@@ -392,9 +400,20 @@ static void vgaRead(int x, int y, int *r, int *g, int *b) {
   *g = PIXEL2G(pixel);
   *b = PIXEL2B(pixel);
 }
+#endif /* FAST_READ */
 
 
 /**************************************************************/
+/**************************************************************/
+
+/* frame buffer mirror */
+
+
+#if FAST_READ != 0
+static Word fbm[(WINDOW_SIZE_X * WINDOW_SIZE_Y) >> 5];
+#endif /* FAST_READ */
+
+
 /**************************************************************/
 
 /* loading the splash screen */
@@ -445,6 +464,10 @@ static void loadSplashScreen(void) {
       }
       count--;
       vgaWrite(x, y, r, g, b);
+#if FAST_READ != 0
+      /* write pixel also to frame buffer mirror */
+      fbm[(y * WINDOW_SIZE_X + x) >> 5] |= (plane << (x & 0x1F));
+#endif /* FAST_READ */
     }
   }
 }
@@ -456,9 +479,11 @@ static void loadSplashScreen(void) {
 
 
 Word graph2Read(Word addr) {
+#if FAST_READ == 0
   int x, y;
   int i;
   int r, g, b;
+#endif /* FAST_READ */
   Word data;
 
   if (debug) {
@@ -470,6 +495,7 @@ Word graph2Read(Word addr) {
   if (addr >= WINDOW_SIZE_X * WINDOW_SIZE_Y / 8) {
     throwException(EXC_BUS_TIMEOUT);
   }
+#if FAST_READ == 0
   /* read pixels from frame buffer memory */
   x = (addr << 3) % WINDOW_SIZE_X;
   y = (addr << 3) / WINDOW_SIZE_X;
@@ -479,9 +505,13 @@ Word graph2Read(Word addr) {
     if (r == ((colors[FOREGROUND] >> 16) & 0xFF) &&
         g == ((colors[FOREGROUND] >>  8) & 0xFF) &&
         b == ((colors[FOREGROUND] >>  0) & 0xFF)) {
-      data |= (0x80000000 >> i);
+      data |= (0x00000001 << i);
     }
   }
+#else
+  /* read word from frame buffer mirror */
+  data = fbm[addr >> 2];
+#endif /* FAST_READ */
   if (debug) {
     cPrintf(", data = 0x%08X ****\n", data);
   }
@@ -509,12 +539,16 @@ void graph2Write(Word addr, Word data) {
   x = (addr << 3) % WINDOW_SIZE_X;
   y = (addr << 3) / WINDOW_SIZE_X;
   for (i = 0; i < 32; i++) {
-    plane = (data & (0x80000000 >> i)) ? FOREGROUND : BACKGROUND;
+    plane = (data & (0x00000001 << i)) ? FOREGROUND : BACKGROUND;
     r = (colors[plane] >> 16) & 0xFF;
     g = (colors[plane] >>  8) & 0xFF;
     b = (colors[plane] >>  0) & 0xFF;
     vgaWrite(x + i, y, r, g, b);
   }
+#if FAST_READ != 0
+  /* write word also to frame buffer mirror */
+  fbm[addr >> 2] = data;
+#endif /* FAST_READ */
 }
 
 
