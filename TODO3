@@ -1,5 +1,7 @@
 1. Change bit order in graphics display 2; see Project Oberon.
+*** DONE ***
 
 2. Implement read buffer for graphics display 2; see Project Oberon.
+*** DONE ***
 
 3. Implement audio device with I2C interface; see course 'HES'.

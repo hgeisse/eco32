@@ -158,7 +158,7 @@ void setPixel(int x, int y, int on) {
   unsigned int pixels;
 
   waddr = BASE + ((y << 5) | (x >> 5));
-  pmask = 0x80000000 >> (x & 0x1F);
+  pmask = 0x00000001 << (x & 0x1F);
   pixels = *waddr;
   if (on) {
     pixels |= pmask;
