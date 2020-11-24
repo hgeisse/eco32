@@ -1,8 +1,0 @@
-This program allows to check the following five statements:
-1. The GOT register is properly saved and restored across
-   function calls.
-2. The linkage of variables is correctly interpreted by the
-   assembler, although only revealed at the end of the source.
-3. Static and global variables are initialized to zero.
-4. The linkage of functions is correctly interpreted.
-5. The result after running the program is 4 (found in $2).
