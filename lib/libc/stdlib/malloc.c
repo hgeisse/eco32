@@ -36,6 +36,8 @@ static Header *moreCore(unsigned int numUnits) {
     /* no space */
     return NULL;
   }
+  /* !!!!! */
+  return NULL;
 }
 
 
@@ -64,12 +66,17 @@ void *malloc(size_t size) {
   if (size <= 0) {
     return NULL;
   }
+  /* !!!!! */
+  return NULL;
 }
 
 
 void *realloc(void *p, size_t size) {
+  /* !!!!! */
+  return NULL;
 }
 
 
 void free(void *p) {
+  /* !!!!! */
 }
