@@ -36,6 +36,8 @@ static Header *moreCore(unsigned int numUnits) {
     /* no space */
     return NULL;
   }
+  /* !!!!! */
+  return NULL;
 }
 
 
