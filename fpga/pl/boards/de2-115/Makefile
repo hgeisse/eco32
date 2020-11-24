@@ -2,68 +2,11 @@
 # Makefile for ECO32 on Terasic DE2-115 board
 #
 
-BUILD = ../../../../build
-
 .PHONY:		all install clean
 
-all:		build/output_files/eco32.sof build/output_files/eco32.pof
+all:
 
-install:	build/output_files/eco32.sof build/output_files/eco32.pof
-		mkdir -p $(BUILD)/eco32/de2-115
-		cp build/output_files/eco32.sof $(BUILD)/eco32/de2-115
-		cp build/output_files/eco32.pof $(BUILD)/eco32/de2-115
-		cp doc/README $(BUILD)/eco32/de2-115
+install:
 
 clean:
-		if [ -f build/eco32.qpf ] ; then \
-		  mv build/eco32.qpf . ; \
-		fi
-		if [ -f build/eco32.qsf ] ; then \
-		  mv build/eco32.qsf . ; \
-		fi
-		#if [ -f build/eco32.qws ] ; then \
-		#  mv build/eco32.qws . ; \
-		#fi
-		if [ -f build/eco32.srf ] ; then \
-		  mv build/eco32.srf . ; \
-		fi
-		if [ -f build/output_files/eco32.sof ] ; then \
-		  mv build/output_files/eco32.sof . ; \
-		fi
-		if [ -f build/output_files/eco32.pof ] ; then \
-		  mv build/output_files/eco32.pof . ; \
-		fi
-		if [ -f build/output_files/eco32.cdf ] ; then \
-		  mv build/output_files/eco32.cdf . ; \
-		fi
-		rm -rf build/*
-		# ------------------------------
-		rm -f eco32.sof
-		rm -f eco32.pof
-		# ------------------------------
-		mkdir build/output_files
-		if [ -f eco32.qpf ] ; then \
-		  mv eco32.qpf build ; \
-		fi
-		if [ -f eco32.qsf ] ; then \
-		  mv eco32.qsf build ; \
-		fi
-		#if [ -f eco32.qws ] ; then \
-		#  mv eco32.qws build ; \
-		#fi
-		if [ -f eco32.srf ] ; then \
-		  mv eco32.srf build ; \
-		fi
-		if [ -f eco32.sof ] ; then \
-		  mv eco32.sof build/output_files ; \
-		fi
-		if [ -f eco32.pof ] ; then \
-		  mv eco32.pof build/output_files ; \
-		fi
-		if [ -f eco32.cdf ] ; then \
-		  mv eco32.cdf build/output_files ; \
-		fi
 		rm -f *~
-		rm -f src/*~
-		rm -f src/toplevel/*~
-		rm -f src/clk_rst/*~
