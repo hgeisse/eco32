@@ -6,11 +6,13 @@ BUILD = ../../../../../build
 
 SERIAL = /dev/ttyUSB0
 
-# number of test cases
-NUM = 50000000
-
 # test level (1 or 2)
-LVL = 2
+LVL = 1
+#LVL = 2
+
+# number of test cases
+NUM = 100000
+#NUM = 10000000
 
 GEN = ../../../test/bin/testfloat_gen
 VER = ../../../test/bin/testfloat_ver
@@ -33,12 +35,12 @@ run-extremes:	$(EXE)
 		$(VER) -rnear_even -tininessbefore f32_mul
 
 run-full:	$(EXE)
-		$(GEN) -n $(NUM) -level $(LVL) f32 2 | \
+		$(GEN) -level $(LVL) -n $(NUM) f32 2 | \
 		./multest $(SERIAL) | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
 run-simulate:	$(EXE)
-		$(GEN) -n $(NUM) -level $(LVL) f32 2 | \
+		$(GEN) -level $(LVL) -n $(NUM) f32 2 | \
 		./multest -simulate | \
 		$(VER) -rnear_even -tininessafter f32_mul
 
