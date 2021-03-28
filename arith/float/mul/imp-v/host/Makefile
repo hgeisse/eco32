@@ -4,6 +4,8 @@
 
 BUILD = ../../../../../build
 
+SERIAL = /dev/ttyUSB0
+
 # number of test cases
 NUM = 50000000
 
@@ -22,17 +24,17 @@ install:	$(EXE)
 
 run-specials:	$(EXE)
 		cat special2.dat | \
-		./multest | \
+		./multest $(SERIAL) | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
 run-extremes:	$(EXE)
 		cat extreme2.dat | \
-		./multest | \
+		./multest $(SERIAL) | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
 run-full:	$(EXE)
 		$(GEN) -n $(NUM) -level $(LVL) f32 2 | \
-		./multest | \
+		./multest $(SERIAL) | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
 run-simulate:	$(EXE)
