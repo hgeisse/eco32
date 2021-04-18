@@ -1,0 +1,100 @@
+
+Which relocations can be present in an object file?
+---------------------------------------------------
+
+1. There are three possible segments which may be involved in
+   relocations (.code, .data, .bss).
+
+2. Every relocation specifies where something has to be patched as a
+   pair (segment, offset). There cannot be any patches within .bss
+   as this segment is filled with zeros before executing the program.
+   So we can choose either .code or .data here.
+
+3. Each relocation references either a segment or a symbol. This
+   gives us four possibilities here (.code, .data, .bss, symbol).
+
+4. There are five different reloactions (H16, L16, R16, R26, W32).
+   This is strictly a consequence of what parts of an instruction or
+   datum must be patched with which part of a (word-sized) value.
+
+5. Thus there are 2*4*5 = 40 different relocations possible.
+   Here is a complete list of them (patched/reference/type):
+	.code/.code/H16
+	.code/.code/L16
+	.code/.code/R16
+	.code/.code/R26
+	.code/.code/W32
+	.code/.data/H16
+	.code/.data/L16
+	.code/.data/R16
+	.code/.data/R26
+	.code/.data/W32
+	.code/.bss/H16
+	.code/.bss/L16
+	.code/.bss/R16
+	.code/.bss/R26
+	.code/.bss/W32
+	.code/symbol/H16
+	.code/symbol/L16
+	.code/symbol/R16
+	.code/symbol/R26
+	.code/symbol/W32
+	.data/.code/H16
+	.data/.code/L16
+	.data/.code/R16
+	.data/.code/R26
+	.data/.code/W32
+	.data/.data/H16
+	.data/.data/L16
+	.data/.data/R16
+	.data/.data/R26
+	.data/.data/W32
+	.data/.bss/H16
+	.data/.bss/L16
+	.data/.bss/R16
+	.data/.bss/R26
+	.data/.bss/W32
+	.data/symbol/H16
+	.data/symbol/L16
+	.data/symbol/R16
+	.data/symbol/R26
+	.data/symbol/W32
+
+6. We concentrate our attention now on those relocations which can be
+   produced by C code.
+   a) The relocation types H16, L16, R16, and R26 are only used to patch
+      instructions, i.e. they never appear in the .data segment.
+   b) R16 and R26 relocations are only used in branch and jump instructions,
+      so they refer to labels in .code or to symbols. Hence the combinations
+      .code/.data/R16, .code/.data/R26, .code/.bss/R16, and .code/.bss/R26
+      will not be generated.
+   c) The C compiler in use does not generate branches which cross
+      module boundaries. Thus the combination .code/symbol/R16 is
+      not generated (but it might be useful, e.g. when optimizing
+      tail calls).
+   d) The C compiler in use does not place constant pointers in .code,
+      which would be possible. Thus the combinations .code/.code/W32,
+      .code/.data/W32, .code/.bss/W32, and .code/symbol/W32 don't get
+      generated.
+   These relocations remain:
+	.code/.code/H16		ok
+	.code/.code/L16		ok
+	.code/.code/R16		ok
+	.code/.code/R26		ok
+	.code/.code/W32		not with current C compiler
+	.code/.data/H16		ok
+	.code/.data/L16		ok
+	.code/.data/W32		not with current C compiler
+	.code/.bss/H16		ok
+	.code/.bss/L16		ok
+	.code/.bss/W32		not with current C compiler
+	.code/symbol/H16	ok
+	.code/symbol/L16	ok
+	.code/symbol/R16	not with current C compiler
+	.code/symbol/R26	ok
+	.code/symbol/W32	not with current C compiler
+	.data/.code/W32		ok
+	.data/.data/W32		ok
+	.data/.bss/W32		ok
+	.data/symbol/W32	ok
+
