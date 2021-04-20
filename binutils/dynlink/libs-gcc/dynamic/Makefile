@@ -6,7 +6,7 @@ all:
 		$(MAKE) -C libdev all
 		$(MAKE) -C appdev all
 
-run:
+run:		all
 		$(MAKE) -C appdev run
 
 clean:
