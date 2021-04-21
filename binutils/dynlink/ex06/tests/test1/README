@@ -13,7 +13,7 @@ Which relocations can be present in an object file?
 3. Each relocation references either a segment or a symbol. This
    gives us four possibilities here (.code, .data, .bss, symbol).
 
-4. There are five different reloactions (H16, L16, R16, R26, W32).
+4. There are five different relocations (H16, L16, R16, R26, W32).
    This is strictly a consequence of what parts of an instruction or
    datum must be patched with which part of a (word-sized) value.
 
