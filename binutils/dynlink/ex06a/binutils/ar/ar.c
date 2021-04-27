@@ -8,8 +8,8 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "../include/ar.h"
-#include "../include/eof.h"
+#include "ar.h"
+#include "eof.h"
 
 
 /**************************************************************/

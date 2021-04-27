@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#include "../include/eof.h"
+#include "eof.h"
 
 
 /**************************************************************/

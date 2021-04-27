@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "../include/eof.h"
+#include "eof.h"
 
 
 /**************************************************************/
