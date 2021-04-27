@@ -1,0 +1,10 @@
+asm-1	Why can an ordinary executable (generated from assembler source)
+	fail to run correctly when not executed at its link address?
+asm-2	Show the principle of accessing static data in PIC.
+asm-3	Show the principle of accessing global data in PIC.
+asm-4	Show the realization of accessing static data in PIC.
+asm-5	Show the realization of accessing global data in PIC.
+asm-6	Check that different references to a global variable
+	in a single module share the same GOT entry.
+asm-7	Check that different references to a global variable
+	in different modules share the same GOT entry.

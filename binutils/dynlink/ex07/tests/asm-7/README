@@ -1,0 +1,13 @@
+The executable is the result of linking two almost identical modules
+(the function labels are different), each with references to a few
+global variables, and a third module which defines the global variables.
+The test checks that the references in different modules share the same
+GOT entry. The .got segment should have a size of 2*4 = 0x08 bytes. The
+.data segment should have a size of 5*4 = 0x14 bytes.
+
+After running the program, the registers $5..$8 should contain the
+following values:
+$5: 0x456789AB
+$6: 0x3456789A
+$7: 0x456789AB
+$8: 0x3456789A

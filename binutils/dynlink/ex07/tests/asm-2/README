@@ -1,0 +1,21 @@
+This program shows the principle for accessing static data from PIC.
+
+First, the address of the code just running is determined. Then, the
+distance from the current instruction to the GOT (which is fixed at
+link time) is added to the code address, which leaves the actual GOT
+address in $3. Finally, the distance of the static data to the GOT
+(which is also fixed at link time) is added to the GOT address and
+the pointer thus constructed is dereferenced.
+
+Note 1: It would be possible to add (at link time) both offsets into
+a single one. But then every access to static data must be preceded
+by the "jal getpc" sequence, which is impractical.
+
+Note 2: The GOT may be totally empty for this use case. Only its
+position in the address space is used to get at the static data.
+
+Note 3: The program shows only the concept. In reality, the GOT
+is constructed (and thus its position is defined) by the linker.
+
+runlo: This is of course OK if executed at the link address.
+runhi: But it also succeeds if executed at some other address.
