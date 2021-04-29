@@ -22,6 +22,12 @@
 #define RELOC_R16	2	/* write 16 bits with value relative to PC */
 #define RELOC_R26	3	/* write 26 bits with value relative to PC */
 #define RELOC_W32	4	/* write full 32 bit word with value */
+#define RELOC_GA_H16	5	/* PIC: GOT addr, PC relative, high part */
+#define RELOC_GA_L16	6	/* PIC: GOT addr, PC relative, low part */
+#define RELOC_GR_H16	7	/* PIC: GOT relative, high part */
+#define RELOC_GR_L16	8	/* PIC: GOT relative, low part */
+#define RELOC_GP_L16	9	/* PIC: GOT pointer, offset within GOT */
+#define RELOC_ER_W32	10	/* PIC: executable relative, 32 bit word */
 #define RELOC_SYM	0x100	/* symbol flag, may be added to any RELOC */
 
 
@@ -64,6 +70,7 @@ typedef struct {
   int typ;			/* relocation type: one of RELOC_xxx */
 				/* symbol flag RELOC_SYM may be set */
   int ref;			/* what is referenced */
+				/* if -1: nothing */
 				/* if symbol flag = 0: segment number */
 				/* if symbol flag = 1: symbol number */
   int add;			/* additive part of value */
