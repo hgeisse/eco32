@@ -370,14 +370,38 @@ void dumpRelocTable(void) {
       case RELOC_W32:
         printf("W32");
         break;
+      case RELOC_GA_H16:
+        printf("GA_H16");
+        break;
+      case RELOC_GA_L16:
+        printf("GA_L16");
+        break;
+      case RELOC_GR_H16:
+        printf("GR_H16");
+        break;
+      case RELOC_GR_L16:
+        printf("GR_L16");
+        break;
+      case RELOC_GP_L16:
+        printf("GP_L16");
+        break;
+      case RELOC_ER_W32:
+        printf("ER_W32");
+        break;
       default:
         printf("\n");
         error("unknown relocation type 0x%08X", relocTable[rn].typ);
     }
     printf("\n");
-    printf("        ref  = %s # %d\n",
-           relocTable[rn].typ & RELOC_SYM ? "symbol" : "segment",
-           relocTable[rn].ref);
+    printf("        ref  = ");
+    if (relocTable[rn].ref == -1) {
+      printf("*nothing*");
+    } else {
+      printf("%s # %d",
+             relocTable[rn].typ & RELOC_SYM ? "symbol" : "segment",
+             relocTable[rn].ref);
+    }
+    printf("\n");
     printf("        add  = 0x%08X\n", relocTable[rn].add);
   }
 }
