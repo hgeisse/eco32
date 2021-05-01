@@ -18,6 +18,7 @@
 
 #define NUM_REGS	32
 #define AUX_REG		1
+#define GOT_REG		25
 
 #define LINE_SIZE	200
 
@@ -157,10 +158,14 @@
 #define SEGMENT_BSS	3	/* uninitialized data segment */
 
 
+int debugCmdline = 0;
 int debugToken = 0;
 int debugCode = 0;
 int debugFixup = 0;
 int debugModule = 0;
+
+int genPIC = 0;
+int gotReg = GOT_REG;
 
 char codeName[L_tmpnam];
 char dataName[L_tmpnam];
@@ -184,7 +189,10 @@ int allowSyn = 1;
 int currSeg = SEGMENT_CODE;
 unsigned int segPtr[4] = { 0, 0, 0, 0 };
 char *segName[4] = { "ABS", "CODE", "DATA", "BSS" };
-char *methodName[5] = { "H16", "L16", "R16", "R26", "W32" };
+char *methodName[10] = {
+  "H16", "L16", "R16", "R26", "W32",
+  "GA_H16", "GA_L16", "GR_H16", "GR_L16", "GP_L16"
+};
 
 
 typedef struct fixup {
@@ -200,6 +208,7 @@ typedef struct fixup {
 
 typedef struct symbol {
   char *name;			/* name of symbol */
+  int whichTable;		/* GLOBAL_TABLE or LOCAL_TABLE */
   int status;			/* status of symbol */
   int segment;			/* the symbol's segment */
   int value;			/* the symbol's value */
@@ -566,8 +575,9 @@ Fixup *newFixup(int segment, unsigned int offset, int method, int value) {
 }
 
 
-void addFixup(Symbol *s,
-              int segment, unsigned int offset, int method, int value) {
+void addFixupToSym(Symbol *s,
+                   int segment, unsigned int offset,
+                   int method, int value) {
   Fixup *f;
 
   if (debugFixup) {
@@ -577,6 +587,20 @@ void addFixup(Symbol *s,
   f = newFixup(segment, offset, method, value);
   f->next = s->fixups;
   s->fixups = f;
+}
+
+
+void addFixupToLst(int segment, unsigned int offset,
+                   int method, int value) {
+  Fixup *f;
+
+  if (debugFixup) {
+    printf("DEBUG: fixup (s:%s, o:%08X, m:%s, v:%08X) added to fixup list\n",
+           segName[segment], offset, methodName[method], value);
+  }
+  f = newFixup(segment, offset, method, value);
+  f->next = fixupList;
+  fixupList = f;
 }
 
 
@@ -596,12 +620,13 @@ Symbol *deref(Symbol *s) {
 }
 
 
-Symbol *newSymbol(char *name) {
+Symbol *newSymbol(char *name, int whichTable) {
   Symbol *p;
 
   p = allocateMemory(sizeof(Symbol));
   p->name = allocateMemory(strlen(name) + 1);
   strcpy(p->name, name);
+  p->whichTable = whichTable;
   p->status = STATUS_UNKNOWN;
   p->segment = 0;
   p->value = 0;
@@ -623,7 +648,7 @@ Symbol *lookupEnter(char *name, int whichTable) {
     p = localTable;
   }
   if (p == NULL) {
-    r = newSymbol(name);
+    r = newSymbol(name, whichTable);
     if (whichTable == GLOBAL_TABLE) {
       globalTable = r;
     } else {
@@ -643,7 +668,7 @@ Symbol *lookupEnter(char *name, int whichTable) {
       p = q->right;
     }
     if (p == NULL) {
-      r = newSymbol(name);
+      r = newSymbol(name, whichTable);
       if (cmp < 0) {
         q->left = r;
       } else {
@@ -1275,7 +1300,7 @@ void dotWord(unsigned int code, unsigned int xopcode) {
     if (v.sym == NULL) {
       emitWord(v.con);
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_W32, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_W32, v.con);
       emitWord(0);
     }
     if (token != TOK_COMMA) {
@@ -1311,6 +1336,26 @@ void dotSet(unsigned int code, unsigned int xopcode) {
 }
 
 
+/*
+ * .ldgot <reg>
+ * emit instructions to load the address of the GOT into <reg>
+ */
+void dotLdgot(unsigned int code, unsigned int xopcode) {
+  if (!genPIC) {
+    error("illegal .ldgot in line %d, cmdline switch -p missing?", lineno);
+  }
+  expect(TOK_REGISTER);
+  gotReg = tokenvalNumber;
+  getToken();
+  emitWord(OP_JAL << 26);
+  addFixupToLst(currSeg, segPtr[currSeg], RELOC_GA_H16, 0);
+  emitWord(OP_LDHI << 26 | gotReg << 16);
+  addFixupToLst(currSeg, segPtr[currSeg], RELOC_GA_L16, 4);
+  emitWord(OP_ORI << 26 | gotReg << 21 | gotReg << 16);
+  emitWord(OP_ADD << 26 | gotReg << 21 | 31 << 16 | gotReg << 11);
+}
+
+
 void formatN(unsigned int code, unsigned int xopcode) {
   Value v;
   unsigned int immed;
@@ -1329,6 +1374,7 @@ void formatN(unsigned int code, unsigned int xopcode) {
   emitWord(code << 26 | (immed & 0x03FFFFFF));
 }
 
+
 void formatXN(unsigned int code, unsigned int xopcode) {
 
   /* opcode with no operands */
@@ -1339,6 +1385,7 @@ void formatXN(unsigned int code, unsigned int xopcode) {
     emitWord(code << 26 | (xopcode & 0x03FFFFFF));
   }
 }
+
 
 void formatRH(unsigned int code, unsigned int xopcode) {
   int reg;
@@ -1355,7 +1402,7 @@ void formatRH(unsigned int code, unsigned int xopcode) {
     emitHalf(code << 10 | reg);
     emitHalf(v.con);
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
     emitHalf(code << 10 | reg);
     emitHalf(0);
   }
@@ -1378,68 +1425,9 @@ void formatRHH(unsigned int code, unsigned int xopcode) {
     emitHalf(code << 10 | reg);
     emitHalf(v.con >> 16);
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
     emitHalf(code << 10 | reg);
     emitHalf(0);
-  }
-}
-
-
-void formatRRH(unsigned int code, unsigned int xopcode) {
-  int dst, src;
-  Value v;
-
-  /* opcode with two registers and a half operand */
-  expect(TOK_REGISTER);
-  dst = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  expect(TOK_REGISTER);
-  src = tokenvalNumber;
-  getToken();
-  expect(TOK_COMMA);
-  getToken();
-  v = parseExpression();
-  if (allowSyn) {
-    if (v.sym == NULL) {
-      if ((v.con & 0xFFFF0000) == 0) {
-        /* code: op dst,src,con */
-        emitHalf(code << 10 | src << 5 | dst);
-        emitHalf(v.con);
-      } else {
-        /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(v.con >> 16);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(v.con);
-        emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-        emitHalf(AUX_REG << 11);
-        emitHalf(code << 10 | AUX_REG << 5 | dst);
-        emitHalf(0);
-      }
-    } else {
-      /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-      emitHalf(OP_LDHI << 10 | AUX_REG);
-      emitHalf(0);
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-      emitHalf(0);
-      emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-      emitHalf(AUX_REG << 11);
-      emitHalf(code << 10 | AUX_REG << 5 | dst);
-      emitHalf(0);
-    }
-  } else {
-    if (v.sym == NULL) {
-      emitHalf(code << 10 | src << 5 | dst);
-      emitHalf(v.con);
-    } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf(code << 10 | src << 5 | dst);
-      emitHalf(0);
-    }
   }
 }
 
@@ -1479,24 +1467,41 @@ void formatRRS(unsigned int code, unsigned int xopcode) {
         emitHalf(0);
       }
     } else {
-      /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-      emitHalf(OP_LDHI << 10 | AUX_REG);
-      emitHalf(0);
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-      emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-      emitHalf(0);
-      emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
-      emitHalf(AUX_REG << 11);
-      emitHalf(code << 10 | AUX_REG << 5 | dst);
-      emitHalf(0);
+      if (genPIC) {
+        if (v.sym->whichTable == LOCAL_TABLE) {
+          /* GOT-relative access */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GR_H16, 0);
+          emitWord(OP_LDHI << 26 | AUX_REG << 16);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GR_L16, 0);
+          emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+          emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+        } else {
+          /* GOT-indirect access */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GP_L16, 0);
+          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+        }
+        emitHalf(code << 10 | AUX_REG << 5 | dst);
+        emitHalf(v.con);
+      } else {
+        /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+        emitHalf(OP_LDHI << 10 | AUX_REG);
+        emitHalf(0);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+        emitHalf(0);
+        emitHalf(OP_ADD << 10 | AUX_REG << 5 | src);
+        emitHalf(AUX_REG << 11);
+        emitHalf(code << 10 | AUX_REG << 5 | dst);
+        emitHalf(0);
+      }
     }
   } else {
     if (v.sym == NULL) {
       emitHalf(code << 10 | src << 5 | dst);
       emitHalf(v.con);
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+      addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
       emitHalf(code << 10 | src << 5 | dst);
       emitHalf(0);
     }
@@ -1524,6 +1529,7 @@ void formatXRRR(unsigned int code, unsigned int xopcode) {
   emitHalf(code << 10 | src1 << 5 | src2);
   emitHalf(dst << 11 | xopcode);
 }
+
 
 void formatXRR(unsigned int code, unsigned int xopcode) {
   int dst, src;
@@ -1589,22 +1595,39 @@ void formatRRX(unsigned int code, unsigned int xopcode) {
           }
         }
       } else {
-        /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(0);
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(0);
-        emitHalf(code << 10 | src1 << 5 | AUX_REG);
-        emitHalf(dst << 11);
+        if (genPIC) {
+          if (v.sym->whichTable == LOCAL_TABLE) {
+            /* GOT-relative access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GR_H16, 0);
+            emitWord(OP_LDHI << 26 | AUX_REG << 16);
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GR_L16, 0);
+            emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+            emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+          } else {
+            /* GOT-indirect access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GP_L16, 0);
+            emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          }
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        } else {
+          /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+          emitHalf(OP_LDHI << 10 | AUX_REG);
+          emitHalf(0);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+          emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+          emitHalf(0);
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        }
       }
     } else {
       if (v.sym == NULL) {
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(v.con);
       } else {
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(0);
       }
@@ -1661,22 +1684,39 @@ void formatRRY(unsigned int code, unsigned int xopcode) {
           }
         }
       } else {
-        /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
-        emitHalf(OP_LDHI << 10 | AUX_REG);
-        emitHalf(0);
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
-        emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
-        emitHalf(0);
-        emitHalf(code << 10 | src1 << 5 | AUX_REG);
-        emitHalf(dst << 11);
+        if (genPIC) {
+          if (v.sym->whichTable == LOCAL_TABLE) {
+            /* GOT-relative access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GR_H16, 0);
+            emitWord(OP_LDHI << 26 | AUX_REG << 16);
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GR_L16, 0);
+            emitWord(OP_ORI << 26 | AUX_REG << 21 | AUX_REG << 16);
+            emitWord(OP_ADD << 26 | AUX_REG << 21 | gotReg << 16 | AUX_REG << 11);
+          } else {
+            /* GOT-indirect access */
+            addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GP_L16, 0);
+            emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          }
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        } else {
+          /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_H16, v.con);
+          emitHalf(OP_LDHI << 10 | AUX_REG);
+          emitHalf(0);
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+          emitHalf((OP_OR + 1) << 10 | AUX_REG << 5 | AUX_REG);
+          emitHalf(0);
+          emitHalf(code << 10 | src1 << 5 | AUX_REG);
+          emitHalf(dst << 11);
+        }
       }
     } else {
       if (v.sym == NULL) {
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(v.con);
       } else {
-        addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_L16, v.con);
         emitHalf((code + 1) << 10 | src1 << 5 | dst);
         emitHalf(0);
       }
@@ -1698,7 +1738,6 @@ void formatRRB(unsigned int code, unsigned int xopcode) {
   getToken();
   expect(TOK_REGISTER);
   src2 = tokenvalNumber;
-
   getToken();
   expect(TOK_COMMA);
   getToken();
@@ -1706,12 +1745,13 @@ void formatRRB(unsigned int code, unsigned int xopcode) {
   if (v.sym == NULL) {
     immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
     immed = 0;
   }
   emitHalf(code << 10 | src1 << 5 | src2);
   emitHalf(immed);
 }
+
 
 void aliasRRB(unsigned int code, unsigned int xopcode) {
   int src1, src2;
@@ -1727,7 +1767,6 @@ void aliasRRB(unsigned int code, unsigned int xopcode) {
   getToken();
   expect(TOK_REGISTER);
   src1 = tokenvalNumber;
-
   getToken();
   expect(TOK_COMMA);
   getToken();
@@ -1735,7 +1774,7 @@ void aliasRRB(unsigned int code, unsigned int xopcode) {
   if (v.sym == NULL) {
     immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
   } else {
-    addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
+    addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R16, v.con);
     immed = 0;
   }
   emitHalf(code << 10 | src1 << 5 | src2);
@@ -1758,11 +1797,26 @@ void formatJ(unsigned int code, unsigned int xopcode) {
     v = parseExpression();
     if (v.sym == NULL) {
       immed = (v.con - ((signed) segPtr[currSeg] + 4)) / 4;
+      emitWord(code << 26 | (immed & 0x03FFFFFF));
     } else {
-      addFixup(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
-      immed = 0;
+      if (genPIC) {
+        if (v.sym->whichTable == LOCAL_TABLE) {
+          /* generate PC-relative jump with R26 relocation */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+          immed = 0;
+          emitWord(code << 26 | (immed & 0x03FFFFFF));
+        } else {
+          /* load address from GOT in register and jump */
+          addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_GP_L16, 0);
+          emitWord(OP_LDW << 26 | gotReg << 21 | AUX_REG << 16);
+          emitWord((code + 1) << 26 | AUX_REG << 21);
+        }
+      } else {
+        addFixupToSym(v.sym, currSeg, segPtr[currSeg], RELOC_R26, v.con);
+        immed = 0;
+        emitWord(code << 26 | (immed & 0x03FFFFFF));
+      }
     }
-    emitWord(code << 26 | (immed & 0x03FFFFFF));
   }
 }
 
@@ -1803,6 +1857,7 @@ Instr instrTable[] = {
   { ".half",   dotHalf,    0,       0        },
   { ".word",   dotWord,    0,       0        },
   { ".set",    dotSet,     0,       0        },
+  { ".ldgot",  dotLdgot,   0,       0        },
 
   /* arithmetical instructions */
   { "add",     formatRRY,  OP_ADD,  0        },
@@ -1939,6 +1994,41 @@ void asmModule(void) {
   Symbol *label;
   Instr *instr;
 
+  /* extra pass to handle imported/exported symbols */
+  allowSyn = 1;
+  currSeg = SEGMENT_CODE;
+  lineno = 0;
+  while (fgets(line, LINE_SIZE, inFile) != NULL) {
+    lineno++;
+    lineptr = line;
+    getToken();
+    while (token == TOK_LABEL) {
+      getToken();
+    }
+    if (token == TOK_IDENT) {
+      instr = lookupInstr(tokenvalString);
+      if (instr == NULL) {
+        error("unknown instruction '%s' in line %d",
+              tokenvalString, lineno);
+      }
+      getToken();
+      if (instr->func == dotExport ||
+          instr->func == dotImport) {
+        /* handle */
+        (*instr->func)(instr->code, instr->xopcode);
+      } else {
+        /* skip */
+        while (token != TOK_EOL) {
+          getToken();
+        }
+      }
+    }
+    if (token != TOK_EOL) {
+      error("garbage in line %d", lineno);
+    }
+  }
+  rewind(inFile);
+  /* regular pass to assemble the module */
   allowSyn = 1;
   currSeg = SEGMENT_CODE;
   lineno = 0;
@@ -1964,7 +2054,16 @@ void asmModule(void) {
               tokenvalString, lineno);
       }
       getToken();
-      (*instr->func)(instr->code, instr->xopcode);
+      if (instr->func == dotExport ||
+          instr->func == dotImport) {
+        /* skip */
+        while (token != TOK_EOL) {
+          getToken();
+        }
+      } else {
+        /* handle */
+        (*instr->func)(instr->code, instr->xopcode);
+      }
     }
     if (token != TOK_EOL) {
       error("garbage in line %d", lineno);
@@ -2287,6 +2386,7 @@ void writeAll(void) {
 
 void usage(char *myself) {
   fprintf(stderr, "Usage: %s\n", myself);
+  fprintf(stderr, "         [-p]             position-independent code\n");
   fprintf(stderr, "         [-o objfile]     set object file name\n");
   fprintf(stderr, "         file             source file name\n");
   fprintf(stderr, "         [files...]       additional source files\n");
@@ -2298,10 +2398,16 @@ int main(int argc, char *argv[]) {
   int i;
   char *argp;
 
+  if (debugCmdline) {
+    for (i = 1; i < argc; i++) {
+      fprintf(stderr, "%s cmdline arg %d: %s\n", argv[0], i, argv[i]);
+    }
+  }
   sortInstrTable();
   tmpnam(codeName);
   tmpnam(dataName);
   outName = "a.out";
+  genPIC = 0;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (*argp != '-') {
@@ -2314,6 +2420,9 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
         }
         outName = argv[++i];
+        break;
+      case 'p':
+        genPIC = 1;
         break;
       default:
         usage(argv[0]);
