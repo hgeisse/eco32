@@ -40,11 +40,13 @@ char *com[] = {
   "$1",			/* other options handed through */
   "$2",			/* compiler input file (preprocessed C) */
   "$3",			/* compiler output file (assembler) */
+  "",			/* reserved for "-pic" */
   0
 };
 
 char *as[] = {
   LCCDIR "as",
+  "",			/* reserved for "-p" */
   "-o", "$3",		/* assembler output file (object) */
   "$1",			/* other options handed through */
   "$2",			/* assembler input file (assembler) */
@@ -73,6 +75,8 @@ extern char *concat(char *, char *);
  *   -Wo-nostdlib	do not use the standard libs and startup files
  *   -Wo-ldscript=...	specify linker script file name
  *   -Wo-ldmap=...	specify linker map file name
+ *
+ *   -Wo-pic		generate position-independent code
  */
 int option(char *arg) {
   if (strcmp(arg, "-nostdinc") == 0) {
@@ -93,6 +97,11 @@ int option(char *arg) {
   if (strncmp(arg, "-ldmap=", 7) == 0) {
     ld[10] = "-m";
     ld[11] = arg + 7;
+    return 1;
+  }
+  if (strcmp(arg, "-pic") == 0) {
+    com[5] = "-pic";
+    as[1] = "-p";
     return 1;
   }
   return 0;

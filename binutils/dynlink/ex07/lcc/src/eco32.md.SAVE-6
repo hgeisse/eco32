@@ -94,10 +94,6 @@ static Symbol iregw;
 static Symbol blkreg;
 static int tmpregs[] = { 3, 9, 10 };
 
-static int pic = 0;
-
-#define GOT_REG	25
-
 %}
 
 %start stmt
@@ -568,13 +564,10 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
   assert(caller[i] == NULL);
   offset = 0;
   gencode(caller, callee);
-  if (ncalls != 0 || pic != 0) {
+  if (ncalls != 0) {
     usedmask[IREG] |= ((unsigned) 1) << 31;
   }
   usedmask[IREG] &= 0x80FF0000;
-  if (pic) {
-    usedmask[IREG] |= 1 << GOT_REG;
-  }
   maxargoffset = roundup(maxargoffset, 4);
   if (ncalls != 0 && maxargoffset < 16) {
     maxargoffset = 16;
@@ -593,9 +586,6 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
       print("\tstw\t$%d,$29,%d\n", i, saved);
       saved += 4;
     }
-  }
-  if (pic) {
-    print("\t.ldgot\t$%d\n", GOT_REG);
   }
   for (i = 0; i < 4 && callee[i] != NULL; i++) {
     r = argregs[i];
@@ -683,11 +673,6 @@ static void progbeg(int argc, char *argv[]) {
   setSwap();
   segment(CODE);
   parseflags(argc, argv);
-  for (i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "-pic") == 0) {
-      pic = 1;
-    }
-  }
   for (i = 0; i < 32; i++) {
     ireg[i] = mkreg("%d", i, 1, IREG);
   }
