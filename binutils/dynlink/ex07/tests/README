@@ -8,3 +8,9 @@ asm-6	Check that different references to a global variable
 	in a single module share the same GOT entry.
 asm-7	Check that different references to a global variable
 	in different modules share the same GOT entry.
+c-1	Why can an ordinary executable (generated from C source) fail
+	to run correctly when not executed at its link address?
+c-2	Show how static variables are accessed correctly in PIC.
+c-3	Show how external variables are accessed correctly in PIC.
+c-4	Check a few important assertions about PIC.
+c-5	Check behavior of various relocations in PIC.

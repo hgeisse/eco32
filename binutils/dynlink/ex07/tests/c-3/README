@@ -1,0 +1,10 @@
+In this little program, main() returns the value of an external
+variable (its value is 0x3456789A). For testing purposes, the
+variable is defined within the program. The compiler is told to
+produce PIC.
+
+shows: Show the assembler output from the compiler.
+showo: Show the object file with its relocations.
+showx: Show the executable with its relocations.
+runlo: Run the program at its link address.
+runhi: Run the program at some location above its link address.
