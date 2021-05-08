@@ -37,6 +37,14 @@ unsigned int read4(unsigned char *p) {
 }
 
 
+void write4(unsigned char *p, unsigned int data) {
+  p[0] = data >> 24;
+  p[1] = data >> 16;
+  p[2] = data >>  8;
+  p[3] = data >>  0;
+}
+
+
 /**************************************************************/
 
 
@@ -52,6 +60,9 @@ unsigned int read4(unsigned char *p) {
 #define LDERR_RSD	9	/* cannot read segment data */
 #define LDERR_WBF	10	/* cannot write binary file */
 #define LDERR_SNO	11	/* segments not ordered, cannot fill gap */
+#define LDERR_SRE	12	/* cannot seek to relocation entry */
+#define LDERR_RRE	13	/* cannot read relocation entry */
+#define LDERR_ILR	14	/* illegal load-time relocation */
 
 
 typedef struct {
@@ -79,10 +90,13 @@ int segCmp(const void *entry1, const void *entry2) {
 
 
 int loadObj(FILE *inFile, FILE *outFile,
-            int sort, int fill, int clear, int verbose) {
+            int verbose, unsigned int loadOffs,
+            int sort, int fill, int clear) {
   EofHeader fileHeader;
   unsigned int osegs;
   unsigned int nsegs;
+  unsigned int orels;
+  unsigned int nrels;
   unsigned int odata;
   unsigned int entry;
   SegmentInfo *allSegs;
@@ -94,6 +108,13 @@ int loadObj(FILE *inFile, FILE *outFile,
   unsigned int size;
   unsigned int attr;
   unsigned char *data;
+  RelocRecord relRec;
+  unsigned int loc;
+  int seg;
+  int typ;
+  int ref;
+  int add;
+  unsigned int word;
   unsigned int vaddr;
   int j;
 
@@ -109,12 +130,16 @@ int loadObj(FILE *inFile, FILE *outFile,
   }
   osegs = read4((unsigned char *) &fileHeader.osegs);
   nsegs = read4((unsigned char *) &fileHeader.nsegs);
+  orels = read4((unsigned char *) &fileHeader.orels);
+  nrels = read4((unsigned char *) &fileHeader.nrels);
   odata = read4((unsigned char *) &fileHeader.odata);
   entry = read4((unsigned char *) &fileHeader.entry);
   if (verbose) {
     printf("info: entry point      : 0x%08X\n", entry);
     printf("      num segments     : %d\n", nsegs);
     printf("      segment table at : 0x%08X bytes file offset\n", osegs);
+    printf("      num relocs       : %d\n", nrels);
+    printf("      reloc table at   : 0x%08X bytes file offset\n", orels);
     printf("      segment data at  : 0x%08X bytes file offset\n", odata);
   }
   if (nsegs == 0) {
@@ -169,6 +194,36 @@ int loadObj(FILE *inFile, FILE *outFile,
     allSegs[i].attr = attr;
     allSegs[i].data = data;
     numSegs++;
+  }
+  /* read relocations */
+  for (i = 0; i < nrels; i++) {
+    if (verbose) {
+      printf("processing relocation entry %d\n", i);
+    }
+    if (fseek(inFile, orels + i * sizeof(RelocRecord), SEEK_SET) < 0) {
+      return LDERR_SRE;
+    }
+    if (fread(&relRec, sizeof(RelocRecord), 1, inFile) != 1) {
+      return LDERR_RRE;
+    }
+    loc = read4((unsigned char *) &relRec.loc);
+    seg = read4((unsigned char *) &relRec.seg);
+    typ = read4((unsigned char *) &relRec.typ);
+    ref = read4((unsigned char *) &relRec.ref);
+    add = read4((unsigned char *) &relRec.add);
+    if (verbose) {
+      printf("    loc : 0x%08X\n", loc);
+      printf("    seg : %d\n", seg);
+      printf("    typ : %d\n", typ);
+      printf("    ref : %d\n", ref);
+      printf("    add : %d\n", add);
+    }
+    if (typ != RELOC_ER_W32 || ref != -1 || add != 0) {
+      return LDERR_ILR;
+    }
+    word = read4(allSegs[seg].data + loc);
+    word += loadOffs;
+    write4(allSegs[seg].data + loc, word);
   }
   /* possibly sort segments */
   if (sort) {
@@ -236,13 +291,17 @@ char *loadResult[] = {
   /*  9 */  "cannot read segment data",
   /* 10 */  "cannot write binary file",
   /* 11 */  "segments not ordered, cannot fill gap",
+  /* 12 */  "cannot seek to relocation entry",
+  /* 13 */  "cannot read relocation entry",
+  /* 14 */  "illegal load-time relocation",
 };
 
 int maxResults = sizeof(loadResult) / sizeof(loadResult[0]);
 
 
 void usage(char *myself) {
-  printf("usage: %s [-p] [-v] <object file> <binary file>\n", myself);
+  printf("usage: %s [-p] [-v] [-l <offset>] <object file> <binary file>\n",
+         myself);
   exit(1);
 }
 
@@ -250,15 +309,18 @@ void usage(char *myself) {
 int main(int argc, char *argv[]) {
   int pack;
   int verbose;
+  unsigned int loadOffs;
   char *inName;
   char *outName;
   int i;
+  char *endptr;
   FILE *inFile;
   FILE *outFile;
   int result;
 
   pack = 0;
   verbose = 0;
+  loadOffs = 0;
   inName = NULL;
   outName = NULL;
   for (i = 1; i < argc; i++) {
@@ -269,6 +331,15 @@ int main(int argc, char *argv[]) {
       } else
       if (strcmp(argv[i], "-v") == 0) {
         verbose = 1;
+      } else
+      if (strcmp(argv[i], "-l") == 0) {
+        if (++i == argc) {
+          error("option '-l' is missing an offset");
+        }
+        loadOffs = strtoul(argv[i], &endptr, 0);
+        if (*endptr != '\0') {
+          error("option '-l' has an invalid offset");
+        }
       } else {
         usage(argv[0]);
       }
@@ -298,7 +369,9 @@ int main(int argc, char *argv[]) {
   if (outFile == NULL) {
     error("cannot open binary file '%s'", outName);
   }
-  result = loadObj(inFile, outFile, 0, !pack, !pack, verbose);
+  result = loadObj(inFile, outFile,
+                   verbose, loadOffs,
+                   0, !pack, !pack);
   if (verbose || result != 0) {
     printf("%s: %s\n",
            result == 0 ? "result" : "error",
