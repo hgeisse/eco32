@@ -1,0 +1,14 @@
+
+subdir		topic
+--------------------------------------------------------
+
+ex02		read and write an object file
+ex03		allocate memory for segments
+ex04		resolve symbols with the GST
+ex05		handle static libraries
+ex06		relocate segments
+ex06a		same as ex06, but with complete toolchain
+ex07		generate position-independent code
+
+libs-gcc	static and dynamic libs (gcc toolchain)
+
