@@ -2134,7 +2134,7 @@ static void writeDummyHeader(void) {
 
 static void writeFinalHeader(void) {
   rewind(outFile);
-  outFileHeader.magic = EOF_MAGIC;
+  outFileHeader.magic = EOF_R_MAGIC;
   outFileHeader.entry = 0;
   conv4FromNativeToEco((unsigned char *) &outFileHeader.magic);
   conv4FromNativeToEco((unsigned char *) &outFileHeader.osegs);

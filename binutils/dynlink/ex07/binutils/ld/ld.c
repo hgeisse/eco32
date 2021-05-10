@@ -463,7 +463,7 @@ void readObjHeader(EofHeader *hdr, unsigned int ohdr,
   conv4FromEcoToNative((unsigned char *) &hdr->ostrs);
   conv4FromEcoToNative((unsigned char *) &hdr->sstrs);
   conv4FromEcoToNative((unsigned char *) &hdr->entry);
-  if (hdr->magic != EOF_MAGIC) {
+  if (hdr->magic != EOF_R_MAGIC) {
     error("wrong magic number in input file '%s'", inPath);
   }
 }
@@ -803,7 +803,7 @@ void readFiles(void) {
       error("cannot read magic number in input file '%s'", file->path);
     }
     conv4FromEcoToNative((unsigned char *) &magic);
-    if (magic == EOF_MAGIC) {
+    if (magic == EOF_R_MAGIC) {
       baseName = file->path + strlen(file->path);
       while (baseName != file->path && *baseName != '/') {
         baseName--;
@@ -1356,7 +1356,7 @@ static void writeDummyHeader(FILE *outFile) {
 
 
 static void writeFinalHeader(unsigned int entry, FILE *outFile) {
-  outFileHeader.magic = EOF_MAGIC;
+  outFileHeader.magic = EOF_X_MAGIC;
   outFileHeader.entry = entry;
   conv4FromNativeToEco((unsigned char *) &outFileHeader.magic);
   conv4FromNativeToEco((unsigned char *) &outFileHeader.osegs);

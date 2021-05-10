@@ -8,7 +8,9 @@
 #define _EOF_H_
 
 
-#define EOF_MAGIC	0x8F0B45C0
+#define EOF_R_MAGIC	0xE7B79BFE	/* relocatable object */
+#define EOF_X_MAGIC	0x3AECCFDF	/* executable object */
+#define EOF_D_MAGIC	0xFB23146C	/* dynamic library object */
 
 #define SEG_ATTR_X	0x01	/* executable */
 #define SEG_ATTR_W	0x02	/* writable */
@@ -32,7 +34,7 @@
 
 
 typedef struct {
-  unsigned int magic;		/* must be EOF_MAGIC */
+  unsigned int magic;		/* must be one of EOF_<type>_MAGIC */
   unsigned int osegs;		/* offset of segment table in file */
   unsigned int nsegs;		/* number of segment table entries */
   unsigned int osyms;		/* offset of symbol table in file */

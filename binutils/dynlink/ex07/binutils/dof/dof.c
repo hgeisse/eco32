@@ -186,11 +186,26 @@ void readHeader(void) {
 
 
 void dumpHeader(void) {
-  if (inFileHeader.magic != EOF_MAGIC) {
-    error("wrong magic number in exec header");
+  char *type;
+
+  if (inFileHeader.magic != EOF_R_MAGIC &&
+      inFileHeader.magic != EOF_X_MAGIC &&
+      inFileHeader.magic != EOF_D_MAGIC) {
+    error("wrong magic number in object header");
+  }
+  switch (inFileHeader.magic) {
+    case EOF_R_MAGIC:
+      type = "relocatable";
+      break;
+    case EOF_X_MAGIC:
+      type = "executable";
+      break;
+    case EOF_D_MAGIC:
+      type = "dynamic library";
+      break;
   }
   printf("Header\n");
-  printf("    magic number              : 0x%08X\n", inFileHeader.magic);
+  printf("    magic number              : EOF %s\n", type);
   printf("    offset of segment table   : 0x%08X\n", inFileHeader.osegs);
   printf("    number of segment entries : %10u\n", inFileHeader.nsegs);
   printf("    offset of symbol table    : 0x%08X\n", inFileHeader.osyms);

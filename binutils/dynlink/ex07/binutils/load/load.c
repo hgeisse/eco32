@@ -125,7 +125,7 @@ int loadObj(FILE *inFile, FILE *outFile,
   if (fread(&fileHeader, sizeof(EofHeader), 1, inFile) != 1) {
     return LDERR_RFH;
   }
-  if (read4((unsigned char *) &fileHeader.magic) != EOF_MAGIC) {
+  if (read4((unsigned char *) &fileHeader.magic) != EOF_X_MAGIC) {
     return LDERR_WMN;
   }
   osegs = read4((unsigned char *) &fileHeader.osegs);
