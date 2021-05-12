@@ -19,7 +19,7 @@ app.bin:	app
 		$(LOAD) app app.bin
 
 app:		start.o app.o
-		../../../ld/ld -c 0xc0001000 -o app \
+		../../../ld/ld -c 0xC0001000 -o app \
 		  start.o app.o ../lib/libmylib.a
 
 start.o:	start.s
