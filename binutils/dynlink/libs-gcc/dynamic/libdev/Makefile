@@ -13,10 +13,10 @@ all:		mylib.h libmylib.so
 		cp libmylib.so ../lib
 
 libmylib.so:	mylib.o
-		$(CC) -shared -o libmylib.so mylib.o
+		$(CC) -shared -fpic -o libmylib.so mylib.o
 
 mylib.o:	mylib.c mylib.h
-		$(CC) $(CFLAGS) -o mylib.o -c -fPIC mylib.c
+		$(CC) $(CFLAGS) -fpic -o mylib.o -c mylib.c
 
 clean:
 		rm -f *~ mylib.o libmylib.so
