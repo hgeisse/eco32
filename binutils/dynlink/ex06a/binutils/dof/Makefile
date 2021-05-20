@@ -9,7 +9,7 @@ CFLAGS = -g -Wall -I../include
 LDFLAGS = -g
 LDLIBS = -lm
 
-SRCS = dof.c
+SRCS = dof.c disasm.c instr.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = dof
 

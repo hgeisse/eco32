@@ -9,6 +9,9 @@
 #include <stdarg.h>
 
 #include "eof.h"
+#include "common.h"
+#include "instr.h"
+#include "disasm.h"
 
 
 /**************************************************************/
@@ -33,6 +36,17 @@ void error(char *fmt, ...) {
   printf("\n");
   va_end(ap);
   exit(1);
+}
+
+
+void warning(char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  printf("Warning: ");
+  vprintf(fmt, ap);
+  printf("\n");
+  va_end(ap);
 }
 
 
@@ -157,6 +171,29 @@ void dumpString(unsigned int offset) {
     fputc(c, stdout);
   }
   fseek(inFile, pos, SEEK_SET);
+}
+
+
+/**************************************************************/
+
+
+void disasmInstrs(unsigned int virtAddr, unsigned int numInstrs) {
+  unsigned int addr;
+  unsigned int i;
+  unsigned char c[4];
+  unsigned int instr;
+
+  addr = virtAddr;
+  for (i = 0; i < numInstrs; i++) {
+    c[0] = fgetc(inFile);
+    c[1] = fgetc(inFile);
+    c[2] = fgetc(inFile);
+    c[3] = fgetc(inFile);
+    instr = read4FromEco(c);
+    printf("%08X:  %08X    %s\n",
+           addr, instr, disasm(instr, addr));
+    addr += 4;
+  }
 }
 
 
@@ -386,8 +423,9 @@ void dumpRelocTable(void) {
 /**************************************************************/
 
 
-void dumpData(int sn) {
+void dumpData(int sn, int disassemble) {
   unsigned int offs;
+  unsigned int addr;
   unsigned int size;
 
   printf("\nData of Segment %d\n", sn);
@@ -396,6 +434,7 @@ void dumpData(int sn) {
     return;
   }
   offs = segmentTable[sn].offs;
+  addr = segmentTable[sn].addr;
   size = segmentTable[sn].size;
   if (size == 0) {
     printf("<empty>\n");
@@ -404,7 +443,14 @@ void dumpData(int sn) {
   if (fseek(inFile, inFileHeader.odata + offs, SEEK_SET) < 0) {
     error("cannot seek to segment data");
   }
-  dumpBytes(size);
+  if (disassemble) {
+    if (size & 3) {
+      warning("segment size not a multiple of 4, last few bytes not shown");
+    }
+    disasmInstrs(addr, size >> 2);
+  } else {
+    dumpBytes(size);
+  }
 }
 
 
@@ -416,6 +462,7 @@ void usage(char *myself) {
   printf("         [-s]             dump symbol table\n");
   printf("         [-r]             dump relocations\n");
   printf("         [-d <n>]         dump data in segment <n>\n");
+  printf("         [-D <n>]         disassemble data in segment <n>\n");
   printf("         [-a]             dump all\n");
   printf("         file             object file to be dumped\n");
   exit(1);
@@ -457,10 +504,20 @@ int main(int argc, char *argv[]) {
             error("cannot read segment number in option -d");
           }
           break;
+        case 'D':
+          optionData = 2;
+          if (i == argc - 1) {
+            error("option -D is missing a segment number");
+          }
+          sn = strtol(argv[++i], &endptr, 0);
+          if (*endptr != '\0') {
+            error("cannot read segment number in option -D");
+          }
+          break;
         case 'a':
           optionSymbols = 1;
           optionRelocs = 1;
-          optionData = 2;
+          optionData = 3;
           break;
         default:
           usage(argv[0]);
@@ -479,6 +536,7 @@ int main(int argc, char *argv[]) {
   if (inFile == NULL) {
     error("cannot open input file '%s'", inName);
   }
+  initInstrTable();
   readHeader();
   dumpHeader();
   readSegmentTable();
@@ -496,10 +554,16 @@ int main(int argc, char *argv[]) {
       if (sn < 0 || sn >= inFileHeader.nsegs) {
         error("option -d has illegal segment number %d", sn);
       }
-      dumpData(sn);
+      dumpData(sn, 0);
+    } else
+    if (optionData == 2) {
+      if (sn < 0 || sn >= inFileHeader.nsegs) {
+        error("option -D has illegal segment number %d", sn);
+      }
+      dumpData(sn, 1);
     } else {
       for (sn = 0; sn < inFileHeader.nsegs; sn++) {
-        dumpData(sn);
+        dumpData(sn, 0);
       }
     }
   }
