@@ -69,6 +69,7 @@ typedef struct {
 typedef struct {
   unsigned int loc;		/* where to relocate */
   int seg;			/* in which segment */
+				/* if -1: none, loc is virtual address */
   int typ;			/* relocation type: one of RELOC_xxx */
 				/* symbol flag RELOC_SYM may be set */
   int ref;			/* what is referenced */

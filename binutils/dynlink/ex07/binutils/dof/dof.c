@@ -404,7 +404,13 @@ void dumpRelocTable(void) {
   for (rn = 0; rn < inFileHeader.nrels; rn++) {
     printf("    %d:\n", rn);
     printf("        loc  = 0x%08X\n", relocTable[rn].loc);
-    printf("        seg  = %d\n", relocTable[rn].seg);
+    printf("        seg  = ");
+    if (relocTable[rn].seg == -1) {
+      printf("*none*");
+    } else {
+      printf("%d", relocTable[rn].seg);
+    }
+    printf("\n");
     printf("        typ  = ");
     switch (relocTable[rn].typ & ~RELOC_SYM) {
       case RELOC_H16:
@@ -447,7 +453,7 @@ void dumpRelocTable(void) {
     printf("\n");
     printf("        ref  = ");
     if (relocTable[rn].ref == -1) {
-      printf("*nothing*");
+      printf("*none*");
     } else {
       printf("%s # %d",
              relocTable[rn].typ & RELOC_SYM ? "symbol" : "segment",

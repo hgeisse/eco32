@@ -218,12 +218,26 @@ int loadObj(FILE *inFile, FILE *outFile,
       printf("    ref : %d\n", ref);
       printf("    add : %d\n", add);
     }
-    if (typ != RELOC_ER_W32 || ref != -1 || add != 0) {
+    if (seg != -1 || typ != RELOC_ER_W32 || ref != -1 || add != 0) {
       return LDERR_ILR;
     }
-    word = read4(allSegs[seg].data + loc);
+    /*
+     * Since loc is a virtual address, we have to search for the proper
+     * segment in which to apply the relocation. In a real loader, this
+     * is not necessary: just apply the relocation in memory at loc.
+     */
+    for (seg = 0; seg < numSegs; seg++) {
+      if (loc >= allSegs[seg].vaddr &&
+          loc < allSegs[seg].vaddr + allSegs[seg].size) {
+        break;
+      }
+    }
+    if (seg == numSegs) {
+      return LDERR_ILR;
+    }
+    word = read4(allSegs[seg].data + (loc - allSegs[seg].vaddr));
     word += loadOffs;
-    write4(allSegs[seg].data + loc, word);
+    write4(allSegs[seg].data + (loc - allSegs[seg].vaddr), word);
   }
   /* possibly sort segments */
   if (sort) {
