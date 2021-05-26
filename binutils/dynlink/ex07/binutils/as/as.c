@@ -2386,7 +2386,7 @@ void writeAll(void) {
 
 void usage(char *myself) {
   fprintf(stderr, "Usage: %s\n", myself);
-  fprintf(stderr, "         [-p]             position-independent code\n");
+  fprintf(stderr, "         [-pic]           position-independent code\n");
   fprintf(stderr, "         [-o objfile]     set object file name\n");
   fprintf(stderr, "         file             source file name\n");
   fprintf(stderr, "         [files...]       additional source files\n");
@@ -2413,19 +2413,16 @@ int main(int argc, char *argv[]) {
     if (*argp != '-') {
       break;
     }
-    argp++;
-    switch (*argp) {
-      case 'o':
-        if (i == argc - 1) {
-          usage(argv[0]);
-        }
-        outName = argv[++i];
-        break;
-      case 'p':
-        genPIC = 1;
-        break;
-      default:
+    if (strcmp(argp, "-pic") == 0) {
+      genPIC = 1;
+    } else
+    if (strcmp(argp, "-o") == 0) {
+      if (i == argc - 1) {
         usage(argv[0]);
+      }
+      outName = argv[++i];
+    } else {
+      usage(argv[0]);
     }
   }
   if (i == argc) {

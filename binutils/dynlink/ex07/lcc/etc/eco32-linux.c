@@ -46,7 +46,7 @@ char *com[] = {
 
 char *as[] = {
   LCCDIR "as",
-  "",			/* reserved for "-p" */
+  "",			/* reserved for "-pic" */
   "-o", "$3",		/* assembler output file (object) */
   "$1",			/* other options handed through */
   "$2",			/* assembler input file (assembler) */
@@ -101,7 +101,7 @@ int option(char *arg) {
   }
   if (strcmp(arg, "-pic") == 0) {
     com[5] = "-pic";
-    as[1] = "-p";
+    as[1] = "-pic";
     return 1;
   }
   return 0;
