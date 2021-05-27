@@ -1,0 +1,11 @@
+Here, the address of an external variable (its value is 0x3456789A)
+is computed and stored in a local pointer variable. main() returns
+the difference of the value we get when dereferencing the pointer
+and the value we get when directly accessing the variable, which
+of course must be 0. The compiler is told to produce PIC.
+
+shows: Show the assembler output from the compiler.
+showo: Show the object file with its relocations.
+showx: Show the executable with its relocations.
+runlo: Run the program at its link address.
+runhi: Run the program at some location above its link address.
