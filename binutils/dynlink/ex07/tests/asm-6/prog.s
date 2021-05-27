@@ -10,9 +10,9 @@
 
 _start:	.ldgot	$3
 	ldw	$8,$0,dat3
-	ldw	$7,$0,dat4
-	ldw	$6,$0,dat3
-	ldw	$5,$0,dat4
+	ldw	$9,$0,dat4
+	ldw	$10,$0,dat3
+	ldw	$11,$0,dat4
 loop:	j	loop
 
 	.data
