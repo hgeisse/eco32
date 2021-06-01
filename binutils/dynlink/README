@@ -9,6 +9,8 @@ ex05		handle static libraries
 ex06		relocate segments
 ex06a		same as ex06, but with complete toolchain
 ex07		generate position-independent code
+ex09		generate shared libraries
+ex11		implement the dynamic linker
 
 libs-gcc	static and dynamic libs (gcc toolchain)
 
