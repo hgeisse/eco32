@@ -1342,7 +1342,8 @@ void dotSet(unsigned int code, unsigned int xopcode) {
  */
 void dotLdgot(unsigned int code, unsigned int xopcode) {
   if (!genPIC) {
-    error("illegal .ldgot in line %d, cmdline switch -p missing?", lineno);
+    error("illegal .ldgot in line %d, cmdline switch -pic missing?",
+          lineno);
   }
   expect(TOK_REGISTER);
   gotReg = tokenvalNumber;
