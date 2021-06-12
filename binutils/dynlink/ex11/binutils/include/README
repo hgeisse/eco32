@@ -1,0 +1,223 @@
+
+Format of Object and Executable Files
+-------------------------------------
+
+0) General
+
+The "eof" file format is used as the format for assembler output
+("object files") as well as for linker output ("executable files").
+The difference between these two is the size of certain sections of
+the file being zero in case of executable files.
+
+The file consists of a header and up to 5 sections:
+  - segment table
+  - symbol table
+  - relocation table
+  - segment data
+  - string space
+The different sections are not required to appear in this order in
+the file; their offsets and sizes can be extracted from the header.
+
+
+1) Header
+
+The header specifies the file offsets and sizes of the following
+sections, but has itself a fixed size and is always present at
+file offset 0:
+
+typedef struct {
+  unsigned int magic;		/* must be EOF_MAGIC */
+  unsigned int osegs;		/* offset of segment table in file */
+  unsigned int nsegs;		/* number of segment table entries */
+  unsigned int osyms;		/* offset of symbol table in file */
+  unsigned int nsyms;		/* number of symbol table entries */
+  unsigned int orels;		/* offset of relocation table in file */
+  unsigned int nrels;		/* number of relocation table entries */
+  unsigned int odata;		/* offset of segment data in file */
+  unsigned int sdata;		/* size of segment data in file */
+  unsigned int ostrs;		/* offset of string space in file */
+  unsigned int sstrs;		/* size of string space in file */
+  unsigned int entry;		/* entry point (if executable) */
+} EofHeader;
+
+The magic number is used to distinguish object and executable
+files from other file types. It must have the value EOF_MAGIC.
+
+The segment table starts at file offset osegs and has nsegs
+entries. It describes the segments contained in the object file
+(typical segments are ".code", ".data", and ".bss").
+
+The symbol table starts at file offset osyms and has nsyms
+entries. It contains information about symbols which are
+exported from or imported into this object file. It is mainly
+used during the link step and may not be present (nsyms = 0)
+if the file is an executable.
+
+The relocation table starts at file offset orels and has nrels
+entries. Each entry points to a place in a segment where the
+binary data has to be modified during the link step. The table
+is empty (nrels = 0) if the file is an executable.
+
+The binary data proper of all segments is contained in the
+segment data section of the file. It begins at file offset
+odata, and has a size of sdata bytes.
+
+The textual representation of all names (of segments, symbols,
+etc.) is contained in the string space which starts at file
+offset ostrs, and has a size of sstrs bytes. The strings are
+null-terminated and stored without any padding.
+
+The program's starting address is given by the value of "entry".
+It only has meaning in executable files.
+
+
+2) Segment Table
+
+Each entry in the segment table describes a single segment:
+
+typedef struct {
+  unsigned int name;		/* offset in string space */
+  unsigned int offs;		/* offset in segment data */
+  unsigned int addr;		/* virtual start address */
+  unsigned int size;		/* size of segment in bytes */
+  unsigned int attr;		/* segment attributes */
+} SegmentRecord;
+
+#define SEG_ATTR_X	0x01	/* executable */
+#define SEG_ATTR_W	0x02	/* writable */
+#define SEG_ATTR_P	0x04	/* present in object file */
+#define SEG_ATTR_A	0x08	/* allocatable in memory */
+
+The segment's name is given by its offset into the string space.
+Its binary data is found at offset offs into the segment data.
+The segment's virtual start address is specified by addr, and its
+size is given in bytes. This is also the size of the binary data
+contained in the file, but only if the "present in object file"
+attribute (SEG_ATTR_P) is set. Otherwise there is no binary data
+present for this segment. The attributes SEG_ATTR_X and SEG_ATTR_W
+specify if the segment is executable and writable, respectively.
+If the attribute SEG_ATTR_A is set, the loader must allocate space
+in memory for the segment during loading. Typical combinations are:
+    .code    APX
+    .data    APW
+    .bss     AW
+
+
+3) Symbol Table
+
+For every symbol which is imported into or exported from the current
+object file, there is a corresponding symbol table record:
+
+typedef struct {
+  unsigned int name;		/* offset in string space */
+  int val;			/* the symbol's value */
+  int seg;			/* the symbol's segment, -1: absolute */
+  unsigned int attr;		/* symbol attributes */
+} SymbolRecord;
+
+#define SYM_ATTR_U	0x01	/* undefined */
+
+The symbol's name is given by its offset into the string space.
+If the symbol is defined, val holds its value and seg holds the
+segment in which the symbol is defined (-1 meaning "the symbol's
+value is not relative to a segment but absolute"). The symbol's
+attribute is a single bit, which means "symbol undefined" when
+set. In this case, val and seg are meaningless.
+
+
+4) Relocation Table
+
+The relocation table consists of records, each of which points
+to a specific location where the contents must be modified when
+segments are moved within the virtual address space or when the
+value of a symbol becomes known during the link step:
+
+typedef struct {
+  unsigned int loc;		/* where to relocate */
+  int seg;			/* in which segment */
+  int typ;			/* relocation type: one of RELOC_xxx */
+				/* symbol flag RELOC_SYM may be set */
+  int ref;			/* what is referenced */
+				/* if symbol flag = 0: segment number */
+				/* if symbol flag = 1: symbol number */
+  int add;			/* additive part of value */
+} RelocRecord;
+
+#define RELOC_H16	0	/* write 16 bits with high part of value */
+#define RELOC_L16	1	/* write 16 bits with low part of value */
+#define RELOC_R16	2	/* write 16 bits with value relative to PC */
+#define RELOC_R26	3	/* write 26 bits with value relative to PC */
+#define RELOC_W32	4	/* write full 32 bit word with value */
+#define RELOC_SYM	0x100	/* symbol flag, may be added to any RELOC */
+
+Loc and seg together determine the place where the relocation
+must be applied. This is always a word address, i.e., loc is
+divisible by 4. Typ specifies what exactly is to be done with
+the computed value (e.g., take only the 16 lower bits and write
+them into the lower half of the word). Typ may have its symbol
+flag set (or cleared), which influences the interpretation of
+ref. In case the symbol flag is set, ref is a symbol number
+(index into the symbol table), otherwise (symbol flag cleared)
+ref is a segment number (index into the segment table). In both
+cases, the value which is used in the relocation is computed as
+the sum of the symbols's value (or the segment's start address)
+and add, the additive part in the relocation record.
+
+
+5) Object Data
+
+This section contains the binary data of all segments. The data of
+each segment is padded with zeros to achieve a segment size which
+is a multiple of 4 bytes. All segments are then concatenated.
+
+
+6) String Space
+
+The string space is used to store the names of all symbols in the
+object file. The strings are null-terminated and stored without
+any padding.
+
+
+7) Executing an Executable
+
+It is the task of the loader to prepare execution of a program.
+
+The loader has to execute the following steps:
+  - read and inspect file header, check magic number
+  - read segment table, process segment records individually
+  - ignore the segment if its SEG_ATTR_A is cleared
+  - allocate virtual memory (addr and size given in segment record)
+  - if SEG_ATTR_P is set, read memory contents from file
+  - if SEG_ATTR_P is cleared, set memory contents to zero
+  - set up memory protection according to SEG_ATTR_W and SEG_ATTR_X
+  - after all segments are loaded, set up a stack
+  - begin execution of the program at its entry point.
+
+
+
+Format of Static Library Files
+------------------------------
+
+0) General
+
+The "ar" file format is used for library files which are statically
+linked with other object files in order to get an executable file.
+
+typedef struct {
+  unsigned int magic;		/* must be ARCH_MAGIC */
+  unsigned int omods;		/* offset of module table in file */
+  unsigned int nmods;		/* number of module table entries */
+  unsigned int odata;		/* offset of data space in file */
+  unsigned int sdata;		/* size of data space in file */
+  unsigned int ostrs;		/* offset of string space in file */
+  unsigned int sstrs;		/* size of string space in file */
+} ArchHeader;
+
+typedef struct {
+  unsigned int name;		/* offset of name in string space */
+  unsigned int offs;		/* offset of module in data space */
+  unsigned int size;		/* size of module in bytes */
+  unsigned int fsym;		/* first symbol name in string space */
+  unsigned int nsym;		/* number of symbol names */
+} ModuleRecord;
+
