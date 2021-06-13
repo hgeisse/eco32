@@ -63,6 +63,7 @@ char *ld[] = {
   "-lc",
   "", "",		/* reserved for "-s <ldscript>" */
   "", "",		/* reserved for "-m <ldmap>" */
+  "",			/* reserved for "-shared" */
   0
 };
 
@@ -77,6 +78,7 @@ extern char *concat(char *, char *);
  *   -Wo-ldmap=...	specify linker map file name
  *
  *   -Wo-pic		generate position-independent code
+ *   -Wo-shared		generate dynamic shared object (implies -pic)
  */
 int option(char *arg) {
   if (strcmp(arg, "-nostdinc") == 0) {
@@ -102,6 +104,12 @@ int option(char *arg) {
   if (strcmp(arg, "-pic") == 0) {
     com[5] = "-pic";
     as[1] = "-pic";
+    return 1;
+  }
+  if (strcmp(arg, "-shared") == 0) {
+    com[5] = "-pic";
+    as[1] = "-pic";
+    ld[12] = "-shared";
     return 1;
   }
   return 0;
