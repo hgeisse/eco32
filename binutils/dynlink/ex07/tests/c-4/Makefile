@@ -13,22 +13,22 @@ start.o:	start.s
 		$(BUILD)/bin/as -o start.o start.s
 
 prog.s:		prog.c
-		$(BUILD)/bin/lcc -pic -o prog.s -S prog.c
+		$(BUILD)/bin/lcc -Wo-pic -o prog.s -S prog.c
 
 shows:		prog.s
 		cat prog.s
 
 prog.o:		prog.s
-		$(BUILD)/bin/lcc -pic -o prog.o -c prog.s
+		$(BUILD)/bin/lcc -Wo-pic -o prog.o -c prog.s
 
 showo:		prog.o
 		$(BUILD)/bin/dof -a prog.o
 
 mod1.s:		mod1.c
-		$(BUILD)/bin/lcc -pic -o mod1.s -S mod1.c
+		$(BUILD)/bin/lcc -Wo-pic -o mod1.s -S mod1.c
 
 mod1.o:		mod1.s
-		$(BUILD)/bin/lcc -pic -o mod1.o -c mod1.s
+		$(BUILD)/bin/lcc -Wo-pic -o mod1.o -c mod1.s
 
 prog:		start.o prog.o mod1.o
 		$(BUILD)/bin/ld -c 0xC0000000 -o prog start.o prog.o mod1.o

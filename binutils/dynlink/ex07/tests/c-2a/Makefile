@@ -13,13 +13,13 @@ start.o:	start.s
 		$(BUILD)/bin/as -o start.o start.s
 
 prog.s:		prog.c
-		$(BUILD)/bin/lcc -pic -o prog.s -S prog.c
+		$(BUILD)/bin/lcc -Wo-pic -o prog.s -S prog.c
 
 shows:		prog.s
 		cat prog.s
 
 prog.o:		prog.s
-		$(BUILD)/bin/lcc -pic -o prog.o -c prog.s
+		$(BUILD)/bin/lcc -Wo-pic -o prog.o -c prog.s
 
 showo:		prog.o
 		$(BUILD)/bin/dof -a prog.o
