@@ -889,11 +889,11 @@ static void target(Node p) {
     case CALL+P:
     case CALL+U:
     case CALL+F:
-      rtarget(p, 0, ireg[25]);
+      rtarget(p, 0, ireg[24]);
       setreg(p, ireg[2]);
       break;
     case CALL+V:
-      rtarget(p, 0, ireg[25]);
+      rtarget(p, 0, ireg[24]);
       break;
     case RET+I:
     case RET+P:
