@@ -1,0 +1,7 @@
+
+usage:
+  ls
+
+description:
+  list directory contents to standard output
+

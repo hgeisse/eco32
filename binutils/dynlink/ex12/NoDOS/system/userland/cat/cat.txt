@@ -1,0 +1,7 @@
+
+usage:
+  cat <file>
+
+description:
+  print the contents of <file> to standard output
+
