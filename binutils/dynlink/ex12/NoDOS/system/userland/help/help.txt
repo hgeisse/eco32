@@ -1,0 +1,8 @@
+
+commands:
+  halt
+  ls
+  cat <file>
+  help
+  chkdsk
+

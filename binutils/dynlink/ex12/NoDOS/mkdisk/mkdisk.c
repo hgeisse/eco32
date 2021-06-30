@@ -21,10 +21,8 @@
 
 typedef struct {
   int blockStart;
-  int blockSize;
   int byteSize;
-  int dummy;
-  char name[64 - 4 * 4];
+  char name[64 - 2 * 4];
 } DirEntry;
 
 
@@ -112,16 +110,12 @@ void writeFinalDirectory(FILE *imageFile) {
 
   for (i = 0; i < MAX_FILES; i++) {
     conv4FromNativeToEco((unsigned char *) &directory[i].blockStart);
-    conv4FromNativeToEco((unsigned char *) &directory[i].blockSize);
     conv4FromNativeToEco((unsigned char *) &directory[i].byteSize);
-    conv4FromNativeToEco((unsigned char *) &directory[i].dummy);
   }
   writeBlock(0, directory, imageFile);
   for (i = 0; i < MAX_FILES; i++) {
     conv4FromEcoToNative((unsigned char *) &directory[i].blockStart);
-    conv4FromEcoToNative((unsigned char *) &directory[i].blockSize);
     conv4FromEcoToNative((unsigned char *) &directory[i].byteSize);
-    conv4FromEcoToNative((unsigned char *) &directory[i].dummy);
   }
 }
 
@@ -161,7 +155,6 @@ void writeFile(char *hostPath, char *targetPath, FILE *imageFile) {
   printf("  %d blocks (%d bytes) written\n", blocks, bytes);
   strcpy(directory[nextFilno].name, targetPath);
   directory[nextFilno].blockStart = nextBlkno;
-  directory[nextFilno].blockSize = blocks;
   directory[nextFilno].byteSize = bytes;
   nextFilno++;
   nextBlkno += blocks;

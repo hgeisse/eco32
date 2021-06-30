@@ -9,6 +9,9 @@ all:
 		  $(MAKE) -C $$i all ; \
 		done
 
+run:
+		$(MAKE) -C kernel run
+
 clean:
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i clean ; \

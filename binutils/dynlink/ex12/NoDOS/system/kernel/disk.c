@@ -8,6 +8,12 @@
 #include "disk.h"
 
 
+int debug = 0;
+
+
+/**************************************************************/
+
+
 /*
  * blocksize: 4k
  * structure: directory (1 block = max. 64 files)
@@ -20,17 +26,13 @@ unsigned char diskImage[] = {
 };
 
 
-#define BLOCK_SIZE	4096
-#define MAX_FILES	(BLOCK_SIZE / sizeof(DirEntry))
-
-#define MAX_OPEN_DIRS	20
-#define MAX_OPEN_FILES	20
-
-
 /**************************************************************/
 
 
 static void readBlock(int blkno, void *buf) {
+  if (debug) {
+    printf("\nDEBUG: reading block %d\n", blkno);
+  }
   memcpy(buf, diskImage + blkno * BLOCK_SIZE, BLOCK_SIZE);
 }
 
@@ -83,7 +85,7 @@ int readdir(DirEntry *buf, DIR *dp) {
       return -1;
     }
     de = &directory[dp->index];
-  } while (de->blockStart == 0) ;
+  } while (de->blockStart == 0);
   memcpy((unsigned char *) buf, (unsigned char *) de, sizeof(DirEntry));
   return 0;
 }
@@ -120,7 +122,8 @@ FILE *fopen(char *path) {
   openFiles[i].slotInUse = 1;
   openFiles[i].blockStart = de->blockStart;
   openFiles[i].byteSize = de->byteSize;
-  openFiles[i].filePtr = 0;
+  openFiles[i].filePos = 0;
+  openFiles[i].bufBlkno = -1;
   return &openFiles[i];
 }
 
@@ -130,6 +133,66 @@ void fclose(FILE *fp) {
 }
 
 
-int fread(void *buf, int size, int num, FILE *fp) {
+int fseek(FILE *fp, int offset, int whence) {
+  int newPos;
+
+  switch (whence) {
+    case SEEK_SET:
+      newPos = offset;
+      break;
+    case SEEK_CUR:
+      newPos = fp->filePos + offset;
+      break;
+    case SEEK_END:
+      newPos = fp->byteSize + offset;
+      break;
+    default:
+      return -1;
+  }
+  if (newPos < 0 || newPos >= fp->byteSize) {
+    return -1;
+  }
+  fp->filePos = newPos;
   return 0;
+}
+
+
+int ftell(FILE *fp) {
+  return fp->filePos;
+}
+
+
+int fread(void *buf, int size, int num, FILE *fp) {
+  unsigned char *bp;
+  int nbytes, bytes;
+  int blkno, index;
+  int n;
+
+  bp = buf;
+  nbytes = size * num;
+  if (fp->filePos + nbytes > fp->byteSize) {
+    nbytes = fp->byteSize - fp->filePos;
+  }
+  if (nbytes <= 0) {
+    return 0;
+  }
+  bytes = nbytes;
+  do {
+    blkno = fp->filePos / BLOCK_SIZE;
+    if (fp->bufBlkno != blkno) {
+      readBlock(fp->blockStart + blkno, fp->buf);
+      fp->bufBlkno = blkno;
+    }
+    index = fp->filePos % BLOCK_SIZE;
+    if (bytes > BLOCK_SIZE - index) {
+      n = BLOCK_SIZE - index;
+    } else {
+      n = bytes;
+    }
+    memcpy(bp, &fp->buf[index], n);
+    bp += n;
+    fp->filePos += n;
+    bytes -= n;
+  } while (bytes != 0);
+  return nbytes / size;
 }

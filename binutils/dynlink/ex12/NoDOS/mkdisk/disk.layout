@@ -2,3 +2,5 @@
 ../system/userland/ls/ls		/bin/ls
 ../system/userland/cat/cat.txt		/txt/cat.txt
 ../system/userland/ls/ls.txt		/txt/ls.txt
+../system/userland/help/help.txt	/txt/help.txt
+../random/randbytes			/data/randbytes

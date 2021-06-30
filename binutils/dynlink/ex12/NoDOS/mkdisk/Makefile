@@ -1,5 +1,5 @@
 #
-# Makefile
+# Makefile for building a super simple disk image
 #
 
 all:		mkdisk
