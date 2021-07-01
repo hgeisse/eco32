@@ -1,0 +1,7 @@
+
+usage:
+  args arg1 arg2 ...
+
+description:
+  prints command-line arguments
+

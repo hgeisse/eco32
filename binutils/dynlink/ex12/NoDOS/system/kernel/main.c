@@ -6,6 +6,7 @@
 #include "stdarg.h"
 #include "iolib.h"
 #include "disk.h"
+#include "eof.h"
 
 
 #define PROMPT		"NoDOS> "
@@ -59,7 +60,7 @@ void cat(char *path) {
 
 
 unsigned char ref[] = {
-  #include "../../random/randbytes.txt"
+  #include "../disk/randbytes.txt"
 };
 
 
@@ -159,6 +160,170 @@ void chkdsk(void) {
 /**************************************************************/
 
 
+#define LDERR_NONE	0	/* no error */
+#define LDERR_FND	1	/* not found */
+#define LDERR_HDR	2	/* cannot read header */
+#define LDERR_MGC	3	/* wrong magic number */
+#define LDERR_STR	4	/* cannot read strings */
+#define LDERR_SEG	5	/* cannot read segments */
+
+
+char *loadRes[] = {
+  /*  0 */  "no error",
+  /*  1 */  "not found",
+  /*  2 */  "cannot read header",
+  /*  3 */  "wrong magic number",
+  /*  4 */  "cannot read strings",
+  /*  5 */  "cannot read segments",
+};
+
+int maxRes = sizeof(loadRes) / sizeof(loadRes[0]);
+
+
+int verbose = 1;
+
+
+int readObjHeader(EofHeader *hdr,
+                  FILE *inFile, char *inPath,
+                  unsigned int magic) {
+  if (fseek(inFile, 0, SEEK_SET) < 0) {
+    return LDERR_HDR;
+  }
+  if (fread(hdr, sizeof(EofHeader), 1, inFile) != 1) {
+    return LDERR_HDR;
+  }
+  if (hdr->magic != magic) {
+    return LDERR_MGC;
+  }
+  return LDERR_NONE;
+}
+
+
+char *readObjStrings(unsigned int ostrs, unsigned int sstrs,
+                     FILE *inFile, char *inPath) {
+  char *strs;
+
+  strs = malloc(sstrs);
+  if (strs == NULL) {
+    return NULL;
+  }
+  if (fseek(inFile, ostrs, SEEK_SET) < 0) {
+    return NULL;
+  }
+  if (fread(strs, 1, sstrs, inFile) != sstrs) {
+    return NULL;
+  }
+  return strs;
+}
+
+
+int readObjSegment(SegmentRecord *segRec,
+                   unsigned int osegs, int segno,
+                   FILE *inFile, char *inPath) {
+  if (fseek(inFile, osegs + segno * sizeof(SegmentRecord), SEEK_SET) < 0) {
+    return LDERR_SEG;
+  }
+  if (fread(segRec, sizeof(SegmentRecord), 1, inFile) != 1) {
+    return LDERR_SEG;
+  }
+  return LDERR_NONE;
+}
+
+
+void showObjSegment(SegmentRecord *segRec, char *strs) {
+  printf("    loading segment '%s'\n", strs + segRec->name);
+  printf("        offset  : 0x%08X\n", segRec->offs);
+  printf("        address : 0x%08X\n", segRec->addr);
+  printf("        size    : 0x%08X\n", segRec->size);
+  printf("        attr    : ");
+  if (segRec->attr & SEG_ATTR_A) {
+    printf("A");
+  } else {
+    printf("-");
+  }
+  if (segRec->attr & SEG_ATTR_P) {
+    printf("P");
+  } else {
+    printf("-");
+  }
+  if (segRec->attr & SEG_ATTR_W) {
+    printf("W");
+  } else {
+    printf("-");
+  }
+  if (segRec->attr & SEG_ATTR_X) {
+    printf("X");
+  } else {
+    printf("-");
+  }
+  printf("\n");
+}
+
+
+int loadLinkUnit(char *inPath,
+                 unsigned int magic,
+                 unsigned int loadOff) {
+  FILE *inFile;
+  int ldr;
+  EofHeader hdr;
+  char *strs;
+  int i;
+  SegmentRecord segRec;
+
+  /* open input file */
+  inFile = fopen(inPath);
+  if (inFile == NULL) {
+    return LDERR_FND;
+  }
+  /* read header */
+  ldr = readObjHeader(&hdr, inFile, inPath, magic);
+  if (ldr != LDERR_NONE) {
+    return ldr;
+  }
+  /* read strings */
+  strs = readObjStrings(hdr.ostrs, hdr.sstrs, inFile, inPath);
+  if (strs == NULL) {
+    return LDERR_STR;
+  }
+  /* load segments */
+  for (i = 0; i < hdr.nsegs; i++) {
+    ldr = readObjSegment(&segRec, hdr.osegs, i, inFile, inPath);
+    if (ldr != LDERR_NONE) {
+      return ldr;
+    }
+    if (verbose) {
+      showObjSegment(&segRec, strs);
+    }
+    if (segRec.attr & SEG_ATTR_A) {
+      /* segment needs memory */
+      if (segRec.attr & SEG_ATTR_P) {
+        /* load from file */
+      } else {
+        /* load with zeros */
+      }
+    }
+  }
+  /* close input file */
+  fclose(inFile);
+  return LDERR_NONE;
+}
+
+
+int loadExecutable(char *execPath) {
+  int ldr;
+
+  /* load executable */
+  if (verbose) {
+    printf("loading from executable '%s'\n", execPath);
+  }
+  ldr = loadLinkUnit(execPath, EOF_X_MAGIC, 0);
+  return ldr;
+}
+
+
+/**************************************************************/
+
+
 int tokenize(char *line, char *tokens[], int maxTokens) {
   int n;
   char *p;
@@ -180,6 +345,7 @@ void main(void) {
   char line[LINE_SIZE];
   char *tokens[MAX_TOKENS];
   int n;
+  int ldr;
 
   printf("Welcome to NoDOS, the No-Disk Operating System!\n\n");
   mountDisk();
@@ -208,7 +374,13 @@ void main(void) {
     if (strcmp(tokens[0], "chkdsk") == 0) {
       chkdsk();
     } else {
-      printf("command '%s' not found\n", tokens[0]);
+      ldr = loadExecutable(tokens[0]);
+      if (ldr == LDERR_NONE) {
+        printf("%s loaded\n", tokens[0]);
+      } else {
+        printf("error: %s\n",
+               ldr >= maxRes ? "unknown error" : loadRes[ldr]);
+      }
     }
   }
   printf("NoDOS halted.\n");

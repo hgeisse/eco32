@@ -1,0 +1,17 @@
+# executable files
+../userland/mini/mini			/bin/mini
+../userland/hello/hello			/bin/hello
+../userland/args/args			/bin/args
+../userland/ls/ls			/bin/ls
+../userland/cat/cat			/bin/cat
+
+# text files
+../userland/mini/mini.txt		/txt/mini.txt
+../userland/hello/hello.txt		/txt/hello.txt
+../userland/args/args.txt		/txt/args.txt
+../userland/ls/ls.txt			/txt/ls.txt
+../userland/cat/cat.txt			/txt/cat.txt
+../userland/help/help.txt		/txt/help.txt
+
+# random bytes for testing disk accesss
+./randbytes				/data/randbytes

@@ -212,6 +212,12 @@ int main(int argc, char *argv[]) {
   writePreliminaryDirectory(imageFile);
   while (fgets(line, LINE_SIZE, layoutFile) != NULL) {
     n = tokenize(line, tokens, MAX_TOKENS);
+    if (n == 0) {
+      continue;
+    }
+    if (*tokens[0] == '#') {
+      continue;
+    }
     if (n != 2) {
       error("illegal line in layout file");
     }

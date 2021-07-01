@@ -1,0 +1,7 @@
+
+usage:
+  mini
+
+description:
+  minimal executable, does nothing
+

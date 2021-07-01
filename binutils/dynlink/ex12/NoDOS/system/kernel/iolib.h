@@ -24,6 +24,8 @@ void putString(char *s);
 void getLine(char *prompt, char *line, int max);
 void vprintf(char *fmt, va_list ap);
 void printf(char *fmt, ...);
+void *malloc(unsigned int size);
+void free(void *p);
 
 
 #endif /* _IOLIB_H_ */

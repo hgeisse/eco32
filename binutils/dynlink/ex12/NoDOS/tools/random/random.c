@@ -23,7 +23,11 @@ int main(int argc, char *argv[]) {
   unsigned int n;
   unsigned char m[4];
 
-  out = fopen("randbytes", "w");
+  if (argc != 2) {
+    printf("usage: %s <output file>\n", argv[0]);
+    exit(1);
+  }
+  out = fopen(argv[1], "w");
   if (out == NULL) {
     printf("cannot open output file\n");
     exit(1);

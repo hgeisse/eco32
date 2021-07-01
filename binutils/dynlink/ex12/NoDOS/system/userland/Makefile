@@ -1,16 +1,13 @@
 #
-# Makefile for building NoDOS
+# Makefile for NoDOS userland
 #
 
-DIRS = tools system
+DIRS = mini
 
 all:
 		for i in $(DIRS) ; do \
 		  $(MAKE) -C $$i all ; \
 		done
-
-run:
-		$(MAKE) -C system run
 
 clean:
 		for i in $(DIRS) ; do \

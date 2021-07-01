@@ -1,5 +1,5 @@
 #
-# Makefile for kernel
+# Makefile for NoDOS kernel
 #
 
 ECO32_BUILD = ../../../../../../build

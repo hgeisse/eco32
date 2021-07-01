@@ -2,7 +2,7 @@
 # Makefile for building NoDOS
 #
 
-DIRS = kernel
+DIRS = userland disk kernel
 
 all:
 		for i in $(DIRS) ; do \

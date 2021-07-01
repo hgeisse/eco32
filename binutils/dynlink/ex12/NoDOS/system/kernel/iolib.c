@@ -376,3 +376,17 @@ void printf(char *fmt, ...) {
   vprintf(fmt, ap);
   va_end(ap);
 }
+
+
+/**************************************************************/
+
+/* storage allocation */
+
+
+void *malloc(unsigned int size) {
+  return NULL;
+}
+
+
+void free(void *p) {
+}

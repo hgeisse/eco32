@@ -22,7 +22,7 @@ int debug = 0;
 
 
 unsigned char diskImage[] = {
-  #include "../../mkdisk/disk.img.txt"
+  #include "../disk/disk.img.txt"
 };
 
 
