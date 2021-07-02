@@ -2,7 +2,7 @@
 # Makefile for building a hosted executable
 #
 
-BUILD = ../../../../build
+BUILD = ../../../../../build
 CC = $(BUILD)/bin/lcc
 CFLAGS = -A -Wo-nostdinc -Wo-nostdlib
 AS = $(BUILD)/bin/as

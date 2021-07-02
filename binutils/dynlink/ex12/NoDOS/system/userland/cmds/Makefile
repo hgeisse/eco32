@@ -1,8 +1,8 @@
 #
-# Makefile for NoDOS userland
+# Makefile for NoDOS commands
 #
 
-DIRS = lib cmds
+DIRS = mini hello argret halt ls cat
 
 all:
 		for i in $(DIRS) ; do \

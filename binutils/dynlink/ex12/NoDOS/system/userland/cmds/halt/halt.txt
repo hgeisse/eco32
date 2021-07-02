@@ -1,0 +1,7 @@
+
+usage:
+  halt
+
+description:
+  halt the system
+
