@@ -2,7 +2,7 @@
 # Makefile for NoDOS userland
 #
 
-DIRS = mini
+DIRS = mini hello argret
 
 all:
 		for i in $(DIRS) ; do \

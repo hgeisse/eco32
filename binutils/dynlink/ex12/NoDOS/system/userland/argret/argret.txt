@@ -1,0 +1,8 @@
+
+usage:
+  argret arg1 arg2 ...
+
+description:
+  print command-line arguments
+  return value is argc
+
