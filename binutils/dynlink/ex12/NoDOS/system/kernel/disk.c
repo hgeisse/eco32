@@ -8,9 +8,6 @@
 #include "disk.h"
 
 
-int debug = 0;
-
-
 /**************************************************************/
 
 
@@ -30,9 +27,6 @@ unsigned char diskImage[] = {
 
 
 static void readBlock(int blkno, void *buf) {
-  if (debug) {
-    printf("\nDEBUG: reading block %d\n", blkno);
-  }
   memcpy(buf, diskImage + blkno * BLOCK_SIZE, BLOCK_SIZE);
 }
 

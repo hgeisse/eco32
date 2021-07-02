@@ -12,7 +12,7 @@ LD = $(BUILD)/bin/ld
 LOAD = $(BUILD)/bin/load
 SIM = $(ECO32_BUILD)/bin/sim
 
-KMODS = start.o main.o iolib.o biolib.o disk.o
+KMODS = start.o main.o iolib.o biolib.o disk.o load.o
 
 all:		nodos
 

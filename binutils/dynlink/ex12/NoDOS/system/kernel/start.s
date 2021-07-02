@@ -1,5 +1,5 @@
 ;
-; start.s -- startup code
+; start.s -- startup code and assembler support functions
 ;
 
 	.set	stacktop,0xC0400000	; at top of 4 MB
@@ -11,6 +11,7 @@
 	.export	_start
 	.export	_intr
 	.export	_refill
+	.export	run
 
 	.import	main
 
@@ -35,3 +36,13 @@ start:
 	; the standalone program's equivalent to exit
 stop:
 	j	stop
+
+;
+; int run(unsigned int startAddr, int argc, char *argv[]);
+;
+run:
+	ccs				; sync caches
+	add	$24,$0,$4		; free arg reg
+	add	$4,$0,$5		; argc
+	add	$5,$0,$6		; argv[]
+	jr	$24			; transfer control

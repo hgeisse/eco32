@@ -18,6 +18,7 @@ void strcpy(char *dst, char *src);
 char *strchr(const char *cs, int c);
 char *strtok(char *str, char *delim);
 void memcpy(unsigned char *dst, unsigned char *src, unsigned int cnt);
+void memset(unsigned char *dst, unsigned char c, unsigned int cnt);
 char getchar(void);
 void putchar(char c);
 void putString(char *s);
