@@ -1,16 +1,18 @@
 # executable files
-../userland/cmds/mini/mini		/bin/mini
-../userland/cmds/hello/hello		/bin/hello
-../userland/cmds/argret/argret		/bin/argret
-../userland/cmds/ls/ls			/bin/ls
-../userland/cmds/cat/cat		/bin/cat
+../userland/cmd/mini			/bin/mini
+../userland/cmd/hello			/bin/hello
+../userland/cmd/argret			/bin/argret
+../userland/cmd/halt			/bin/halt
+../userland/cmd/ls			/bin/ls
+../userland/cmd/cat			/bin/cat
 
 # text files
-../userland/cmds/mini/mini.txt		/txt/mini.txt
-../userland/cmds/hello/hello.txt	/txt/hello.txt
-../userland/cmds/argret/argret.txt	/txt/argret.txt
-../userland/cmds/ls/ls.txt		/txt/ls.txt
-../userland/cmds/cat/cat.txt		/txt/cat.txt
+../userland/txt/mini.txt		/txt/mini
+../userland/txt/hello.txt		/txt/hello
+../userland/txt/argret.txt		/txt/argret
+../userland/txt/halt.txt		/txt/halt
+../userland/txt/ls.txt			/txt/ls
+../userland/txt/cat.txt			/txt/cat
 
 # random bytes for testing disk accesss
 ./randbytes				/data/randbytes
