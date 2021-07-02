@@ -215,9 +215,6 @@ void main(void) {
     if (n == 0) {
       continue;
     }
-    if (strcmp(tokens[0], "halt") == 0) {
-      break;
-    }
     if (strcmp(tokens[0], "ls") == 0) {
       ls();
     } else
@@ -257,5 +254,4 @@ void main(void) {
       }
     }
   }
-  printf("NoDOS halted.\n");
 }

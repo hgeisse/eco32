@@ -15,6 +15,11 @@
 
 	.import	main
 
+	.import	getc
+	.import	putc
+
+;---------------------------------------------------------------
+
 	.code
 
 _start:
@@ -26,6 +31,22 @@ _intr:
 _refill:
 	j	_refill			; user TLB misses better not yet
 
+_dummy:
+	j	_dummy
+
+;---------------------------------------------------------------
+
+	.code
+
+;
+; system call jump vector
+;
+	j	halt
+	j	getc
+	j	putc
+
+;---------------------------------------------------------------
+
 start:
 	; let irq/exc vectors point to RAM
 	add	$8,$0,V
@@ -34,8 +55,10 @@ start:
 	add	$29,$0,stacktop
 	jal	main
 	; the standalone program's equivalent to exit
-stop:
-	j	stop
+halt:
+	j	halt
+
+;---------------------------------------------------------------
 
 ;
 ; int run(unsigned int startAddr, int argc, char *argv[]);
