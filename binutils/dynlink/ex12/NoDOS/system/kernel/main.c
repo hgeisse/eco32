@@ -204,6 +204,7 @@ void main(void) {
   int ldr;
   unsigned int startAddr;
   int retval;
+  char path[LINE_SIZE];
 
   printf("\nWelcome to NoDOS, the No-Disk Operating System!\n\n");
   mountDisk();
@@ -227,14 +228,18 @@ void main(void) {
         cat(tokens[1]);
       }
     } else
-    if (strcmp(tokens[0], "help") == 0) {
-      cat("/txt/help.txt");
-    } else
     if (strcmp(tokens[0], "chkdsk") == 0) {
       chkdsk();
     } else {
       /* load */
-      ldr = loadExecutable(tokens[0], &startAddr);
+      strcpy(path, tokens[0]);
+      ldr = loadExecutable(path, &startAddr);
+      if (ldr == LDERR_FND && *tokens[0] != '/') {
+        /* try alternative */
+        strcpy(path, "/bin/");
+        strcat(path, tokens[0]);
+        ldr = loadExecutable(path, &startAddr);
+      }
       if (ldr == LDERR_NONE) {
         if (verbose) {
           printf("%s loaded, starting\n", tokens[0]);

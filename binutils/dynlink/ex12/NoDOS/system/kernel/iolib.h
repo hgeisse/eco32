@@ -15,6 +15,7 @@
 int strlen(char *str);
 int strcmp(char *s1, char *s2);
 void strcpy(char *dst, char *src);
+void strcat(char *dst, char *src);
 char *strchr(const char *cs, int c);
 char *strtok(char *str, char *delim);
 void memcpy(unsigned char *dst, unsigned char *src, unsigned int cnt);

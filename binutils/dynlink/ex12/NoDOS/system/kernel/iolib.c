@@ -42,6 +42,13 @@ void strcpy(char *dst, char *src) {
 }
 
 
+void strcat(char *dst, char *src) {
+  while (*dst++ != '\0') ;
+  dst--;
+  while ((*dst++ = *src++) != '\0') ;
+}
+
+
 char *strchr(const char *cs, int c) {
   do {
     if (*cs == c) {
