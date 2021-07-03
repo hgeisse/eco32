@@ -1,0 +1,26 @@
+
+NoDOS, the No-Disk Operating System
+-----------------------------------
+
+This little project mimics some functions of an operating
+system. Notably absent are multitasking, interrupts, virtual
+memory and protection. The kernel consists of a command-line
+interpreter, a RAM-based embedded super simple "disk", and
+a program loader, which currently can only load statically
+bound programs. These programs are placed on the disk, and
+are built using a "user library" in the usual cross-compiling
+environment. For system functions (e.g., open a file, output
+a character), the library makes use of a set of "system calls",
+which are accessed via a jump vector in the kernel (but without
+using traps). The programs make it possible to print a string
+on standard output ("hello"), list the directory (there is
+only a single one, no hierarchy), print the contents of a file,
+demonstrate comamnd-line arguments and return value, etc.
+
+This system is intended to help in understanding how a dynamic
+linker/loader can operate on the target system, possibly using
+a procedure linkage table (PLT) to defer binding of adresses
+until actually needing them, and ultimately to help answer the
+question what must be done to integrate the loader into the
+very program being loaded (as ELF does).
+
