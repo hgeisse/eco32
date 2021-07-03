@@ -3,10 +3,18 @@
  */
 
 
-#include "types.h"
 #include "stdarg.h"
 #include "iolib.h"
 #include "biolib.h"
+
+
+/**************************************************************/
+
+
+typedef int Bool;
+
+#define FALSE		0
+#define TRUE		1
 
 
 /**************************************************************/
