@@ -13,16 +13,16 @@
 
 
 typedef struct {
+  int slotInUse;
+  int index;
+} DIR;
+
+
+typedef struct {
   int blockStart;
   int byteSize;
   char name[64 - 2 * 4];
 } DirEntry;
-
-
-typedef struct {
-  int slotInUse;
-  int index;
-} DIR;
 
 
 DIR *opendir(void);

@@ -6,8 +6,10 @@ BUILD = ../../../../../build
 INCL = ../../include
 LIB = ../../lib
 
-AR = $(BUILD)/bin/ar
+CC = $(BUILD)/bin/lcc
+CFLAGS = -A -Wo-nostdinc -Wo-nostdlib
 AS = $(BUILD)/bin/as
+AR = $(BUILD)/bin/ar
 
 MODS = string.o stdlib.o stdio.o dirent.o syscalls.o
 
@@ -24,7 +26,7 @@ syscalls.o:	syscalls.s
 		$(AS) -o syscalls.o syscalls.s
 
 %.o:		%.c
-		$(BUILD)/bin/lcc -o $@ -c $^
+		$(CC) $(CFLAGS) -o $@ -c $^
 
 clean:
 		rm -f *~ libc.a $(MODS)

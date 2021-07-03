@@ -4,6 +4,8 @@
 
 
 #include "stdio.h"
+#include "string.h"
+#include "syscalls.h"
 
 
 typedef int Bool;
@@ -18,22 +20,27 @@ typedef int Bool;
 
 
 FILE *fopen(char *path) {
+  return _fopen(path);
 }
 
 
 void fclose(FILE *fp) {
+  _fclose(fp);
 }
 
 
 int fseek(FILE *fp, int offset, int whence) {
+  return _fseek(fp, offset, whence);
 }
 
 
 int ftell(FILE *fp) {
+  return _ftell(fp);
 }
 
 
 int fread(void *buf, int size, int num, FILE *fp) {
+  return _fread(buf, size, num, fp);
 }
 
 
@@ -43,15 +50,15 @@ int fread(void *buf, int size, int num, FILE *fp) {
 
 
 char getchar(void) {
-  return getc();
+  return _getchar();
 }
 
 
 void putchar(char c) {
   if (c == '\n') {
-    putchar('\r');
+    _putchar('\r');
   }
-  putc(c);
+  _putchar(c);
 }
 
 
