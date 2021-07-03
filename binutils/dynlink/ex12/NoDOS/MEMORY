@@ -1,0 +1,44 @@
+
+NoDOS Memory Usage
+------------------
+
+
+	C0400000	+------------------------------+	4M
+			|                              |
+			|        C o m m o n           |
+			|                              |
+			|        S t a c k             |
+			|                              |
+			|                              |
+	C0300000	+------------------------------+	3M
+			|                              |
+			|                              |
+			|                              |
+			|        L o a d e d           |
+			|                              |
+			|        P r o g r a m         |
+			|                              |
+			|                              |
+			|                              |
+			|                              |
+			|                              |
+			|                              |
+	C0100000	+------------------------------+	1M
+			|                              |
+			|                              |
+			|        K e r n e l           |
+			|                              |
+			|                              |
+			|                              |
+	C0000000	+------------------------------+	0M
+
+
+
+The system runs in direct-mapped memory; there is no address
+mapping whatsoever. Kernel malloc() must not allocate memory
+beyond 0xC0100000. User programs are loaded at 0xC0100000. Their
+memory allocators must not allocate memory beyond 0xC0300000.
+Kernel and loaded program use a common stack, which starts out
+at 0xC0400000 and grows downwards. The stack must not write to
+any location below 0xC0300000.
+
