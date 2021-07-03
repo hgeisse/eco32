@@ -21,7 +21,7 @@
  */
 
 
-#define MAX_TOP		0xC0100000
+#define MAX_TOP		0xC0300000
 #define MIN_ALLOC	1024	/* in header-sized units */
 
 
