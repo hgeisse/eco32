@@ -1,0 +1,7 @@
+
+usage:
+  chkdsk
+
+description:
+  check disk file reads at various positions, with different sizes
+
