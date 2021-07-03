@@ -17,6 +17,7 @@
 
 
 int loadExecutable(char *execPath, unsigned int *startAddr);
+void unload(void);
 
 
 #endif /* _LOAD_H_ */

@@ -92,6 +92,7 @@ void main(void) {
         printf("%s stopped, return value = %d\n",
                tokens[0], retval);
       }
+      unload();
     } else {
       printf("error: %s\n",
              ldr >= maxRes ? "unknown error" : loadRes[ldr]);

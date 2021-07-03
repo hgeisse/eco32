@@ -13,6 +13,44 @@
 static int verbose = 0;
 
 
+/**************************************************************/
+
+
+#define MAX_ARENA	30
+
+
+static void *arenas[MAX_ARENA];
+
+
+void *arenaMalloc(unsigned int size) {
+  int i;
+
+  for (i = 0; i < MAX_ARENA; i++) {
+    if (arenas[i] == NULL) {
+      arenas[i] = malloc(size);
+      return arenas[i];
+    }
+  }
+  /* no slot of arena array free */
+  return NULL;
+}
+
+
+void freeAll(void) {
+  int i;
+
+  for (i = 0; i < MAX_ARENA; i++) {
+    if (arenas[i] != NULL) {
+      free(arenas[i]);
+      arenas[i] = NULL;
+    }
+  }
+}
+
+
+/**************************************************************/
+
+
 int readObjHeader(EofHeader *hdr,
                   FILE *inFile, char *inPath,
                   unsigned int magic) {
@@ -33,7 +71,7 @@ char *readObjStrings(unsigned int ostrs, unsigned int sstrs,
                      FILE *inFile, char *inPath) {
   char *strs;
 
-  strs = malloc(sstrs);
+  strs = arenaMalloc(sstrs);
   if (strs == NULL) {
     return NULL;
   }
@@ -160,4 +198,12 @@ int loadExecutable(char *execPath, unsigned int *startAddr) {
   }
   ldr = loadLinkUnit(execPath, EOF_X_MAGIC, 0, startAddr);
   return ldr;
+}
+
+
+void unload(void) {
+  if (verbose) {
+    printf("unload the loaded program\n");
+  }
+  freeAll();
 }
