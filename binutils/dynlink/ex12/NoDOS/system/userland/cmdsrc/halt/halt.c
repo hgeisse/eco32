@@ -9,6 +9,6 @@
 
 int main(int argc, char *argv[]) {
   printf("NoDOS halted.\n");
-  halt();
+  _halt();
   return 0;
 }
