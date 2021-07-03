@@ -5,14 +5,18 @@
 ../userland/cmd/halt			/bin/halt
 ../userland/cmd/ls			/bin/ls
 ../userland/cmd/cat			/bin/cat
+../userland/cmd/man			/bin/man
+../userland/cmd/chkdsk			/bin/chkdsk
 
 # text files
-../userland/txt/mini.txt		/txt/mini
-../userland/txt/hello.txt		/txt/hello
-../userland/txt/argret.txt		/txt/argret
-../userland/txt/halt.txt		/txt/halt
-../userland/txt/ls.txt			/txt/ls
-../userland/txt/cat.txt			/txt/cat
+../userland/txt/mini.txt		/man/mini
+../userland/txt/hello.txt		/man/hello
+../userland/txt/argret.txt		/man/argret
+../userland/txt/halt.txt		/man/halt
+../userland/txt/ls.txt			/man/ls
+../userland/txt/cat.txt			/man/cat
+../userland/txt/man.txt			/man/man
+../userland/txt/chkdsk.txt		/man/chkdsk
 
-# random bytes for testing disk accesss
-./randbytes				/data/randbytes
+# random bytes for testing disk access
+../../tools/random/randbytes		/data/randbytes

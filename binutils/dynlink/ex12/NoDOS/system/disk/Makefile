@@ -4,20 +4,13 @@
 
 TOOLS = ../../tools
 
-all:		disk.img.txt randbytes.txt
+all:		disk.img.txt
 
 disk.img.txt:	disk.img
 		$(TOOLS)/dump/dump disk.img disk.img.txt
 
-disk.img:	disk.layout randbytes
+disk.img:	disk.layout
 		$(TOOLS)/mkdisk/mkdisk disk.layout disk.img
 
-randbytes:
-		$(TOOLS)/random/random randbytes
-
-randbytes.txt:	randbytes
-		$(TOOLS)/dump/dump randbytes randbytes.txt
-
 clean:
-		rm -f *~ randbytes disk.img disk.img.txt
-		rm -f randbytes.txt
+		rm -f *~ disk.img disk.img.txt
