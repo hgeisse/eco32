@@ -2,7 +2,7 @@
 # Makefile for NoDOS commands
 #
 
-DIRS = mini hello argret halt ls cat
+DIRS = mini hello argret halt ls cat man chkdsk
 
 all:
 		for i in $(DIRS) ; do \
