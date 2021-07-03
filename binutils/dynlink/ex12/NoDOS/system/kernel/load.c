@@ -10,7 +10,7 @@
 #include "load.h"
 
 
-static int verbose = 1;
+static int verbose = 0;
 
 
 int readObjHeader(EofHeader *hdr,
