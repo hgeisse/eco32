@@ -17,6 +17,14 @@
 
 	.import	getc
 	.import	putc
+	.import	opendir
+	.import	closedir
+	.import	readdir
+	.import	fopen
+	.import	fclose
+	.import	fseek
+	.import	ftell
+	.import	fread
 
 ;---------------------------------------------------------------
 
@@ -32,7 +40,7 @@ _refill:
 	j	_refill			; user TLB misses better not yet
 
 _dummy:
-	j	_dummy
+	j	_dummy			; not used
 
 ;---------------------------------------------------------------
 
@@ -44,9 +52,22 @@ _dummy:
 	j	halt
 	j	getc
 	j	putc
+	j	opendir
+	j	closedir
+	j	readdir
+	j	fopen
+	j	fclose
+	j	fseek
+	j	ftell
+	j	fread
 
 ;---------------------------------------------------------------
 
+	.code
+
+;
+; startup for standalone program
+;
 start:
 	; let irq/exc vectors point to RAM
 	add	$8,$0,V
@@ -59,6 +80,8 @@ halt:
 	j	halt
 
 ;---------------------------------------------------------------
+
+	.code
 
 ;
 ; int run(unsigned int startAddr, int argc, char *argv[]);
