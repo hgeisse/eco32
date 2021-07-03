@@ -1,0 +1,7 @@
+
+usage:
+  man <cmd>
+
+description:
+  print the description of <cmd> to standard output
+
