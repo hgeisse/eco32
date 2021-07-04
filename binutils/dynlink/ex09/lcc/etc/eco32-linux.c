@@ -63,6 +63,7 @@ char *ld[] = {
   "-lc",
   "", "",		/* reserved for "-s <ldscript>" */
   "", "",		/* reserved for "-m <ldmap>" */
+  "",			/* reserved for "-pic" */
   "",			/* reserved for "-shared" */
   0
 };
@@ -104,12 +105,14 @@ int option(char *arg) {
   if (strcmp(arg, "-pic") == 0) {
     com[5] = "-pic";
     as[1] = "-pic";
+    ld[12] = "-pic";
     return 1;
   }
   if (strcmp(arg, "-shared") == 0) {
     com[5] = "-pic";
     as[1] = "-pic";
-    ld[12] = "-shared";
+    ld[12] = "-pic";
+    ld[13] = "-shared";
     return 1;
   }
   return 0;
