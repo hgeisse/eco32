@@ -4,7 +4,7 @@
 
 
 /*
- * This is the solution to exercise 6:
+ * This is the solution to exercise 7:
  *   - read a list of object files
  *   - build the global symbol table
  *   - some of the files may be static libraries
@@ -13,6 +13,11 @@
  *   - resolve symbols
  *   - relocate modules
  *   - write executable file
+ *   - collect GP_L16 relocations, create GOT entries
+ *   - add an output segment containing the GOT
+ *   - handle all PIC relocations correctly
+ *   - generate ER_W32 relocations in the executable
+ *     (for all W32 pointers, including GOT entries)
  */
 
 
@@ -40,19 +45,30 @@
 #define WORD_ALIGN(x)		(((x) + 0x03) & ~0x03)
 #define PAGE_ALIGN(x)		(((x) + 0x0FFF) & ~0x0FFF)
 
+#define SEG_ATTR_APX		(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X)
+#define SEG_ATTR_APW		(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W)
+#define SEG_ATTR_AW		(SEG_ATTR_A | SEG_ATTR_W)
+
+#define MAX_GOT_ENTRIES		(1 << 13)
+
 
 /**************************************************************/
 
 /*
- * debugging
+ * debugging and global variables
  */
 
 
+int debugCmdline = 1;
 int debugExtract = 1;
 int debugSegments = 1;
 int debugGroups = 1;
 int debugResolve = 1;
 int debugRelocs = 1;
+int debugLTRelocs = 1;
+
+
+int genPIC = 0;
 
 
 /**************************************************************/
@@ -235,10 +251,38 @@ typedef struct reloc {
   int typ;			/* relocation type: one of RELOC_xxx */
 				/* symbol flag RELOC_SYM may be set */
   int ref;			/* what is referenced */
+				/* if -1: nothing */
 				/* if symbol flag = 0: segment number */
 				/* if symbol flag = 1: symbol number */
   int add;			/* additive part of value */
 } Reloc;
+
+
+typedef struct partialSegment {
+  Module *mod;				/* module where part comes from */
+  Segment *seg;				/* which segment in the module */
+  struct partialSegment *next;		/* next part in total segment */
+} PartialSegment;
+
+
+typedef struct totalSegment {
+  char *name;				/* name of total segment */
+  unsigned int nameOffs;		/* name offset in string space */
+  unsigned int dataOffs;		/* data offset in data space */
+  unsigned int addr;			/* virtual address */
+  unsigned int size;			/* size in bytes */
+  unsigned int attr;			/* attributes */
+  struct partialSegment *firstPart;	/* first partial segment in total */
+  struct partialSegment *lastPart;	/* last partial segment in total */
+  struct totalSegment *next;		/* next total in segment group */
+} TotalSegment;
+
+
+typedef struct segmentGroup {
+  unsigned int attr;			/* attributes of this group */
+  TotalSegment *firstTotal;		/* first total segment in group */
+  TotalSegment *lastTotal;		/* last total segment in group */
+} SegmentGroup;
 
 
 /**************************************************************/
@@ -573,6 +617,9 @@ void readObjSymbols(Module *mod,
 }
 
 
+int getGotOffs(Module *mod, Reloc *rel);
+
+
 void readObjRelocs(Module *mod,
                    unsigned int orels,
                    unsigned int nrels,
@@ -601,6 +648,26 @@ void readObjRelocs(Module *mod,
     rel->typ = relRec.typ;
     rel->ref = relRec.ref;
     rel->add = relRec.add;
+    if ((rel->typ & ~RELOC_SYM) == RELOC_GA_H16 ||
+        (rel->typ & ~RELOC_SYM) == RELOC_GA_L16) {
+      /* we found a GOT address relocation */
+      /* take this as a flag to generate PIC */
+      genPIC = 1;
+    }
+    if ((rel->typ & ~RELOC_SYM) == RELOC_GP_L16) {
+      /* we found a GOT pointer relocation for PIC */
+      if ((rel->typ & RELOC_SYM) == 0) {
+        /* RELOC_GP_L16 must reference a symbol */
+        error("illegal relocation (RELOC_GP_L16 without symbol)");
+      }
+      if (rel->add != 0) {
+        /* RELOC_GP_L16 must not have a non-zero addend */
+        error("illegal relocation (RELOC_GP_L16 with non-zero addend)");
+      }
+      /* find or create a corresponding GOT entry */
+      /* and remember its offset within the GOT */
+      rel->add = getGotOffs(mod, rel);
+    }
   }
 }
 
@@ -865,40 +932,126 @@ void showSegments(void) {
 /**************************************************************/
 
 /*
- * storage allocator
+ * load-time relocations
  */
 
 
-#define SEG_ATTR_APX	(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X)
-#define SEG_ATTR_APW	(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W)
-#define SEG_ATTR_AW	(SEG_ATTR_A | SEG_ATTR_W)
+typedef struct loadTimeReloc {
+  unsigned int addr;		/* where to relocate */
+  struct loadTimeReloc *next;
+} LoadTimeReloc;
+
+LoadTimeReloc *loadTimeRelocs = NULL;
 
 
-typedef struct partialSegment {
-  Module *mod;				/* module where part comes from */
-  Segment *seg;				/* which segment in the module */
-  struct partialSegment *next;		/* next part in total segment */
-} PartialSegment;
+void recordLoadTimeReloc(unsigned int addr) {
+  LoadTimeReloc *loadTimeReloc;
+
+  if (debugLTRelocs) {
+    printf("<load-time relocation @ 0x%08X recorded>\n", addr);
+  }
+  loadTimeReloc = memAlloc(sizeof(LoadTimeReloc));
+  loadTimeReloc->addr = addr;
+  loadTimeReloc->next = loadTimeRelocs;
+  loadTimeRelocs = loadTimeReloc;
+}
 
 
-typedef struct totalSegment {
-  char *name;				/* name of total segment */
-  unsigned int nameOffs;		/* name offset in string space */
-  unsigned int dataOffs;		/* data offset in data space */
-  unsigned int addr;			/* virtual address */
-  unsigned int size;			/* size in bytes */
-  unsigned int attr;			/* attributes */
-  struct partialSegment *firstPart;	/* first partial segment in total */
-  struct partialSegment *lastPart;	/* last partial segment in total */
-  struct totalSegment *next;		/* next total in segment group */
-} TotalSegment;
+/**************************************************************/
+
+/*
+ * global offset table (GOT)
+ */
 
 
-typedef struct segmentGroup {
-  unsigned int attr;			/* attributes of this group */
-  TotalSegment *firstTotal;		/* first total segment in group */
-  TotalSegment *lastTotal;		/* last total segment in group */
-} SegmentGroup;
+typedef struct gotEntry {
+  Symbol *sym;			/* symbol which is referenced */
+  int gotOffs;			/* offset of entry in GOT */
+  struct gotEntry *next;
+} GotEntry;
+
+static GotEntry *gotEntries = NULL;
+static int numGotEntries = 0;
+
+
+static Segment gotSeg = {
+  ".got",		/* segment name */
+  NULL,			/* segment data */
+  0,			/* virtual start address */
+  0,			/* size of segment in bytes */
+  0,			/* number of padding bytes */
+  SEG_ATTR_APW,		/* segment attributes */
+  NULL,			/* total segment this segment is part of */
+};
+
+Segment *gotSegment = &gotSeg;
+
+
+static GotEntry *lookupGotEntry(Module *mod, Reloc *rel) {
+  GotEntry *gotEntry;
+
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    if (gotEntry->sym == mod->syms[rel->ref]) {
+      /* found */
+      return gotEntry;
+    }
+    gotEntry = gotEntry->next;
+  }
+  /* not found */
+  return NULL;
+}
+
+
+int getGotOffs(Module *mod, Reloc *rel) {
+  GotEntry *gotEntry;
+
+  /* try to find a matching GOT entry */
+  gotEntry = lookupGotEntry(mod, rel);
+  if (gotEntry == NULL) {
+    /* not found, create a new one */
+    if (numGotEntries == MAX_GOT_ENTRIES) {
+      error("more than %d GOT entries", MAX_GOT_ENTRIES);
+    }
+    gotEntry = memAlloc(sizeof(GotEntry));
+    gotEntry->sym = mod->syms[rel->ref];
+    gotEntry->gotOffs = numGotEntries << 2;
+    gotEntry->next = gotEntries;
+    gotEntries = gotEntry;
+    numGotEntries++;
+    gotSegment->size += 4;
+  }
+  return gotEntry->gotOffs;
+}
+
+
+void makeGotSegment(void) {
+  GotEntry *gotEntry;
+  unsigned char *addr;
+  unsigned int data;
+
+  if (gotSegment->size == 0) {
+    /* no entries present */
+    return;
+  }
+  gotSegment->data = memAlloc(gotSegment->size);
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    addr = gotSegment->data + gotEntry->gotOffs;
+    data = gotEntry->sym->val;
+    write4ToEco(addr, data);
+    /* GOT entries need ER_W32 relocations */
+    recordLoadTimeReloc(gotSegment->addr + gotEntry->gotOffs);
+    gotEntry = gotEntry->next;
+  }
+}
+
+
+/**************************************************************/
+
+/*
+ * storage allocator
+ */
 
 
 SegmentGroup groupAPX = { SEG_ATTR_APX, NULL, NULL };
@@ -994,6 +1147,11 @@ void allocateStorage(unsigned int codeBase,
   unsigned int size;
   Symbol *endSym;
 
+  if (genPIC) {
+    /* install the GOT in a separate segment */
+    /* should be the first segment in group APW */
+    addToGroup(&linkerModule, gotSegment, &groupAPW);
+  }
   /* pass 1: combine segments from modules in three groups */
   mod = firstModule;
   while (mod != NULL) {
@@ -1188,10 +1346,16 @@ void relocateModules(void) {
                 "    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
                 seg->name, rel->loc, addr, data);
       }
-      if (rel->typ & RELOC_SYM) {
-        base = mod->syms[rel->ref]->val;
+      if (rel->ref == -1) {
+        /* nothing is referenced */
+        base = 0;
       } else {
-        base = mod->segs[rel->ref].addr;
+        /* either a symbol or a segment is referenced */
+        if (rel->typ & RELOC_SYM) {
+          base = mod->syms[rel->ref]->val;
+        } else {
+          base = mod->segs[rel->ref].addr;
+        }
       }
       value = base + rel->add;
       switch (rel->typ & ~RELOC_SYM) {
@@ -1246,6 +1410,33 @@ void relocateModules(void) {
           method = "W32";
           mask = 0xFFFFFFFF;
           break;
+        case RELOC_GA_H16:
+          method = "GA_H16";
+          mask = 0x0000FFFF;
+          value += gotSegment->addr - addr;
+          value >>= 16;
+          break;
+        case RELOC_GA_L16:
+          method = "GA_L16";
+          mask = 0x0000FFFF;
+          value += gotSegment->addr - addr;
+          break;
+        case RELOC_GR_H16:
+          method = "GR_H16";
+          mask = 0x0000FFFF;
+          value -= gotSegment->addr;
+          value >>= 16;
+          break;
+        case RELOC_GR_L16:
+          method = "GR_L16";
+          mask = 0x0000FFFF;
+          value -= gotSegment->addr;
+          break;
+        case RELOC_GP_L16:
+          method = "GP_L16";
+          mask = 0x0000FFFF;
+          value = rel->add;
+          break;
         default:
           method = "ILL";
           mask = 0;
@@ -1258,11 +1449,18 @@ void relocateModules(void) {
                 "        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
                 method,
                 rel->typ & RELOC_SYM ? "SYM" : "SEG",
-                rel->typ & RELOC_SYM ?
-                  mod->syms[rel->ref]->name :
-                  mod->segs[rel->ref].name,
+                rel->ref == -1 ? "*nothing*" :
+                  rel->typ & RELOC_SYM ?
+                    mod->syms[rel->ref]->name :
+                    mod->segs[rel->ref].name,
                 rel->add,
                 data);
+      }
+      if (genPIC) {
+        if ((rel->typ & ~RELOC_SYM) == RELOC_W32) {
+          /* in PIC, W32 pointers need ER_W32 relocations */
+          recordLoadTimeReloc(addr);
+        }
       }
     }
     mod = mod->next;
@@ -1489,6 +1687,41 @@ void writeSegmentsForGroups(FILE *outFile) {
 }
 
 
+void writeLoadTimeReloc(LoadTimeReloc *loadTimeReloc, FILE *outFile) {
+  RelocRecord relRec;
+
+  relRec.loc = loadTimeReloc->addr;
+  relRec.seg = -1;
+  relRec.typ = RELOC_ER_W32;
+  relRec.ref = -1;
+  relRec.add = 0;
+  conv4FromNativeToEco((unsigned char *) &relRec.loc);
+  conv4FromNativeToEco((unsigned char *) &relRec.seg);
+  conv4FromNativeToEco((unsigned char *) &relRec.typ);
+  conv4FromNativeToEco((unsigned char *) &relRec.ref);
+  conv4FromNativeToEco((unsigned char *) &relRec.add);
+  if (fwrite(&relRec, sizeof(RelocRecord), 1, outFile) != 1) {
+    error("cannot write output file relocation record");
+  }
+  /* update file offset */
+  outFileOffset += sizeof(RelocRecord);
+}
+
+
+void writeLoadTimeRelocs(FILE *outFile) {
+  LoadTimeReloc *loadTimeReloc;
+
+  outFileHeader.orels = outFileOffset;
+  outFileHeader.nrels = 0;
+  loadTimeReloc = loadTimeRelocs;
+  while (loadTimeReloc != NULL) {
+    writeLoadTimeReloc(loadTimeReloc, outFile);
+    outFileHeader.nrels++;
+    loadTimeReloc = loadTimeReloc->next;
+  }
+}
+
+
 void writeObjModule(char *startSymbol, char *outPath) {
   Symbol *startSym;
   unsigned int entry;
@@ -1507,6 +1740,7 @@ void writeObjModule(char *startSymbol, char *outPath) {
   writeDataForGroups(outFile);
   writeStringsForGroups(outFile);
   writeSegmentsForGroups(outFile);
+  writeLoadTimeRelocs(outFile);
   writeFinalHeader(entry, outFile);
   fclose(outFile);
 }
@@ -1561,6 +1795,11 @@ int main(int argc, char *argv[]) {
   char *mapName;
   char *endptr;
 
+  if (debugCmdline) {
+    for (i = 1; i < argc; i++) {
+      fprintf(stderr, "%s cmdline arg %d: %s\n", argv[0], i, argv[i]);
+    }
+  }
   dataPageAlign = 1;
   codeBase = DEFAULT_CODE_BASE;
   startSymbol = DEFAULT_START_SYMBOL;
@@ -1628,6 +1867,9 @@ int main(int argc, char *argv[]) {
     showGroups();
   }
   resolveSymbols();
+  if (genPIC) {
+    makeGotSegment();
+  }
   relocateModules();
   writeObjModule(startSymbol, outName);
   if (mapName != NULL) {
