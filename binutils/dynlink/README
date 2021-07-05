@@ -11,6 +11,8 @@ ex06a		same as ex06, but with complete toolchain
 ex07		generate position-independent code
 ex09		generate shared libraries
 ex11		implement the dynamic linker
+ex12		NoDOS, an experiment to run the dynamic
+		linker on the target system ECO32
 
 libs-gcc	static and dynamic libs (gcc toolchain)
 
