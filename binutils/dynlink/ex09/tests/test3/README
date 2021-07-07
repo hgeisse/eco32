@@ -1,0 +1,2 @@
+Show that a symbol coming from a module takes precedence
+over a symbol with the same name, but coming from a DSO.
