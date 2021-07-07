@@ -1,0 +1,5 @@
+Test discarding multiple requests for the same library.
+Output should only name two dynamic libraries:
+    dynamic libs needed       :          2
+        name = libiolib.dso
+        name = libbiolib.dso

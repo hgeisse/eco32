@@ -1,0 +1,4 @@
+Test using symbols from a dynamic library after naming the
+library as input file. Should compile without errors, output:
+    dynamic libs needed       :          1
+        name = libiolib.dso
