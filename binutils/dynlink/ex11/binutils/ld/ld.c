@@ -4,7 +4,7 @@
 
 
 /*
- * This is the solution to exercise 6:
+ * This is the solution to exercise 9:
  *   - read a list of object files
  *   - build the global symbol table
  *   - some of the files may be static libraries
@@ -13,6 +13,11 @@
  *   - resolve symbols
  *   - relocate modules
  *   - write executable file
+ *   - collect GP_L16 relocations, create GOT entries
+ *   - add an output segment containing the GOT
+ *   - handle all PIC relocations correctly
+ *   - generate ER_W32 relocations in the executable
+ *     (for all W32 pointers, including GOT entries)
  */
 
 
@@ -40,19 +45,51 @@
 #define WORD_ALIGN(x)		(((x) + 0x03) & ~0x03)
 #define PAGE_ALIGN(x)		(((x) + 0x0FFF) & ~0x0FFF)
 
+#define SEG_ATTR_APX		(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X)
+#define SEG_ATTR_APW		(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W)
+#define SEG_ATTR_AW		(SEG_ATTR_A | SEG_ATTR_W)
+
+#define MAX_GOT_ENTRIES		(1 << 13)
+
+#define SYM_ATTR_X		0x0100		/* defined externally */
+#define SYM_ATTR_R		0x0200		/* referenced from here */
+
 
 /**************************************************************/
 
 /*
- * debugging
+ * debugging and global variables
  */
 
 
+int debugCmdline = 1;
 int debugExtract = 1;
 int debugSegments = 1;
 int debugGroups = 1;
 int debugResolve = 1;
 int debugRelocs = 1;
+int debugLTRelocs = 1;
+int debugLTRelocsX = 1;
+int debugGOT = 1;
+
+
+int genPIC;
+int genDSO;
+
+
+char *relocMethod[] = {
+  /*  0 */  "H16",
+  /*  1 */  "L16",
+  /*  2 */  "R16",
+  /*  3 */  "R26",
+  /*  4 */  "W32",
+  /*  5 */  "GA_H16",
+  /*  6 */  "GA_L16",
+  /*  7 */  "GR_H16",
+  /*  8 */  "GR_L16",
+  /*  9 */  "GP_L16",
+  /* 10 */  "ER_W32",
+};
 
 
 /**************************************************************/
@@ -226,6 +263,9 @@ typedef struct symbol {
   /* internal data */
   unsigned int hash;		/* full hash over symbol's name */
   struct symbol *next;		/* hash bucket chain */
+  /* output data */
+  unsigned int nameOffs;	/* offset in output string space */
+  int symIndex;			/* index in output symbol table */
 } Symbol;
 
 
@@ -235,10 +275,38 @@ typedef struct reloc {
   int typ;			/* relocation type: one of RELOC_xxx */
 				/* symbol flag RELOC_SYM may be set */
   int ref;			/* what is referenced */
+				/* if -1: nothing */
 				/* if symbol flag = 0: segment number */
 				/* if symbol flag = 1: symbol number */
   int add;			/* additive part of value */
 } Reloc;
+
+
+typedef struct partialSegment {
+  Module *mod;				/* module where part comes from */
+  Segment *seg;				/* which segment in the module */
+  struct partialSegment *next;		/* next part in total segment */
+} PartialSegment;
+
+
+typedef struct totalSegment {
+  char *name;				/* name of total segment */
+  unsigned int nameOffs;		/* name offset in string space */
+  unsigned int dataOffs;		/* data offset in data space */
+  unsigned int addr;			/* virtual address */
+  unsigned int size;			/* size in bytes */
+  unsigned int attr;			/* attributes */
+  struct partialSegment *firstPart;	/* first partial segment in total */
+  struct partialSegment *lastPart;	/* last partial segment in total */
+  struct totalSegment *next;		/* next total in segment group */
+} TotalSegment;
+
+
+typedef struct segmentGroup {
+  unsigned int attr;			/* attributes of this group */
+  TotalSegment *firstTotal;		/* first total segment in group */
+  TotalSegment *lastTotal;		/* last total segment in group */
+} SegmentGroup;
 
 
 /**************************************************************/
@@ -444,7 +512,7 @@ int numberOfSymbols(void) {
 
 
 void readObjHeader(EofHeader *hdr, unsigned int ohdr,
-                   FILE *inFile, char *inPath) {
+                   FILE *inFile, char *inPath, unsigned int magic) {
   if (fseek(inFile, ohdr, SEEK_SET) < 0) {
     error("cannot seek to header in input file '%s'", inPath);
   }
@@ -463,7 +531,9 @@ void readObjHeader(EofHeader *hdr, unsigned int ohdr,
   conv4FromEcoToNative((unsigned char *) &hdr->ostrs);
   conv4FromEcoToNative((unsigned char *) &hdr->sstrs);
   conv4FromEcoToNative((unsigned char *) &hdr->entry);
-  if (hdr->magic != EOF_R_MAGIC) {
+  conv4FromEcoToNative((unsigned char *) &hdr->olibs);
+  conv4FromEcoToNative((unsigned char *) &hdr->nlibs);
+  if (hdr->magic != magic) {
     error("wrong magic number in input file '%s'", inPath);
   }
 }
@@ -554,7 +624,8 @@ void readObjSymbols(Module *mod,
     sym = enterSymbol(mod->strs + symRec.name);
     if ((symRec.attr & SYM_ATTR_U) == 0) {
       /* symbol gets defined here */
-      if ((sym->attr & SYM_ATTR_U) == 0) {
+      if ((sym->attr & SYM_ATTR_U) == 0 &&
+          (sym->attr & SYM_ATTR_X) == 0) {
         /* but is already defined in table */
         error("symbol '%s' in module '%s' defined more than once\n"
               "       (previous definition is in module '%s')",
@@ -571,6 +642,9 @@ void readObjSymbols(Module *mod,
     mod->syms[i] = sym;
   }
 }
+
+
+int getGotOffs(Module *mod, Reloc *rel);
 
 
 void readObjRelocs(Module *mod,
@@ -601,6 +675,20 @@ void readObjRelocs(Module *mod,
     rel->typ = relRec.typ;
     rel->ref = relRec.ref;
     rel->add = relRec.add;
+    if ((rel->typ & ~RELOC_SYM) == RELOC_GP_L16) {
+      /* we found a GOT pointer relocation for PIC */
+      if ((rel->typ & RELOC_SYM) == 0) {
+        /* RELOC_GP_L16 must reference a symbol */
+        error("illegal relocation (RELOC_GP_L16 without symbol)");
+      }
+      if (rel->add != 0) {
+        /* RELOC_GP_L16 must not have a non-zero addend */
+        error("illegal relocation (RELOC_GP_L16 with non-zero addend)");
+      }
+      /* find or create a corresponding GOT entry */
+      /* and remember its offset within the GOT */
+      rel->add = getGotOffs(mod, rel);
+    }
   }
 }
 
@@ -611,7 +699,7 @@ Module *readObjModule(char *name, unsigned int ohdr,
   Module *mod;
 
   mod = newModule(name);
-  readObjHeader(&hdr, ohdr, inFile, inPath);
+  readObjHeader(&hdr, ohdr, inFile, inPath, EOF_R_MAGIC);
   readObjData(mod, ohdr + hdr.odata, hdr.sdata, inFile, inPath);
   readObjStrings(mod, ohdr + hdr.ostrs, hdr.sstrs, inFile, inPath);
   readObjSegments(mod, ohdr + hdr.osegs, hdr.nsegs, inFile, inPath);
@@ -694,10 +782,12 @@ int needArchModule(char *fsym, unsigned int nsym) {
 
   for (i = 0; i < nsym; i++) {
     sym = lookupSymbol(fsym);
-    if (sym != NULL && (sym->attr & SYM_ATTR_U) != 0) {
+    if (sym != NULL &&
+        ((sym->attr & SYM_ATTR_U) != 0 ||
+         (sym->attr & SYM_ATTR_X) != 0)) {
       /*
-       * This symbol is undefined in the global symbol table,
-       * so this module needs to be extracted.
+       * This symbol is undefined (or defined by a shared
+       * object), so this module needs to be extracted.
        */
       return 1;
     }
@@ -746,6 +836,138 @@ void readArchive(FILE *inFile, char *inPath) {
   } while (anyModuleExtracted);
   memFree(mods);
   memFree(strs);
+}
+
+
+/**************************************************************/
+
+/*
+ * remember shared objects, which must be loaded at runtime
+ */
+
+
+typedef struct sharedObj {
+  char *name;
+  struct sharedObj *next;
+} SharedObj;
+
+
+SharedObj *firstSharedObj = NULL;
+SharedObj *lastSharedObj;
+
+
+SharedObj *newSharedObj(char *path) {
+  char *name;
+  SharedObj *sharedObj;
+
+  /* compute name from path */
+  name = path + strlen(path);
+  while (name != path && *name != '/') {
+    name--;
+  }
+  if (*name == '/') {
+    name++;
+  }
+  /* eliminate duplicates */
+  sharedObj = firstSharedObj;
+  while (sharedObj != NULL) {
+    if (strcmp(sharedObj->name, name) == 0) {
+      return NULL;
+    }
+    sharedObj = sharedObj->next;
+  }
+  /* this one is new */
+  sharedObj = memAlloc(sizeof(SharedObj));
+  sharedObj->name = name;
+  sharedObj->next = NULL;
+  if (firstSharedObj == NULL) {
+    firstSharedObj = sharedObj;
+  } else {
+    lastSharedObj->next = sharedObj;
+  }
+  lastSharedObj = sharedObj;
+  return sharedObj;
+}
+
+
+/**************************************************************/
+
+/*
+ * shared object reader
+ */
+
+
+char *readSharedObjStrings(unsigned int ostrs,
+                           unsigned int sstrs,
+                           FILE *inFile, char *inPath) {
+  char *strs;
+
+  strs = memAlloc(sstrs);
+  if (fseek(inFile, ostrs, SEEK_SET) < 0) {
+    error("cannot seek to strings in input file '%s'", inPath);
+  }
+  if (fread(strs, 1, sstrs, inFile) != sstrs) {
+    error("cannot read strings in input file '%s'", inPath);
+  }
+  return strs;
+}
+
+
+SymbolRecord *readSharedObjSymbols(unsigned int osyms,
+                                   unsigned int nsyms,
+                                   FILE *inFile, char *inPath) {
+  SymbolRecord *syms;
+  int i;
+
+  syms = memAlloc(nsyms * sizeof(SymbolRecord));
+  if (fseek(inFile, osyms, SEEK_SET) < 0) {
+    error("cannot seek to symbol table in input file '%s'", inPath);
+  }
+  for (i = 0; i < nsyms; i++) {
+    if (fread(syms + i, sizeof(SymbolRecord), 1, inFile) != 1) {
+      error("cannot read symbol record in input file '%s'", inPath);
+    }
+    conv4FromEcoToNative((unsigned char *) &syms[i].name);
+    conv4FromEcoToNative((unsigned char *) &syms[i].val);
+    conv4FromEcoToNative((unsigned char *) &syms[i].seg);
+    conv4FromEcoToNative((unsigned char *) &syms[i].attr);
+  }
+  return syms;
+}
+
+
+void readSharedObj(FILE *inFile, char *inPath) {
+  EofHeader hdr;
+  char *strs;
+  SymbolRecord *syms;
+  int i;
+  char *name;
+  Symbol *sym;
+
+  /* remember shared object, discard duplicates */
+  if (newSharedObj(inPath) == NULL) {
+    return;
+  }
+  /* enter all defined symbols of the shared object */
+  readObjHeader(&hdr, 0, inFile, inPath, EOF_D_MAGIC);
+  strs = readSharedObjStrings(hdr.ostrs, hdr.sstrs, inFile, inPath);
+  syms = readSharedObjSymbols(hdr.osyms, hdr.nsyms, inFile, inPath);
+  for (i = 0; i < hdr.nsyms; i++) {
+    if ((syms[i].attr & SYM_ATTR_U) != 0) {
+      /* symbol is undefined in the shared object, skip */
+      continue;
+    }
+    /* symbol is defined in the shared object, get its name */
+    name = strs + syms[i].name;
+    /* look it up in the global symbol table, enter if not present */
+    sym = enterSymbol(name);
+    if ((sym->attr & SYM_ATTR_U) != 0) {
+      /* true in two cases: either it's new or undefined up to now */
+      /* change to 'defined externally, in a shared object' */
+      sym->attr &= ~SYM_ATTR_U;
+      sym->attr |= SYM_ATTR_X;
+    }
+  }
 }
 
 
@@ -815,6 +1037,9 @@ void readFiles(void) {
     } else
     if (magic == ARCH_MAGIC) {
       readArchive(inFile, file->path);
+    } else
+    if (magic == EOF_D_MAGIC) {
+      readSharedObj(inFile, file->path);
     } else {
       error("input file '%s' is not an object file", file->path);
     }
@@ -865,40 +1090,167 @@ void showSegments(void) {
 /**************************************************************/
 
 /*
- * storage allocator
+ * load-time relocations
  */
 
 
-#define SEG_ATTR_APX	(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_X)
-#define SEG_ATTR_APW	(SEG_ATTR_A | SEG_ATTR_P | SEG_ATTR_W)
-#define SEG_ATTR_AW	(SEG_ATTR_A | SEG_ATTR_W)
+typedef struct loadTimeReloc {
+  unsigned int addr;		/* where to relocate */
+  int typ;			/* relocation type, RELOC_SYM may be set */
+  Symbol *ref;			/* symbol that is referenced */
+				/* NULL if typ has RELOC_SYM reset */
+  struct loadTimeReloc *next;
+} LoadTimeReloc;
+
+LoadTimeReloc *loadTimeRelocs = NULL;
 
 
-typedef struct partialSegment {
-  Module *mod;				/* module where part comes from */
-  Segment *seg;				/* which segment in the module */
-  struct partialSegment *next;		/* next part in total segment */
-} PartialSegment;
+void recordLoadTimeReloc(unsigned int addr, int typ, Symbol *ref) {
+  LoadTimeReloc *loadTimeReloc;
+
+  if (debugLTRelocs) {
+    printf("<load-time reloc @ 0x%08X recorded, "
+           "type = %s, ref = %s>\n",
+           addr, relocMethod[typ & ~RELOC_SYM],
+           ref == NULL ? "*none*" : ref->name);
+  }
+  loadTimeReloc = memAlloc(sizeof(LoadTimeReloc));
+  loadTimeReloc->addr = addr;
+  loadTimeReloc->typ = typ;
+  if ((typ & RELOC_SYM) != 0) {
+    /* mark the symbol as being referenced */
+    ref->attr |= SYM_ATTR_R;
+  }
+  loadTimeReloc->ref = ref;
+  loadTimeReloc->next = loadTimeRelocs;
+  loadTimeRelocs = loadTimeReloc;
+}
 
 
-typedef struct totalSegment {
-  char *name;				/* name of total segment */
-  unsigned int nameOffs;		/* name offset in string space */
-  unsigned int dataOffs;		/* data offset in data space */
-  unsigned int addr;			/* virtual address */
-  unsigned int size;			/* size in bytes */
-  unsigned int attr;			/* attributes */
-  struct partialSegment *firstPart;	/* first partial segment in total */
-  struct partialSegment *lastPart;	/* last partial segment in total */
-  struct totalSegment *next;		/* next total in segment group */
-} TotalSegment;
+/**************************************************************/
+
+/*
+ * global offset table (GOT)
+ */
 
 
-typedef struct segmentGroup {
-  unsigned int attr;			/* attributes of this group */
-  TotalSegment *firstTotal;		/* first total segment in group */
-  TotalSegment *lastTotal;		/* last total segment in group */
-} SegmentGroup;
+typedef struct gotEntry {
+  Symbol *sym;			/* symbol which is referenced */
+  int gotOffs;			/* offset of entry in GOT */
+  struct gotEntry *next;
+} GotEntry;
+
+static GotEntry *gotEntries = NULL;
+static int numGotEntries = 0;
+
+
+static Segment gotSeg = {
+  ".got",		/* segment name */
+  NULL,			/* segment data */
+  0,			/* virtual start address */
+  0,			/* size of segment in bytes */
+  0,			/* number of padding bytes */
+  SEG_ATTR_APW,		/* segment attributes */
+  NULL,			/* total segment this segment is part of */
+};
+
+Segment *gotSegment = &gotSeg;
+
+
+static GotEntry *lookupGotEntry(Module *mod, Reloc *rel) {
+  GotEntry *gotEntry;
+
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    if (gotEntry->sym == mod->syms[rel->ref]) {
+      /* found */
+      return gotEntry;
+    }
+    gotEntry = gotEntry->next;
+  }
+  /* not found */
+  return NULL;
+}
+
+
+int getGotOffs(Module *mod, Reloc *rel) {
+  GotEntry *gotEntry;
+
+  /* try to find a matching GOT entry */
+  gotEntry = lookupGotEntry(mod, rel);
+  if (gotEntry == NULL) {
+    /* not found, create a new one */
+    if (numGotEntries == MAX_GOT_ENTRIES) {
+      error("more than %d GOT entries", MAX_GOT_ENTRIES);
+    }
+    gotEntry = memAlloc(sizeof(GotEntry));
+    gotEntry->sym = mod->syms[rel->ref];
+    gotEntry->gotOffs = numGotEntries << 2;
+    gotEntry->next = gotEntries;
+    gotEntries = gotEntry;
+    numGotEntries++;
+    gotSegment->size += 4;
+  }
+  return gotEntry->gotOffs;
+}
+
+
+void showGotEntry(GotEntry *gotEntry) {
+  printf("GOT entry @ offset 0x%04X: symbol = '%s'\n"
+         "    val = 0x%08X, attr = %c%c\n",
+         gotEntry->gotOffs, gotEntry->sym->name,
+         gotEntry->sym->val,
+         (gotEntry->sym->attr & SYM_ATTR_U) ? 'U' : 'D',
+         (gotEntry->sym->attr & SYM_ATTR_X) ? 'X' : 'I');
+}
+
+
+void makeGotSegment(void) {
+  GotEntry *gotEntry;
+  unsigned char *addr;
+  unsigned int data;
+
+  if (gotSegment->size == 0) {
+    /* no entries present */
+    return;
+  }
+  gotSegment->data = memAlloc(gotSegment->size);
+  gotEntry = gotEntries;
+  while (gotEntry != NULL) {
+    if (debugGOT) {
+      showGotEntry(gotEntry);
+    }
+    addr = gotSegment->data + gotEntry->gotOffs;
+    data = gotEntry->sym->val;
+    write4ToEco(addr, data);
+    /* GOT entries need ER_W32 or W32 relocations */
+    if ((gotEntry->sym->attr & SYM_ATTR_X) == 0) {
+      /* GOT entry for a symbol which is defined in this link unit */
+      if (debugLTRelocsX) {
+        printf("<load-time reloc for GOT entry: "
+               "internally defined symbol>\n");
+      }
+      recordLoadTimeReloc(gotSegment->addr + gotEntry->gotOffs,
+                          RELOC_ER_W32, NULL);
+    } else {
+      /* GOT entry for a symbol which is defined in another link unit */
+      if (debugLTRelocsX) {
+        printf("<load-time reloc for GOT entry: "
+               "externally defined symbol>\n");
+      }
+      recordLoadTimeReloc(gotSegment->addr + gotEntry->gotOffs,
+                          RELOC_W32 | RELOC_SYM, gotEntry->sym);
+    }
+    gotEntry = gotEntry->next;
+  }
+}
+
+
+/**************************************************************/
+
+/*
+ * storage allocator
+ */
 
 
 SegmentGroup groupAPX = { SEG_ATTR_APX, NULL, NULL };
@@ -994,6 +1346,11 @@ void allocateStorage(unsigned int codeBase,
   unsigned int size;
   Symbol *endSym;
 
+  if (genPIC) {
+    /* install the GOT in a separate segment */
+    /* should be the first segment in group APW */
+    addToGroup(&linkerModule, gotSegment, &groupAPW);
+  }
   /* pass 1: combine segments from modules in three groups */
   mod = firstModule;
   while (mod != NULL) {
@@ -1015,7 +1372,7 @@ void allocateStorage(unsigned int codeBase,
     mod = mod->next;
   }
   /* pass 2: compute sum of sizes and set start addresses */
-  addr = codeBase;
+  addr = genDSO ? 0x00000000 : codeBase;
   size = setTotalAddrs(groupAPX.firstTotal, addr);
   addr += size;
   if (dataPageAlign) {
@@ -1025,11 +1382,13 @@ void allocateStorage(unsigned int codeBase,
   addr += size;
   size = setTotalAddrs(groupAW.firstTotal, addr);
   addr += size;
-  endSym = enterSymbol(endSymbol);
-  endSym->mod = &linkerModule;
-  endSym->seg = -1;
-  endSym->val = addr;
-  endSym->attr &= ~SYM_ATTR_U;
+  if (!genDSO) {
+    endSym = enterSymbol(endSymbol);
+    endSym->mod = &linkerModule;
+    endSym->seg = -1;
+    endSym->val = addr;
+    endSym->attr &= ~SYM_ATTR_U;
+  }
 }
 
 
@@ -1084,7 +1443,7 @@ void showGroups(void) {
 
 
 static void countUndefSymbol(Symbol *sym, void *arg) {
-  if (sym->attr & SYM_ATTR_U) {
+  if ((sym->attr & SYM_ATTR_U) != 0) {
     (*(int *)arg)++;
   }
 }
@@ -1100,7 +1459,7 @@ int countUndefSymbols(void) {
 
 
 static void showUndefSymbol(Symbol *sym, void *arg) {
-  if (sym->attr & SYM_ATTR_U) {
+  if ((sym->attr & SYM_ATTR_U) != 0) {
     fprintf(stderr, "    %s\n", sym->name);
   }
 }
@@ -1115,6 +1474,15 @@ static void resolveSymbol(Symbol *sym, void *arg) {
   Module *mod;
   Segment *seg;
 
+  if ((sym->attr & SYM_ATTR_X) != 0) {
+    /* skip symbols which get resolved at runtime */
+    if (debugResolve) {
+      fprintf(stderr,
+              "    %s skipped, resolved at runtime\n",
+              sym->name);
+    }
+    return;
+  }
   if (debugResolve) {
     fprintf(stderr, "    %s = 0x%08X", sym->name, sym->val);
   }
@@ -1169,8 +1537,8 @@ void relocateModules(void) {
   unsigned int data;	/* word at loc, which gets modified */
   unsigned int base;	/* base value of either segment or symbol */
   unsigned int value;	/* base + addend from relocation */
-  char *method;		/* relocation method as printable string */
   unsigned int mask;	/* which part of the word gets modified */
+  Symbol * sym;		/* auxiliary variable for generating LT relocs */
 
   mod = firstModule;
   while (mod != NULL) {
@@ -1188,24 +1556,27 @@ void relocateModules(void) {
                 "    %s @ 0x%08X (vaddr 0x%08X) = 0x%08X\n",
                 seg->name, rel->loc, addr, data);
       }
-      if (rel->typ & RELOC_SYM) {
-        base = mod->syms[rel->ref]->val;
+      if (rel->ref == -1) {
+        /* nothing is referenced */
+        base = 0;
       } else {
-        base = mod->segs[rel->ref].addr;
+        /* either a symbol or a segment is referenced */
+        if (rel->typ & RELOC_SYM) {
+          base = mod->syms[rel->ref]->val;
+        } else {
+          base = mod->segs[rel->ref].addr;
+        }
       }
       value = base + rel->add;
       switch (rel->typ & ~RELOC_SYM) {
         case RELOC_H16:
-          method = "H16";
           mask = 0x0000FFFF;
           value >>= 16;
           break;
         case RELOC_L16:
-          method = "L16";
           mask = 0x0000FFFF;
           break;
         case RELOC_R16:
-          method = "R16";
           mask = 0x0000FFFF;
           value -= addr + 4;
           if (value & 3) {
@@ -1224,7 +1595,6 @@ void relocateModules(void) {
           value >>= 2;
           break;
         case RELOC_R26:
-          method = "R26";
           mask = 0x03FFFFFF;
           value -= addr + 4;
           if (value & 3) {
@@ -1243,11 +1613,31 @@ void relocateModules(void) {
           value >>= 2;
           break;
         case RELOC_W32:
-          method = "W32";
           mask = 0xFFFFFFFF;
           break;
+        case RELOC_GA_H16:
+          mask = 0x0000FFFF;
+          value += gotSegment->addr - addr;
+          value >>= 16;
+          break;
+        case RELOC_GA_L16:
+          mask = 0x0000FFFF;
+          value += gotSegment->addr - addr;
+          break;
+        case RELOC_GR_H16:
+          mask = 0x0000FFFF;
+          value -= gotSegment->addr;
+          value >>= 16;
+          break;
+        case RELOC_GR_L16:
+          mask = 0x0000FFFF;
+          value -= gotSegment->addr;
+          break;
+        case RELOC_GP_L16:
+          mask = 0x0000FFFF;
+          value = rel->add;
+          break;
         default:
-          method = "ILL";
           mask = 0;
           error("illegal relocation type %d", rel->typ & ~RELOC_SYM);
       }
@@ -1256,81 +1646,47 @@ void relocateModules(void) {
       if (debugRelocs) {
         fprintf(stderr,
                 "        --(%s, %s %s, 0x%08X)--> 0x%08X\n",
-                method,
+                relocMethod[rel->typ & ~RELOC_SYM],
                 rel->typ & RELOC_SYM ? "SYM" : "SEG",
-                rel->typ & RELOC_SYM ?
-                  mod->syms[rel->ref]->name :
-                  mod->segs[rel->ref].name,
+                rel->ref == -1 ? "*nothing*" :
+                  rel->typ & RELOC_SYM ?
+                    mod->syms[rel->ref]->name :
+                    mod->segs[rel->ref].name,
                 rel->add,
                 data);
+      }
+      if (genPIC && (rel->typ & ~RELOC_SYM) == RELOC_W32) {
+        /* in PIC, W32 pointers need ER_W32 or W32 relocations */
+        if ((rel->typ & RELOC_SYM) == 0) {
+          /* pointer to segment/offset */
+          if (debugLTRelocsX) {
+            printf("<load-time reloc for pointer: "
+                   "non-symbolic reference>\n");
+          }
+          recordLoadTimeReloc(addr, RELOC_ER_W32, NULL);
+        } else {
+          /* pointer to symbol */
+          sym = mod->syms[rel->ref];
+          if ((sym->attr & SYM_ATTR_X) == 0) {
+            /* pointer to internally defined symbol */
+            if (debugLTRelocsX) {
+              printf("<load-time reloc for pointer: "
+                     "internally defined symbol>\n");
+            }
+            recordLoadTimeReloc(addr, RELOC_ER_W32, NULL);
+          } else {
+            /* pointer to externally defined symbol */
+            if (debugLTRelocsX) {
+              printf("<load-time reloc for pointer: "
+                     "externally defined symbol>\n");
+            }
+            recordLoadTimeReloc(addr, RELOC_W32 | RELOC_SYM, sym);
+          }
+        }
       }
     }
     mod = mod->next;
   }
-}
-
-
-/**************************************************************/
-
-/*
- * symbol table writer
- */
-
-
-typedef struct {
-  Symbol **symbolTable;
-  int currentIndex;
-} SymtableIterator;
-
-
-static void getSymbol(Symbol *sym, void *arg) {
-  SymtableIterator *iter;
-
-  iter = (SymtableIterator *) arg;
-  iter->symbolTable[iter->currentIndex++] = sym;
-}
-
-
-static int compareSymbols(const void *p1, const void *p2) {
-  Symbol **sym1;
-  Symbol **sym2;
-
-  sym1 = (Symbol **) p1;
-  sym2 = (Symbol **) p2;
-  if ((*sym1)->val < (*sym2)->val) {
-    return -1;
-  }
-  if ((*sym1)->val > (*sym2)->val) {
-    return 1;
-  }
-  return strcmp((*sym1)->name, (*sym2)->name);
-}
-
-
-void writeSymbolTable(FILE *mapFile) {
-  int numSymbols;
-  SymtableIterator iter;
-  int i;
-  Symbol *sym;
-  Module *mod;
-
-  numSymbols = numberOfSymbols();
-  iter.symbolTable = memAlloc(numSymbols * sizeof(Symbol *));
-  iter.currentIndex = 0;
-  mapOverSymbols(getSymbol, &iter);
-  qsort(iter.symbolTable, numSymbols, sizeof(Symbol *), compareSymbols);
-  for (i = 0; i < numSymbols; i++) {
-    sym = iter.symbolTable[i];
-    mod = sym->mod;
-    fprintf(mapFile,
-            "%-24s  0x%08X  %-12s  %s\n",
-            sym->name,
-            sym->val,
-            sym->seg == -1 ?
-              "*ABS*" : mod->segs[sym->seg].name,
-            mod->name);
-  }
-  memFree(iter.symbolTable);
 }
 
 
@@ -1356,7 +1712,7 @@ static void writeDummyHeader(FILE *outFile) {
 
 
 static void writeFinalHeader(unsigned int entry, FILE *outFile) {
-  outFileHeader.magic = EOF_X_MAGIC;
+  outFileHeader.magic = genDSO ? EOF_D_MAGIC : EOF_X_MAGIC;
   outFileHeader.entry = entry;
   conv4FromNativeToEco((unsigned char *) &outFileHeader.magic);
   conv4FromNativeToEco((unsigned char *) &outFileHeader.osegs);
@@ -1370,6 +1726,8 @@ static void writeFinalHeader(unsigned int entry, FILE *outFile) {
   conv4FromNativeToEco((unsigned char *) &outFileHeader.ostrs);
   conv4FromNativeToEco((unsigned char *) &outFileHeader.sstrs);
   conv4FromNativeToEco((unsigned char *) &outFileHeader.entry);
+  conv4FromNativeToEco((unsigned char *) &outFileHeader.olibs);
+  conv4FromNativeToEco((unsigned char *) &outFileHeader.nlibs);
   if (fseek(outFile, 0, SEEK_SET) < 0) {
     error("cannot seek to header in output file");
   }
@@ -1440,11 +1798,60 @@ void writeStringsForTotals(TotalSegment *total, FILE *outFile) {
 
 
 void writeStringsForGroups(FILE *outFile) {
-  outFileHeader.ostrs = outFileOffset;
-  outFileHeader.sstrs = 0;
   writeStringsForTotals(groupAPX.firstTotal, outFile);
   writeStringsForTotals(groupAPW.firstTotal, outFile);
   writeStringsForTotals(groupAW.firstTotal, outFile);
+}
+
+
+static void writeStringForSymbol(Symbol *sym, void *arg) {
+  FILE *outFile;
+  unsigned int size;
+
+  if ((sym->attr & SYM_ATTR_X) != 0 &&
+      (sym->attr & SYM_ATTR_R) == 0) {
+    /* symbol is externally defined, but not referenced from here */
+    /* exclude it from being written to the output file */
+    return;
+  }
+  outFile = (FILE *) arg;
+  size = strlen(sym->name) + 1;
+  if (fwrite(sym->name, 1, size, outFile) != size) {
+    error("cannot write output file strings");
+  }
+  sym->nameOffs = outFileHeader.sstrs;
+  outFileHeader.sstrs += size;
+}
+
+
+void writeStringsForSharedObjs(FILE *outFile) {
+  SharedObj *sharedObj;
+  unsigned int size;
+
+  outFileHeader.olibs = outFileHeader.sstrs;
+  outFileHeader.nlibs = 0;
+  sharedObj = firstSharedObj;
+  while (sharedObj != NULL) {
+    size = strlen(sharedObj->name) + 1;
+    if (fwrite(sharedObj->name, 1, size, outFile) != size) {
+      error("cannot write output file strings");
+    }
+    outFileHeader.nlibs++;
+    outFileHeader.sstrs += size;
+    sharedObj = sharedObj->next;
+  }
+}
+
+
+void writeStrings(FILE *outFile) {
+  outFileHeader.ostrs = outFileOffset;
+  outFileHeader.sstrs = 0;
+  /* write strings for groups */
+  writeStringsForGroups(outFile);
+  /* write strings for symbols */
+  mapOverSymbols(writeStringForSymbol, outFile);
+  /* write strings for shared objects needed at runtime */
+  writeStringsForSharedObjs(outFile);
   /* update file offset */
   outFileOffset += outFileHeader.sstrs;
 }
@@ -1489,24 +1896,119 @@ void writeSegmentsForGroups(FILE *outFile) {
 }
 
 
+static void writeSymbol(Symbol *sym, void *arg) {
+  FILE *outFile;
+  SymbolRecord symRec;
+
+  if ((sym->attr & SYM_ATTR_X) != 0 &&
+      (sym->attr & SYM_ATTR_R) == 0) {
+    /* symbol is externally defined, but not referenced from here */
+    /* exclude it from being written to the output file */
+    return;
+  }
+  outFile = (FILE *) arg;
+  symRec.name = sym->nameOffs;
+  symRec.val = sym->val;
+  if (sym->seg == -1) {
+    /* symbol is absolute, leave it at that */
+    symRec.seg = -1;
+  } else {
+    /* symbol isn't absolute, so it must be link-unit relative */
+    symRec.seg = 0;
+  }
+  if ((sym->attr & SYM_ATTR_X) != 0) {
+    /* symbol gets resolved at runtime, so it is undefined for now */
+    symRec.attr = SYM_ATTR_U;
+  } else {
+    /* symbol is defined locally */
+    symRec.attr = 0;
+  }
+  conv4FromNativeToEco((unsigned char *) &symRec.name);
+  conv4FromNativeToEco((unsigned char *) &symRec.val);
+  conv4FromNativeToEco((unsigned char *) &symRec.seg);
+  conv4FromNativeToEco((unsigned char *) &symRec.attr);
+  if (fwrite(&symRec, sizeof(SymbolRecord), 1, outFile) != 1) {
+    error("cannot write output file symbol");
+  }
+  /* remember symbol index */
+  sym->symIndex = outFileHeader.nsyms;
+  /* update number of symbols */
+  outFileHeader.nsyms++;
+  /* update file offset */
+  outFileOffset += sizeof(SymbolRecord);
+}
+
+
+void writeSymbols(FILE *outFile) {
+  outFileHeader.osyms = outFileOffset;
+  outFileHeader.nsyms = 0;
+  mapOverSymbols(writeSymbol, outFile);
+}
+
+
+void writeLoadTimeReloc(LoadTimeReloc *loadTimeReloc, FILE *outFile) {
+  RelocRecord relRec;
+
+  relRec.loc = loadTimeReloc->addr;
+  relRec.seg = -1;
+  relRec.typ = loadTimeReloc->typ;
+  if ((loadTimeReloc->typ & RELOC_SYM) == 0) {
+    relRec.ref = -1;
+  } else {
+    relRec.ref = loadTimeReloc->ref->symIndex;
+  }
+  relRec.add = 0;
+  conv4FromNativeToEco((unsigned char *) &relRec.loc);
+  conv4FromNativeToEco((unsigned char *) &relRec.seg);
+  conv4FromNativeToEco((unsigned char *) &relRec.typ);
+  conv4FromNativeToEco((unsigned char *) &relRec.ref);
+  conv4FromNativeToEco((unsigned char *) &relRec.add);
+  if (fwrite(&relRec, sizeof(RelocRecord), 1, outFile) != 1) {
+    error("cannot write output file relocation record");
+  }
+  /* update file offset */
+  outFileOffset += sizeof(RelocRecord);
+}
+
+
+void writeLoadTimeRelocs(FILE *outFile) {
+  LoadTimeReloc *loadTimeReloc;
+
+  outFileHeader.orels = outFileOffset;
+  outFileHeader.nrels = 0;
+  loadTimeReloc = loadTimeRelocs;
+  while (loadTimeReloc != NULL) {
+    writeLoadTimeReloc(loadTimeReloc, outFile);
+    outFileHeader.nrels++;
+    loadTimeReloc = loadTimeReloc->next;
+  }
+}
+
+
 void writeObjModule(char *startSymbol, char *outPath) {
   Symbol *startSym;
   unsigned int entry;
   FILE *outFile;
 
-  startSym = lookupSymbol(startSymbol);
-  if (startSym == NULL) {
-    error("undefined start symbol '%s'", startSymbol);
+  if (!genDSO) {
+    startSym = lookupSymbol(startSymbol);
+    if (startSym == NULL) {
+      error("undefined start symbol '%s'", startSymbol);
+    }
+    entry = startSym->val;
+  } else {
+    entry = 0;
   }
-  entry = startSym->val;
   outFile = fopen(outPath, "w");
   if (outFile == NULL) {
     error("cannot open output file '%s'", outPath);
   }
   writeDummyHeader(outFile);
   writeDataForGroups(outFile);
-  writeStringsForGroups(outFile);
+  writeStrings(outFile);
   writeSegmentsForGroups(outFile);
+  writeSymbols(outFile);
+  writeLoadTimeRelocs(outFile);
   writeFinalHeader(entry, outFile);
   fclose(outFile);
 }
@@ -1519,14 +2021,70 @@ void writeObjModule(char *startSymbol, char *outPath) {
  */
 
 
+typedef struct {
+  Symbol **symbolTable;
+  int numSymbols;
+} SymtableIterator;
+
+
+static void getSymbol(Symbol *sym, void *arg) {
+  SymtableIterator *iter;
+
+  if ((sym->attr & SYM_ATTR_X) != 0) {
+    /* externally defined symbol, skip */
+    return;
+  }
+  iter = (SymtableIterator *) arg;
+  iter->symbolTable[iter->numSymbols++] = sym;
+}
+
+
+static int compareSymbols(const void *p1, const void *p2) {
+  Symbol **sym1;
+  Symbol **sym2;
+
+  sym1 = (Symbol **) p1;
+  sym2 = (Symbol **) p2;
+  if ((*sym1)->val < (*sym2)->val) {
+    return -1;
+  }
+  if ((*sym1)->val > (*sym2)->val) {
+    return 1;
+  }
+  return strcmp((*sym1)->name, (*sym2)->name);
+}
+
+
 void writeMap(char *mapName) {
   FILE *mapFile;
+  int maxSymbols;
+  SymtableIterator iter;
+  int i;
+  Symbol *sym;
+  Module *mod;
 
   mapFile = fopen(mapName, "w");
   if (mapFile == NULL) {
     error("cannot open map file '%s'", mapName);
   }
-  writeSymbolTable(mapFile);
+  maxSymbols = numberOfSymbols();
+  iter.symbolTable = memAlloc(maxSymbols * sizeof(Symbol *));
+  iter.numSymbols = 0;
+  mapOverSymbols(getSymbol, &iter);
+  qsort(iter.symbolTable, iter.numSymbols,
+        sizeof(Symbol *), compareSymbols);
+  for (i = 0; i < iter.numSymbols; i++) {
+    sym = iter.symbolTable[i];
+    mod = sym->mod;
+    fprintf(mapFile,
+            "%-24s  0x%08X  %-12s  %s\n",
+            sym->name,
+            sym->val,
+            sym->seg == -1 ?
+              "*ABS*" : mod->segs[sym->seg].name,
+            mod->name);
+  }
+  memFree(iter.symbolTable);
   fclose(mapFile);
 }
 
@@ -1540,6 +2098,8 @@ void writeMap(char *mapName) {
 
 void usage(char *myself) {
   fprintf(stderr, "usage: %s\n", myself);
+  fprintf(stderr, "         [-pic]           position-independent code\n");
+  fprintf(stderr, "         [-shared]        build shared object\n");
   fprintf(stderr, "         [-d]             data directly after code\n");
   fprintf(stderr, "         [-c <addr>]      set code base address\n");
   fprintf(stderr, "         [-s <symbol>]    set code start symbol\n");
@@ -1561,6 +2121,13 @@ int main(int argc, char *argv[]) {
   char *mapName;
   char *endptr;
 
+  if (debugCmdline) {
+    for (i = 1; i < argc; i++) {
+      fprintf(stderr, "%s cmdline arg %d: %s\n", argv[0], i, argv[i]);
+    }
+  }
+  genPIC = 0;
+  genDSO = 0;
   dataPageAlign = 1;
   codeBase = DEFAULT_CODE_BASE;
   startSymbol = DEFAULT_START_SYMBOL;
@@ -1570,6 +2137,12 @@ int main(int argc, char *argv[]) {
   for (i = 1; i < argc; i++) {
     if (*argv[i] == '-') {
       /* option */
+      if (strcmp(argv[i], "-pic") == 0) {
+        genPIC = 1;
+      } else
+      if (strcmp(argv[i], "-shared") == 0) {
+        genDSO = 1;
+      } else
       if (strcmp(argv[i], "-d") == 0) {
         dataPageAlign = 0;
       } else
@@ -1628,6 +2201,9 @@ int main(int argc, char *argv[]) {
     showGroups();
   }
   resolveSymbols();
+  if (genPIC) {
+    makeGotSegment();
+  }
   relocateModules();
   writeObjModule(startSymbol, outName);
   if (mapName != NULL) {
