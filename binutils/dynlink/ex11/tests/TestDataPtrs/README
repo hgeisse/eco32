@@ -1,0 +1,2 @@
+Test data pointers. Running the program should result
+in $2 = i11 + i12 + i21 = 11 + 12 + 21 = 44 = 0x2C.
