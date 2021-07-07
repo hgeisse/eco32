@@ -1,0 +1,4 @@
+This little program checks that absolute symbols get
+propagated correctly to the combined global symbol
+table. It also shows how such a symbol is accessed
+from C.

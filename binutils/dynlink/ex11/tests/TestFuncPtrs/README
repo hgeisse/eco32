@@ -1,0 +1,2 @@
+Test function pointers. Running the program should result
+in $2 = f11() + f12() + f21() = 11 + 12 + 21 = 44 = 0x2C.

@@ -1,0 +1,38 @@
+Order of tests (with increasing difficulty)
+-------------------------------------------
+
+TestStaticLibs
+    The executable is linked statically.
+    It is compiled using non-PIC.
+    The libraries are archives, produced by ar.
+    They are compiled using non-PIC.
+
+TestStaticPIC
+    The executable is linked statically.
+    It is compiled using PIC.
+    The libraries are archives, produced by ar.
+    They are compiled using PIC.
+
+TestDynamicPIC
+    The executable is linked dynamically.
+    It is compiled using PIC.
+    The libraries are shared objects, produced by ld.
+    They are compiled using PIC.
+
+TestFuncPtrs
+    Same as TestDynamicPIC, but with function pointers
+    in the "middle" library.
+
+TestDataPtrs
+    Same as TestDynamicPIC, but with data pointers
+    in the "middle" library.
+
+TestAbsSym
+    Check that absolute symbols make it to the combined
+    global symbol table. Show access to such a symbol.
+
+TestDynamicLibs
+    The executable is linked dynamically.
+    It is compiled using non-PIC.
+    The libraries are shared objects, produced by ld.
+    They are compiled using PIC.
