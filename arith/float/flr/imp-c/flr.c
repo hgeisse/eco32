@@ -16,6 +16,12 @@ typedef enum { false = 0, true = 1 } Bool;
 
 /**************************************************************/
 
+
+Bool truncate;		/* floor() vs. trunc() */
+
+
+/**************************************************************/
+
 /*
  * display functions
  */
@@ -179,7 +185,7 @@ int fpFlr(_FP_Word x) {
       printf("mxnorm = 0x%08X, exnorm = %d\n", mxnorm, exnorm);
     }
     if (exnorm < 0) {
-      z = sx ? 0xFFFFFFFF : 0x00000000;
+      z = (sx && !truncate) ? 0xFFFFFFFF : 0x00000000;
       Flags |= _FP_X_FLAG;
     } else
     if (exnorm > 31) {
@@ -196,7 +202,7 @@ int fpFlr(_FP_Word x) {
         z = mxnorm >> (23 - exnorm);
         if ((mxnorm << (9 + exnorm)) != 0) {
           Flags |= _FP_X_FLAG;
-          decr = 1;
+          decr = truncate ? 0 : 1;
         } else {
           decr = 0;
         }
@@ -239,7 +245,9 @@ int fpFlr_ref(_FP_Word x) {
 
   X.v = x;
   softfloat_exceptionFlags = 0;
-  z = f32_to_i32(X, softfloat_round_min, true);
+  z = f32_to_i32(X,
+                 truncate ? softfloat_round_minMag : softfloat_round_min,
+                 true);
   Flags_ref |=
     ((softfloat_exceptionFlags & softfloat_flag_invalid)   ? _FP_V_FLAG : 0) |
     ((softfloat_exceptionFlags & softfloat_flag_infinite)  ? _FP_I_FLAG : 0) |
@@ -430,8 +438,8 @@ _FP_Single singles[] = {
   /*
    * other tests
    */
-  //{ 0x4F951295 },
-  //{ 0x4E000000 },
+  { 0x4F951295 },
+  { 0x4E000000 },
   { 0x45800000 },
   { 0xC5800000 },
   { 0x4F000000 },
@@ -610,34 +618,43 @@ void server(void) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -simple | -selected | -intervals | -server\n",
+  printf("usage: %s (-floor | -trunc) "
+         "(-simple | -selected | -intervals | -server)\n",
          myself);
   exit(1);
 }
 
 
 int main(int argc, char *argv[]) {
-  if (argc == 2 && strcmp(argv[1], "-simple") == 0) {
+  if (argc != 3) {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[1], "-floor") == 0) {
+    truncate = false;
+  } else
+  if (strcmp(argv[1], "-trunc") == 0) {
+    truncate = true;
+  } else {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[2], "-simple") == 0) {
     printf("Check simple test cases\n");
     debug = true;
     check_simple();
-    return 0;
-  }
-  if (argc == 2 && strcmp(argv[1], "-selected") == 0) {
+  } else
+  if (strcmp(argv[2], "-selected") == 0) {
     printf("Check selected test cases\n");
     debug = true;
     check_selected();
-    return 0;
-  }
-  if (argc == 2 && strcmp(argv[1], "-intervals") == 0) {
+  } else
+  if (strcmp(argv[2], "-intervals") == 0) {
     printf("Check different intervals\n");
     check_intervals();
-    return 0;
-  }
-  if (argc == 2 && strcmp(argv[1], "-server") == 0) {
+  } else
+  if (strcmp(argv[2], "-server") == 0) {
     server();
-    return 0;
+  } else {
+    usage(argv[0]);
   }
-  usage(argv[0]);
   return 0;
 }

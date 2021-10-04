@@ -27,44 +27,83 @@ all:		$(EXE)
 
 install:	$(EXE)
 
-run-simple:	$(EXE)
-		./$(EXE) -simple
+run-floor-simple:	$(EXE)
+		./$(EXE) -floor -simple
 
-run-selected:	$(EXE)
-		./$(EXE) -selected
+run-floor-selected:	$(EXE)
+		./$(EXE) -floor -selected
 
-run-intervals:	$(EXE)
-		./$(EXE) -intervals
+run-floor-intervals:	$(EXE)
+		./$(EXE) -floor -intervals
 
-run-specials:	$(EXE)
+run-floor-specials:	$(EXE)
 		cat special1.dat | \
-		./flr -server | \
+		./$(EXE) -floor -server | \
 		$(VER) f32_to_i32 -rmin exact
 
-run-extremes:	$(EXE)
+run-floor-extremes:	$(EXE)
 		cat extreme1.dat | \
-		./flr -server | \
+		./$(EXE) -floor -server | \
 		$(VER) f32_to_i32 -rmin exact
 
-run-1M:		$(EXE)
+run-floor-1M:		$(EXE)
 		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
-		./flr -server | \
+		./$(EXE) -floor -server | \
 		$(VER) f32_to_i32 -rmin exact
 
-run-10M:	$(EXE)
-		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
-		./flr -server | \
+run-floor-10M:		$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -floor -server | \
 		$(VER) f32_to_i32 -rmin exact
 
-run-100M:	$(EXE)
-		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
-		./flr -server | \
+run-floor-100M:		$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -floor -server | \
 		$(VER) f32_to_i32 -rmin exact
 
-run-1000M:	$(EXE)
-		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
-		./flr -server | \
+run-floor-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -floor -server | \
 		$(VER) f32_to_i32 -rmin exact
+
+run-trunc-simple:	$(EXE)
+		./$(EXE) -trunc -simple
+
+run-trunc-selected:	$(EXE)
+		./$(EXE) -trunc -selected
+
+run-trunc-intervals:	$(EXE)
+		./$(EXE) -trunc -intervals
+
+run-trunc-specials:	$(EXE)
+		cat special1.dat | \
+		./$(EXE) -trunc -server | \
+		$(VER) f32_to_i32 -rminMag exact
+
+run-trunc-extremes:	$(EXE)
+		cat extreme1.dat | \
+		./$(EXE) -trunc -server | \
+		$(VER) f32_to_i32 -rminMag exact
+
+run-trunc-1M:		$(EXE)
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
+		./$(EXE) -trunc -server | \
+		$(VER) f32_to_i32 -rminMag exact
+
+run-trunc-10M:		$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -trunc -server | \
+		$(VER) f32_to_i32 -rminMag exact
+
+run-trunc-100M:		$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -trunc -server | \
+		$(VER) f32_to_i32 -rminMag exact
+
+run-trunc-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -trunc -server | \
+		$(VER) f32_to_i32 -rminMag exact
 
 $(EXE):		$(SRC)
 		gcc -g -Wall -I$(INCDIR) -o $(EXE) $(SRC) $(LIB) -lm
