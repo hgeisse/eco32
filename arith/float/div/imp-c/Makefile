@@ -44,32 +44,32 @@ run-intervals:	$(EXE)
 
 run-specials:	$(EXE)
 		cat special2.dat | \
-		./div -server | \
+		./$(EXE) -server | \
 		$(VER) -rnear_even -tininessbefore f32_div
 
 run-extremes:	$(EXE)
 		cat extreme2.dat | \
-		./div -server | \
+		./$(EXE) -server | \
 		$(VER) -rnear_even -tininessbefore f32_div
 
 run-1M:		$(EXE)
 		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
-		./div -server | \
+		./$(EXE) -server | \
 		$(VER) -rnear_even -tininessbefore f32_div
 
 run-10M:	$(EXE)
 		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
-		./div -server | \
+		./$(EXE) -server | \
 		$(VER) -rnear_even -tininessbefore f32_div
 
 run-100M:	$(EXE)
 		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
-		./div -server | \
+		./$(EXE) -server | \
 		$(VER) -rnear_even -tininessbefore f32_div
 
 run-1000M:	$(EXE)
 		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
-		./div -server | \
+		./$(EXE) -server | \
 		$(VER) -rnear_even -tininessbefore f32_div
 
 $(EXE):		$(SRC)
