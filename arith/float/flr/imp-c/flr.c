@@ -618,8 +618,9 @@ void server(void) {
 
 
 void usage(char *myself) {
-  printf("usage: %s (-floor | -trunc) "
-         "(-simple | -selected | -intervals | -server)\n",
+  printf("usage: %s\n"
+         "       (-floor | -trunc)\n"
+         "       (-simple | -selected | -intervals | -server)\n",
          myself);
   exit(1);
 }
