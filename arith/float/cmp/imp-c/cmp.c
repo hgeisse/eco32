@@ -194,14 +194,14 @@ Bool fpCmp(_FP_Word x, _FP_Word y) {
       Flags |= _FP_V_FLAG;
     }
   } else
-  if (IS_NAN(ex, fx)) {
+  if (IS_NAN(ex, fx) && !IS_NAN(ey, fy)) {
     cond = COND_UN;
     if (!IS_QUIET(fx) ||
         !(predicate == PRED_EQ || predicate == PRED_NE)) {
       Flags |= _FP_V_FLAG;
     }
   } else
-  if (IS_NAN(ey, fy)) {
+  if (!IS_NAN(ex, fx) && IS_NAN(ey, fy)) {
     cond = COND_UN;
     if (!IS_QUIET(fy) ||
         !(predicate == PRED_EQ || predicate == PRED_NE)) {
