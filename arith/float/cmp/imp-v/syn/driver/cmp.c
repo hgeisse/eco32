@@ -263,7 +263,7 @@ void sndDevice(int pred, _FP_Word x, _FP_Word y) {
 
 
 void rcvDevice(Bool *zp, _FP_Word *fp) {
-  *zp = (Bool) rcvByte();
+  *zp = (Bool) rcvWord();
   *fp = (_FP_Word) rcvByte();
 }
 
