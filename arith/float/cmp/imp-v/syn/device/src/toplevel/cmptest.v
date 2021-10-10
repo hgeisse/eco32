@@ -441,7 +441,8 @@ module cmptest(clk_in,
           if (~xmt_rdy) begin
             next_state = 4'hD;
           end else begin
-            next_state = 4'h0;
+            // back to start state
+            next_state = 4'hE;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
