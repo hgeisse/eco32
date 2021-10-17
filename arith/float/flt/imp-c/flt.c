@@ -130,10 +130,10 @@ Byte combine2(Byte left, Byte right) {
   if ((left & 2) != 0 && (right & 2) != 0) {
     r = 4;
   } else
-  if ((left & 2) == 0) {
-    r = left;
-  } else {
+  if ((left & 2) != 0) {
     r = right | 2;
+  } else {
+    r = left;
   }
   return r;
 }
@@ -145,10 +145,10 @@ Byte combine3(Byte left, Byte right) {
   if ((left & 4) != 0 && (right & 4) != 0) {
     r = 8;
   } else
-  if ((left & 4) == 0) {
-    r = left;
-  } else {
+  if ((left & 4) != 0) {
     r = right | 4;
+  } else {
+    r = left;
   }
   return r;
 }
@@ -160,10 +160,10 @@ Byte combine4(Byte left, Byte right) {
   if ((left & 8) != 0 && (right & 8) != 0) {
     r = 16;
   } else
-  if ((left & 8) == 0) {
-    r = left;
-  } else {
+  if ((left & 8) != 0) {
     r = right | 8;
+  } else {
+    r = left;
   }
   return r;
 }
@@ -175,10 +175,10 @@ Byte combine5(Byte left, Byte right) {
   if ((left & 16) != 0 && (right & 16) != 0) {
     r = 32;
   } else
-  if ((left & 16) == 0) {
-    r = left;
-  } else {
+  if ((left & 16) != 0) {
     r = right | 16;
+  } else {
+    r = left;
   }
   return r;
 }
