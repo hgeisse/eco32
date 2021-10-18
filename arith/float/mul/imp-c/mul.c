@@ -199,7 +199,7 @@ void check_mul24(void) {
 typedef unsigned char Byte;
 
 
-Byte encode(Byte two_bits) {
+Byte encode2(Byte two_bits) {
   Byte r;
 
   switch (two_bits) {
@@ -220,93 +220,92 @@ Byte encode(Byte two_bits) {
 }
 
 
-Byte combine1(Byte right, Byte left) {
+Byte combine2(Byte left, Byte right) {
   Byte r;
 
   if ((left & 2) != 0 && (right & 2) != 0) {
     r = 4;
   } else
-  if ((left & 2) == 0) {
-    r = left;
-  } else {
+  if ((left & 2) != 0) {
     r = right | 2;
+  } else {
+    r = left;
   }
   return r;
 }
 
 
-Byte combine2(Byte right, Byte left) {
+Byte combine3(Byte left, Byte right) {
   Byte r;
 
   if ((left & 4) != 0 && (right & 4) != 0) {
     r = 8;
   } else
-  if ((left & 4) == 0) {
-    r = left;
-  } else {
+  if ((left & 4) != 0) {
     r = right | 4;
+  } else {
+    r = left;
   }
   return r;
 }
 
 
-Byte combine3(Byte right, Byte left) {
+Byte combine4(Byte left, Byte middle, Byte right) {
   Byte r;
 
-  if ((left & 8) != 0 && (right & 8) != 0) {
-    r = 16;
+  if ((left & 8) != 0 && (middle & 8) != 0 && (right & 8) != 0) {
+    r = 24;
   } else
-  if ((left & 8) == 0) {
-    r = left;
+  if ((left & 8) != 0 && (middle & 8) != 0) {
+    r = right | 16;
+  } else
+  if ((left & 8) != 0) {
+    r = middle | 8;
   } else {
-    r = right | 8;
+    r = left;
   }
   return r;
 }
 
 
 int lzc24(_FP_Word m) {
-  Byte lz_0_0, lz_0_1, lz_0_2, lz_0_3, lz_0_4, lz_0_5;
-  Byte lz_0_6, lz_0_7, lz_0_8, lz_0_9, lz_0_A, lz_0_B;
-  Byte lz_1_0, lz_1_1, lz_1_2, lz_1_3, lz_1_4, lz_1_5;
-  Byte lz_2_0, lz_2_1, lz_2_2;
-  Byte lz_3_0, lz_3_1;
-  Byte lz_4_0;
+  Byte lz1_b, lz1_a, lz1_9, lz1_8, lz1_7, lz1_6;
+  Byte lz1_5, lz1_4, lz1_3, lz1_2, lz1_1, lz1_0;
+  Byte lz2_5, lz2_4, lz2_3, lz2_2, lz2_1, lz2_0;
+  Byte lz3_2, lz3_1, lz3_0;
+  Byte lz4_0;
 
-  /* stage 0: encode 2 bits */
-  lz_0_0 = encode((m >>  0) & 0x03);
-  lz_0_1 = encode((m >>  2) & 0x03);
-  lz_0_2 = encode((m >>  4) & 0x03);
-  lz_0_3 = encode((m >>  6) & 0x03);
-  lz_0_4 = encode((m >>  8) & 0x03);
-  lz_0_5 = encode((m >> 10) & 0x03);
-  lz_0_6 = encode((m >> 12) & 0x03);
-  lz_0_7 = encode((m >> 14) & 0x03);
-  lz_0_8 = encode((m >> 16) & 0x03);
-  lz_0_9 = encode((m >> 18) & 0x03);
-  lz_0_A = encode((m >> 20) & 0x03);
-  lz_0_B = encode((m >> 22) & 0x03);
-  /* stage 1: symmetrical combine 2+2 bits */
-  lz_1_0 = combine1(lz_0_0, lz_0_1);
-  lz_1_1 = combine1(lz_0_2, lz_0_3);
-  lz_1_2 = combine1(lz_0_4, lz_0_5);
-  lz_1_3 = combine1(lz_0_6, lz_0_7);
-  lz_1_4 = combine1(lz_0_8, lz_0_9);
-  lz_1_5 = combine1(lz_0_A, lz_0_B);
-  /* stage 2: symmetrical combine 4+4 bits */
-  lz_2_0 = combine2(lz_1_0, lz_1_1);
-  lz_2_1 = combine2(lz_1_2, lz_1_3);
-  lz_2_2 = combine2(lz_1_4, lz_1_5);
-  /* stage 3: symmetrical combine 8+8 bits, leave top 8 bits alone */
-  lz_3_0 = combine3(lz_2_0, lz_2_1);
-  lz_3_1 = lz_2_2;
-  /* stage4: asymmetrical combine 8+16 bits */
-  if (lz_3_1 & 8) {
-    lz_4_0 = 8 + lz_3_0;
-  } else {
-    lz_4_0 = lz_3_1;
-  }
-  return lz_4_0;
+  /* stage 1: encode 2 bits */
+  /* representing the LZC of 2 bits */
+  lz1_b = encode2((m >> 22) & 0x03);
+  lz1_a = encode2((m >> 20) & 0x03);
+  lz1_9 = encode2((m >> 18) & 0x03);
+  lz1_8 = encode2((m >> 16) & 0x03);
+  lz1_7 = encode2((m >> 14) & 0x03);
+  lz1_6 = encode2((m >> 12) & 0x03);
+  lz1_5 = encode2((m >> 10) & 0x03);
+  lz1_4 = encode2((m >>  8) & 0x03);
+  lz1_3 = encode2((m >>  6) & 0x03);
+  lz1_2 = encode2((m >>  4) & 0x03);
+  lz1_1 = encode2((m >>  2) & 0x03);
+  lz1_0 = encode2((m >>  0) & 0x03);
+  /* stage 2: combine 2+2 bits to 3 bits */
+  /* representing the LZC of 4 bits */
+  lz2_5 = combine2(lz1_b, lz1_a);
+  lz2_4 = combine2(lz1_9, lz1_8);
+  lz2_3 = combine2(lz1_7, lz1_6);
+  lz2_2 = combine2(lz1_5, lz1_4);
+  lz2_1 = combine2(lz1_3, lz1_2);
+  lz2_0 = combine2(lz1_1, lz1_0);
+  /* stage 3: combine 3+3 bits to 4 bits */
+  /* representing the LZC of 8 bits */
+  lz3_2 = combine3(lz2_5, lz2_4);
+  lz3_1 = combine3(lz2_3, lz2_2);
+  lz3_0 = combine3(lz2_1, lz2_0);
+  /* stage 4: combine 4+4+4 bits to 5 bits */
+  /* representing the LZC of 24 bits */
+  lz4_0 = combine4(lz3_2, lz3_1, lz3_0);
+  return lz4_0;
 }
 
 
