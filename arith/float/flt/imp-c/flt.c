@@ -362,8 +362,8 @@ _FP_Word Flags = 0;
 _FP_Word fpFlt(int x) {
   _FP_Word sz, ez, fz;
   _FP_Word xabs;
-  _FP_Word m, ml;
   int lx;
+  _FP_Word m;
   _FP_Word z;
   Bool round, sticky, odd, incr;
 
@@ -389,26 +389,14 @@ _FP_Word fpFlt(int x) {
     if (debug) {
       printf("xabs = 0x%08X, lx = %d\n", xabs, lx);
     }
-    if (lx >= 8) {
-      if (debug) {
-        printf("shift xabs left by %d bits\n", lx - 8);
-      }
-      m = xabs << (lx - 8);
-      ml = 0;
-    } else {
-      if (debug) {
-        printf("shift xabs right by %d bits\n", 8 - lx);
-      }
-      m = xabs >> (8 - lx);
-      ml = xabs << (32 - (8 - lx));
-    }
+    m = xabs << lx;
     ez = 158 - lx;
     if (debug) {
-      printf("m = 0x%08X, ml = 0x%08X, ez = %d\n", m, ml, ez);
+      printf("m = 0x%08X, ez = %d\n", m, ez);
     }
-    fz = m & ~(1 << 23);
-    round = ((ml & (1 << 31)) != 0);
-    sticky = ((ml << 1) != 0);
+    fz = (m & ~(1 << 31)) >> 8;
+    round = ((m & (1 << 7)) != 0);
+    sticky = ((m & 0x7F) != 0);
     odd = ((fz & 1) != 0);
     incr = round && (sticky || odd);
     if (debug) {
