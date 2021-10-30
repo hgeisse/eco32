@@ -7,10 +7,12 @@
 `default_nettype none
 
 
-`define PRED_EQ		2'b00
-`define PRED_NE		2'b01
-`define PRED_LE		2'b10
-`define PRED_LT		2'b11
+`define PRED_EQ		3'b000
+`define PRED_NE		3'b001
+`define PRED_LE		3'b010
+`define PRED_LT		3'b011
+`define PRED_ULE	3'b100
+`define PRED_ULT	3'b101
 
 
 module fpcmp(clk, run, stall,
@@ -18,7 +20,7 @@ module fpcmp(clk, run, stall,
     input clk;
     input run;
     output stall;
-    input [1:0] pred;
+    input [2:0] pred;
     input [31:0] x;
     input [31:0] y;
     output z;
@@ -182,11 +184,14 @@ module fpcmp(clk, run, stall,
   //
 
   always @(*) begin
-    case (pred[1:0])
-      `PRED_EQ: cond_mask[3:0] = 4'b0100;
-      `PRED_NE: cond_mask[3:0] = 4'b1011;
-      `PRED_LE: cond_mask[3:0] = 4'b1100;
-      `PRED_LT: cond_mask[3:0] = 4'b1000;
+    case (pred[2:0])
+      `PRED_EQ:  cond_mask[3:0] = 4'b0100;
+      `PRED_NE:  cond_mask[3:0] = 4'b1011;
+      `PRED_LE:  cond_mask[3:0] = 4'b1100;
+      `PRED_LT:  cond_mask[3:0] = 4'b1000;
+      `PRED_ULE: cond_mask[3:0] = 4'b1101;
+      `PRED_ULT: cond_mask[3:0] = 4'b1001;
+      default:   cond_mask[3:0] = 4'b0000;
     endcase
   end
 
