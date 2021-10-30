@@ -12,7 +12,7 @@ module fptest;
   reg clk;
   reg run;
   wire stall;
-  reg [1:0] pred;
+  reg [2:0] pred;
   reg [31:0] x;
   reg [31:0] y;
   wire z;
@@ -56,7 +56,7 @@ module fptest;
     .clk(clk),
     .run(run),
     .stall(stall),
-    .pred(pred[1:0]),
+    .pred(pred[2:0]),
     .x(x[31:0]),
     .y(y[31:0]),
     .z(z),
