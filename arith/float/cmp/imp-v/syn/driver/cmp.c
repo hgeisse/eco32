@@ -25,9 +25,11 @@ typedef enum { false = 0, true = 1 } Bool;
 #define PRED_NE		1
 #define PRED_LE		2
 #define PRED_LT		3
+#define PRED_ULE	4
+#define PRED_ULT	5
 
 
-int predicate;		/* eq() vs. ne() vs. le() vs. lt() */
+int predicate;		/* one of eq, ne, le, lt, ule, ult */
 
 
 /**************************************************************/
@@ -318,12 +320,23 @@ Bool fpCmp_ref(_FP_Word x, _FP_Word y) {
       Z = !f32_eq(X, Y);
       break;
     case PRED_LE:
-      /* Note: The following is not equal to "less or equal"! */
+      /* Note: The following is not equal to "less than or equal"! */
       Z = f32_le(X, Y);
       break;
     case PRED_LT:
       Z = f32_lt(X, Y);
       break;
+    case PRED_ULE:
+      /* Note: ule(x, y) = not(gt(x, y)) = not(lt(y, x)) */
+      Z = !f32_lt(Y, X);
+      break;
+    case PRED_ULT:
+      /* Note: ult(x, y) = not(ge(x, y)) = not(le(y, x)) */
+      Z = !f32_le(Y, X);
+      break;
+    default:
+      fprintf(stderr, "FATAL INTERNAL ERROR 2\n");
+      exit(1);
   }
   Flags_ref |=
     ((softfloat_exceptionFlags & softfloat_flag_invalid)   ? _FP_V_FLAG : 0) |
@@ -731,7 +744,7 @@ void server(void) {
 
 void usage(char *myself) {
   printf("usage: %s\n"
-         "       (-eq | -ne | -le | -lt)\n"
+         "       (-eq | -ne | -le | -lt | -ule | -ult)\n"
          "       (-simple | -selected | -intervals | -server)\n",
          myself);
   exit(1);
@@ -753,6 +766,12 @@ int main(int argc, char *argv[]) {
   } else
   if (strcmp(argv[1], "-lt") == 0) {
     predicate = PRED_LT;
+  } else
+  if (strcmp(argv[1], "-ule") == 0) {
+    predicate = PRED_ULE;
+  } else
+  if (strcmp(argv[1], "-ult") == 0) {
+    predicate = PRED_ULT;
   } else {
     usage(argv[0]);
   }

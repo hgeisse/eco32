@@ -23,9 +23,9 @@ VER = ../../../../test/bin/testfloat_ver
 SRC = cmp.c
 EXE = cmp
 
-all:		$(EXE) cmpl
+all:		$(EXE) cmpl xcmpl
 
-install:	$(EXE) cmpl
+install:	$(EXE) cmpl xcmpl
 
 run-eq-simple:		$(EXE)
 		./$(EXE) -eq -simple
@@ -189,11 +189,104 @@ run-lt-1000M:	$(EXE)
 		./$(EXE) -lt -server | \
 		$(VER) f32_lt
 
+run-ule-simple:		$(EXE)
+		./$(EXE) -ule -simple
+
+run-ule-selected:	$(EXE)
+		./$(EXE) -ule -selected
+
+run-ule-intervals:	$(EXE)
+		./$(EXE) -ule -intervals
+
+run-ule-specials:	$(EXE) xcmpl
+		cat special2.dat | \
+		./$(EXE) -ule -server | \
+		./xcmpl | \
+		$(VER) f32_lt
+
+run-ule-extremes:	$(EXE) xcmpl
+		cat extreme2.dat | \
+		./$(EXE) -ule -server | \
+		./xcmpl | \
+		$(VER) f32_lt
+
+run-ule-1M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
+		./$(EXE) -ule -server | \
+		./xcmpl | \
+		$(VER) f32_lt
+
+run-ule-10M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ule -server | \
+		./xcmpl | \
+		$(VER) f32_lt
+
+run-ule-100M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ule -server | \
+		./xcmpl | \
+		$(VER) f32_lt
+
+run-ule-1000M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ule -server | \
+		./xcmpl | \
+		$(VER) f32_lt
+
+run-ult-simple:		$(EXE)
+		./$(EXE) -ult -simple
+
+run-ult-selected:	$(EXE)
+		./$(EXE) -ult -selected
+
+run-ult-intervals:	$(EXE)
+		./$(EXE) -ult -intervals
+
+run-ult-specials:	$(EXE) xcmpl
+		cat special2.dat | \
+		./$(EXE) -ult -server | \
+		./xcmpl | \
+		$(VER) f32_le
+
+run-ult-extremes:	$(EXE) xcmpl
+		cat extreme2.dat | \
+		./$(EXE) -ult -server | \
+		./xcmpl | \
+		$(VER) f32_le
+
+run-ult-1M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
+		./$(EXE) -ult -server | \
+		./xcmpl | \
+		$(VER) f32_le
+
+run-ult-10M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ult -server | \
+		./xcmpl | \
+		$(VER) f32_le
+
+run-ult-100M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ult -server | \
+		./xcmpl | \
+		$(VER) f32_le
+
+run-ult-1000M:	$(EXE) xcmpl
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ult -server | \
+		./xcmpl | \
+		$(VER) f32_le
+
 $(EXE):		$(SRC)
 		gcc -g -Wall -I$(INCDIR) -o $(EXE) $(SRC) $(LIB) -lm
 
 cmpl:		cmpl.c
 		gcc -g -Wall -o cmpl cmpl.c
 
+xcmpl:		xcmpl.c
+		gcc -g -Wall -o xcmpl xcmpl.c
+
 clean:
-		rm -f *~ $(EXE) cmpl
+		rm -f *~ $(EXE) cmpl xcmpl

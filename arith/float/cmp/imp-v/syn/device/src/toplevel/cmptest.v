@@ -40,7 +40,7 @@ module cmptest(clk_in,
   wire z_out;
   wire [4:0] flags_out;
   // data buffers
-  reg [1:0] pred;
+  reg [2:0] pred;
   reg wr_pred;
   reg [31:0] x;
   reg [31:0] y;
@@ -92,7 +92,7 @@ module cmptest(clk_in,
     .clk(clk),
     .run(run),
     .stall(stall),
-    .pred(pred[1:0]),
+    .pred(pred[2:0]),
     .x(x[31:0]),
     .y(y[31:0]),
     .z(z_out),
@@ -105,7 +105,7 @@ module cmptest(clk_in,
 
   always @(posedge clk) begin
     if (wr_pred) begin
-      pred[1:0] <= rcv_out[1:0];
+      pred[2:0] <= rcv_out[2:0];
     end
   end
 
