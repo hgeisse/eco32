@@ -7,6 +7,8 @@ mul     done      --            --               --
 
 div     done      --            --               --
 
+sqr     done      --            --               --
+
 flr     done      --            --               --
 
 flt     done      done          done             done
