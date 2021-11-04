@@ -17,7 +17,12 @@ typedef enum { false = 0, true = 1 } Bool;
 /**************************************************************/
 
 
-Bool truncate;		/* floor() vs. trunc() */
+#define DIR_FLOOR	0
+#define DIR_TRUNC	1
+#define DIR_CEIL	2
+
+
+int direction;		/* one of floor, trunc, ceil */
 
 
 /**************************************************************/
@@ -151,7 +156,7 @@ int fpFlr(_FP_Word x) {
   _FP_Word mxnorm;
   int exnorm;
   int z;
-  Bool decr;
+  Bool corr;
 
   if (debug) {
     printf("------------------------------------------------\n");
@@ -185,7 +190,20 @@ int fpFlr(_FP_Word x) {
       printf("mxnorm = 0x%08X, exnorm = %d\n", mxnorm, exnorm);
     }
     if (exnorm < 0) {
-      z = (sx && !truncate) ? 0xFFFFFFFF : 0x00000000;
+      switch (direction) {
+        case DIR_FLOOR:
+          z = sx ? 0xFFFFFFFF : 0x00000000;
+          break;
+        case DIR_TRUNC:
+          z = 0x00000000;
+          break;
+        case DIR_CEIL:
+          z = sx ? 0x00000000 : 0x00000001;
+          break;
+        default:
+          fprintf(stderr, "FATAL INTERNAL ERROR 2\n");
+          exit(1);
+      }
       Flags |= _FP_X_FLAG;
     } else
     if (exnorm > 31) {
@@ -202,16 +220,27 @@ int fpFlr(_FP_Word x) {
         z = mxnorm >> (23 - exnorm);
         if ((mxnorm << (9 + exnorm)) != 0) {
           Flags |= _FP_X_FLAG;
-          decr = truncate ? 0 : 1;
+          corr = true;
         } else {
-          decr = 0;
+          corr = false;
         }
       } else {
         z = mxnorm << (exnorm - 23);
-        decr = 0;
+        corr = false;
       }
-      if (sx) {
-        z = -z - decr;
+      switch (direction) {
+        case DIR_FLOOR:
+          z = sx ? -z - corr : z;
+          break;
+        case DIR_TRUNC:
+          z = sx ? -z : z;
+          break;
+        case DIR_CEIL:
+          z = sx ? -z : z + corr;
+          break;
+        default:
+          fprintf(stderr, "FATAL INTERNAL ERROR 3\n");
+          exit(1);
       }
     }
   }
@@ -245,9 +274,20 @@ int fpFlr_ref(_FP_Word x) {
 
   X.v = x;
   softfloat_exceptionFlags = 0;
-  z = f32_to_i32(X,
-                 truncate ? softfloat_round_minMag : softfloat_round_min,
-                 true);
+  switch (direction) {
+    case DIR_FLOOR:
+      z = f32_to_i32(X, softfloat_round_min, true);
+      break;
+    case DIR_TRUNC:
+      z = f32_to_i32(X, softfloat_round_minMag, true);
+      break;
+    case DIR_CEIL:
+      z = f32_to_i32(X, softfloat_round_max, true);
+      break;
+    default:
+      fprintf(stderr, "FATAL INTERNAL ERROR 4\n");
+      exit(1);
+  }
   Flags_ref |=
     ((softfloat_exceptionFlags & softfloat_flag_invalid)   ? _FP_V_FLAG : 0) |
     ((softfloat_exceptionFlags & softfloat_flag_infinite)  ? _FP_I_FLAG : 0) |
@@ -619,7 +659,7 @@ void server(void) {
 
 void usage(char *myself) {
   printf("usage: %s\n"
-         "       (-floor | -trunc)\n"
+         "       (-floor | -trunc | -ceil)\n"
          "       (-simple | -selected | -intervals | -server)\n",
          myself);
   exit(1);
@@ -631,10 +671,13 @@ int main(int argc, char *argv[]) {
     usage(argv[0]);
   }
   if (strcmp(argv[1], "-floor") == 0) {
-    truncate = false;
+    direction = DIR_FLOOR;
   } else
   if (strcmp(argv[1], "-trunc") == 0) {
-    truncate = true;
+    direction = DIR_TRUNC;
+  } else
+  if (strcmp(argv[1], "-ceil") == 0) {
+    direction = DIR_CEIL;
   } else {
     usage(argv[0]);
   }

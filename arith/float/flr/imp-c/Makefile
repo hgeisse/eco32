@@ -105,6 +105,45 @@ run-trunc-1000M:	$(EXE)
 		./$(EXE) -trunc -server | \
 		$(VER) -rminMag -exact f32_to_i32
 
+run-ceil-simple:	$(EXE)
+		./$(EXE) -ceil -simple
+
+run-ceil-selected:	$(EXE)
+		./$(EXE) -ceil -selected
+
+run-ceil-intervals:	$(EXE)
+		./$(EXE) -ceil -intervals
+
+run-ceil-specials:	$(EXE)
+		cat special1.dat | \
+		./$(EXE) -ceil -server | \
+		$(VER) -rmax -exact f32_to_i32
+
+run-ceil-extremes:	$(EXE)
+		cat extreme1.dat | \
+		./$(EXE) -ceil -server | \
+		$(VER) -rmax -exact f32_to_i32
+
+run-ceil-1M:		$(EXE)
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
+		./$(EXE) -ceil -server | \
+		$(VER) -rmax -exact f32_to_i32
+
+run-ceil-10M:		$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -ceil -server | \
+		$(VER) -rmax -exact f32_to_i32
+
+run-ceil-100M:		$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -ceil -server | \
+		$(VER) -rmax -exact f32_to_i32
+
+run-ceil-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -ceil -server | \
+		$(VER) -rmax -exact f32_to_i32
+
 $(EXE):		$(SRC)
 		gcc -g -Wall -I$(INCDIR) -o $(EXE) $(SRC) $(LIB) -lm
 
