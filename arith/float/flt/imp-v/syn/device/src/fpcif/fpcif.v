@@ -1,5 +1,5 @@
 //
-// fpflt.v -- floating-point float function
+// fpcif.v -- floating-point cif function
 //
 
 
@@ -7,7 +7,7 @@
 `default_nettype none
 
 
-module fpflt(clk, run, stall,
+module fpcif(clk, run, stall,
              x, z, flags);
     input clk;
     input run;

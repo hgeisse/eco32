@@ -50,7 +50,7 @@ module fptest;
   // module instantiation
   //
 
-  fpflt fpflt_1(
+  fpcif fpcif_1(
     .clk(clk),
     .run(run),
     .stall(stall),

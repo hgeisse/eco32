@@ -1,5 +1,5 @@
 /*
- * flt.c -- implementation and test of conversion to float
+ * cif.c -- implementation and test of conversion integer to float
  */
 
 
@@ -11,7 +11,7 @@
 #include "../../include/fp.h"
 
 
-#define PATH_TO_FPSERVER	"../device/fpserver"
+#define SERIAL_PORT		"/dev/ttyUSB0"
 #define LINE_SIZE		200
 
 
@@ -100,19 +100,22 @@ void showInt(char *name, int n) {
 /**************************************************************/
 
 /*
- * device communication
+ * serial port
  */
 
 
 #include <stdarg.h>
+#include <fcntl.h>
 #include <unistd.h>
-#include <signal.h>
+#include <termios.h>
 
 
-pid_t fpserver;
+int sfd = -1;
+struct termios origOptions;
+struct termios currOptions;
 
-FILE *writeToDevice;
-FILE *readFromDevice;
+
+void serialClose(void);
 
 
 void fatalError(char *fmt, ...) {
@@ -123,94 +126,145 @@ void fatalError(char *fmt, ...) {
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   va_end(ap);
+  serialClose();
   exit(1);
 }
 
 
-void startDevice(char *pathToFPServer) {
-  int pipeToDevice[2];
-  int pipeToDriver[2];
-
-  if (pipe(pipeToDevice) < 0) {
-    fatalError("cannot open pipe");
+void serialOpen(char *serialPort) {
+  sfd = open(serialPort, O_RDWR | O_NOCTTY | O_NDELAY);
+  if (sfd == -1) {
+    fatalError("cannot open serial port '%s'", serialPort);
   }
-  if (pipe(pipeToDriver) < 0) {
-    fatalError("cannot open pipe");
-  }
-  fpserver = fork();
-  if (fpserver < 0) {
-    fatalError("cannot fork");
-  }
-  if (fpserver == 0) {
-    /* device */
-    close(pipeToDevice[1]);
-    close(pipeToDriver[0]);
-    dup2(pipeToDevice[0], 0);
-    dup2(pipeToDriver[1], 1);
-    close(pipeToDevice[0]);
-    close(pipeToDriver[1]);
-    execl(pathToFPServer, pathToFPServer, NULL);
-    fatalError("cannot exec FP server '%s'", pathToFPServer);
-  } else {
-    /* driver */
-    close(pipeToDevice[0]);
-    close(pipeToDriver[1]);
-    writeToDevice = fdopen(pipeToDevice[1], "w");
-    if (writeToDevice == NULL) {
-      fatalError("cannot open writeToDevice");
-    }
-    readFromDevice = fdopen(pipeToDriver[0], "r");
-    if (readFromDevice == NULL) {
-      fatalError("cannot open readFromDevice");
-    }
-  }
+  tcgetattr(sfd, &origOptions);
+  currOptions = origOptions;
+  cfsetispeed(&currOptions, B115200);
+  cfsetospeed(&currOptions, B115200);
+  currOptions.c_cflag |= (CLOCAL | CREAD);
+  currOptions.c_cflag &= ~PARENB;
+  currOptions.c_cflag &= ~CSTOPB;
+  currOptions.c_cflag &= ~CSIZE;
+  currOptions.c_cflag |= CS8;
+  currOptions.c_cflag &= ~CRTSCTS;
+  currOptions.c_lflag &= ~(ICANON | ECHO | ECHONL | ISIG | IEXTEN);
+  currOptions.c_iflag &= ~(IGNBRK | BRKINT | IGNPAR | PARMRK);
+  currOptions.c_iflag &= ~(INPCK | ISTRIP | INLCR | IGNCR | ICRNL);
+  currOptions.c_iflag &= ~(IXON | IXOFF | IXANY);
+  currOptions.c_oflag &= ~(OPOST | ONLCR | OCRNL | ONOCR | ONLRET);
+  tcsetattr(sfd, TCSANOW, &currOptions);
 }
 
 
-void stopDevice(void) {
-  kill(fpserver, SIGKILL);
+void serialClose(void) {
+  if (sfd < 0) {
+    return;
+  }
+  tcsetattr(sfd, TCSANOW, &origOptions);
+  close(sfd);
+  sfd = -1;
 }
 
 
-void sndDevice(_FP_Word x) {
-  fprintf(writeToDevice, "%08X\n", x);
-  fflush(writeToDevice);
+Bool serialSnd(unsigned char b) {
+  int n;
+
+  n = write(sfd, &b, 1);
+  return n == 1;
 }
 
 
-void rcvDevice(_FP_Word *zp, _FP_Word *fp) {
-  static Bool firstLine = true;
-  char line[LINE_SIZE];
-  char *endptr;
+Bool serialRcv(unsigned char *bp) {
+  int n;
 
-  if (fgets(line, LINE_SIZE, readFromDevice) == NULL) {
-    fatalError("cannot read answer from simulation");
-  }
-  if (firstLine) {
-    firstLine = false;
-    if (strncmp(line, "VCD info: dumpfile", 18) == 0) {
-      if (fgets(line, LINE_SIZE, readFromDevice) == NULL) {
-        fatalError("cannot read answer from simulation");
-      }
-    }
-  }
-  endptr = line;
-  *zp = strtoul(endptr, &endptr, 16);
-  *fp = strtoul(endptr, &endptr, 16);
+  n = read(sfd, bp, 1);
+  return n == 1;
 }
 
 
 /**************************************************************/
 
 /*
- * floating-point float function, implementation
+ * sending and receiving bytes and words
+ */
+
+
+void sndByte(unsigned char b) {
+  while (!serialSnd(b)) ;
+}
+
+
+void sndWord(unsigned int w) {
+  while (!serialSnd((w >>  0) & 0xFF)) ;
+  while (!serialSnd((w >>  8) & 0xFF)) ;
+  while (!serialSnd((w >> 16) & 0xFF)) ;
+  while (!serialSnd((w >> 24) & 0xFF)) ;
+}
+
+
+unsigned char rcvByte(void) {
+  unsigned char b;
+
+  while (!serialRcv(&b)) ;
+  return b;
+}
+
+
+unsigned int rcvWord(void) {
+  unsigned int w;
+  unsigned char b;
+
+  w = 0;
+  while (!serialRcv(&b)) ;
+  w |= (unsigned int) b <<  0;
+  while (!serialRcv(&b)) ;
+  w |= (unsigned int) b <<  8;
+  while (!serialRcv(&b)) ;
+  w |= (unsigned int) b << 16;
+  while (!serialRcv(&b)) ;
+  w |= (unsigned int) b << 24;
+  return w;
+}
+
+
+/**************************************************************/
+
+/*
+ * device communication
+ */
+
+
+void startDevice(char *serialPort) {
+  serialOpen(serialPort);
+}
+
+
+void stopDevice(void) {
+  serialClose();
+}
+
+
+void sndDevice(_FP_Word x) {
+  sndWord(x);
+}
+
+
+void rcvDevice(_FP_Word *zp, _FP_Word *fp) {
+  *zp = (_FP_Word) rcvWord();
+  *fp = (_FP_Word) rcvByte();
+}
+
+
+/**************************************************************/
+
+/*
+ * floating-point cif function, implementation
  */
 
 
 _FP_Word Flags = 0;
 
 
-_FP_Word fpFlt(int x) {
+_FP_Word fpCif(int x) {
   _FP_Word z;
 
   sndDevice(x);
@@ -222,7 +276,7 @@ _FP_Word fpFlt(int x) {
 /**************************************************************/
 
 /*
- * floating-point float function, internal reference
+ * floating-point cif function, internal reference
  */
 
 
@@ -232,7 +286,7 @@ _FP_Word fpFlt(int x) {
 _FP_Word Flags_ref = 0;
 
 
-_FP_Word fpFlt_ref(int x) {
+_FP_Word fpCif_ref(int x) {
   float32_t Z;
 
   softfloat_detectTininess = softfloat_tininess_beforeRounding;
@@ -290,9 +344,9 @@ void check_simple(void) {
   for (i = 1; i <= 20; i++) {
     x = i;
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -325,9 +379,9 @@ void check_simple(void) {
   for (i = 1; i <= 20; i++) {
     x = -i;
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -360,9 +414,9 @@ void check_simple(void) {
   for (i = 0; i <= 31; i++) {
     x = (1 << i);
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -448,9 +502,9 @@ void check_selected(void) {
   for (i = 0; i < numSingles; i++) {
     x = singles[i].x;
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -501,9 +555,9 @@ void check_intervals(void) {
   x = 0x3FABBBBB;
   do {
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     count++;
     if (!compareEqual(z, r) || Flags != Flags_ref) {
       if (errors == 0) {
@@ -523,9 +577,9 @@ void check_intervals(void) {
   x = 0x3F000000;
   do {
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     count++;
     if (!compareEqual(z, r) || Flags != Flags_ref) {
       if (errors == 0) {
@@ -552,9 +606,9 @@ void check_intervals(void) {
       x |= SKIP_MASK;
     }
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     count++;
     if (!compareEqual(z, r) || Flags != Flags_ref) {
       if (errors == 0) {
@@ -590,7 +644,7 @@ void server(void) {
     endptr = line;
     x = strtoul(endptr, &endptr, 16);
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     printf("%08X %08X %02X\n", x, z, Flags);
   }
 }
@@ -615,25 +669,25 @@ int main(int argc, char *argv[]) {
     usage(argv[0]);
   }
   if (strcmp(argv[1], "-simple") == 0) {
-    startDevice(PATH_TO_FPSERVER);
+    startDevice(SERIAL_PORT);
     printf("Check simple test cases\n");
     check_simple();
     stopDevice();
   } else
   if (strcmp(argv[1], "-selected") == 0) {
-    startDevice(PATH_TO_FPSERVER);
+    startDevice(SERIAL_PORT);
     printf("Check selected test cases\n");
     check_selected();
     stopDevice();
   } else
   if (strcmp(argv[1], "-intervals") == 0) {
-    startDevice(PATH_TO_FPSERVER);
+    startDevice(SERIAL_PORT);
     printf("Check different intervals\n");
     check_intervals();
     stopDevice();
   } else
   if (strcmp(argv[1], "-server") == 0) {
-    startDevice(PATH_TO_FPSERVER);
+    startDevice(SERIAL_PORT);
     server();
     stopDevice();
   } else {

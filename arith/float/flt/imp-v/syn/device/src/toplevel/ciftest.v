@@ -1,5 +1,5 @@
 //
-// flttest.v -- floating-point device test top-level description
+// ciftest.v -- floating-point device test top-level description
 //
 
 
@@ -7,7 +7,7 @@
 `default_nettype none
 
 
-module flttest(clk_in,
+module ciftest(clk_in,
                rst_in_n,
                rs232_0_rxd,
                rs232_0_txd
@@ -85,7 +85,7 @@ module flttest(clk_in,
     .serial_out(rs232_0_txd)
   );
 
-  fpflt fpflt_0(
+  fpcif fpcif_0(
     .clk(clk),
     .run(run),
     .stall(stall),

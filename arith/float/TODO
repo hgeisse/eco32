@@ -9,9 +9,9 @@ div     done      --            --               --
 
 sqr     done      --            --               --
 
-flr     done      --            --               --
+cfi     done      --            --               --
 
-flt     done      done          done             done
+cif     done      done          done             done
 
 cmp     done      done          done             done
 

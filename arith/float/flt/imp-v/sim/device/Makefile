@@ -2,7 +2,7 @@
 # Makefile for testing floating-point arithmetic
 #
 
-SRCS = fptest.v fpflt/fpflt.v
+SRCS = fptest.v fpcif/fpcif.v
 
 all:		fptest fpserver
 

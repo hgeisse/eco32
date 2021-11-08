@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "Vfpflt.h"
+#include "Vfpcif.h"
 #include "verilated.h"
 
 
@@ -16,7 +16,7 @@
 
 int main(int argc, char *argv[]) {
   VerilatedContext *contextp;
-  Vfpflt *top;
+  Vfpcif *top;
   char line[LINE_SIZE];
   char *endptr;
   unsigned int x;
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
   contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
-  top = new Vfpflt{contextp};
+  top = new Vfpcif{contextp};
   top->clk = 0;
   top->run = 0;
   top->eval();

@@ -2,7 +2,7 @@
 # Makefile for floating-point device test on Terasic DE2-115 board
 #
 
-PROJECT = flttest
+PROJECT = ciftest
 
 all:
 		@echo "This Makefile can only be used for 'make clean'!"

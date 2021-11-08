@@ -1,5 +1,5 @@
 /*
- * flt.c -- implementation and test of conversion to float
+ * cif.c -- implementation and test of conversion integer to float
  */
 
 
@@ -9,6 +9,10 @@
 #include <math.h>
 
 #include "../../include/fp.h"
+
+
+#define PATH_TO_FPSERVER	"../device/fpserver"
+#define LINE_SIZE		200
 
 
 typedef enum { false = 0, true = 1 } Bool;
@@ -96,328 +100,121 @@ void showInt(char *name, int n) {
 /**************************************************************/
 
 /*
- * 32-bit leading-zero counter, implementation
+ * device communication
  */
 
 
-typedef unsigned char Byte;
+#include <stdarg.h>
+#include <unistd.h>
+#include <signal.h>
 
 
-Byte encode2(Byte two_bits) {
-  Byte r;
+pid_t fpserver;
 
-  switch (two_bits) {
-    case 0:
-      r = 2;
-      break;
-    case 1:
-      r = 1;
-      break;
-    case 2:
-      r = 0;
-      break;
-    case 3:
-      r = 0;
-      break;
-  }
-  return r;
+FILE *writeToDevice;
+FILE *readFromDevice;
+
+
+void fatalError(char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  fprintf(stderr, "FATAL ERROR: ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  va_end(ap);
+  exit(1);
 }
 
 
-Byte combine2(Byte left, Byte right) {
-  Byte r;
+void startDevice(char *pathToFPServer) {
+  int pipeToDevice[2];
+  int pipeToDriver[2];
 
-  if ((left & 2) != 0 && (right & 2) != 0) {
-    r = 4;
-  } else
-  if ((left & 2) != 0) {
-    r = right | 2;
+  if (pipe(pipeToDevice) < 0) {
+    fatalError("cannot open pipe");
+  }
+  if (pipe(pipeToDriver) < 0) {
+    fatalError("cannot open pipe");
+  }
+  fpserver = fork();
+  if (fpserver < 0) {
+    fatalError("cannot fork");
+  }
+  if (fpserver == 0) {
+    /* device */
+    close(pipeToDevice[1]);
+    close(pipeToDriver[0]);
+    dup2(pipeToDevice[0], 0);
+    dup2(pipeToDriver[1], 1);
+    close(pipeToDevice[0]);
+    close(pipeToDriver[1]);
+    execl(pathToFPServer, pathToFPServer, NULL);
+    fatalError("cannot exec FP server '%s'", pathToFPServer);
   } else {
-    r = left;
-  }
-  return r;
-}
-
-
-Byte combine3(Byte left, Byte right) {
-  Byte r;
-
-  if ((left & 4) != 0 && (right & 4) != 0) {
-    r = 8;
-  } else
-  if ((left & 4) != 0) {
-    r = right | 4;
-  } else {
-    r = left;
-  }
-  return r;
-}
-
-
-Byte combine4(Byte left, Byte right) {
-  Byte r;
-
-  if ((left & 8) != 0 && (right & 8) != 0) {
-    r = 16;
-  } else
-  if ((left & 8) != 0) {
-    r = right | 8;
-  } else {
-    r = left;
-  }
-  return r;
-}
-
-
-Byte combine5(Byte left, Byte right) {
-  Byte r;
-
-  if ((left & 16) != 0 && (right & 16) != 0) {
-    r = 32;
-  } else
-  if ((left & 16) != 0) {
-    r = right | 16;
-  } else {
-    r = left;
-  }
-  return r;
-}
-
-
-int lzc32(_FP_Word m) {
-  Byte lz1_f, lz1_e, lz1_d, lz1_c, lz1_b, lz1_a, lz1_9, lz1_8;
-  Byte lz1_7, lz1_6, lz1_5, lz1_4, lz1_3, lz1_2, lz1_1, lz1_0;
-  Byte lz2_7, lz2_6, lz2_5, lz2_4, lz2_3, lz2_2, lz2_1, lz2_0;
-  Byte lz3_3, lz3_2, lz3_1, lz3_0;
-  Byte lz4_1, lz4_0;
-  Byte lz5_0;
-
-  /* stage 1: encode 2 bits */
-  /* representing the LZC of 2 bits */
-  lz1_f = encode2((m >> 30) & 0x03);
-  lz1_e = encode2((m >> 28) & 0x03);
-  lz1_d = encode2((m >> 26) & 0x03);
-  lz1_c = encode2((m >> 24) & 0x03);
-  lz1_b = encode2((m >> 22) & 0x03);
-  lz1_a = encode2((m >> 20) & 0x03);
-  lz1_9 = encode2((m >> 18) & 0x03);
-  lz1_8 = encode2((m >> 16) & 0x03);
-  lz1_7 = encode2((m >> 14) & 0x03);
-  lz1_6 = encode2((m >> 12) & 0x03);
-  lz1_5 = encode2((m >> 10) & 0x03);
-  lz1_4 = encode2((m >>  8) & 0x03);
-  lz1_3 = encode2((m >>  6) & 0x03);
-  lz1_2 = encode2((m >>  4) & 0x03);
-  lz1_1 = encode2((m >>  2) & 0x03);
-  lz1_0 = encode2((m >>  0) & 0x03);
-  /* stage 2: combine 2+2 bits to 3 bits */
-  /* representing the LZC of 4 bits */
-  lz2_7 = combine2(lz1_f, lz1_e);
-  lz2_6 = combine2(lz1_d, lz1_c);
-  lz2_5 = combine2(lz1_b, lz1_a);
-  lz2_4 = combine2(lz1_9, lz1_8);
-  lz2_3 = combine2(lz1_7, lz1_6);
-  lz2_2 = combine2(lz1_5, lz1_4);
-  lz2_1 = combine2(lz1_3, lz1_2);
-  lz2_0 = combine2(lz1_1, lz1_0);
-  /* stage 3: combine 3+3 bits to 4 bits */
-  /* representing the LZC of 8 bits */
-  lz3_3 = combine3(lz2_7, lz2_6);
-  lz3_2 = combine3(lz2_5, lz2_4);
-  lz3_1 = combine3(lz2_3, lz2_2);
-  lz3_0 = combine3(lz2_1, lz2_0);
-  /* stage 4: combine 4+4 bits to 5 bits */
-  /* representing the LZC of 16 bits */
-  lz4_1 = combine4(lz3_3, lz3_2);
-  lz4_0 = combine4(lz3_1, lz3_0);
-  /* stage 5: combine 5+5 bits to 6 bits */
-  /* representing the LZC of 32 bits */
-  lz5_0 = combine5(lz4_1, lz4_0);
-  return lz5_0;
-}
-
-
-/**************************************************************/
-
-/*
- * 32-bit leading-zero counter, internal reference
- */
-
-
-int lzc32_ref(_FP_Word m) {
-  int i;
-
-  for (i = 31; i >= 0; i--) {
-    if (m & (1 << i)) {
-      return 31 - i;
+    /* driver */
+    close(pipeToDevice[0]);
+    close(pipeToDriver[1]);
+    writeToDevice = fdopen(pipeToDevice[1], "w");
+    if (writeToDevice == NULL) {
+      fatalError("cannot open writeToDevice");
+    }
+    readFromDevice = fdopen(pipeToDriver[0], "r");
+    if (readFromDevice == NULL) {
+      fatalError("cannot open readFromDevice");
     }
   }
-  return 32;
 }
 
 
-/**************************************************************/
+void stopDevice(void) {
+  kill(fpserver, SIGKILL);
+}
 
 
-void check_lzc32(void) {
-  int i, j;
-  _FP_Word m;
-  int lz, lz_ref;
-  long count, errors;
+void sndDevice(_FP_Word x) {
+  fprintf(writeToDevice, "%08X\n", x);
+  fflush(writeToDevice);
+}
 
-  printf("Part 1: single bit test\n");
-  count = 0;
-  errors = 0;
-  for (i = 0; i < 32; i++) {
-    m = (1 << i);
-    lz = lzc32(m);
-    lz_ref = lzc32_ref(m);
-    count++;
-    if (lz != lz_ref) {
-      errors++;
-    }
+
+void rcvDevice(_FP_Word *zp, _FP_Word *fp) {
+  static Bool firstLine = true;
+  char line[LINE_SIZE];
+  char *endptr;
+
+  if (fgets(line, LINE_SIZE, readFromDevice) == NULL) {
+    fatalError("cannot read answer from simulation");
   }
-  printf("number of tests  = %ld\n", count);
-  printf("number of errors = %ld\n", errors);
-  printf("Part 2: small value test\n");
-  count = 0;
-  errors = 0;
-  for (i = 0; i < (1 << 20); i++) {
-    m = i;
-    lz = lzc32(m);
-    lz_ref = lzc32_ref(m);
-    count++;
-    if (lz != lz_ref) {
-      errors++;
-    }
-  }
-  printf("number of tests  = %ld\n", count);
-  printf("number of errors = %ld\n", errors);
-  printf("Part 3: full range test\n");
-  count = 0;
-  errors = 0;
-  for (i = 0; i < 256; i++) {
-    for (j = 0; j < (1 << 24); j += 257) {
-      m = (i << 24) | j;
-      lz = lzc32(m);
-      lz_ref = lzc32_ref(m);
-      count++;
-      if (lz != lz_ref) {
-        errors++;
+  if (firstLine) {
+    firstLine = false;
+    if (strncmp(line, "VCD info: dumpfile", 18) == 0) {
+      if (fgets(line, LINE_SIZE, readFromDevice) == NULL) {
+        fatalError("cannot read answer from simulation");
       }
     }
   }
-  printf("number of tests  = %ld\n", count);
-  printf("number of errors = %ld\n", errors);
+  endptr = line;
+  *zp = strtoul(endptr, &endptr, 16);
+  *fp = strtoul(endptr, &endptr, 16);
 }
 
 
 /**************************************************************/
 
 /*
- * floating-point float function, implementation
+ * floating-point cif function, implementation
  */
 
-
-#define DEVELOPING	0
-
-#if DEVELOPING
-_FP_Word fake_fpFlt(int x) {
-  extern _FP_Word Flags;
-  extern _FP_Word Flags_ref;
-  extern _FP_Word fpFlt_ref(int x);
-  _FP_Word Flags_save;
-  _FP_Word z;
-
-  Flags_save = Flags_ref;
-  Flags_ref = 0;
-  z = fpFlt_ref(x);
-  Flags = Flags_ref;
-  Flags_ref = Flags_save;
-  return z;
-}
-#endif
-
-
-#define genZERO		((_FP_Word) 0x00000000)
-#define genNAN		((_FP_Word) 0x7FC00000)
-#define genINF		((_FP_Word) 0x7F800000)
-
-#define QUIET_BIT	((_FP_Word) 0x00400000)
-#define IS_QUIET(f)	((f & QUIET_BIT) != 0)
-
-#define IS_ZERO(e,f)	((e) ==   0 && (f) ==   0)
-#define IS_SUB(e,f)	((e) ==   0 && (f) !=   0)
-#define IS_INF(e,f)	((e) == 255 && (f) ==   0)
-#define IS_NAN(e,f)	((e) == 255 && (f) !=   0)
-#define IS_NORM(e)	((e) !=   0 && (e) != 255)
-#define IS_NUM(e,f)	(IS_NORM(e) || IS_SUB(e, f))
-
-
-Bool debug = false;
 
 _FP_Word Flags = 0;
 
 
-_FP_Word fpFlt(int x) {
-  _FP_Word sz, ez, fz;
-  _FP_Word xabs;
-  int lx;
-  _FP_Word m;
+_FP_Word fpCif(int x) {
   _FP_Word z;
-  Bool round, sticky, odd, incr;
 
-  if (debug) {
-    printf("------------------------------------------------\n");
-    showInt("x", x);
-    printf("\n");
-  }
-  if (x == 0) {
-    sz = 0;
-    ez = _FP_EXP(genZERO);
-    fz = _FP_FRC(genZERO);
-    z = _FP_FLT(sz, ez, fz);
-  } else {
-    if (x < 0) {
-      xabs = -x;
-      sz = 1;
-    } else {
-      xabs = x;
-      sz = 0;
-    }
-    lx = lzc32(xabs);
-    if (debug) {
-      printf("xabs = 0x%08X, lx = %d\n", xabs, lx);
-    }
-    m = xabs << lx;
-    ez = 158 - lx;
-    if (debug) {
-      printf("m = 0x%08X, ez = %d\n", m, ez);
-    }
-    fz = (m & ~(1 << 31)) >> 8;
-    round = ((m & (1 << 7)) != 0);
-    sticky = ((m & 0x7F) != 0);
-    odd = ((fz & 1) != 0);
-    incr = round && (sticky || odd);
-    if (debug) {
-      printf("round = %d, sticky = %d, odd = %d => incr = %d\n",
-             round, sticky, odd, incr);
-    }
-    z = _FP_FLT(sz, ez, fz);
-    if (incr) {
-      z++;
-    }
-    if (round || sticky) {
-      Flags |= _FP_X_FLAG;
-    }
-  }
-  if (debug) {
-    show("z", z);
-    printf("    ");
-    showFlags(Flags);
-    printf("\n");
-    printf("------------------------------------------------\n");
-  }
+  sndDevice(x);
+  rcvDevice(&z, &Flags);
   return z;
 }
 
@@ -425,7 +222,7 @@ _FP_Word fpFlt(int x) {
 /**************************************************************/
 
 /*
- * floating-point float function, internal reference
+ * floating-point cif function, internal reference
  */
 
 
@@ -435,7 +232,7 @@ _FP_Word fpFlt(int x) {
 _FP_Word Flags_ref = 0;
 
 
-_FP_Word fpFlt_ref(int x) {
+_FP_Word fpCif_ref(int x) {
   float32_t Z;
 
   softfloat_detectTininess = softfloat_tininess_beforeRounding;
@@ -493,9 +290,9 @@ void check_simple(void) {
   for (i = 1; i <= 20; i++) {
     x = i;
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -528,9 +325,9 @@ void check_simple(void) {
   for (i = 1; i <= 20; i++) {
     x = -i;
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -563,9 +360,9 @@ void check_simple(void) {
   for (i = 0; i <= 31; i++) {
     x = (1 << i);
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -651,9 +448,9 @@ void check_selected(void) {
   for (i = 0; i < numSingles; i++) {
     x = singles[i].x;
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     show("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -704,9 +501,9 @@ void check_intervals(void) {
   x = 0x3FABBBBB;
   do {
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     count++;
     if (!compareEqual(z, r) || Flags != Flags_ref) {
       if (errors == 0) {
@@ -726,9 +523,9 @@ void check_intervals(void) {
   x = 0x3F000000;
   do {
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     count++;
     if (!compareEqual(z, r) || Flags != Flags_ref) {
       if (errors == 0) {
@@ -755,9 +552,9 @@ void check_intervals(void) {
       x |= SKIP_MASK;
     }
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     Flags_ref = 0;
-    r = fpFlt_ref(x);
+    r = fpCif_ref(x);
     count++;
     if (!compareEqual(z, r) || Flags != Flags_ref) {
       if (errors == 0) {
@@ -782,9 +579,6 @@ void check_intervals(void) {
  */
 
 
-#define LINE_SIZE       200
-
-
 void server(void) {
   char line[LINE_SIZE];
   char *endptr;
@@ -796,7 +590,7 @@ void server(void) {
     endptr = line;
     x = strtoul(endptr, &endptr, 16);
     Flags = 0;
-    z = fpFlt(x);
+    z = fpCif(x);
     printf("%08X %08X %02X\n", x, z, Flags);
   }
 }
@@ -810,8 +604,7 @@ void server(void) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -lzc32 | -simple | "
-         "-selected | -intervals | -server\n",
+  printf("usage: %s -simple | -selected | -intervals | -server\n",
          myself);
   exit(1);
 }
@@ -821,26 +614,28 @@ int main(int argc, char *argv[]) {
   if (argc != 2) {
     usage(argv[0]);
   }
-  if (strcmp(argv[1], "-lzc32") == 0) {
-    printf("Check 32-bit leading-zero counter\n");
-    check_lzc32();
-  } else
   if (strcmp(argv[1], "-simple") == 0) {
+    startDevice(PATH_TO_FPSERVER);
     printf("Check simple test cases\n");
-    debug = true;
     check_simple();
+    stopDevice();
   } else
   if (strcmp(argv[1], "-selected") == 0) {
+    startDevice(PATH_TO_FPSERVER);
     printf("Check selected test cases\n");
-    debug = true;
     check_selected();
+    stopDevice();
   } else
   if (strcmp(argv[1], "-intervals") == 0) {
+    startDevice(PATH_TO_FPSERVER);
     printf("Check different intervals\n");
     check_intervals();
+    stopDevice();
   } else
   if (strcmp(argv[1], "-server") == 0) {
+    startDevice(PATH_TO_FPSERVER);
     server();
+    stopDevice();
   } else {
     usage(argv[0]);
   }
