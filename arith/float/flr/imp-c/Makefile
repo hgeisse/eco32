@@ -20,8 +20,8 @@ LIB = ../../test/lib/softfloat.a
 GEN = ../../test/bin/testfloat_gen
 VER = ../../test/bin/testfloat_ver
 
-SRC = flr.c
-EXE = flr
+SRC = cfi.c
+EXE = cfi
 
 all:		$(EXE)
 

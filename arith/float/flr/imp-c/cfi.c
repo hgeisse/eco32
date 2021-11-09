@@ -1,5 +1,5 @@
 /*
- * flr.c -- implementation and test of conversion to integer
+ * cfi.c -- implementation and test of conversion float to integer
  */
 
 
@@ -107,23 +107,23 @@ void showInt(char *name, int n) {
 /**************************************************************/
 
 /*
- * floating-point floor function, implementation
+ * floating-point cfi function, implementation
  */
 
 
 #define DEVELOPING	0
 
 #if DEVELOPING
-int fake_fpFlr(_FP_Word x) {
+int fake_fpCfi(_FP_Word x) {
   extern _FP_Word Flags;
   extern _FP_Word Flags_ref;
-  extern int fpFlr_ref(_FP_Word x);
+  extern int fpCfi_ref(_FP_Word x);
   _FP_Word Flags_save;
   int z;
 
   Flags_save = Flags_ref;
   Flags_ref = 0;
-  z = fpFlr_ref(x);
+  z = fpCfi_ref(x);
   Flags = Flags_ref;
   Flags_ref = Flags_save;
   return z;
@@ -151,7 +151,7 @@ Bool debug = false;
 _FP_Word Flags = 0;
 
 
-int fpFlr(_FP_Word x) {
+int fpCfi(_FP_Word x) {
   _FP_Word sx, ex, fx;
   _FP_Word mxnorm;
   int exnorm;
@@ -258,7 +258,7 @@ int fpFlr(_FP_Word x) {
 /**************************************************************/
 
 /*
- * floating-point floor function, internal reference
+ * floating-point cfi function, internal reference
  */
 
 
@@ -268,7 +268,7 @@ int fpFlr(_FP_Word x) {
 _FP_Word Flags_ref = 0;
 
 
-int fpFlr_ref(_FP_Word x) {
+int fpCfi_ref(_FP_Word x) {
   float32_t X;
   int z;
 
@@ -341,9 +341,9 @@ void check_simple(void) {
     u.f = (float) i;
     x = u.w;
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     Flags_ref = 0;
-    r = fpFlr_ref(x);
+    r = fpCfi_ref(x);
     showInt("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -377,9 +377,9 @@ void check_simple(void) {
     u.f = (float) i / (float) 10.0;
     x = u.w;
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     Flags_ref = 0;
-    r = fpFlr_ref(x);
+    r = fpCfi_ref(x);
     showInt("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -499,9 +499,9 @@ void check_selected(void) {
   for (i = 0; i < numSingles; i++) {
     x = singles[i].x;
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     Flags_ref = 0;
-    r = fpFlr_ref(x);
+    r = fpCfi_ref(x);
     showInt("r", r);
     printf("    ");
     showFlags(Flags_ref);
@@ -552,9 +552,9 @@ void check_intervals(void) {
   x = 0x3FABBBBB;
   do {
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     Flags_ref = 0;
-    r = fpFlr_ref(x);
+    r = fpCfi_ref(x);
     count++;
     if (z != r || Flags != Flags_ref) {
       if (errors == 0) {
@@ -574,9 +574,9 @@ void check_intervals(void) {
   x = 0x3F000000;
   do {
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     Flags_ref = 0;
-    r = fpFlr_ref(x);
+    r = fpCfi_ref(x);
     count++;
     if (z != r || Flags != Flags_ref) {
       if (errors == 0) {
@@ -603,9 +603,9 @@ void check_intervals(void) {
       x |= SKIP_MASK;
     }
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     Flags_ref = 0;
-    r = fpFlr_ref(x);
+    r = fpCfi_ref(x);
     count++;
     if (z != r || Flags != Flags_ref) {
       if (errors == 0) {
@@ -644,7 +644,7 @@ void server(void) {
     endptr = line;
     x = strtoul(endptr, &endptr, 16);
     Flags = 0;
-    z = fpFlr(x);
+    z = fpCfi(x);
     printf("%08X %08X %02X\n", x, z, Flags);
   }
 }
