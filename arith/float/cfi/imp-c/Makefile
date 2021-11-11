@@ -27,44 +27,44 @@ all:		$(EXE)
 
 install:	$(EXE)
 
-run-floor-simple:	$(EXE)
-		./$(EXE) -floor -simple
+run-round-simple:	$(EXE)
+		./$(EXE) -round -simple
 
-run-floor-selected:	$(EXE)
-		./$(EXE) -floor -selected
+run-round-selected:	$(EXE)
+		./$(EXE) -round -selected
 
-run-floor-intervals:	$(EXE)
-		./$(EXE) -floor -intervals
+run-round-intervals:	$(EXE)
+		./$(EXE) -round -intervals
 
-run-floor-specials:	$(EXE)
+run-round-specials:	$(EXE)
 		cat special1.dat | \
-		./$(EXE) -floor -server | \
-		$(VER) -rmin -exact f32_to_i32
+		./$(EXE) -round -server | \
+		$(VER) -rnear_even -exact f32_to_i32
 
-run-floor-extremes:	$(EXE)
+run-round-extremes:	$(EXE)
 		cat extreme1.dat | \
-		./$(EXE) -floor -server | \
-		$(VER) -rmin -exact f32_to_i32
+		./$(EXE) -round -server | \
+		$(VER) -rnear_even -exact f32_to_i32
 
-run-floor-1M:		$(EXE)
+run-round-1M:		$(EXE)
 		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
-		./$(EXE) -floor -server | \
-		$(VER) -rmin -exact f32_to_i32
+		./$(EXE) -round -server | \
+		$(VER) -rnear_even -exact f32_to_i32
 
-run-floor-10M:		$(EXE)
+run-round-10M:		$(EXE)
 		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
-		./$(EXE) -floor -server | \
-		$(VER) -rmin -exact f32_to_i32
+		./$(EXE) -round -server | \
+		$(VER) -rnear_even -exact f32_to_i32
 
-run-floor-100M:		$(EXE)
+run-round-100M:		$(EXE)
 		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
-		./$(EXE) -floor -server | \
-		$(VER) -rmin -exact f32_to_i32
+		./$(EXE) -round -server | \
+		$(VER) -rnear_even -exact f32_to_i32
 
-run-floor-1000M:	$(EXE)
+run-round-1000M:	$(EXE)
 		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
-		./$(EXE) -floor -server | \
-		$(VER) -rmin -exact f32_to_i32
+		./$(EXE) -round -server | \
+		$(VER) -rnear_even -exact f32_to_i32
 
 run-trunc-simple:	$(EXE)
 		./$(EXE) -trunc -simple
@@ -104,6 +104,45 @@ run-trunc-1000M:	$(EXE)
 		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -trunc -server | \
 		$(VER) -rminMag -exact f32_to_i32
+
+run-floor-simple:	$(EXE)
+		./$(EXE) -floor -simple
+
+run-floor-selected:	$(EXE)
+		./$(EXE) -floor -selected
+
+run-floor-intervals:	$(EXE)
+		./$(EXE) -floor -intervals
+
+run-floor-specials:	$(EXE)
+		cat special1.dat | \
+		./$(EXE) -floor -server | \
+		$(VER) -rmin -exact f32_to_i32
+
+run-floor-extremes:	$(EXE)
+		cat extreme1.dat | \
+		./$(EXE) -floor -server | \
+		$(VER) -rmin -exact f32_to_i32
+
+run-floor-1M:		$(EXE)
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
+		./$(EXE) -floor -server | \
+		$(VER) -rmin -exact f32_to_i32
+
+run-floor-10M:		$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -floor -server | \
+		$(VER) -rmin -exact f32_to_i32
+
+run-floor-100M:		$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -floor -server | \
+		$(VER) -rmin -exact f32_to_i32
+
+run-floor-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
+		./$(EXE) -floor -server | \
+		$(VER) -rmin -exact f32_to_i32
 
 run-ceil-simple:	$(EXE)
 		./$(EXE) -ceil -simple

@@ -17,9 +17,10 @@ typedef enum { false = 0, true = 1 } Bool;
 /**************************************************************/
 
 
-#define DIR_FLOOR	0
+#define DIR_ROUND	0
 #define DIR_TRUNC	1
-#define DIR_CEIL	2
+#define DIR_FLOOR	2
+#define DIR_CEIL	3
 
 
 int direction;		/* one of floor, trunc, ceil */
@@ -156,7 +157,8 @@ int fpCfi(_FP_Word x) {
   _FP_Word mxnorm;
   int exnorm;
   int z;
-  Bool corr;
+  _FP_Word aux;
+  Bool round, sticky, odd, incr;
 
   if (debug) {
     printf("------------------------------------------------\n");
@@ -185,17 +187,20 @@ int fpCfi(_FP_Word x) {
       exit(1);
     }
     mxnorm = (1 << 23) | fx;
-    exnorm = ex - 127;
+    exnorm = ex - 126;
     if (debug) {
       printf("mxnorm = 0x%08X, exnorm = %d\n", mxnorm, exnorm);
     }
     if (exnorm < 0) {
       switch (direction) {
-        case DIR_FLOOR:
-          z = sx ? 0xFFFFFFFF : 0x00000000;
+        case DIR_ROUND:
+          z = 0x00000000;
           break;
         case DIR_TRUNC:
           z = 0x00000000;
+          break;
+        case DIR_FLOOR:
+          z = sx ? 0xFFFFFFFF : 0x00000000;
           break;
         case DIR_CEIL:
           z = sx ? 0x00000000 : 0x00000001;
@@ -206,41 +211,56 @@ int fpCfi(_FP_Word x) {
       }
       Flags |= _FP_X_FLAG;
     } else
-    if (exnorm > 31) {
+    if (exnorm > 32) {
       z = 0x80000000;
       Flags |= _FP_V_FLAG;
     } else
-    if (exnorm == 31) {
+    if (exnorm == 32) {
       z = 0x80000000;
       if (!sx || fx != 0) {
         Flags |= _FP_V_FLAG;
       }
     } else {
-      if (exnorm < 23) {
-        z = mxnorm >> (23 - exnorm);
-        if ((mxnorm << (9 + exnorm)) != 0) {
-          Flags |= _FP_X_FLAG;
-          corr = true;
-        } else {
-          corr = false;
-        }
+      if (exnorm < 24) {
+        z = mxnorm >> (24 - exnorm);
+        aux = mxnorm << (8 + exnorm);
+        round = ((aux & (1 << 31)) != 0);
+        sticky = ((aux << 1) != 0);
       } else {
-        z = mxnorm << (exnorm - 23);
-        corr = false;
+        z = mxnorm << (exnorm - 24);
+        round = false;
+        sticky = false;
       }
+      odd = ((z & 1) != 0);
       switch (direction) {
-        case DIR_FLOOR:
-          z = sx ? -z - corr : z;
+        case DIR_ROUND:
+          incr = round && (sticky || odd);
           break;
         case DIR_TRUNC:
-          z = sx ? -z : z;
+          incr = false;
+          break;
+        case DIR_FLOOR:
+          incr = !sx ? false : round || sticky;
           break;
         case DIR_CEIL:
-          z = sx ? -z : z + corr;
+          incr = !sx ? round || sticky : false;
           break;
         default:
           fprintf(stderr, "FATAL INTERNAL ERROR 3\n");
           exit(1);
+      }
+      if (debug) {
+        printf("round = %d, sticky = %d, odd = %d => incr = %d\n",
+               round, sticky, odd, incr);
+      }
+      if (incr) {
+        z++;
+      }
+      if (sx) {
+        z = -z;
+      }
+      if (round || sticky) {
+        Flags |= _FP_X_FLAG;
       }
     }
   }
@@ -275,11 +295,14 @@ int fpCfi_ref(_FP_Word x) {
   X.v = x;
   softfloat_exceptionFlags = 0;
   switch (direction) {
-    case DIR_FLOOR:
-      z = f32_to_i32(X, softfloat_round_min, true);
+    case DIR_ROUND:
+      z = f32_to_i32(X, softfloat_round_near_even, true);
       break;
     case DIR_TRUNC:
       z = f32_to_i32(X, softfloat_round_minMag, true);
+      break;
+    case DIR_FLOOR:
+      z = f32_to_i32(X, softfloat_round_min, true);
       break;
     case DIR_CEIL:
       z = f32_to_i32(X, softfloat_round_max, true);
@@ -484,6 +507,25 @@ _FP_Single singles[] = {
   { 0xC5800000 },
   { 0x4F000000 },
   { 0xCF000000 },
+  /*
+   * special conversion tests
+   */
+  { 0x40C00000 },  /* +6.000000e+00 */
+  { 0x40C02000 },  /* +6.003906e+00 */
+  { 0x40D00000 },  /* +6.500000e+00 */
+  { 0x40D02000 },  /* +6.503906e+00 */
+  { 0x40A00000 },  /* +5.000000e+00 */
+  { 0x40A02000 },  /* +5.003906e+00 */
+  { 0x40B00000 },  /* +5.500000e+00 */
+  { 0x40B02000 },  /* +5.503906e+00 */
+  { 0xC0C00000 },  /* -6.000000e+00 */
+  { 0xC0C02000 },  /* -6.003906e+00 */
+  { 0xC0D00000 },  /* -6.500000e+00 */
+  { 0xC0D02000 },  /* -6.503906e+00 */
+  { 0xC0A00000 },  /* -5.000000e+00 */
+  { 0xC0A02000 },  /* -5.003906e+00 */
+  { 0xC0B00000 },  /* -5.500000e+00 */
+  { 0xC0B02000 },  /* -5.503906e+00 */
 };
 
 int numSingles = sizeof(singles)/sizeof(singles[0]);
@@ -659,7 +701,7 @@ void server(void) {
 
 void usage(char *myself) {
   printf("usage: %s\n"
-         "       (-floor | -trunc | -ceil)\n"
+         "       (-round | -trunc | -floor | -ceil)\n"
          "       (-simple | -selected | -intervals | -server)\n",
          myself);
   exit(1);
@@ -670,11 +712,14 @@ int main(int argc, char *argv[]) {
   if (argc != 3) {
     usage(argv[0]);
   }
-  if (strcmp(argv[1], "-floor") == 0) {
-    direction = DIR_FLOOR;
+  if (strcmp(argv[1], "-round") == 0) {
+    direction = DIR_ROUND;
   } else
   if (strcmp(argv[1], "-trunc") == 0) {
     direction = DIR_TRUNC;
+  } else
+  if (strcmp(argv[1], "-floor") == 0) {
+    direction = DIR_FLOOR;
   } else
   if (strcmp(argv[1], "-ceil") == 0) {
     direction = DIR_CEIL;
