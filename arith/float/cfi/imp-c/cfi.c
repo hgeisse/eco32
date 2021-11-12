@@ -23,7 +23,7 @@ typedef enum { false = 0, true = 1 } Bool;
 #define DIR_CEIL	3
 
 
-int direction;		/* one of floor, trunc, ceil */
+int direction;		/* one of round, trunc, floor, ceil */
 
 
 /**************************************************************/
