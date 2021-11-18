@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
   Vfpcif *top;
   char line[LINE_SIZE];
   char *endptr;
+  int rnd;
   unsigned int x;
   unsigned int z;
   unsigned int flags;
@@ -34,7 +35,9 @@ int main(int argc, char *argv[]) {
   top->clk = 0;
   while (fgets(line, LINE_SIZE, stdin) != NULL) {
     endptr = line;
+    rnd = strtoul(endptr, &endptr, 10);
     x = strtoul(endptr, &endptr, 16);
+    top->rnd = rnd;
     top->x = x;
     top->run = 1;
     top->eval();
