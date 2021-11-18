@@ -12,6 +12,7 @@ module fptest;
   reg clk;
   reg run;
   wire stall;
+  reg [1:0] rnd;
   reg [31:0] x;
   wire [31:0] z;
   wire [4:0] flags;
@@ -30,7 +31,7 @@ module fptest;
           run = 0;
     #10   clk = 1;
     #10   clk = 0;
-          while ($fscanf('h80000000, "%h", x) == 1) begin
+          while ($fscanf('h80000000, "%h %h", rnd, x) == 2) begin
             run = 1;
             #10   clk = 1;
             #10   clk = 0;
@@ -54,6 +55,7 @@ module fptest;
     .clk(clk),
     .run(run),
     .stall(stall),
+    .rnd(rnd[1:0]),
     .x(x[31:0]),
     .z(z[31:0]),
     .flags(flags[4:0])

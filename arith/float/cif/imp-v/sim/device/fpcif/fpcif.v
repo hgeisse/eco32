@@ -8,10 +8,11 @@
 
 
 module fpcif(clk, run, stall,
-             x, z, flags);
+             rnd, x, z, flags);
     input clk;
     input run;
     output stall;
+    input [1:0] rnd;
     input [31:0] x;
     output reg [31:0] z;
     output [4:0] flags;
@@ -25,7 +26,8 @@ module fpcif(clk, run, stall,
   wire round;
   wire sticky;
   wire odd;
-  wire incr;
+  wire inxct;
+  reg incr;
   wire [31:0] zpr;
 
   reg flag_v;
@@ -53,7 +55,15 @@ module fpcif(clk, run, stall,
   assign round = m[7];
   assign sticky = | m[6:0];
   assign odd = fz[0];
-  assign incr = round & (sticky | odd);
+  assign inxct = round | sticky;
+  always @(*) begin
+    case (rnd[1:0])
+      2'b00: /* near */ incr = round & (sticky | odd);
+      2'b01: /* zero */ incr = 1'b0;
+      2'b10: /* down */ incr = sx & inxct;
+      2'b11: /* up   */ incr = ~sx & inxct;
+    endcase
+  end
   assign zpr[31:0] = { sx, ez[7:0], fz[22:0] };
 
   //
@@ -69,12 +79,12 @@ module fpcif(clk, run, stall,
       flag_u = 1'b0;
       flag_x = 1'b0;
     end else begin
-      z[31:0] = incr ? zpr[31:0] + 32'h00000001 : zpr[31:0];
+      z[31:0] = zpr[31:0] + { 30'h00000000, incr };
       flag_v = 1'b0;
       flag_i = 1'b0;
       flag_o = 1'b0;
       flag_u = 1'b0;
-      flag_x = round | sticky;
+      flag_x = inxct;
     end
   end
 
