@@ -40,6 +40,8 @@ module ciftest(clk_in,
   wire [31:0] z_out;
   wire [4:0] flags_out;
   // data buffers
+  reg [1:0] rnd;
+  reg wr_rnd;
   reg [31:0] x;
   reg [3:0] wr_x;
   reg [31:0] z;
@@ -89,6 +91,7 @@ module ciftest(clk_in,
     .clk(clk),
     .run(run),
     .stall(stall),
+    .rnd(rnd[1:0]),
     .x(x[31:0]),
     .z(z_out[31:0]),
     .flags(flags_out[4:0])
@@ -97,6 +100,12 @@ module ciftest(clk_in,
   //--------------------------------------
   // data buffers
   //--------------------------------------
+
+  always @(posedge clk) begin
+    if (wr_rnd) begin
+      rnd[1:0] <= rcv_out[1:0];
+    end
+  end
 
   always @(posedge clk) begin
     if (wr_x[0]) begin
@@ -160,16 +169,18 @@ module ciftest(clk_in,
   always @(*) begin
     case (state[3:0])
       4'h0:
-        // wait for byte x0 read on serial line
+        // wait for rnd byte read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h0;
             rcv_read = 1'b0;
+            wr_rnd = 1'b0;
             wr_x[3:0] = 4'h0;
           end else begin
             next_state = 4'h1;
             rcv_read = 1'b1;
-            wr_x[3:0] = 4'h1;
+            wr_rnd = 1'b1;
+            wr_x[3:0] = 4'h0;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -177,16 +188,18 @@ module ciftest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h1:
-        // wait for byte x1 read on serial line
+        // wait for byte x0 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h1;
             rcv_read = 1'b0;
+            wr_rnd = 1'b0;
             wr_x[3:0] = 4'h0;
           end else begin
             next_state = 4'h2;
             rcv_read = 1'b1;
-            wr_x[3:0] = 4'h2;
+            wr_rnd = 1'b0;
+            wr_x[3:0] = 4'h1;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -194,16 +207,18 @@ module ciftest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h2:
-        // wait for byte x2 read on serial line
+        // wait for byte x1 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h2;
             rcv_read = 1'b0;
+            wr_rnd = 1'b0;
             wr_x[3:0] = 4'h0;
           end else begin
             next_state = 4'h3;
             rcv_read = 1'b1;
-            wr_x[3:0] = 4'h4;
+            wr_rnd = 1'b0;
+            wr_x[3:0] = 4'h2;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -211,15 +226,36 @@ module ciftest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h3:
-        // wait for byte x3 read on serial line
+        // wait for byte x2 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h3;
             rcv_read = 1'b0;
+            wr_rnd = 1'b0;
             wr_x[3:0] = 4'h0;
           end else begin
-            next_state = 4'h8;
+            next_state = 4'h4;
             rcv_read = 1'b1;
+            wr_rnd = 1'b0;
+            wr_x[3:0] = 4'h4;
+          end
+          run = 1'b0;
+          wr_zflags = 1'b0;
+          xmt_sel = 3'h0;
+          xmt_wrt = 1'b0;
+        end
+      4'h4:
+        // wait for byte x3 read on serial line
+        begin
+          if (~rcv_rdy) begin
+            next_state = 4'h4;
+            rcv_read = 1'b0;
+            wr_rnd = 1'b0;
+            wr_x[3:0] = 4'h0;
+          end else begin
+            next_state = 4'h5;
+            rcv_read = 1'b1;
+            wr_rnd = 1'b0;
             wr_x[3:0] = 4'h8;
           end
           run = 1'b0;
@@ -227,15 +263,16 @@ module ciftest(clk_in,
           xmt_sel = 3'h0;
           xmt_wrt = 1'b0;
         end
-      4'h8:
+      4'h5:
         // wait for operation to finish
         begin
           if (stall) begin
-            next_state = 4'h8;
+            next_state = 4'h5;
           end else begin
-            next_state = 4'h9;
+            next_state = 4'h6;
           end
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b1;
           if (stall) begin
@@ -246,15 +283,16 @@ module ciftest(clk_in,
           xmt_sel = 3'h0;
           xmt_wrt = 1'b0;
         end
-      4'h9:
+      4'h6:
         // send byte z0 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'h9;
+            next_state = 4'h6;
           end else begin
-            next_state = 4'hA;
+            next_state = 4'h7;
           end
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -265,15 +303,16 @@ module ciftest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hA:
+      4'h7:
         // send byte z1 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hA;
+            next_state = 4'h7;
           end else begin
-            next_state = 4'hB;
+            next_state = 4'h8;
           end
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -284,15 +323,16 @@ module ciftest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hB:
+      4'h8:
         // send byte z2 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hB;
+            next_state = 4'h8;
           end else begin
-            next_state = 4'hC;
+            next_state = 4'h9;
           end
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -303,15 +343,16 @@ module ciftest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hC:
+      4'h9:
         // send byte z3 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hC;
+            next_state = 4'h9;
           end else begin
-            next_state = 4'hD;
+            next_state = 4'hA;
           end
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -322,16 +363,17 @@ module ciftest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hD:
+      4'hA:
         // send flag byte back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hD;
+            next_state = 4'hA;
           end else begin
             // back to start state
             next_state = 4'h0;
           end
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -347,6 +389,7 @@ module ciftest(clk_in,
         begin
           next_state = 4'h0;
           rcv_read = 1'b0;
+          wr_rnd = 1'b0;
           wr_x[3:0] = 4'h0;
           run = 1'b0;
           wr_zflags = 1'b0;

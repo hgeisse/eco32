@@ -20,6 +20,18 @@ typedef enum { false = 0, true = 1 } Bool;
 
 /**************************************************************/
 
+
+#define ROUND_NEAR	0
+#define ROUND_ZERO	1
+#define ROUND_DOWN	2
+#define ROUND_UP	3
+
+
+int rounding;		/* one of near, zero, down, up */
+
+
+/**************************************************************/
+
 /*
  * display functions
  */
@@ -243,7 +255,8 @@ void stopDevice(void) {
 }
 
 
-void sndDevice(_FP_Word x) {
+void sndDevice(int rnd, _FP_Word x) {
+  sndByte(rnd & 0xFF);
   sndWord(x);
 }
 
@@ -267,7 +280,7 @@ _FP_Word Flags = 0;
 _FP_Word fpCif(int x) {
   _FP_Word z;
 
-  sndDevice(x);
+  sndDevice(rounding, x);
   rcvDevice(&z, &Flags);
   return z;
 }
@@ -290,7 +303,23 @@ _FP_Word fpCif_ref(int x) {
   float32_t Z;
 
   softfloat_detectTininess = softfloat_tininess_beforeRounding;
-  softfloat_roundingMode = softfloat_round_near_even;
+  switch (rounding) {
+    case ROUND_NEAR:
+      softfloat_roundingMode = softfloat_round_near_even;
+      break;
+    case ROUND_ZERO:
+      softfloat_roundingMode = softfloat_round_minMag;
+      break;
+    case ROUND_DOWN:
+      softfloat_roundingMode = softfloat_round_min;
+      break;
+    case ROUND_UP:
+      softfloat_roundingMode = softfloat_round_max;
+      break;
+    default:
+      fprintf(stderr, "FATAL INTERNAL ERROR 4\n");
+      exit(1);
+  }
   softfloat_exceptionFlags = 0;
   Z = i32_to_f32(x);
   Flags_ref |=
@@ -658,35 +687,51 @@ void server(void) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -simple | -selected | -intervals | -server\n",
+  printf("usage: %s\n"
+         "       (-rn | -rz | -rd | -ru)\n"
+         "       (-simple | -selected | -intervals | -server)\n",
          myself);
   exit(1);
 }
 
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+  if (argc != 3) {
     usage(argv[0]);
   }
-  if (strcmp(argv[1], "-simple") == 0) {
+  if (strcmp(argv[1], "-rn") == 0) {
+    rounding = ROUND_NEAR;
+  } else
+  if (strcmp(argv[1], "-rz") == 0) {
+    rounding = ROUND_ZERO;
+  } else
+  if (strcmp(argv[1], "-rd") == 0) {
+    rounding = ROUND_DOWN;
+  } else
+  if (strcmp(argv[1], "-ru") == 0) {
+    rounding = ROUND_UP;
+  } else {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[2], "-simple") == 0) {
     startDevice(SERIAL_PORT);
     printf("Check simple test cases\n");
     check_simple();
     stopDevice();
   } else
-  if (strcmp(argv[1], "-selected") == 0) {
+  if (strcmp(argv[2], "-selected") == 0) {
     startDevice(SERIAL_PORT);
     printf("Check selected test cases\n");
     check_selected();
     stopDevice();
   } else
-  if (strcmp(argv[1], "-intervals") == 0) {
+  if (strcmp(argv[2], "-intervals") == 0) {
     startDevice(SERIAL_PORT);
     printf("Check different intervals\n");
     check_intervals();
     stopDevice();
   } else
-  if (strcmp(argv[1], "-server") == 0) {
+  if (strcmp(argv[2], "-server") == 0) {
     startDevice(SERIAL_PORT);
     server();
     stopDevice();
