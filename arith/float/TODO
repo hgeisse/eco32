@@ -1,17 +1,19 @@
 
-        imp-c     imp-v/sim     imp-v/sim-vl     imp-v/syn
+        imp-c       imp-v/sim     imp-v/sim-vl    imp-v/syn
 
-add     --        --            --               --
+add     --          --            --              --
 
-mul     done      --            --               --
+mul     done(*)     --            --              --
 
-div     done      --            --               --
+div     done(*)     --            --              --
 
-sqr     done      --            --               --
+sqr     done(*)     --            --              --
 
-cfi     done      --            --               --
+cif     done        done          done            done
 
-cif     done      done          done             done
+cfi     done        --            --              --
 
-cmp     done      done          done             done
+cmp     done        done          done            done
+
+(*) rounding modes yet to be added
 
