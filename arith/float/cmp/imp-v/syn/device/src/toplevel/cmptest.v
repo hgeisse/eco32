@@ -174,8 +174,7 @@ module cmptest(clk_in,
 
   always @(posedge clk) begin
     if (rst) begin
-      // Note: the start state of this FSM is not zero!
-      state[3:0] <= 4'hE;
+      state[3:0] <= 4'h0;
     end else begin
       state[3:0] <= next_state[3:0];
     end
@@ -184,7 +183,7 @@ module cmptest(clk_in,
   always @(*) begin
     case (state[3:0])
       4'h0:
-        // wait for byte x0 read on serial line
+        // wait for pred byte read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h0;
@@ -194,8 +193,8 @@ module cmptest(clk_in,
           end else begin
             next_state = 4'h1;
             rcv_read = 1'b1;
-            wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h01;
+            wr_pred = 1'b1;
+            wr_xy[7:0] = 8'h00;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -203,7 +202,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h1:
-        // wait for byte x1 read on serial line
+        // wait for byte x0 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h1;
@@ -214,7 +213,7 @@ module cmptest(clk_in,
             next_state = 4'h2;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h02;
+            wr_xy[7:0] = 8'h01;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -222,7 +221,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h2:
-        // wait for byte x2 read on serial line
+        // wait for byte x1 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h2;
@@ -233,7 +232,7 @@ module cmptest(clk_in,
             next_state = 4'h3;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h04;
+            wr_xy[7:0] = 8'h02;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -241,7 +240,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h3:
-        // wait for byte x3 read on serial line
+        // wait for byte x2 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h3;
@@ -252,7 +251,7 @@ module cmptest(clk_in,
             next_state = 4'h4;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h08;
+            wr_xy[7:0] = 8'h04;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -260,7 +259,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h4:
-        // wait for byte y0 read on serial line
+        // wait for byte x3 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h4;
@@ -271,7 +270,7 @@ module cmptest(clk_in,
             next_state = 4'h5;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h10;
+            wr_xy[7:0] = 8'h08;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -279,7 +278,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h5:
-        // wait for byte y1 read on serial line
+        // wait for byte y0 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h5;
@@ -290,7 +289,7 @@ module cmptest(clk_in,
             next_state = 4'h6;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h20;
+            wr_xy[7:0] = 8'h10;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -298,7 +297,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h6:
-        // wait for byte y2 read on serial line
+        // wait for byte y1 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h6;
@@ -309,7 +308,7 @@ module cmptest(clk_in,
             next_state = 4'h7;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h40;
+            wr_xy[7:0] = 8'h20;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -317,7 +316,7 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h7:
-        // wait for byte y3 read on serial line
+        // wait for byte y2 read on serial line
         begin
           if (~rcv_rdy) begin
             next_state = 4'h7;
@@ -328,7 +327,7 @@ module cmptest(clk_in,
             next_state = 4'h8;
             rcv_read = 1'b1;
             wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h80;
+            wr_xy[7:0] = 8'h40;
           end
           run = 1'b0;
           wr_zflags = 1'b0;
@@ -336,12 +335,31 @@ module cmptest(clk_in,
           xmt_wrt = 1'b0;
         end
       4'h8:
+        // wait for byte y3 read on serial line
+        begin
+          if (~rcv_rdy) begin
+            next_state = 4'h8;
+            rcv_read = 1'b0;
+            wr_pred = 1'b0;
+            wr_xy[7:0] = 8'h00;
+          end else begin
+            next_state = 4'h9;
+            rcv_read = 1'b1;
+            wr_pred = 1'b0;
+            wr_xy[7:0] = 8'h80;
+          end
+          run = 1'b0;
+          wr_zflags = 1'b0;
+          xmt_sel = 3'h0;
+          xmt_wrt = 1'b0;
+        end
+      4'h9:
         // wait for operation to finish
         begin
           if (stall) begin
-            next_state = 4'h8;
-          end else begin
             next_state = 4'h9;
+          end else begin
+            next_state = 4'hA;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
@@ -355,13 +373,13 @@ module cmptest(clk_in,
           xmt_sel = 3'h0;
           xmt_wrt = 1'b0;
         end
-      4'h9:
+      4'hA:
         // send byte z0 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'h9;
-          end else begin
             next_state = 4'hA;
+          end else begin
+            next_state = 4'hB;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
@@ -375,13 +393,13 @@ module cmptest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hA:
+      4'hB:
         // send byte z1 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hA;
-          end else begin
             next_state = 4'hB;
+          end else begin
+            next_state = 4'hC;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
@@ -395,13 +413,13 @@ module cmptest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hB:
+      4'hC:
         // send byte z2 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hB;
-          end else begin
             next_state = 4'hC;
+          end else begin
+            next_state = 4'hD;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
@@ -415,13 +433,13 @@ module cmptest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hC:
+      4'hD:
         // send byte z3 back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hC;
-          end else begin
             next_state = 4'hD;
+          end else begin
+            next_state = 4'hE;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
@@ -435,14 +453,14 @@ module cmptest(clk_in,
             xmt_wrt = 1'b1;
           end
         end
-      4'hD:
+      4'hE:
         // send flag byte back on serial line
         begin
           if (~xmt_rdy) begin
-            next_state = 4'hD;
+            next_state = 4'hE;
           end else begin
             // back to start state
-            next_state = 4'hE;
+            next_state = 4'h0;
           end
           rcv_read = 1'b0;
           wr_pred = 1'b0;
@@ -455,26 +473,6 @@ module cmptest(clk_in,
           end else begin
             xmt_wrt = 1'b1;
           end
-        end
-      4'hE:
-        // Note: this is the start state of this FSM!
-        // wait for pred byte read on serial line
-        begin
-          if (~rcv_rdy) begin
-            next_state = 4'hE;
-            rcv_read = 1'b0;
-            wr_pred = 1'b0;
-            wr_xy[7:0] = 8'h00;
-          end else begin
-            next_state = 4'h0;
-            rcv_read = 1'b1;
-            wr_pred = 1'b1;
-            wr_xy[7:0] = 8'h00;
-          end
-          run = 1'b0;
-          wr_zflags = 1'b0;
-          xmt_sel = 3'h0;
-          xmt_wrt = 1'b0;
         end
       default:
         // should not be reached
