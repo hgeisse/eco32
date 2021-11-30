@@ -1,9 +1,0 @@
-In this little program, main() returns the value of a static
-variable (its value is 0x3456789A). The compiler is told to
-produce PIC.
-
-shows: Show the assembler output from the compiler.
-showo: Show the object file with its relocations.
-showx: Show the executable with its relocations.
-runlo: Run the program at its link address.
-runhi: Run the program at some location above its link address.
