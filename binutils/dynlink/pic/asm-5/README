@@ -1,0 +1,10 @@
+This program shows the assembler realization for accessing global
+data from PIC.
+
+The following pseudo-instruction is used:
+.ldgot	<got>		load register <got> with the address of the GOT
+
+showo: Explore how .ldgot and the variable access are implemented.
+showx: Look at the resulting executable.
+runlo: Run the program at its link address.
+runhi: Run the program at some location above its link address.
