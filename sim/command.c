@@ -77,6 +77,7 @@ static void help(void) {
   cPrintf("  dc      data cache control\n");
   cPrintf("  pm      show physical memory\n");
   cPrintf("  sb      show/set board I/O\n");
+  cPrintf("  f       show/set FPC\n");
   cPrintf("  q       quit simulator\n");
   cPrintf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -219,6 +220,12 @@ static void help20(void) {
 
 
 static void help21(void) {
+  cPrintf("  f                 show FPC\n");
+  cPrintf("  f <data>          set FPC to <data>\n");
+}
+
+
+static void help99(void) {
   cPrintf("  q                 quit simulator\n");
 }
 
@@ -270,6 +277,23 @@ static void showBreakAndTotal(void) {
     cPrintf("--------");
   }
   cPrintf("     Total  %08X   instructions\n", tot);
+}
+
+
+static void showFPC(void) {
+  Word fpc;
+  int i;
+
+  fpc = fpuGetFPC();
+  cPrintf("     C  xxxxxxxxxxxxxxxxxxxxxx  VIOUX  xx  RM\n");
+  cPrintf("FPC  ");
+  for (i = 31; i >= 0; i--) {
+    if (i == 30 || i == 8 || i == 3 || i == 1) {
+      cPrintf("  ");
+    }
+    cPrintf("%c", fpc & (1 << i) ? '1' : '0');
+  }
+  cPrintf("\n");
 }
 
 
@@ -590,6 +614,7 @@ static void doRegister(char *tokens[], int n) {
     }
     showPSW();
     showIRQ();
+    showFPC();
     showBreakAndTotal();
     showPC();
   } else if (n == 2) {
@@ -1056,11 +1081,66 @@ static void doBoardIO(char *tokens[], int n) {
 }
 
 
+static char *roundingModeToString[4] = {
+  /* 0 */  "round to nearest, ties to even",
+  /* 1 */  "round toward zero",
+  /* 2 */  "round toward negative infinity",
+  /* 3 */  "round toward positive infinity",
+};
+
+
+static void explainFPC(Word data) {
+  cPrintf("result of last comparison          : %s (%s)\n",
+          data & FPU_COND ? "on " : "off",
+          data & FPU_COND ? "true" : "false");
+  cPrintf("exception flag 'invalid'           : %s (%s)\n",
+          data & FPU_FLAG_V ? "on " : "off",
+          data & FPU_FLAG_V ? "true" : "false");
+  cPrintf("exception flag 'infinite'          : %s (%s)\n",
+          data & FPU_FLAG_I ? "on " : "off",
+          data & FPU_FLAG_I ? "true" : "false");
+  cPrintf("exception flag 'overflow'          : %s (%s)\n",
+          data & FPU_FLAG_O ? "on " : "off",
+          data & FPU_FLAG_O ? "true" : "false");
+  cPrintf("exception flag 'underflow'         : %s (%s)\n",
+          data & FPU_FLAG_U ? "on " : "off",
+          data & FPU_FLAG_U ? "true" : "false");
+  cPrintf("exception flag 'inexact'           : %s (%s)\n",
+          data & FPU_FLAG_X ? "on " : "off",
+          data & FPU_FLAG_X ? "true" : "false");
+  cPrintf("rounding mode                      : %1d   (%s)\n",
+          data & FPU_RND_MASK,
+          roundingModeToString[data & FPU_RND_MASK]);
+}
+
+
+static void doFPC(char *tokens[], int n) {
+  Word data;
+
+  if (n == 1) {
+    data = fpuGetFPC();
+    showFPC();
+    explainFPC(data);
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &data)) {
+      cPrintf("illegal data\n");
+      return;
+    }
+    data &= 0x800001F3;
+    fpuSetFPC(data);
+    showFPC();
+    explainFPC(data);
+  } else {
+    help21();
+  }
+}
+
+
 static void doQuit(char *tokens[], int n) {
   if (n == 1) {
     quit = true;
   } else {
-    help21();
+    help99();
   }
 }
 
@@ -1087,7 +1167,8 @@ Command commands[] = {
   { "dc",   help18, doDcache     },
   { "pm",   help19, doPhysMem    },
   { "sb",   help20, doBoardIO    },
-  { "q",    help21, doQuit       },
+  { "f",    help21, doFPC        },
+  { "q",    help99, doQuit       },
 };
 
 int numCommands = sizeof(commands) / sizeof(commands[0]);

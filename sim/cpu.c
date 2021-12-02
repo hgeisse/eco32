@@ -162,7 +162,7 @@ static void execNextInstruction(void) {
   Word smsk;
   Word aux;
   Word addr;
-  int cmp;
+//  int cmp;
 
   /* count the instruction */
   total++;
@@ -376,30 +376,30 @@ static void execNextInstruction(void) {
         next += SEXT16(immed) << 2;
       }
       break;
-    case OP_BEQF:
-      cmp = fpuCmp(RR(reg1), RR(reg2), false);
-      if (cmp == FPU_CMP_EQ) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
-    case OP_BNEF:
-      cmp = fpuCmp(RR(reg1), RR(reg2), false);
-      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_GT || cmp == FPU_CMP_UO) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
-    case OP_BLEF:
-      cmp = fpuCmp(RR(reg1), RR(reg2), true);
-      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_EQ) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
-    case OP_BLTF:
-      cmp = fpuCmp(RR(reg1), RR(reg2), true);
-      if (cmp == FPU_CMP_LT) {
-        next += SEXT16(immed) << 2;
-      }
-      break;
+//    case OP_BEQF:
+//      cmp = fpuCmp(RR(reg1), RR(reg2), false);
+//      if (cmp == FPU_CMP_EQ) {
+//        next += SEXT16(immed) << 2;
+//      }
+//      break;
+//    case OP_BNEF:
+//      cmp = fpuCmp(RR(reg1), RR(reg2), false);
+//      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_GT || cmp == FPU_CMP_UO) {
+//        next += SEXT16(immed) << 2;
+//      }
+//      break;
+//    case OP_BLEF:
+//      cmp = fpuCmp(RR(reg1), RR(reg2), true);
+//      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_EQ) {
+//        next += SEXT16(immed) << 2;
+//      }
+//      break;
+//    case OP_BLTF:
+//      cmp = fpuCmp(RR(reg1), RR(reg2), true);
+//      if (cmp == FPU_CMP_LT) {
+//        next += SEXT16(immed) << 2;
+//      }
+//      break;
     case OP_J:
       next += SEXT26(offset) << 2;
       break;
@@ -559,31 +559,31 @@ static void execNextInstruction(void) {
           break;
       }
       break;
-    case OP_FPAR:
-      switch (xop) {
-        case XOP_ADDF:
-          WR(reg3, fpuAdd(RR(reg1), RR(reg2)));
-          break;
-        case XOP_SUBF:
-          WR(reg3, fpuSub(RR(reg1), RR(reg2)));
-          break;
-        case XOP_MULF:
-          WR(reg3, fpuMul(RR(reg1), RR(reg2)));
-          break;
-        case XOP_DIVF:
-          WR(reg3, fpuDiv(RR(reg1), RR(reg2)));
-          break;
-        case XOP_CF2I:
-          WR(reg2, fpuCnvF2I(RR(reg1)));
-          break;
-        case XOP_CI2F:
-          WR(reg2, fpuCnvI2F(RR(reg1)));
-          break;
-        default:
-          throwException(EXC_ILL_INSTRCT);
-          break;
-      }
-      break;
+//    case OP_FPAR:
+//      switch (xop) {
+//        case XOP_ADDF:
+//          WR(reg3, fpuAdd(RR(reg1), RR(reg2)));
+//          break;
+//        case XOP_SUBF:
+//          WR(reg3, fpuSub(RR(reg1), RR(reg2)));
+//          break;
+//        case XOP_MULF:
+//          WR(reg3, fpuMul(RR(reg1), RR(reg2)));
+//          break;
+//        case XOP_DIVF:
+//          WR(reg3, fpuDiv(RR(reg1), RR(reg2)));
+//          break;
+//        case XOP_CF2I:
+//          WR(reg2, fpuCnvF2I(RR(reg1)));
+//          break;
+//        case XOP_CI2F:
+//          WR(reg2, fpuCnvI2F(RR(reg1)));
+//          break;
+//        default:
+//          throwException(EXC_ILL_INSTRCT);
+//          break;
+//      }
+//      break;
     case OP_LDLW:
       addr = RR(reg1) + SEXT16(immed);
       traceLoadLinkWord(addr);

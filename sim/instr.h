@@ -86,10 +86,10 @@
 #define OP_BLEU		0x23
 #define OP_BLT		0x24
 #define OP_BLTU		0x25
-#define OP_BEQF		0x26
-#define OP_BNEF		0x27
-#define OP_BLEF		0x28
-#define OP_BLTF		0x29
+//#define OP_BEQF		0x26
+//#define OP_BNEF		0x27
+//#define OP_BLEF		0x28
+//#define OP_BLTF		0x29
 
 #define OP_J		0x2A
 #define OP_JR		0x2B
@@ -118,13 +118,13 @@
 #define XOP_TBRI	0x04
 #define XOP_TBWI	0x05
 
-#define OP_FPAR		0x3B
-#define XOP_ADDF	0x00
-#define XOP_SUBF	0x01
-#define XOP_MULF	0x02
-#define XOP_DIVF	0x03
-#define XOP_CF2I	0x06
-#define XOP_CI2F	0x07
+//#define OP_FPAR		0x3B
+//#define XOP_ADDF	0x00
+//#define XOP_SUBF	0x01
+//#define XOP_MULF	0x02
+//#define XOP_DIVF	0x03
+//#define XOP_CF2I	0x06
+//#define XOP_CI2F	0x07
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
