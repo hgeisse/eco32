@@ -504,13 +504,16 @@ static void execNextInstruction(void) {
         case 5:
           WR(reg2, mmuGetBadAccs());
           break;
+        case 16:
+          WR(reg2, fpuGetFPC());
+          break;
         default:
           throwException(EXC_ILL_INSTRCT);
           break;
       }
       break;
     case OP_MVTS:
-      if (UM != 0) {
+      if (UM != 0 && immed < 16) {
         throwException(EXC_PRV_INSTRCT);
       }
       switch (immed) {
@@ -531,6 +534,9 @@ static void execNextInstruction(void) {
           break;
         case 5:
           mmuSetBadAccs(RR(reg2));
+          break;
+        case 16:
+          fpuSetFPC(RR(reg2));
           break;
         default:
           throwException(EXC_ILL_INSTRCT);
