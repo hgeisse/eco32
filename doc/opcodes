@@ -12,13 +12,13 @@ Main Opcodes
    +-------+-------+-------+-------+-------+-------+-------+-------+
 18 | SLL   | SLLI  | SLR   | SLRI  | SAR   | SARI  | CCTL* | LDHI  |
    +-------+-------+-------+-------+-------+-------+-------+-------+
-20 | BEQ   | BNE   | BLE   | BLEU  | BLT   | BLTU  | BEQF  | BNEF  |
+20 | BEQ   | BNE   | BLE   | BLEU  | BLT   | BLTU  | BFPF  | BFPT  |
    +-------+-------+-------+-------+-------+-------+-------+-------+
-28 | BLEF  | BLTF  | J     | JR    | JAL   | JALR  | TRAP  | RFX   |
+28 | ----  | ----  | J     | JR    | JAL   | JALR  | TRAP  | RFX   |
    +-------+-------+-------+-------+-------+-------+-------+-------+
 30 | LDW   | LDH   | LDHU  | LDB   | LDBU  | STW   | STH   | STB   |
    +-------+-------+-------+-------+-------+-------+-------+-------+
-38 | MVFS  | MVTS  | TCTL* | FPAR* |  ---  |  ---  | LDLW  | STCW  |
+38 | MVFS  | MVTS  | TCTL* | FAR2* | FAR1* | FCMP* | LDLW  | STCW  |
    +-------+-------+-------+-------+-------+-------+-------+-------+
 
 
@@ -33,7 +33,15 @@ TCTL*
       0       1       2       3       4       5       6       7
      ---     ---     TBS     TBWR    TBRI    TBWI    ---     ---
 
-FPAR*
+FAR2*
       0       1       2       3       4       5       6       7
-     ADDF    SUBF    MULF    DIVF    ---     ---     CF2I    CI2F
+     ADDF    SUBF    MULF    DIVF    ---     ---     ---     ---
+
+FAR1*
+      0       1       2       3       4       5       6       7
+     SQRT    CIF     CFIR    CFIT    CFIF    CFIC    ---     ---
+
+FCMP*
+      0       1       2       3       4       5       6       7
+     EQF     NEF     LEF     LTF     ULEF    ULTF    ---     ---
 
