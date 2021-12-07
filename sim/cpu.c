@@ -574,7 +574,7 @@ static void execNextInstruction(void) {
     case OP_FAR1:
       switch (xop) {
         case XOP_SQRT:
-//          WR(reg2, fpuCnvF2I(RR(reg1)));
+          WR(reg2, fpuSqrt(RR(reg1)));
           break;
         case XOP_CIF:
 //          WR(reg2, fpuCnvI2F(RR(reg1)));

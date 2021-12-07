@@ -23,15 +23,6 @@ Word fpc;		/* floating-point control word */
 /**************************************************************/
 
 
-Word fpuSqrt(Word x) {
-  error("fpuSqrt not yet");
-  return 0;
-}
-
-
-/**************************************************************/
-
-
 Word fpuIntToFloat(Word x) {
   error("fpuIntToFloat not yet");
   return 0;
