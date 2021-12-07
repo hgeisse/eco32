@@ -116,13 +116,27 @@
 #define XOP_TBRI	0x04
 #define XOP_TBWI	0x05
 
-//#define OP_FPAR		0x3B
-//#define XOP_ADDF	0x00
-//#define XOP_SUBF	0x01
-//#define XOP_MULF	0x02
-//#define XOP_DIVF	0x03
-//#define XOP_CF2I	0x06
-//#define XOP_CI2F	0x07
+#define OP_FAR2		0x3B
+#define XOP_ADDF	0x00
+#define XOP_SUBF	0x01
+#define XOP_MULF	0x02
+#define XOP_DIVF	0x03
+
+#define OP_FAR1		0x3C
+#define XOP_SQRT	0x00
+#define XOP_CIF		0x01
+#define XOP_CFIR	0x02
+#define XOP_CFIT	0x03
+#define XOP_CFIF	0x04
+#define XOP_CFIC	0x05
+
+#define OP_FCMP		0x3D
+#define XOP_EQF		0x00
+#define XOP_NEF		0x01
+#define XOP_LEF		0x02
+#define XOP_LTF		0x03
+#define XOP_ULEF	0x04
+#define XOP_ULTF	0x05
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F

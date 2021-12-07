@@ -552,31 +552,75 @@ static void execNextInstruction(void) {
           break;
       }
       break;
-//    case OP_FPAR:
-//      switch (xop) {
-//        case XOP_ADDF:
+    case OP_FAR2:
+      switch (xop) {
+        case XOP_ADDF:
 //          WR(reg3, fpuAdd(RR(reg1), RR(reg2)));
-//          break;
-//        case XOP_SUBF:
+          break;
+        case XOP_SUBF:
 //          WR(reg3, fpuSub(RR(reg1), RR(reg2)));
-//          break;
-//        case XOP_MULF:
+          break;
+        case XOP_MULF:
 //          WR(reg3, fpuMul(RR(reg1), RR(reg2)));
-//          break;
-//        case XOP_DIVF:
+          break;
+        case XOP_DIVF:
 //          WR(reg3, fpuDiv(RR(reg1), RR(reg2)));
-//          break;
-//        case XOP_CF2I:
+          break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
+          break;
+      }
+      break;
+    case OP_FAR1:
+      switch (xop) {
+        case XOP_SQRT:
 //          WR(reg2, fpuCnvF2I(RR(reg1)));
-//          break;
-//        case XOP_CI2F:
+          break;
+        case XOP_CIF:
 //          WR(reg2, fpuCnvI2F(RR(reg1)));
-//          break;
-//        default:
-//          throwException(EXC_ILL_INSTRCT);
-//          break;
-//      }
-//      break;
+          break;
+        case XOP_CFIR:
+//          WR(reg2, fpuCnvF2I(RR(reg1)));
+          break;
+        case XOP_CFIT:
+//          WR(reg2, fpuCnvI2F(RR(reg1)));
+          break;
+        case XOP_CFIF:
+//          WR(reg2, fpuCnvF2I(RR(reg1)));
+          break;
+        case XOP_CFIC:
+//          WR(reg2, fpuCnvI2F(RR(reg1)));
+          break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
+          break;
+      }
+      break;
+    case OP_FCMP:
+      switch (xop) {
+        case XOP_EQF:
+//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_EQ);
+          break;
+        case XOP_NEF:
+//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_NE);
+          break;
+        case XOP_LEF:
+//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_LE);
+          break;
+        case XOP_LTF:
+//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_LT);
+          break;
+        case XOP_ULEF:
+//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_ULE);
+          break;
+        case XOP_ULTF:
+//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_ULT);
+          break;
+        default:
+          throwException(EXC_ILL_INSTRCT);
+          break;
+      }
+      break;
     case OP_LDLW:
       addr = RR(reg1) + SEXT16(immed);
       traceLoadLinkWord(addr);
