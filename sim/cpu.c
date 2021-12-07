@@ -162,7 +162,6 @@ static void execNextInstruction(void) {
   Word smsk;
   Word aux;
   Word addr;
-//  int cmp;
 
   /* count the instruction */
   total++;
@@ -376,30 +375,18 @@ static void execNextInstruction(void) {
         next += SEXT16(immed) << 2;
       }
       break;
-//    case OP_BEQF:
-//      cmp = fpuCmp(RR(reg1), RR(reg2), false);
-//      if (cmp == FPU_CMP_EQ) {
-//        next += SEXT16(immed) << 2;
-//      }
-//      break;
-//    case OP_BNEF:
-//      cmp = fpuCmp(RR(reg1), RR(reg2), false);
-//      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_GT || cmp == FPU_CMP_UO) {
-//        next += SEXT16(immed) << 2;
-//      }
-//      break;
-//    case OP_BLEF:
-//      cmp = fpuCmp(RR(reg1), RR(reg2), true);
-//      if (cmp == FPU_CMP_LT || cmp == FPU_CMP_EQ) {
-//        next += SEXT16(immed) << 2;
-//      }
-//      break;
-//    case OP_BLTF:
-//      cmp = fpuCmp(RR(reg1), RR(reg2), true);
-//      if (cmp == FPU_CMP_LT) {
-//        next += SEXT16(immed) << 2;
-//      }
-//      break;
+    case OP_BFPF:
+      aux = fpuGetFPC();
+      if ((aux & FPU_COND) == 0) {
+        next += SEXT26(offset) << 2;
+      }
+      break;
+    case OP_BFPT:
+      aux = fpuGetFPC();
+      if ((aux & FPU_COND) != 0) {
+        next += SEXT26(offset) << 2;
+      }
+      break;
     case OP_J:
       next += SEXT26(offset) << 2;
       break;
