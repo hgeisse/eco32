@@ -35,8 +35,8 @@ Word fpuMul(Word x, Word y);
 Word fpuDiv(Word x, Word y);
 Word fpuSqrt(Word x);
 
-Word fpuIntToFloat(Word x);
-Word fpuFloatToInt(Word x, int round);
+Word fpuCnvI2F(Word x);
+Word fpuCnvF2I(Word x, int round);
 
 void fpuCmp(Word x, Word y, int pred);
 

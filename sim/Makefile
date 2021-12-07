@@ -12,6 +12,7 @@ LDLIBS = -lgetline -lX11 -lpthread -lm
 SRCS = main.c console.c error.c except.c command.c \
        instr.c asm.c disasm.c cpu.c trace.c fpu/fpu.c \
        fpu/add.c fpu/sub.c fpu/mul.c fpu/div.c fpu/sqrt.c \
+       fpu/i2f.c \
        mmu.c icache.c dcache.c ram.c rom.c io.c \
        timer.c dsp.c kbd.c serial.c disk.c sdcard.c \
        output.c shutdown.c graph1.c graph2.c mouse.c \

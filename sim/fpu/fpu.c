@@ -23,13 +23,7 @@ Word fpc;		/* floating-point control word */
 /**************************************************************/
 
 
-Word fpuIntToFloat(Word x) {
-  error("fpuIntToFloat not yet");
-  return 0;
-}
-
-
-Word fpuFloatToInt(Word x, int round) {
+Word fpuCnvF2I(Word x, int round) {
   error("fpuFloatToInt not yet");
   return 0;
 }
