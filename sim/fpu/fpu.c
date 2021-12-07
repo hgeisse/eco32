@@ -11,39 +11,16 @@
 #include "../console.h"
 #include "../error.h"
 #include "../fpu.h"
+#include "fpubits.h"
 
 
 /**************************************************************/
 
 
-static Word fpc;		/* floating-point control */
+Word fpc;		/* floating-point control word */
 
 
 /**************************************************************/
-
-
-Word fpuAdd(Word x, Word y) {
-  error("fpuAdd not yet");
-  return 0;
-}
-
-
-Word fpuSub(Word x, Word y) {
-  error("fpuSub not yet");
-  return 0;
-}
-
-
-Word fpuMul(Word x, Word y) {
-  error("fpuMul not yet");
-  return 0;
-}
-
-
-Word fpuDiv(Word x, Word y) {
-  error("fpuDiv not yet");
-  return 0;
-}
 
 
 Word fpuSqrt(Word x) {

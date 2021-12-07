@@ -555,16 +555,16 @@ static void execNextInstruction(void) {
     case OP_FAR2:
       switch (xop) {
         case XOP_ADDF:
-//          WR(reg3, fpuAdd(RR(reg1), RR(reg2)));
+          WR(reg3, fpuAdd(RR(reg1), RR(reg2)));
           break;
         case XOP_SUBF:
-//          WR(reg3, fpuSub(RR(reg1), RR(reg2)));
+          WR(reg3, fpuSub(RR(reg1), RR(reg2)));
           break;
         case XOP_MULF:
-//          WR(reg3, fpuMul(RR(reg1), RR(reg2)));
+          WR(reg3, fpuMul(RR(reg1), RR(reg2)));
           break;
         case XOP_DIVF:
-//          WR(reg3, fpuDiv(RR(reg1), RR(reg2)));
+          WR(reg3, fpuDiv(RR(reg1), RR(reg2)));
           break;
         default:
           throwException(EXC_ILL_INSTRCT);
