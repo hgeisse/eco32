@@ -14,21 +14,7 @@
 #include "fpubits.h"
 
 
-/**************************************************************/
-
-
 Word fpc;		/* floating-point control word */
-
-
-/**************************************************************/
-
-
-void fpuCmp(Word x, Word y, int pred) {
-  error("fpuCmp not yet");
-}
-
-
-/**************************************************************/
 
 
 Word fpuGetFPC(void) {
@@ -39,9 +25,6 @@ Word fpuGetFPC(void) {
 void fpuSetFPC(Word value) {
   fpc = value;
 }
-
-
-/**************************************************************/
 
 
 void fpuReset(void) {

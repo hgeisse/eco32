@@ -599,22 +599,22 @@ static void execNextInstruction(void) {
     case OP_FCMP:
       switch (xop) {
         case XOP_EQF:
-//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_EQ);
+          fpuCmp(RR(reg1), RR(reg2), FPU_PRED_EQ);
           break;
         case XOP_NEF:
-//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_NE);
+          fpuCmp(RR(reg1), RR(reg2), FPU_PRED_NE);
           break;
         case XOP_LEF:
-//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_LE);
+          fpuCmp(RR(reg1), RR(reg2), FPU_PRED_LE);
           break;
         case XOP_LTF:
-//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_LT);
+          fpuCmp(RR(reg1), RR(reg2), FPU_PRED_LT);
           break;
         case XOP_ULEF:
-//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_ULE);
+          fpuCmp(RR(reg1), RR(reg2), FPU_PRED_ULE);
           break;
         case XOP_ULTF:
-//          fpuCmp(RR(reg1), RR(reg1), FPU_PRED_ULT);
+          fpuCmp(RR(reg1), RR(reg2), FPU_PRED_ULT);
           break;
         default:
           throwException(EXC_ILL_INSTRCT);
