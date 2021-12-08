@@ -5,7 +5,7 @@
 BUILD = ../build
 
 CC = gcc
-CFLAGS = -g -Wall -I./getline -I/usr/X11R7/include
+CFLAGS = -g -Wall -I./fpu -I./getline -I/usr/X11R7/include
 LDFLAGS = -g -L./getline -L/usr/X11R7/lib -Wl,-rpath -Wl,/usr/X11R7/lib
 LDLIBS = -lgetline -lX11 -lpthread -lm
 

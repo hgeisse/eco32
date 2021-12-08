@@ -19,7 +19,7 @@
 #include "../common.h"
 #include "../console.h"
 #include "../error.h"
-#include "../fpu.h"
+#include "fpu.h"
 #include "fpubits.h"
 
 
