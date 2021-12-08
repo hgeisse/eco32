@@ -580,16 +580,16 @@ static void execNextInstruction(void) {
           WR(reg2, fpuCnvI2F(RR(reg1)));
           break;
         case XOP_CFIR:
-//          WR(reg2, fpuCnvF2I(RR(reg1)));
+          WR(reg2, fpuCnvF2I(RR(reg1), FPU_RND_NEAR));
           break;
         case XOP_CFIT:
-//          WR(reg2, fpuCnvI2F(RR(reg1)));
+          WR(reg2, fpuCnvF2I(RR(reg1), FPU_RND_ZERO));
           break;
         case XOP_CFIF:
-//          WR(reg2, fpuCnvF2I(RR(reg1)));
+          WR(reg2, fpuCnvF2I(RR(reg1), FPU_RND_DOWN));
           break;
         case XOP_CFIC:
-//          WR(reg2, fpuCnvI2F(RR(reg1)));
+          WR(reg2, fpuCnvF2I(RR(reg1), FPU_RND_UP));
           break;
         default:
           throwException(EXC_ILL_INSTRCT);
