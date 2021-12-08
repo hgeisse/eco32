@@ -99,9 +99,13 @@ static void disasmExtended(Instr *ip, Word instr) {
       case FORMAT_XN:
         disasmXN(ip->name);
         break;
-      case FORMAT_XRR:
+      case FORMAT_XRR1:
         disasmXRR(ip->name, (instr >> 16) & 0x1F,
                   (instr >> 21) & 0x1F);
+        break;
+      case FORMAT_XRR2:
+        disasmXRR(ip->name, (instr >> 21) & 0x1F,
+                  (instr >> 16) & 0x1F);
         break;
       case FORMAT_XRRR:
         disasmXRRR(ip->name, (instr >> 11) & 0x1F,
@@ -178,7 +182,8 @@ char *disasm(Word instr, Word locus) {
         disasmJR(ip->name, (instr >> 21) & 0x1F);
         break;
       case FORMAT_XN:
-      case FORMAT_XRR:
+      case FORMAT_XRR1:
+      case FORMAT_XRR2:
       case FORMAT_XRRR:
         disasmExtended(ip, instr);
         break;

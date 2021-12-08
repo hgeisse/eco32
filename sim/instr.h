@@ -22,8 +22,9 @@
 				   offset operand */
 #define FORMAT_JR	10	/* one register operand */
 #define FORMAT_XN	11	/* extended, no operands */
-#define FORMAT_XRR	12	/* extended, two register operands */
-#define FORMAT_XRRR	13	/* extended, three register operands */
+#define FORMAT_XRR1	12	/* extended, dst & src register operands */
+#define FORMAT_XRR2	13	/* extended, src1 & src2 register operands */
+#define FORMAT_XRRR	14	/* extended, three register operands */
 
 
 #define MASK(n)		((((Word) 1) << n) - 1)

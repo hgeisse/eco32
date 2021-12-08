@@ -28,7 +28,6 @@ void fpuCmp(Word x, Word y, int pred) {
   Bool cond;
   int flags;
 
-  error("fpuCmp(0x%08X,0x%08X) has wrong order of args\n", x, y);
   X.w = x;
   Y.w = y;
   switch (fpc & FPU_RND_MASK) {

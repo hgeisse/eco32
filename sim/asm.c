@@ -376,8 +376,8 @@ char *asmInstr(char *line, Word addr, Word *instrPtr) {
       result = ((Word) instr->opcode << 26) |
                ((Word) instr->xopcode);
       break;
-    case FORMAT_XRR:
-      /* extended, two register operands */
+    case FORMAT_XRR1:
+      /* extended, dst & src register operands */
       if (n > 3) {
         return msgs[4];
       }
@@ -394,6 +394,25 @@ char *asmInstr(char *line, Word addr, Word *instrPtr) {
                ((Word) instr->xopcode) |
                (r2 << 21) |
                (r1 << 16);
+      break;
+    case FORMAT_XRR2:
+      /* extended, src1 & src2 register operands */
+      if (n > 3) {
+        return msgs[4];
+      }
+      if (n < 3) {
+        return msgs[5];
+      }
+      if (!asmReg(tokens[1], &r1)) {
+        return msgs[6];
+      }
+      if (!asmReg(tokens[2], &r2)) {
+        return msgs[6];
+      }
+      result = ((Word) instr->opcode << 26) |
+               ((Word) instr->xopcode) |
+               (r1 << 21) |
+               (r2 << 16);
       break;
     case FORMAT_XRRR:
       /* extended, three register operands */
