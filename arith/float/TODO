@@ -7,7 +7,7 @@ mul     done(*)     --            --              --
 
 div     done(*)     --            --              --
 
-sqr     done(*)     --            --              --
+sqr     done        --            --              --
 
 cif     done        done          done            done
 
