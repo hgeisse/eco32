@@ -53,22 +53,22 @@ run-rn-extremes:	$(EXE)
 		$(VER) -rnear_even -tininessbefore f32_sqrt
 
 run-rn-1M:	$(EXE)
-		$(GEN) -n $(NUM_1M) -level $(LVL_1) i32 | \
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
 		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_sqrt
 
 run-rn-10M:	$(EXE)
-		$(GEN) -n $(NUM_10M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_sqrt
 
 run-rn-100M:	$(EXE)
-		$(GEN) -n $(NUM_100M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_sqrt
 
 run-rn-1000M:	$(EXE)
-		$(GEN) -n $(NUM_1000M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_sqrt
 
@@ -92,22 +92,22 @@ run-rz-extremes:	$(EXE)
 		$(VER) -rminMag -tininessbefore f32_sqrt
 
 run-rz-1M:	$(EXE)
-		$(GEN) -n $(NUM_1M) -level $(LVL_1) i32 | \
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
 		./$(EXE) -rz -server | \
 		$(VER) -rminMag -tininessbefore f32_sqrt
 
 run-rz-10M:	$(EXE)
-		$(GEN) -n $(NUM_10M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rz -server | \
 		$(VER) -rminMag -tininessbefore f32_sqrt
 
 run-rz-100M:	$(EXE)
-		$(GEN) -n $(NUM_100M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rz -server | \
 		$(VER) -rminMag -tininessbefore f32_sqrt
 
 run-rz-1000M:	$(EXE)
-		$(GEN) -n $(NUM_1000M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rz -server | \
 		$(VER) -rminMag -tininessbefore f32_sqrt
 
@@ -131,22 +131,22 @@ run-rd-extremes:	$(EXE)
 		$(VER) -rmin -tininessbefore f32_sqrt
 
 run-rd-1M:	$(EXE)
-		$(GEN) -n $(NUM_1M) -level $(LVL_1) i32 | \
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
 		./$(EXE) -rd -server | \
 		$(VER) -rmin -tininessbefore f32_sqrt
 
 run-rd-10M:	$(EXE)
-		$(GEN) -n $(NUM_10M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rd -server | \
 		$(VER) -rmin -tininessbefore f32_sqrt
 
 run-rd-100M:	$(EXE)
-		$(GEN) -n $(NUM_100M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rd -server | \
 		$(VER) -rmin -tininessbefore f32_sqrt
 
 run-rd-1000M:	$(EXE)
-		$(GEN) -n $(NUM_1000M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -rd -server | \
 		$(VER) -rmin -tininessbefore f32_sqrt
 
@@ -170,22 +170,22 @@ run-ru-extremes:	$(EXE)
 		$(VER) -rmax -tininessbefore f32_sqrt
 
 run-ru-1M:	$(EXE)
-		$(GEN) -n $(NUM_1M) -level $(LVL_1) i32 | \
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 1 | \
 		./$(EXE) -ru -server | \
 		$(VER) -rmax -tininessbefore f32_sqrt
 
 run-ru-10M:	$(EXE)
-		$(GEN) -n $(NUM_10M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -ru -server | \
 		$(VER) -rmax -tininessbefore f32_sqrt
 
 run-ru-100M:	$(EXE)
-		$(GEN) -n $(NUM_100M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -ru -server | \
 		$(VER) -rmax -tininessbefore f32_sqrt
 
 run-ru-1000M:	$(EXE)
-		$(GEN) -n $(NUM_1000M) -level $(LVL_2) i32 | \
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 1 | \
 		./$(EXE) -ru -server | \
 		$(VER) -rmax -tininessbefore f32_sqrt
 
