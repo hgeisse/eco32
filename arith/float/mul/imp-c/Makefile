@@ -33,44 +33,161 @@ run-mul24:	$(EXE)
 run-lzc24:	$(EXE)
 		./$(EXE) -lzc24
 
-run-simple:	$(EXE)
-		./$(EXE) -simple
+run-rn-simple:		$(EXE)
+		./$(EXE) -rn -simple
 
-run-selected:	$(EXE)
-		./$(EXE) -selected
+run-rn-selected:	$(EXE)
+		./$(EXE) -rn -selected
 
-run-intervals:	$(EXE)
-		./$(EXE) -intervals
+run-rn-intervals:	$(EXE)
+		./$(EXE) -rn -intervals
 
-run-specials:	$(EXE)
+run-rn-specials:	$(EXE)
 		cat special2.dat | \
-		./$(EXE) -server | \
+		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
-run-extremes:	$(EXE)
+run-rn-extremes:	$(EXE)
 		cat extreme2.dat | \
-		./$(EXE) -server | \
+		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
-run-1M:		$(EXE)
+run-rn-1M:	$(EXE)
 		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
-		./$(EXE) -server | \
+		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
-run-10M:	$(EXE)
+run-rn-10M:	$(EXE)
 		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
-		./$(EXE) -server | \
+		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
-run-100M:	$(EXE)
+run-rn-100M:	$(EXE)
 		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
-		./$(EXE) -server | \
+		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_mul
 
-run-1000M:	$(EXE)
+run-rn-1000M:	$(EXE)
 		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
-		./$(EXE) -server | \
+		./$(EXE) -rn -server | \
 		$(VER) -rnear_even -tininessbefore f32_mul
+
+run-rz-simple:		$(EXE)
+		./$(EXE) -rz -simple
+
+run-rz-selected:	$(EXE)
+		./$(EXE) -rz -selected
+
+run-rz-intervals:	$(EXE)
+		./$(EXE) -rz -intervals
+
+run-rz-specials:	$(EXE)
+		cat special2.dat | \
+		./$(EXE) -rz -server | \
+		$(VER) -rminMag -tininessbefore f32_mul
+
+run-rz-extremes:	$(EXE)
+		cat extreme2.dat | \
+		./$(EXE) -rz -server | \
+		$(VER) -rminMag -tininessbefore f32_mul
+
+run-rz-1M:	$(EXE)
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
+		./$(EXE) -rz -server | \
+		$(VER) -rminMag -tininessbefore f32_mul
+
+run-rz-10M:	$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -rz -server | \
+		$(VER) -rminMag -tininessbefore f32_mul
+
+run-rz-100M:	$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -rz -server | \
+		$(VER) -rminMag -tininessbefore f32_mul
+
+run-rz-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -rz -server | \
+		$(VER) -rminMag -tininessbefore f32_mul
+
+run-rd-simple:		$(EXE)
+		./$(EXE) -rd -simple
+
+run-rd-selected:	$(EXE)
+		./$(EXE) -rd -selected
+
+run-rd-intervals:	$(EXE)
+		./$(EXE) -rd -intervals
+
+run-rd-specials:	$(EXE)
+		cat special2.dat | \
+		./$(EXE) -rd -server | \
+		$(VER) -rmin -tininessbefore f32_mul
+
+run-rd-extremes:	$(EXE)
+		cat extreme2.dat | \
+		./$(EXE) -rd -server | \
+		$(VER) -rmin -tininessbefore f32_mul
+
+run-rd-1M:	$(EXE)
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
+		./$(EXE) -rd -server | \
+		$(VER) -rmin -tininessbefore f32_mul
+
+run-rd-10M:	$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -rd -server | \
+		$(VER) -rmin -tininessbefore f32_mul
+
+run-rd-100M:	$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -rd -server | \
+		$(VER) -rmin -tininessbefore f32_mul
+
+run-rd-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -rd -server | \
+		$(VER) -rmin -tininessbefore f32_mul
+
+run-ru-simple:		$(EXE)
+		./$(EXE) -ru -simple
+
+run-ru-selected:	$(EXE)
+		./$(EXE) -ru -selected
+
+run-ru-intervals:	$(EXE)
+		./$(EXE) -ru -intervals
+
+run-ru-specials:	$(EXE)
+		cat special2.dat | \
+		./$(EXE) -ru -server | \
+		$(VER) -rmax -tininessbefore f32_mul
+
+run-ru-extremes:	$(EXE)
+		cat extreme2.dat | \
+		./$(EXE) -ru -server | \
+		$(VER) -rmax -tininessbefore f32_mul
+
+run-ru-1M:	$(EXE)
+		$(GEN) -n $(NUM_1M) -level $(LVL_1) f32 2 | \
+		./$(EXE) -ru -server | \
+		$(VER) -rmax -tininessbefore f32_mul
+
+run-ru-10M:	$(EXE)
+		$(GEN) -n $(NUM_10M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ru -server | \
+		$(VER) -rmax -tininessbefore f32_mul
+
+run-ru-100M:	$(EXE)
+		$(GEN) -n $(NUM_100M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ru -server | \
+		$(VER) -rmax -tininessbefore f32_mul
+
+run-ru-1000M:	$(EXE)
+		$(GEN) -n $(NUM_1000M) -level $(LVL_2) f32 2 | \
+		./$(EXE) -ru -server | \
+		$(VER) -rmax -tininessbefore f32_mul
 
 $(EXE):		$(SRC)
 		gcc -g -Wall -I$(INCDIR) -o $(EXE) $(SRC) $(LIB) -lm
