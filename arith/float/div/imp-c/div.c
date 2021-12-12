@@ -16,6 +16,18 @@ typedef enum { false = 0, true = 1 } Bool;
 
 /**************************************************************/
 
+
+#define ROUND_NEAR	0
+#define ROUND_ZERO	1
+#define ROUND_DOWN	2
+#define ROUND_UP	3
+
+
+int rounding;		/* one of near, zero, down, up */
+
+
+/**************************************************************/
+
 /*
  * display functions
  */
@@ -632,8 +644,14 @@ _FP_Word fpDiv(_FP_Word x, _FP_Word y) {
     /* stage 3: handle overflow, denormal and normal results, rounding */
     if ((int) ez >= 255) {
       /* overflow */
-      ez = _FP_EXP(genINF);
-      fz = _FP_FRC(genINF);
+      if ((!sz && (rounding == ROUND_DOWN || rounding == ROUND_ZERO)) ||
+          (sz && (rounding == ROUND_UP || rounding == ROUND_ZERO))) {
+        ez = _FP_EXP(genINF - 1);
+        fz = _FP_FRC(genINF - 1);
+      } else {
+        ez = _FP_EXP(genINF);
+        fz = _FP_FRC(genINF);
+      }
       z = _FP_FLT(sz, ez, fz);
       Flags |= _FP_O_FLAG | _FP_X_FLAG;
     } else
@@ -649,7 +667,23 @@ _FP_Word fpDiv(_FP_Word x, _FP_Word y) {
         round = ((fzx & (1 << 31)) != 0);
         sticky = (fr != 0) || ((fzx << 1) != 0);
         odd = ((fz & 1) != 0);
-        incr = round && (sticky || odd);
+        switch (rounding) {
+          case ROUND_NEAR:
+            incr = round && (sticky || odd);
+            break;
+          case ROUND_ZERO:
+            incr = false;
+            break;
+          case ROUND_DOWN:
+            incr = !sz ? false : round || sticky;
+            break;
+          case ROUND_UP:
+            incr = !sz ? round || sticky : false;
+            break;
+          default:
+            fprintf(stderr, "FATAL INTERNAL ERROR 3\n");
+            exit(1);
+        }
         if (debug) {
           printf("round = %d, sticky = %d, odd = %d => incr = %d\n",
                  round, sticky, odd, incr);
@@ -662,7 +696,12 @@ _FP_Word fpDiv(_FP_Word x, _FP_Word y) {
           Flags |= _FP_U_FLAG | _FP_X_FLAG;
         }
       } else {
-        z = _FP_FLT(sz, 0, 0);
+        if ((!sz && rounding == ROUND_UP) ||
+            (sz && rounding == ROUND_DOWN)) {
+          z = _FP_FLT(sz, 0, 1);
+        } else {
+          z = _FP_FLT(sz, 0, 0);
+        }
         Flags |= _FP_U_FLAG | _FP_X_FLAG;
       }
     } else {
@@ -671,7 +710,23 @@ _FP_Word fpDiv(_FP_Word x, _FP_Word y) {
       round = ((fzx & (1 << 31)) != 0);
       sticky = (fr != 0);
       odd = ((fz & 1) != 0);
-      incr = round && (sticky || odd);
+      switch (rounding) {
+        case ROUND_NEAR:
+          incr = round && (sticky || odd);
+          break;
+        case ROUND_ZERO:
+          incr = false;
+          break;
+        case ROUND_DOWN:
+          incr = !sz ? false : round || sticky;
+          break;
+        case ROUND_UP:
+          incr = !sz ? round || sticky : false;
+          break;
+        default:
+          fprintf(stderr, "FATAL INTERNAL ERROR 3\n");
+          exit(1);
+      }
       if (debug) {
         printf("round = %d, sticky = %d, odd = %d => incr = %d\n",
                round, sticky, odd, incr);
@@ -711,12 +766,29 @@ _FP_Word Flags_ref = 0;
 
 
 _FP_Word fpDiv_ref(_FP_Word x, _FP_Word y) {
-  float32_t X, Y, Z;
+  float32_t X, Y;
+  float32_t Z;
 
   X.v = x;
   Y.v = y;
   softfloat_detectTininess = softfloat_tininess_beforeRounding;
-  softfloat_roundingMode = softfloat_round_near_even;
+  switch (rounding) {
+    case ROUND_NEAR:
+      softfloat_roundingMode = softfloat_round_near_even;
+      break;
+    case ROUND_ZERO:
+      softfloat_roundingMode = softfloat_round_minMag;
+      break;
+    case ROUND_DOWN:
+      softfloat_roundingMode = softfloat_round_min;
+      break;
+    case ROUND_UP:
+      softfloat_roundingMode = softfloat_round_max;
+      break;
+    default:
+      fprintf(stderr, "FATAL INTERNAL ERROR 4\n");
+      exit(1);
+  }
   softfloat_exceptionFlags = 0;
   Z = f32_div(X, Y);
   Flags_ref |=
@@ -955,6 +1027,7 @@ _FP_Pair pairs[] = {
   { 0x00100000, 0x40FFFFFF },
   { 0x817FE003, 0x3E801000 },
   { 0x80080100, 0xC17FE003 },
+  { 0x7F7FFFFF, 0x00000001 },
 };
 
 int numPairs = sizeof(pairs)/sizeof(pairs[0]);
@@ -1146,9 +1219,12 @@ void server(void) {
 
 
 void usage(char *myself) {
-  printf("usage: %s -div24 | -lzc24 | -simple | "
-         "-selected | -intervals | -server\n",
-         myself);
+  printf("usage: %s\n"
+         "       (-rn | -rz | -rd | -ru)\n"
+         "       (-simple | -selected | -intervals | -server)\n"
+         "tests: %s -div24\n"
+         "       %s -lzc24\n",
+         myself, myself, myself);
   exit(1);
 }
 
@@ -1164,27 +1240,41 @@ int main(int argc, char *argv[]) {
     check_lzc24();
     return 0;
   }
-  if (argc == 2 && strcmp(argv[1], "-simple") == 0) {
+  if (argc != 3) {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[1], "-rn") == 0) {
+    rounding = ROUND_NEAR;
+  } else
+  if (strcmp(argv[1], "-rz") == 0) {
+    rounding = ROUND_ZERO;
+  } else
+  if (strcmp(argv[1], "-rd") == 0) {
+    rounding = ROUND_DOWN;
+  } else
+  if (strcmp(argv[1], "-ru") == 0) {
+    rounding = ROUND_UP;
+  } else {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[2], "-simple") == 0) {
     printf("Check simple test cases\n");
     debug = true;
     check_simple();
-    return 0;
-  }
-  if (argc == 2 && strcmp(argv[1], "-selected") == 0) {
+  } else
+  if (strcmp(argv[2], "-selected") == 0) {
     printf("Check selected test cases\n");
     debug = true;
     check_selected();
-    return 0;
-  }
-  if (argc == 2 && strcmp(argv[1], "-intervals") == 0) {
+  } else
+  if (strcmp(argv[2], "-intervals") == 0) {
     printf("Check different intervals\n");
     check_intervals();
-    return 0;
-  }
-  if (argc == 2 && strcmp(argv[1], "-server") == 0) {
+  } else
+  if (strcmp(argv[2], "-server") == 0) {
     server();
-    return 0;
+  } else {
+    usage(argv[0]);
   }
-  usage(argv[0]);
   return 0;
 }
