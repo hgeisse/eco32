@@ -341,9 +341,9 @@ int getNextToken(void) {
       // process fp literal 
       tmpFloat = tokenvalNumber;
       if (*lineptr == '.') {
+        int d = base;
         processingFloatLiteral = 1;
         lineptr++;
-        int d = base;
         while (isdigit(*lineptr)) {
           digit = *lineptr++ - '0';
           tmpFloat += digit / (float) d;
