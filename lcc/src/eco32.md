@@ -398,14 +398,14 @@ reg:	MULF4(reg,reg)		"\tmulf\t$%c,$%0,$%1\n"	1
 reg:	DIVF4(reg,reg)		"\tdivf\t$%c,$%0,$%1\n"	1
 reg:	NEGF4(reg)		"\tsubf\t$%c,$0,$%0\n"	1
 reg:	CVFF4(reg)		"# cvt d2s\n"		1
-reg:	CVIF4(reg)		"\tci2f\t$%c,$%0\n"	1
-reg:	CVFI4(reg)		"\tcf2i\t$%c,$%0\n"	1
-stmt:	EQF4(reg,reg)		"\tbeqf\t$%0,$%1,%a\n"	1
-stmt:	NEF4(reg,reg)		"\tbnef\t$%0,$%1,%a\n"	1
-stmt:	LEF4(reg,reg)		"\tblef\t$%0,$%1,%a\n"	1
-stmt:	LTF4(reg,reg)		"\tbltf\t$%0,$%1,%a\n"	1
-stmt:	GEF4(reg,reg)		"\tbgef\t$%0,$%1,%a\n"	1
-stmt:	GTF4(reg,reg)		"\tbgtf\t$%0,$%1,%a\n"	1
+reg:	CVIF4(reg)		"\tcif\t$%c,$%0\n"	1
+reg:	CVFI4(reg)		"\tcfit\t$%c,$%0\n"	1
+stmt:	EQF4(reg,reg)		"\teqf\t$%0,$%1\n\tbfpt %a\n"	1
+stmt:	NEF4(reg,reg)		"\tneqf\t$%0,$%1\n\tbfpt %a\n"	1
+stmt:	LEF4(reg,reg)		"\tulef\t$%0,$%1\n\tbfpt %a\n"	1
+stmt:	LTF4(reg,reg)		"\tultf\t$%0,$%1\n\tbfpt %a\n"	1
+stmt:	GEF4(reg,reg)		"\tugef\t$%0,$%1\n\tbfpt %a\n"	1
+stmt:	GTF4(reg,reg)		"\tugtf\t$%0,$%1\n\tbfpt %a\n"	1
 reg:	CALLF4(ar)		"\tjal\t%0\n"		1
 stmt:	RETF4(reg)		"# ret\n"		1
 stmt:	ARGF4(reg)		"# arg\n"		1

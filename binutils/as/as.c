@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "../include/a.out.h"
 
@@ -41,6 +42,7 @@
 #define TOK_AMPER	17
 #define TOK_BAR		18
 #define TOK_CARET	19
+#define TOK_FLOAT	20
 
 #define STATUS_UNKNOWN	0	/* symbol is not yet defined */
 #define STATUS_DEFINED	1	/* symbol is defined */
@@ -104,10 +106,8 @@
 #define OP_BLEU		0x23
 #define OP_BLT		0x24
 #define OP_BLTU		0x25
-#define OP_BEQF		0x26
-#define OP_BNEF		0x27
-#define OP_BLEF		0x28
-#define OP_BLTF		0x29
+#define OP_BFPF		0x26
+#define OP_BFPT		0x27
 
 #define OP_J		0x2A
 #define OP_JR		0x2B
@@ -136,13 +136,27 @@
 #define XOP_TBRI	0x04
 #define XOP_TBWI	0x05
 
-#define OP_FPAR		0x3B
+#define OP_FAR2		0x3B
 #define XOP_ADDF	0x00
 #define XOP_SUBF	0x01
 #define XOP_MULF	0x02
 #define XOP_DIVF	0x03
-#define XOP_CF2I	0x06
-#define XOP_CI2F	0x07
+
+#define OP_FAR1		0x3C
+#define XOP_SQRT	0x00
+#define XOP_CIF		0x01
+#define XOP_CFIR	0x02
+#define XOP_CFIT	0x03
+#define XOP_CFIF	0x04
+#define XOP_CFIC	0x05
+
+#define OP_FCMP		0x3D
+#define XOP_EQF		0x00
+#define XOP_NEF		0x01
+#define XOP_LEF		0x02
+#define XOP_LTF		0x03
+#define XOP_ULEF	0x04
+#define XOP_ULTF	0x05
 
 #define OP_LDLW		0x3E
 #define OP_STCW		0x3F
@@ -296,6 +310,10 @@ int getNextToken(void) {
     }
   }
   if (isdigit((int) *lineptr)) {
+    union { float f; unsigned int i; } floatValue;
+    double tmpFloat;
+    int processingFloatLiteral = 0;
+
     base = 10;
     tokenvalNumber = 0;
     if (*lineptr == '0') {
@@ -306,27 +324,84 @@ int getNextToken(void) {
       } else
       if (isdigit((int) *lineptr)) {
         base = 8;
+      } else if (*lineptr == '.' || *lineptr == 'E' || *lineptr == 'e') {
+        // don't return yet, fraction part coming up
       } else {
         return TOK_NUMBER;
       }
     }
-    while (isxdigit((int) *lineptr)) {
-      digit = *lineptr++ - '0';
-      if (digit >= 'A' - '0') {
-        if (digit >= 'a' - '0') {
-          digit += '0' - 'a' + 10;
-        } else {
-          digit += '0' - 'A' + 10;
+
+    if (base == 10) {
+      while (isdigit((int) *lineptr)) {
+        digit = *lineptr++ - '0';
+        tokenvalNumber *= base;
+        tokenvalNumber += digit;
+      }
+
+      // process fp literal 
+      tmpFloat = tokenvalNumber;
+      if (*lineptr == '.') {
+        processingFloatLiteral = 1;
+        lineptr++;
+        int d = base;
+        while (isdigit(*lineptr)) {
+          digit = *lineptr++ - '0';
+          tmpFloat += digit / (float) d;
+          d *= base;
         }
+      } 
+
+      if (*lineptr == 'E' || *lineptr == 'e') {
+        int exponentValue = 0;
+        int exponentSign = 1;
+        processingFloatLiteral = 1;
+        lineptr++;
+
+        // read optional sign
+        if (*lineptr == '-') {
+          exponentSign = -1;
+          lineptr++;
+        } else if (*lineptr == '+') {
+          lineptr++;
+        }
+
+        // read exponent
+        while (isdigit(*lineptr)) {
+          digit = *lineptr++ - '0';
+          exponentValue *= base;
+          exponentValue += digit;
+        }
+
+        tmpFloat *= pow(10, exponentSign * exponentValue);
+      } 
+    } else {
+      // octal and hexadecimal
+      while (isxdigit((int) *lineptr)) {
+        digit = *lineptr++ - '0';
+        if (digit >= 'A' - '0') {
+          if (digit >= 'a' - '0') {
+            digit += '0' - 'a' + 10;
+          } else {
+            digit += '0' - 'A' + 10;
+          }
+        }
+        if (digit >= base) {
+          error("illegal digit value %d in line %d", digit, lineno);
+        }
+        tokenvalNumber *= base;
+        tokenvalNumber += digit;
       }
-      if (digit >= base) {
-        error("illegal digit value %d in line %d", digit, lineno);
-      }
-      tokenvalNumber *= base;
-      tokenvalNumber += digit;
     }
-    return TOK_NUMBER;
+
+    if (processingFloatLiteral) {
+      floatValue.f = tmpFloat;
+      tokenvalNumber = floatValue.i;
+      return TOK_FLOAT;
+    } else {
+      return TOK_NUMBER;
+    }
   }
+
   if (*lineptr == '\'') {
     lineptr++;
     if (!isprint((int) *lineptr)) {
@@ -499,6 +574,10 @@ void showToken(void) {
       break;
     case TOK_CARET:
       printf("token = TOK_CARET\n");
+      break;
+    case TOK_FLOAT:
+      printf("token = TOK_FLOAT, value = %f = 0x%08x\n", 
+          *(float*) &tokenvalNumber, tokenvalNumber);
       break;
     default:
       error("illegal token %d in showToken()", token);
@@ -852,6 +931,7 @@ void emitWord(unsigned int word) {
 
 typedef struct {
   int con;
+  int isFloat;
   Symbol *sym;
 } Value;
 
@@ -865,6 +945,13 @@ Value parsePrimaryExpression(void) {
 
   if (token == TOK_NUMBER) {
     v.con = tokenvalNumber;
+    v.isFloat = 0;
+    v.sym = NULL;
+    getToken();
+  } else
+  if (token == TOK_FLOAT) {
+    v.con = tokenvalNumber;
+    v.isFloat = 1;
     v.sym = NULL;
     getToken();
   } else
@@ -872,9 +959,11 @@ Value parsePrimaryExpression(void) {
     s = deref(lookupEnter(tokenvalString, LOCAL_TABLE));
     if (s->status == STATUS_DEFINED && s->segment == SEGMENT_ABS) {
       v.con = s->value;
+      v.isFloat = 0;
       v.sym = NULL;
     } else {
       v.con = 0;
+      v.isFloat = 0;
       v.sym = s;
     }
     getToken();
@@ -904,7 +993,11 @@ Value parseUnaryExpression(void) {
     if (v.sym != NULL) {
       error("cannot negate symbol '%s' in line %d", v.sym->name, lineno);
     }
-    v.con = -v.con;
+    if (v.isFloat) {
+      v.con = v.con | 0x80000000;
+    } else {
+      v.con = -v.con;
+    }
   } else
   if (token == TOK_TILDE) {
     getToken();
@@ -1525,10 +1618,10 @@ void formatXRRR(unsigned int code, unsigned int xopcode) {
   emitHalf(dst << 11 | xopcode);
 }
 
-void formatXRR(unsigned int code, unsigned int xopcode) {
+void formatXRR1(unsigned int code, unsigned int xopcode) {
   int dst, src;
 
-  /* extended opcode with two register operands */
+  /* extended opcode with dst & src register operands */
   expect(TOK_REGISTER);
   dst = tokenvalNumber;
   getToken();
@@ -1541,6 +1634,37 @@ void formatXRR(unsigned int code, unsigned int xopcode) {
   emitHalf(xopcode);
 }
 
+void formatXRR2(unsigned int code, unsigned int xopcode) {
+  int src1, src2;
+
+  /* extended opcode with src1 & src2 register operands */
+  expect(TOK_REGISTER);
+  src1 = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  src2 = tokenvalNumber;
+  getToken();
+  emitHalf(code << 10 | src1 << 5 | src2 );
+  emitHalf(xopcode);
+}
+
+void aliasXRR2(unsigned int code, unsigned int xopcode) {
+  int src1, src2;
+
+  /* extended opcode with reversed src1 & src2 register operands */
+  expect(TOK_REGISTER);
+  src2 = tokenvalNumber;
+  getToken();
+  expect(TOK_COMMA);
+  getToken();
+  expect(TOK_REGISTER);
+  src1 = tokenvalNumber;
+  getToken();
+  emitHalf(code << 10 | src1 << 5 | src2 );
+  emitHalf(xopcode);
+}
 
 void formatRRX(unsigned int code, unsigned int xopcode) {
   int dst, src1, src2;
@@ -1847,12 +1971,8 @@ Instr instrTable[] = {
   { "bgeu",    aliasRRB,   OP_BLEU, 0        },
   { "bgt",     aliasRRB,   OP_BLT,  0        },
   { "bgtu",    aliasRRB,   OP_BLTU, 0        },
-  { "beqf",    formatRRB,  OP_BEQF, 0        },
-  { "bnef",    formatRRB,  OP_BNEF, 0        },
-  { "blef",    formatRRB,  OP_BLEF, 0        },
-  { "bltf",    formatRRB,  OP_BLTF, 0        },
-  { "bgef",    aliasRRB,   OP_BLEF, 0        },
-  { "bgtf",    aliasRRB,   OP_BLTF, 0        },
+  { "bfpf",    formatJ,    OP_BFPF, 0        },
+  { "bfpt",    formatJ,    OP_BFPT, 0        },
 
   /* jump, call & return instructions */
   { "j",       formatJ,    OP_J,    0        },
@@ -1885,12 +2005,29 @@ Instr instrTable[] = {
   { "tbwi",    formatXN,   OP_TCTL, XOP_TBWI },
 
   /* floating point instructions */
-  { "addf",    formatXRRR, OP_FPAR, XOP_ADDF },
-  { "subf",    formatXRRR, OP_FPAR, XOP_SUBF },
-  { "mulf",    formatXRRR, OP_FPAR, XOP_MULF },
-  { "divf",    formatXRRR, OP_FPAR, XOP_DIVF },
-  { "cf2i",    formatXRR,  OP_FPAR, XOP_CF2I },
-  { "ci2f",    formatXRR,  OP_FPAR, XOP_CI2F },
+  { "addf",    formatXRRR, OP_FAR2, XOP_ADDF },
+  { "subf",    formatXRRR, OP_FAR2, XOP_SUBF },
+  { "mulf",    formatXRRR, OP_FAR2, XOP_MULF },
+  { "divf",    formatXRRR, OP_FAR2, XOP_DIVF },
+
+  { "sqrt",    formatXRR1, OP_FAR1, XOP_SQRT },
+  { "cif",     formatXRR1, OP_FAR1, XOP_CIF  },
+  { "cfir",    formatXRR1, OP_FAR1, XOP_CFIR },
+  { "cfit",    formatXRR1, OP_FAR1, XOP_CFIT },
+  { "cfif",    formatXRR1, OP_FAR1, XOP_CFIF },
+  { "cfic",    formatXRR1, OP_FAR1, XOP_CFIC },
+
+
+  { "eqf",     formatXRR2, OP_FCMP, XOP_EQF  },
+  { "neqf",    formatXRR2, OP_FCMP, XOP_NEF  },
+  { "lef",     formatXRR2, OP_FCMP, XOP_LEF  },
+  { "ltf",     formatXRR2, OP_FCMP, XOP_LTF  },
+  { "ulef",    formatXRR2, OP_FCMP, XOP_ULEF },
+  { "ultf",    formatXRR2, OP_FCMP, XOP_ULTF },
+  { "gef",     aliasXRR2,  OP_FCMP, XOP_LEF  },
+  { "gtf",     aliasXRR2,  OP_FCMP, XOP_LTF  },
+  { "ugef",    aliasXRR2,  OP_FCMP, XOP_ULEF },
+  { "ugtf",    aliasXRR2,  OP_FCMP, XOP_ULTF },
 
   /* synchronization instructions */
   { "ldlw",    formatRRS,  OP_LDLW, 0        },
