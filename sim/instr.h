@@ -130,6 +130,7 @@
 #define XOP_CFIT	0x03
 #define XOP_CFIF	0x04
 #define XOP_CFIC	0x05
+#define XOP_NEGF	0x06
 
 #define OP_FCMP		0x3D
 #define XOP_EQF		0x00

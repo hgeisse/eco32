@@ -78,6 +78,7 @@ Instr instrTbl[] = {
   { "cfit",  FORMAT_XRR1, OP_FAR1, XOP_CFIT, NULL },
   { "cfif",  FORMAT_XRR1, OP_FAR1, XOP_CFIF, NULL },
   { "cfic",  FORMAT_XRR1, OP_FAR1, XOP_CFIC, NULL },
+  { "negf",  FORMAT_XRR1, OP_FAR1, XOP_NEGF, NULL },
   { "eqf",   FORMAT_XRR2, OP_FCMP, XOP_EQF,  NULL },
   { "nef",   FORMAT_XRR2, OP_FCMP, XOP_NEF,  NULL },
   { "lef",   FORMAT_XRR2, OP_FCMP, XOP_LEF,  NULL },

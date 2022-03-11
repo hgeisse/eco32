@@ -34,6 +34,7 @@ Word fpuSub(Word x, Word y);
 Word fpuMul(Word x, Word y);
 Word fpuDiv(Word x, Word y);
 Word fpuSqrt(Word x);
+Word fpuNeg(Word x);
 
 Word fpuCnvI2F(Word x);
 Word fpuCnvF2I(Word x, int rnd);
