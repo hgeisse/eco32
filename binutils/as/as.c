@@ -2019,7 +2019,7 @@ Instr instrTable[] = {
 
 
   { "eqf",     formatXRR2, OP_FCMP, XOP_EQF  },
-  { "neqf",    formatXRR2, OP_FCMP, XOP_NEF  },
+  { "nef",     formatXRR2, OP_FCMP, XOP_NEF  },
   { "lef",     formatXRR2, OP_FCMP, XOP_LEF  },
   { "ltf",     formatXRR2, OP_FCMP, XOP_LTF  },
   { "ulef",    formatXRR2, OP_FCMP, XOP_ULEF },
