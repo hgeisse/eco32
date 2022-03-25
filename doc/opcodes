@@ -39,7 +39,7 @@ FAR2*
 
 FAR1*
       0       1       2       3       4       5       6       7
-     SQRT    CIF     CFIR    CFIT    CFIF    CFIC    NEGF    ---
+     SQRT    CIF     CFIR    CFIT    CFIF    CFIC    NEGF    ABSF
 
 FCMP*
       0       1       2       3       4       5       6       7

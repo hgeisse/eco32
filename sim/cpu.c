@@ -594,6 +594,9 @@ static void execNextInstruction(void) {
         case XOP_NEGF:
           WR(reg2, fpuNeg(RR(reg1)));
           break;
+        case XOP_ABSF:
+          WR(reg2, fpuAbs(RR(reg1)));
+          break;
         default:
           throwException(EXC_ILL_INSTRCT);
           break;
