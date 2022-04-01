@@ -396,7 +396,7 @@ reg:	ADDF4(reg,reg)		"\taddf\t$%c,$%0,$%1\n"	1
 reg:	SUBF4(reg,reg)		"\tsubf\t$%c,$%0,$%1\n"	1
 reg:	MULF4(reg,reg)		"\tmulf\t$%c,$%0,$%1\n"	1
 reg:	DIVF4(reg,reg)		"\tdivf\t$%c,$%0,$%1\n"	1
-reg:	NEGF4(reg)		"\tsubf\t$%c,$0,$%0\n"	1
+reg:	NEGF4(reg)		"\tnegf\t$%c,$%0\n"	1
 reg:	CVFF4(reg)		"# cvt d2s\n"		1
 reg:	CVIF4(reg)		"\tcif\t$%c,$%0\n"	1
 reg:	CVFI4(reg)		"\tcfit\t$%c,$%0\n"	1

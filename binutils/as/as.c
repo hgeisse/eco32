@@ -149,6 +149,7 @@
 #define XOP_CFIT	0x03
 #define XOP_CFIF	0x04
 #define XOP_CFIC	0x05
+#define XOP_NEGF	0x06
 
 #define OP_FCMP		0x3D
 #define XOP_EQF		0x00
@@ -2016,7 +2017,7 @@ Instr instrTable[] = {
   { "cfit",    formatXRR1, OP_FAR1, XOP_CFIT },
   { "cfif",    formatXRR1, OP_FAR1, XOP_CFIF },
   { "cfic",    formatXRR1, OP_FAR1, XOP_CFIC },
-
+  { "negf",    formatXRR1, OP_FAR1, XOP_NEGF },
 
   { "eqf",     formatXRR2, OP_FCMP, XOP_EQF  },
   { "nef",     formatXRR2, OP_FCMP, XOP_NEF  },
