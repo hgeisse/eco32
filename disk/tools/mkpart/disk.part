@@ -43,8 +43,11 @@
 #
 # The following example exactly fits on a 706 MB disk:
 
-0 * 0x0058      32   17919 "EOS32 root"
-1   0x0059   17920  148607 "EOS32 swap"
+#0 * 0x0058      32   17919 "EOS32 root"
+
+
+0 * 0x0058      32   22015 "EOS32 root"
+1   0x0059   22016  148607 "EOS32 swap"
 2   0x0058  148608  188607 "EOS32 usr"
 3   0x0058  188608  196607 "EOS32 home"
 4 * 0x00A9  196608  708607 "NetBSD"
