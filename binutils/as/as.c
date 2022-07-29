@@ -996,7 +996,7 @@ Value parseUnaryExpression(void) {
       error("cannot negate symbol '%s' in line %d", v.sym->name, lineno);
     }
     if (v.isFloat) {
-      v.con = v.con | 0x80000000;
+      v.con = v.con ^ 0x80000000;
     } else {
       v.con = -v.con;
     }
