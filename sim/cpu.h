@@ -9,13 +9,15 @@
 
 #define IRQ_TIMER_1		15	/* timer 1 interrupt */
 #define IRQ_TIMER_0		14	/* timer 0 interrupt */
+#define IRQ_PXD_RCVR		13	/* packet exchange rcv interrupt */
+#define IRQ_PXD_XMTR		12	/* packet exchange xmt interrupt */
 #define IRQ_DISK		8	/* disk interrupt */
 #define IRQ_MOUSE		5	/* mouse interrupt */
 #define IRQ_KEYBOARD		4	/* keyboard interrupt */
-#define IRQ_SERIAL_1_RCVR	3	/* line 1 receiver interrupt */
-#define IRQ_SERIAL_1_XMTR	2	/* line 1 transmitter interrupt */
-#define IRQ_SERIAL_0_RCVR	1	/* line 0 receiver interrupt */
-#define IRQ_SERIAL_0_XMTR	0	/* line 0 transmitter interrupt */
+#define IRQ_SERIAL_1_RCVR	3	/* serial line 1 rcv interrupt */
+#define IRQ_SERIAL_1_XMTR	2	/* serial line 1 xmt interrupt */
+#define IRQ_SERIAL_0_RCVR	1	/* serial line 0 rcv interrupt */
+#define IRQ_SERIAL_0_XMTR	0	/* serial line 0 xmt interrupt */
 
 #define PSW_V		0x08000000	/* interrupt vector bit in PSW */
 #define PSW_UM		0x04000000	/* user mode enable bit in PSW */

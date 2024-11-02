@@ -16,7 +16,7 @@ SRCS = main.c console.c error.c except.c command.c \
        mmu.c icache.c dcache.c ram.c rom.c io.c \
        timer.c dsp.c kbd.c serial.c disk.c sdcard.c \
        output.c shutdown.c graph1.c graph2.c mouse.c \
-       bio.c
+       bio.c pxd.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = sim
 

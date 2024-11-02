@@ -25,6 +25,7 @@
 #include "disk.h"
 #include "sdcard.h"
 #include "bio.h"
+#include "pxd.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -58,6 +59,7 @@ void shutdownWrite(Word addr, Word data) {
   diskExit();
   sdcardExit();
   bioExit();
+  pxdExit();
   outputExit();
   shutdownExit();
   cPrintf("ECO32 Simulator shutdown\n");

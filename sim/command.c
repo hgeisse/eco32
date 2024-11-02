@@ -31,6 +31,7 @@
 #include "disk.h"
 #include "sdcard.h"
 #include "bio.h"
+#include "pxd.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -940,6 +941,7 @@ static void doInit(char *tokens[], int n) {
     diskReset();
     sdcardReset();
     bioReset();
+    pxdReset();
     outputReset();
     shutdownReset();
     graph1Reset();

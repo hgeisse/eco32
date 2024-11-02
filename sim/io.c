@@ -20,6 +20,7 @@
 #include "disk.h"
 #include "sdcard.h"
 #include "bio.h"
+#include "pxd.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -63,6 +64,10 @@ Word ioReadWord(Word pAddr) {
   }
   if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
     data = sdcardRead(pAddr & IO_REG_MASK);
+    return data;
+  }
+  if ((pAddr & IO_DEV_MASK) == PXD_BASE) {
+    data = pxdRead(pAddr & IO_REG_MASK);
     return data;
   }
   if ((pAddr & IO_DEV_MASK) == BIO_BASE) {
@@ -128,6 +133,10 @@ void ioWriteWord(Word pAddr, Word data) {
   }
   if ((pAddr & IO_DEV_MASK) == SDCARD_BASE) {
     sdcardWrite(pAddr & IO_REG_MASK, data);
+    return;
+  }
+  if ((pAddr & IO_DEV_MASK) == PXD_BASE) {
+    pxdWrite(pAddr & IO_REG_MASK, data);
     return;
   }
   if ((pAddr & IO_DEV_MASK) == BIO_BASE) {

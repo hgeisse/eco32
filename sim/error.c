@@ -26,6 +26,7 @@
 #include "disk.h"
 #include "sdcard.h"
 #include "bio.h"
+#include "pxd.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -54,6 +55,7 @@ void error(char *fmt, ...) {
   diskExit();
   sdcardExit();
   bioExit();
+  pxdExit();
   outputExit();
   shutdownExit();
   cExit();

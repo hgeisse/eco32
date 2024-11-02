@@ -27,6 +27,7 @@
 #include "disk.h"
 #include "sdcard.h"
 #include "bio.h"
+#include "pxd.h"
 #include "output.h"
 #include "shutdown.h"
 #include "graph1.h"
@@ -63,6 +64,7 @@ static void usage(char *myself) {
   fprintf(stderr, "    [-dcl <n>]     dcache ld line size in bytes (2-10)\n");
   fprintf(stderr, "    [-dca <n>]     dcache ld associativity (0-1)\n");
   fprintf(stderr, "    [-sb <3 hex>]  set board buttons(1)/switches(2)\n");
+  fprintf(stderr, "    [-pxd]         install packet exchange device\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
   fprintf(stderr, "Unconnected serial lines can be accessed by opening\n");
@@ -99,6 +101,7 @@ int main(int argc, char *argv[]) {
   int dcacheLineSize;
   int dcacheAssoc;
   Word initialSwitches;
+  Bool pxd;
   Word initialPC;
   char command[20];
   char *line;
@@ -129,6 +132,7 @@ int main(int argc, char *argv[]) {
   dcacheLineSize = DC_LD_LINE_SIZE;
   dcacheAssoc = DC_LD_ASSOC;
   initialSwitches = 0;
+  pxd = false;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (strcmp(argp, "-i") == 0) {
@@ -308,6 +312,9 @@ int main(int argc, char *argv[]) {
           (initialSwitches & ~0xFFF) != 0) {
         usage(argv[0]);
       }
+    } else
+    if (strcmp(argp, "-pxd") == 0) {
+      pxd = true;
     } else {
       usage(argv[0]);
     }
@@ -352,6 +359,9 @@ int main(int argc, char *argv[]) {
     sdcardInit(sdcardName);
   }
   bioInit(initialSwitches);
+  if (pxd) {
+    pxdInit();
+  }
   outputInit(outputName);
   shutdownInit();
   ramInit(memSize * M, progName, loadAddr);
@@ -401,6 +411,7 @@ int main(int argc, char *argv[]) {
   diskExit();
   sdcardExit();
   bioExit();
+  pxdExit();
   outputExit();
   shutdownExit();
   cPrintf("ECO32 Simulator finished\n");
