@@ -83,6 +83,9 @@ static void rcvrCallback(int dummy) {
     error("packet exchange device receive error");
   }
   /* a packet arrived */
+  if (debug) {
+    cPrintf("%ld bytes received, size = %u words\n", n, packet.size);
+  }
   if (rcvCtrl & PXD_RCV_RDY) {
     /* we have a packet in the buffer already */
     /* raise overrun flag, but don't overwrite buffer */
@@ -126,7 +129,7 @@ Word pxdRead(Word addr) {
   } else
   if ((addr & 0xFF000) == PXD_RCV_BUFFER) {
     /* read receive buffer */
-    data = readWord(rcvBuf.data + (addr & 0x0FFC));
+    data = readWord((Byte *) &rcvBuf.data[(addr & 0x0FFF) >> 2]);
   } else
   if (addr == PXD_XMT_CTRL) {
     /* read transmit control */
@@ -209,7 +212,7 @@ void pxdWrite(Word addr, Word data) {
   } else
   if ((addr & 0xFF000) == PXD_XMT_BUFFER) {
     /* write transmit buffer */
-    writeWord(xmtBuf.data + (addr & 0x0FFC), data);
+    writeWord((Byte *) &xmtBuf.data[(addr & 0x0FFF) >> 2], data);
   } else {
     /* write illegal register */
     throwException(EXC_BUS_TIMEOUT);

@@ -52,8 +52,8 @@ void pxdExit(void);
 
 typedef struct {
   Word type;		/* type of packet */
-  Word size;		/* size of data (up to 4096, may be 0) */
-  Byte data[4096];	/* followed by <size> bytes of data */
+  Word size;		/* size of data (up to 1024 words, may be 0) */
+  Word data[1024];	/* followed by <size> words of data */
 } Packet;
 
 
