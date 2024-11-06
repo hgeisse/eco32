@@ -18,8 +18,8 @@
 #define PXD_RCV_BUFFER		0x80000	/* receiver data buffer start */
 
 #define PXD_RCV_RDY		0x01	/* receiver has a packet */
-#define PXD_RCV_OVR		0x02	/* receiver has been overrun */
-#define PXD_RCV_CLR		0x10	/* clear receiver */
+#define PXD_RCV_OVER		0x02	/* receiver has been overrun */
+#define PXD_RCV_RLS		0x10	/* release receiver */
 #define PXD_RCV_IEN		0x20	/* enable receiver interrupt */
 
 #define PXD_RCV_USEC		100	/* input checking interval */
@@ -30,6 +30,9 @@
 #define PXD_XMT_BUFFER		0x81000	/* transmitter data buffer start */
 
 #define PXD_XMT_RDY		0x01	/* transmitter accepts a packet */
+#define PXD_XMT_UNDR		0x02	/* transmitter has been underrun */
+#define PXD_XMT_RLS		0x10	/* release transmitter */
+#define PXD_XMT_IEN		0x20	/* enable transmitter interrupt */
 
 #define PXD_XMT_USEC		100	/* output speed */
 
@@ -49,11 +52,14 @@ void pxdExit(void);
 
 #define PXD_SERVER_PORT		48765
 
+#define PXD_MAX_SIZE		1024
+
 
 typedef struct {
-  Word type;		/* type of packet */
-  Word size;		/* size of data (up to 1024 words, may be 0) */
-  Word data[1024];	/* followed by <size> words of data */
+  Word type;			/* type of packet */
+  Word size;			/* size of data */
+				/* up to PXD_MAX_SIZE words, may be 0 */
+  Word data[PXD_MAX_SIZE];	/* followed by <size> words of data */
 } Packet;
 
 
