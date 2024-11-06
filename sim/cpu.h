@@ -9,8 +9,8 @@
 
 #define IRQ_TIMER_1		15	/* timer 1 interrupt */
 #define IRQ_TIMER_0		14	/* timer 0 interrupt */
-#define IRQ_PXD_RCVR		13	/* packet exchange rcv interrupt */
-#define IRQ_PXD_XMTR		12	/* packet exchange xmt interrupt */
+#define IRQ_PXD_RCV		13	/* packet exchange rcv interrupt */
+#define IRQ_PXD_XMT		12	/* packet exchange xmt interrupt */
 #define IRQ_DISK		8	/* disk interrupt */
 #define IRQ_MOUSE		5	/* mouse interrupt */
 #define IRQ_KEYBOARD		4	/* keyboard interrupt */
