@@ -11,8 +11,7 @@
 #define PXD_BASE	((Word *) 0xF0700000)	/* packet device base */
 
 #define PXD_RCV_CTRL	(PXD_BASE + 0)		/* control register */
-#define PXD_RCV_TYPE	(PXD_BASE + 1)		/* type register */
-#define PXD_RCV_SIZE	(PXD_BASE + 2)		/* size register */
+#define PXD_RCV_SIZE	(PXD_BASE + 1)		/* size register */
 #define PXD_RCV_BUFFER	(PXD_BASE + 0x20000)	/* data buffer start */
 
 #define PXD_RCV_RDY	0x01		/* receiver has a packet */
@@ -21,8 +20,7 @@
 #define PXD_RCV_IEN	0x20		/* enable receiver interrupt */
 
 #define PXD_XMT_CTRL	(PXD_BASE + 4)		/* control register */
-#define PXD_XMT_TYPE	(PXD_BASE + 5)		/* type register */
-#define PXD_XMT_SIZE	(PXD_BASE + 6)		/* size register */
+#define PXD_XMT_SIZE	(PXD_BASE + 5)		/* size register */
 #define PXD_XMT_BUFFER	(PXD_BASE + 0x20400)	/* data buffer start */
 
 #define PXD_XMT_RDY	0x01		/* transmitter accepts a packet */
@@ -34,7 +32,6 @@
 /**************************************************************/
 
 
-Word type;
 Word size;
 Word data[1024];
 
@@ -48,7 +45,6 @@ void copyPacketFromRcv(void) {
   int i;
   Word w;
 
-  type = *PXD_RCV_TYPE;
   size = *PXD_RCV_SIZE;
   for (i = 0; i < size; i++) {
     w = PXD_RCV_BUFFER[i];
@@ -67,9 +63,11 @@ void showRequest(void) {
   Word w;
 
   printf("packet received:\n");
-  printf("    type = 0x%08X\n", type);
   printf("    size = 0x%08X words\n", size);
-  for (i = 0; i < size; i++) {
+  w = data[0];
+  printf("    data[0] = %d = %s\n",
+         w, w == 42 ? "REQ_ECHO" : w == 43 ? "REP_ECHO" : "<UNKNOWN>");
+  for (i = 1; i < size; i++) {
     w = data[i];
     printf("    data[%d] = 0x%08X = '%c%c%c%c'\n",
            i, w,
@@ -80,8 +78,8 @@ void showRequest(void) {
 
 
 void prepareReply(void) {
-  type++;
-  data[4] &= ~((Word) 0x00010000);
+  data[0] += 1;
+  data[5] &= ~((Word) 0x00010000);
 }
 
 
@@ -90,9 +88,11 @@ void showReply(void) {
   Word w;
 
   printf("packet to be sent:\n");
-  printf("    type = 0x%08X\n", type);
   printf("    size = 0x%08X words\n", size);
-  for (i = 0; i < size; i++) {
+  w = data[0];
+  printf("    data[0] = %d = %s\n",
+         w, w == 42 ? "REQ_ECHO" : w == 43 ? "REP_ECHO" : "<UNKNOWN>");
+  for (i = 1; i < size; i++) {
     w = data[i];
     printf("    data[%d] = 0x%08X = '%c%c%c%c'\n",
            i, w,
@@ -111,7 +111,6 @@ void copyPacketToXmt(void) {
   int i;
   Word w;
 
-  *PXD_XMT_TYPE = type;
   *PXD_XMT_SIZE = size;
   for (i = 0; i < size; i++) {
     w = data[i];

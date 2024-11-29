@@ -29,11 +29,11 @@ typedef enum { false = 0, true = 1 } Bool;
 #define REQ_ECHO	42
 #define REP_ECHO	43
 
+#define PXD_MAX_SIZE	1024
+
 
 typedef struct {
-  Word type;		/* type of packet */
-  Word size;		/* size of data (up to 1024 words, may be 0) */
-  Word data[1024];	/* followed by <size> words of data */
+  Word data[PXD_MAX_SIZE];	/* up to PXD_MAX_SIZE words of data */
 } Packet;
 
 
@@ -127,20 +127,19 @@ void echo(char *str) {
 
   n = roundToWords(strlen(str) + 1);
   printf("REQ: '%s' [%u words]\n", str, n);
-  req.type = htonl(REQ_ECHO);
-  req.size = htonl(n);
-  memset(req.data, 0, n * sizeof(Word));
-  strcpy((char *) req.data, str);
-  reqSize = (2 + n) * sizeof(Word);
+  req.data[0] = htonl(REQ_ECHO);
+  memset(&req.data[1], 0, n * sizeof(Word));
+  strcpy((char *) &req.data[1], str);
+  reqSize = (1 + n) * sizeof(Word);
   requestReply(&req, reqSize, &rep, &repSize);
-  if (ntohl(rep.type) != REP_ECHO) {
-    error("unexpected reply type %u", rep.type);
+  if ((repSize & 3) != 0) {
+    error("illegal reply size");
   }
-  n = ntohl(rep.size);
-  if (repSize != (2 + n) * sizeof(Word)) {
-    error("inconsistent reply size %lu / %u", repSize, n);
+  n = repSize / sizeof(Word) - 1;
+  if (ntohl(rep.data[0]) != REP_ECHO) {
+    error("unexpected reply type %u", ntohl(rep.data[0]));
   }
-  printf("REP: '%s' [%u words]\n", (char *) rep.data, n);
+  printf("REP: '%s' [%u words]\n", (char *) &rep.data[1], n);
 }
 
 
