@@ -27,12 +27,10 @@ static Bool debug = false;
 static Bool installed = false;
 
 static Word rcvCtrl;
-static Word rcvType;
 static Word rcvSize;
 static Word rcvBuf[PXD_MAX_SIZE];
 
 static Word xmtCtrl;
-static Word xmtType;
 static Word xmtSize;
 static Word xmtBuf[PXD_MAX_SIZE];
 
@@ -88,28 +86,26 @@ static void rcvCallback(int dummy) {
   }
   /* a packet arrived */
   if (debug) {
-    cPrintf("%ld bytes received, size = %u words\n",
-            n, readWord((Byte *) &packet.size));
+    cPrintf("%ld bytes received\n", n);
+  }
+  if ((n & 3) != 0) {
+    /* size of packet is not an integral multiple of words */
+    error("packet exchange device illegal packet size");
   }
   if (rcvCtrl & PXD_RCV_RDY) {
     /* we have a packet in the buffer already */
     /* raise overrun flag, but don't overwrite buffer */
     rcvCtrl |= PXD_RCV_OVER;
   } else {
-    /* set type and size, copy data to buffer, and set ready flag */
-    rcvType = ntohl(packet.type);
-    rcvSize = ntohl(packet.size);
-    if (n != (2 + rcvSize) * sizeof(Word)) {
-      /* packet size and data size inconsistent */
-      error("packet size (%ld) and data size (%u) inconsistent",
-            n, rcvSize);
-    }
-    memcpy(&rcvBuf[0], &packet.data[0], rcvSize * sizeof(Word));
+    /* copy data to buffer and set size */
+    memcpy(&rcvBuf[0], &packet.data[0], n);
+    rcvSize = n >> 2;
+    /* set ready flag */
     rcvCtrl |= PXD_RCV_RDY;
-  }
-  if (rcvCtrl & PXD_RCV_IEN) {
-    /* raise pxd rcv interrupt */
-    cpuSetInterrupt(IRQ_PXD_RCV);
+    if (rcvCtrl & PXD_RCV_IEN) {
+      /* raise pxd rcv interrupt */
+      cpuSetInterrupt(IRQ_PXD_RCV);
+    }
   }
 }
 
@@ -119,18 +115,17 @@ static void xmtCallback(int dummy) {
   ssize_t n;
   ssize_t k;
 
-  /* set type and size, copy data from buffer */
-  packet.type = htonl(xmtType);
-  packet.size = htonl(xmtSize);
-  memcpy(&packet.data[0], &xmtBuf[0], xmtSize * sizeof(Word));
+  /* get size and copy data from buffer */
+  n = xmtSize << 2;
+  memcpy(&packet.data[0], &xmtBuf[0], n);
   /* try to transmit packet */
-  n = (2 + xmtSize) * sizeof(Word);
   k = sendto(sockfd, &packet, n, 0,
              (struct sockaddr *) &cliaddr, clilen);
   if (k != n) {
     /* this is a real error */
     error("packet exchange device transmit error");
   }
+  /* set ready flag */
   xmtCtrl |= PXD_XMT_UNDR | PXD_XMT_RDY;
   if (xmtCtrl & PXD_XMT_IEN) {
     /* raise pxd xmt interrupt */
@@ -156,10 +151,6 @@ Word pxdRead(Word addr) {
     /* read receive control */
     data = rcvCtrl;
   } else
-  if (addr == PXD_RCV_TYPE) {
-    /* read receive type */
-    data = rcvType;
-  } else
   if (addr == PXD_RCV_SIZE) {
     /* read receive size */
     data = rcvSize;
@@ -171,10 +162,6 @@ Word pxdRead(Word addr) {
   if (addr == PXD_XMT_CTRL) {
     /* read transmit control */
     data = xmtCtrl;
-  } else
-  if (addr == PXD_XMT_TYPE) {
-    /* read transmit type */
-    throwException(EXC_BUS_TIMEOUT);
   } else
   if (addr == PXD_XMT_SIZE) {
     /* read transmit size */
@@ -223,10 +210,6 @@ void pxdWrite(Word addr, Word data) {
       cpuResetInterrupt(IRQ_PXD_RCV);
     }
   } else
-  if (addr == PXD_RCV_TYPE) {
-    /* write receive type */
-    throwException(EXC_BUS_TIMEOUT);
-  } else
   if (addr == PXD_RCV_SIZE) {
     /* write receive size */
     throwException(EXC_BUS_TIMEOUT);
@@ -255,10 +238,6 @@ void pxdWrite(Word addr, Word data) {
       /* lower pxd xmt interrupt */
       cpuResetInterrupt(IRQ_PXD_XMT);
     }
-  } else
-  if (addr == PXD_XMT_TYPE) {
-    /* write transmit type */
-    xmtType = data;
   } else
   if (addr == PXD_XMT_SIZE) {
     /* write transmit size */

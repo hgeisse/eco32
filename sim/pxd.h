@@ -13,8 +13,7 @@
 
 
 #define PXD_RCV_CTRL		0x00	/* receiver control register */
-#define PXD_RCV_TYPE		0x04	/* receiver packet type register */
-#define PXD_RCV_SIZE		0x08	/* receiver data size register */
+#define PXD_RCV_SIZE		0x04	/* receiver data size register */
 #define PXD_RCV_BUFFER		0x80000	/* receiver data buffer start */
 
 #define PXD_RCV_RDY		0x01	/* receiver has a packet */
@@ -25,8 +24,7 @@
 #define PXD_RCV_USEC		100	/* input checking interval */
 
 #define PXD_XMT_CTRL		0x10	/* transmitter control register */
-#define PXD_XMT_TYPE		0x14	/* transmitter packet type register */
-#define PXD_XMT_SIZE		0x18	/* transmitter data size register */
+#define PXD_XMT_SIZE		0x14	/* transmitter data size register */
 #define PXD_XMT_BUFFER		0x81000	/* transmitter data buffer start */
 
 #define PXD_XMT_RDY		0x01	/* transmitter accepts a packet */
@@ -56,10 +54,7 @@ void pxdExit(void);
 
 
 typedef struct {
-  Word type;			/* type of packet */
-  Word size;			/* size of data */
-				/* up to PXD_MAX_SIZE words, may be 0 */
-  Word data[PXD_MAX_SIZE];	/* followed by <size> words of data */
+  Word data[PXD_MAX_SIZE];	/* up to PXD_MAX_SIZE words of data */
 } Packet;
 
 
